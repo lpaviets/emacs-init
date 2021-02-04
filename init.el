@@ -82,7 +82,8 @@
 (use-package undo-tree
   :config
   (setq undo-tree-visualizer-timestamps t)
-  (global-undo-tree-mode))
+  (global-undo-tree-mode)
+  :diminish (undo-tree-mode))
 
 ;; auto-mode
 (add-to-list 'auto-mode-alist '("\\.g4\\'" . antlr-mode))
@@ -175,7 +176,8 @@
   (setq ac-use-quick-help t)
   (setq-default ac-sources '(ac-source-yasnippet
 			   ac-source-words-in-same-mode-buffers
-			   ac-source-dictionary))) ; see auto-complete doc for other sources
+			   ac-source-dictionary)) ; see auto-complete doc for other sources
+  :diminish (auto-complete-mode))
 
 ;; Company
 (use-package company
@@ -183,11 +185,12 @@
   (setq company-idle-delay 0)
   (setq company-minimum-prefix-length 3)
   (setq company-quickhelp-delay 0)
-  :config
-  (global-company-mode t))
+  (global-company-mode t)
+  :diminish (company-mode))
 
 (use-package company-quickhelp
-  :init (company-quickhelp-mode t))
+  :init (company-quickhelp-mode t)
+  :diminish (company-quickhelp-mode))
 
 ;; Use pdf-tools to open PDF files
 (pdf-tools-install)
