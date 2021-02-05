@@ -136,7 +136,7 @@
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
   :init (which-key-mode)
-  :diminish which-key-mode
+  :diminish
   :config
   (setq which-key-idle-delay 1))
 
@@ -171,50 +171,64 @@
 ;; (require 'yasnippet)
 ;; (yas-global-mode 1)
 
-;; Auto-complete
-(use-package auto-complete
-  :config
-  (setq ac-use-quick-help t)
-  (setq-default ac-sources '(ac-source-yasnippet
-			   ac-source-words-in-same-mode-buffers
-			   ac-source-dictionary)) ; see auto-complete doc for other sources
-  :diminish (auto-complete-mode))
+;; ;; Auto-complete
+;; (use-package auto-complete
+;;   :config
+;;   (setq ac-use-quick-help t)
+;;   (setq-default ac-sources '(ac-source-yasnippet
+;; 			   ac-source-words-in-same-mode-buffers
+;; 			   ac-source-dictionary)) ; see auto-complete doc for other sources
+;;   :diminish (auto-complete-mode))
 
-;; Company
-(use-package company
+
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   :config
-  (setq company-idle-delay 0.1)
-  (setq company-minimum-prefix-length 3)
-  (setq company-quickhelp-delay 1)
-  (global-company-mode t)
-  :diminish (company-mode))
+  (lsp-enable-which-key-integration t))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (lsp-ui-doc-position 'bottom))
+
+(use-package lsp-treemacs
+  :after lsp)
+
+(use-package lsp-ivy)
+
+(use-package company
+  :init (global-company-mode t)
+  :diminish
+  :bind (:map company-active-map
+         ("<tab>" . company-complete-selection))
+  :custom
+  (company-minimum-prefix-length 3)
+  (company-idle-delay 0.1))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode)
+  :diminish)
 
 (use-package company-quickhelp
-  :init (company-quickhelp-mode t)
-  :diminish (company-quickhelp-mode))
+  :hook (company-mode . company-quickhelp-mode)
+  :diminish
+  :custom (company-quickhelp-delay 1))
+
+
+;; ;; Company
+;; (use-package company
+;;   :init (global-company-mode t)
+;;   :config
+;;   (setq company-idle-delay 0.1)
+;;   (setq company-minimum-prefix-length 3)
+;;   (setq company-quickhelp-delay 1)
+;;   :diminish
+;;   )
 
 ;; Use pdf-tools to open PDF files
 (pdf-tools-install)
-
-;; Configure ggtags for C and C++
-;; (require 'cc-mode)
-;; (require 'ggtags)
-
-;; (add-hook 'c-mode-common-hook
-;; 	  (lambda ()
-;; 	    (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
-;; 	      (ggtags-mode 1))))
-
-;; (define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
-;; (define-key ggtags-mode-map (kbd "C-c g h") 'ggtags-view-tag-history)
-;; (define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
-;; (define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
-;; (define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
-;; (define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags)
-
-;; (define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
-
-;; (setq-local imenu-create-index-function #'ggtags-build-imenu-index)
 
 ;; ;; Semantic
 (use-package semantic
@@ -280,7 +294,7 @@
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
-
+;; Tuareg (for OCaml and ML like languages)
 (use-package tuareg
   :config
   (setq tuareg-indent-align-with-first-arg t)
@@ -290,31 +304,32 @@
 ;; Language specific configuration
 
 ;; Python
+;; Change to try Elpy
 
-(defun my-python-hooks()
-    (interactive)
-    (setq tab-width 4)
-    (setq python-indent-offset 4)
+;; (defun my-python-hooks()
+;;     (interactive)
+;;     (setq tab-width 4)
+;;     (setq python-indent-offset 4)
 
-    (add-to-list
-        'imenu-generic-expression
-        '("Sections" "^#### \\[ \\(.*\\) \\]$" 1))
+;;     (add-to-list
+;;         'imenu-generic-expression
+;;         '("Sections" "^#### \\[ \\(.*\\) \\]$" 1))
 
-    ;; pythom mode keybindings
-    (define-key python-mode-map (kbd "M-.") 'jedi:goto-definition)
-    (define-key python-mode-map (kbd "M-,") 'jedi:goto-definition-pop-marker)
-    (define-key python-mode-map (kbd "M-/") 'jedi:show-doc)
-    (define-key python-mode-map (kbd "M-?") 'helm-jedi-related-names)
-    ;; end python mode keybindings
+;;     ;; pythom mode keybindings
+;;     (define-key python-mode-map (kbd "M-.") 'jedi:goto-definition)
+;;     (define-key python-mode-map (kbd "M-,") 'jedi:goto-definition-pop-marker)
+;;     (define-key python-mode-map (kbd "M-/") 'jedi:show-doc)
+;;     (define-key python-mode-map (kbd "M-?") 'helm-jedi-related-names)
+;;     ;; end python mode keybindings
 
-    (add-to-list 'company-backends 'company-jedi)
-    (jedi-mode)
-    (setq jedi:complete-on-dot t)
-    (setq jedi:tooltip-method '(pos-tip popup))
-    (setq jedi:get-in-function-call-delay 0))
+;;     (add-to-list 'company-backends 'company-jedi)
+;;     (jedi-mode)
+;;     (setq jedi:complete-on-dot t)
+;;     (setq jedi:tooltip-method '(pos-tip popup))
+;;     (setq jedi:get-in-function-call-delay 0))
 
-(add-hook 'python-mode-hook 'my-python-hooks)
-;; End Python mode
+;; (add-hook 'python-mode-hook 'my-python-hooks)
+;; ;; End Python mode
 
 ;;LaTeX
 
