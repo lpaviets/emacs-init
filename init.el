@@ -3,12 +3,7 @@
 ;; __________________________________________
 
 ;; Cool packages that might be installed later:
-;; which-key ; some interactive documentation when typing commands
-;; hydra ; "merge" related comands to a family of short bindings with a common prefix
 ;; peep-dired ; preview files in dired-mode
-;; ggtags ; work with GNU Global
-;; ctags ; another smpler but less complete tag generating program
-;; ergoemacs ; insane ergonomy changes (esp. keybindings)
 ;; Many more available on github: awesome-emacs
 ;; __________________________________________
 
@@ -117,6 +112,16 @@
 	 ("C-d" . ivy-reverse-i-search-kill))
   :config
   (ivy-mode 1))
+
+;; Dimmer. Dims buffers that do not have the focus
+(use-package dimmer
+  :config
+  (dimmer-configure-which-key) ; To fix ! Doesn't work
+  (dimmer-configure-magit)
+  (dimmer-configure-org)
+  (dimmer-configure-company-box)
+  (dimmer-mode))
+
 
 ;; Themes
 (use-package doom-themes
@@ -234,7 +239,6 @@
   :hook (python-mode . flycheck-mode)) ; Temporary to avoid noise ...
 
 ;; Magit
-
 (use-package magit
   ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
 
@@ -242,6 +246,45 @@
   ;; instead of in another buffer  
   )
 
+
+(use-package projectile
+  :diminish projectile-mode
+  :config (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
+  :init
+  ;; NOTE: Set this to the folder where you keep your Git repos!
+  ;; (when (file-directory-p "path/to/project/dir")
+  ;; (setq projectile-project-search-path '("path/to/project/dir")))
+  (setq projectile-switch-project-action #'projectile-dired))
+
+(use-package counsel-projectile
+  :config (counsel-projectile-mode))
+
+(use-package smartparens
+  :init
+  (smartparens-mode t)
+  :diminish
+  )
+
+;; org-mode
+
+(use-package org
+  :config
+  (setq org-ellipsis " ▾"))
+
+(use-package org-bullets
+  :after org
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+
+(use-package tuareg
+  :config
+  (setq tuareg-indent-align-with-first-arg t)
+  (setq tuareg-match-patterns-aligned t))
 
 ;; __________________________________________
 ;; Language specific configuration
