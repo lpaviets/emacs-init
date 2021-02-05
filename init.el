@@ -127,6 +127,13 @@
 (use-package doom-themes
   :init (load-theme 'doom-Iosvkem t))
 
+;; First time used: run M-x all-the-icons-install-fonts
+(use-package all-the-icons)
+
+(use-package doom-modeline
+  :init (doom-modeline-mode 1)
+  :custom ((doom-modeline-height 15)))
+
 
 ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
 (use-package rainbow-delimiters
@@ -167,9 +174,10 @@
 
 ;; Autocompletion: auto-complete, yasnippet and company
 
-;; ;;YASnippet
-;; (require 'yasnippet)
-;; (yas-global-mode 1)
+;;YASnippet
+(use-package yasnippet
+  :diminish
+  :hook (lsp-mode . yas-minor-mode))
 
 ;; ;; Auto-complete
 ;; (use-package auto-complete
@@ -180,26 +188,31 @@
 ;; 			   ac-source-dictionary)) ; see auto-complete doc for other sources
 ;;   :diminish (auto-complete-mode))
 
-
+;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :init
   (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   :config
-  (lsp-enable-which-key-integration t))
+  (lsp-enable-which-key-integration t)
+  (setq lsp-diagnostics-provider :none)
+  (setq lsp-ui-sideline-enable nil)
+  (setq lsp-enable-symbol-highlighting nil))
 
 (use-package lsp-ui
   :hook (lsp-mode . lsp-ui-mode)
   :custom
-  (lsp-ui-doc-position 'bottom))
+  (lsp-ui-doc-position 'bottom)
+  (lsp-ui-doc-delay 1))
 
 (use-package lsp-treemacs
   :after lsp)
 
 (use-package lsp-ivy)
 
+;; Company. Auto-completion package
 (use-package company
-  :init (global-company-mode t)
+  :init (company-mode)
   :diminish
   :bind (:map company-active-map
          ("<tab>" . company-complete-selection))
@@ -212,10 +225,9 @@
   :diminish)
 
 (use-package company-quickhelp
-  :hook (company-mode . company-quickhelp-mode)
+  ;;:hook (company-mode . company-quickhelp-mode)
   :diminish
   :custom (company-quickhelp-delay 1))
-
 
 ;; ;; Company
 ;; (use-package company
@@ -249,8 +261,9 @@
   :init
   (setq flycheck-relevant-error-other-file-show nil)
   (setq flycheck-indication-mode nil)
-  :config
-  :hook (python-mode . flycheck-mode)) ; Temporary to avoid noise ...
+  :diminish
+  ;; :hook (python-mode . flycheck-mode)
+  ) ; Temporary to avoid noise ...
 
 ;; Magit
 (use-package magit
@@ -305,6 +318,18 @@
 
 ;; Python
 ;; Change to try Elpy
+
+;; Before using LPS, make sure that the server has been installed !
+;; pip install --user "python-language-server[all]"
+;; Should be able to use the pyls command
+
+(use-package python-mode
+  :ensure t
+  :hook (python-mode . lsp-deferred)
+  :custom
+  (python-shell-interpreter "python3")
+  (setq tab-width 4)
+  (setq python-indent-offset 4))
 
 ;; (defun my-python-hooks()
 ;;     (interactive)
