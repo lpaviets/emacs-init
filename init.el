@@ -155,6 +155,8 @@
 
 ;; Counsel. Adds things to Ivy
 (use-package counsel
+  :init (counsel-mode)
+  :diminish
   :bind (("M-x" . counsel-M-x)
          ("C-x b" . counsel-ibuffer)
          ("C-x C-f" . counsel-find-file)
