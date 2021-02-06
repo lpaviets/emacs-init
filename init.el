@@ -44,7 +44,7 @@
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
    (quote
-    (spinner python-mode org-bullets smartparens counsel-projectile projectile lsp-ivy lsp-treemacs lsp-ui lsp-mode helpful counsel ivy-rich rainbow-delimiters doom-modeline flycheck company-box jedi yasnippet-snippets yasnippet company function-args ggtags magit ac-math which-key pdf-tools auctex gnu-elpa-keyring-update sage-shell-mode doom-themes auto-complete ##))))
+    (ccls spinner python-mode org-bullets smartparens counsel-projectile projectile lsp-ivy lsp-treemacs lsp-ui lsp-mode helpful counsel ivy-rich rainbow-delimiters doom-modeline flycheck company-box jedi yasnippet-snippets yasnippet company function-args ggtags magit ac-math which-key pdf-tools auctex gnu-elpa-keyring-update sage-shell-mode doom-themes auto-complete ##))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -122,7 +122,6 @@
   (dimmer-configure-company-box)
   (dimmer-mode))
 
-
 ;; Themes
 (use-package doom-themes
   :init (load-theme 'doom-Iosvkem t))
@@ -197,7 +196,8 @@
   (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   :config
   (lsp-enable-which-key-integration t)
-  (setq lsp-diagnostics-provider :none)
+  (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
+  (setq lsp-prefer-flymake nil)
   (setq lsp-ui-sideline-enable nil)
   (setq lsp-enable-symbol-highlighting nil))
 
@@ -215,6 +215,7 @@
 ;; Company. Auto-completion package
 (use-package company
   :init (company-mode)
+  :hook (prog-mode . company-mode)
   :diminish
   :bind (:map company-active-map
          ("<tab>" . company-complete-selection))
@@ -291,11 +292,7 @@
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
 
-(use-package smartparens
-  :init
-  (smartparens-mode t)
-  :diminish
-  )
+(use-package smartparens)
 
 ;; org-mode
 
@@ -367,9 +364,18 @@
   :ensure t
   :hook (python-mode . lsp-deferred)
   :custom
-  (python-shell-interpreter "python3")
+  (setq python-shell-interpreter "python3")
   (setq tab-width 4)
   (setq python-indent-offset 4))
+
+
+;; C/C++
+;; See https://github.com/MaskRay/ccls/wiki/lsp-mode
+(use-package ccls
+  :init
+  (setq ccls-executable (executable-find "ccls"))
+  :hook ((c-mode c++-mode objc-mode) .
+         lsp))
 
 
 ;;LaTeX
