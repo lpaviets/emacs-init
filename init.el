@@ -199,6 +199,9 @@
   (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
   (setq lsp-prefer-flymake nil)
   (setq lsp-ui-sideline-enable nil)
+  (setq lsp-ui-doc-enable nil)
+  (setq lsp-signature-render-documentation nil)
+  (setq lsp-signature-auto-activate nil)
   (setq lsp-enable-symbol-highlighting nil))
 
 (use-package lsp-ui
@@ -228,19 +231,9 @@
   :diminish)
 
 (use-package company-quickhelp
-  ;;:hook (company-mode . company-quickhelp-mode)
+  :hook (company-mode . company-quickhelp-mode)
   :diminish
   :custom (company-quickhelp-delay 1))
-
-;; ;; Company
-;; (use-package company
-;;   :init (global-company-mode t)
-;;   :config
-;;   (setq company-idle-delay 0.1)
-;;   (setq company-minimum-prefix-length 3)
-;;   (setq company-quickhelp-delay 1)
-;;   :diminish
-;;   )
 
 ;; Use pdf-tools to open PDF files
 (pdf-tools-install)
