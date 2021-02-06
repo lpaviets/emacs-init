@@ -3,12 +3,7 @@
 ;; __________________________________________
 
 ;; Cool packages that might be installed later:
-;; which-key ; some interactive documentation when typing commands
-;; hydra ; "merge" related comands to a family of short bindings with a common prefix
 ;; peep-dired ; preview files in dired-mode
-;; ggtags ; work with GNU Global
-;; ctags ; another smpler but less complete tag generating program
-;; ergoemacs ; insane ergonomy changes (esp. keybindings)
 ;; Many more available on github: awesome-emacs
 ;; __________________________________________
 
@@ -19,33 +14,24 @@
 ;; __________________________________________
 
 
-;; Added by Package.el.  This must come before configurations of
-;; installed packages.  Don't delete this line.  If you don't want it,
-;; just comment it out by adding a semicolon to the start of the line.
-;; You may delete these explanatory comments.
-
-(setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
-
+;; Initialize package sources
 (require 'package)
-(setq package-enable-at-startup nil)
 
-(add-to-list 'package-archives
-	     '("gnu" . "https://elpa.gnu.org/packages/") t)
-(add-to-list 'package-archives
-	     '("melpa" . "https://melpa.org/packages/") t)
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                         ("org" . "https://orgmode.org/elpa/")
+                         ("elpa" . "https://elpa.gnu.org/packages/")))
 
 (package-initialize)
 
-(let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
-                    (not (gnutls-available-p))))
-       (proto (if no-ssl "http" "https")))
-  (when no-ssl
-    (warn "\ Your version of Emacs does not support SSL
-connections, which is unsafe because it allows man-in-the-middle
-attacks.  There are two things you can do about this warning:
-1. Install an Emacs version that does support SSL and be safe.
-2. Remove this warning from your init file so you won't see it
-again.")))
+(unless package-archive-contents
+ (package-refresh-contents))
+
+;; Initialize use-package on non-Linux platforms
+(unless (package-installed-p 'use-package)
+   (package-install 'use-package))
+
+(require 'use-package)
+(setq use-package-always-ensure t)
 
 
 ;; __________________________________________
@@ -56,42 +42,9 @@ again.")))
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(ansi-color-names-vector
-   ["#212526" "#ff4b4b" "#b4fa70" "#fce94f" "#729fcf" "#e090d7" "#8cc4ff" "#eeeeec"])
- '(custom-enabled-themes (quote (tsdh-dark)))
- '(custom-safe-themes
-   (quote
-    ("fd944f09d4d0c4d4a3c82bd7b3360f17e3ada8adf29f28199d09308ba01cc092" default)))
- '(fci-rule-color "#5B6268")
- '(jdee-db-active-breakpoint-face-colors (cons "#2b2a27" "#ff5d38"))
- '(jdee-db-requested-breakpoint-face-colors (cons "#2b2a27" "#98be65"))
- '(jdee-db-spec-breakpoint-face-colors (cons "#2b2a27" "#3f444a"))
- '(objed-cursor-color "#ff5d38")
  '(package-selected-packages
    (quote
-    (flycheck company-box jedi yasnippet-snippets yasnippet company-c-headers company-irony company function-args ggtags magit ac-math which-key pdf-tools auctex gnu-elpa-keyring-update sage-shell-mode doom-themes realgud realgud-ipdb auto-complete ##)))
- '(vc-annotate-background "#2b2a27")
- '(vc-annotate-color-map
-   (list
-    (cons 20 "#98be65")
-    (cons 40 "#a4c551")
-    (cons 60 "#b0cc3d")
-    (cons 80 "#bcd42a")
-    (cons 100 "#c1a623")
-    (cons 120 "#c5781c")
-    (cons 140 "#cb4b16")
-    (cons 160 "#c95a58")
-    (cons 180 "#c7699a")
-    (cons 200 "#c678dd")
-    (cons 220 "#d96fa6")
-    (cons 240 "#ec666f")
-    (cons 260 "#ff5d38")
-    (cons 280 "#cf563c")
-    (cons 300 "#9f5041")
-    (cons 320 "#6f4a45")
-    (cons 340 "#5B6268")
-    (cons 360 "#5B6268")))
- '(vc-annotate-very-old-color nil))
+    (spinner python-mode org-bullets smartparens counsel-projectile projectile lsp-ivy lsp-treemacs lsp-ui lsp-mode helpful counsel ivy-rich rainbow-delimiters doom-modeline flycheck company-box jedi yasnippet-snippets yasnippet company function-args ggtags magit ac-math which-key pdf-tools auctex gnu-elpa-keyring-update sage-shell-mode doom-themes auto-complete ##))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -99,135 +52,324 @@ again.")))
  ;; If there is more than one, they won't work right.
  )
 
-(load-theme 'doom-Iosvkem)
-
 
 
 ;;__________________________________________
 ;; Global "comfort" modes and shortcuts
 ;; Modes:
 (delete-selection-mode 1)
-(setq inhibit-startup-screen t)
-;; Shortcuts
 
-(global-set-key (kbd "C-x C-b") 'ibuffer)
+(setq inhibit-startup-message t)
 
-(setq undo-tree-visualizer-timestamps t)
-(global-undo-tree-mode)
+(scroll-bar-mode -1)        ; Disable visible scrollbar
+(tool-bar-mode -1)          ; Disable the toolbar
+(tooltip-mode -1)           ; Disable tooltips
+(set-fringe-mode 10)        ; Give some breathing room
+
+(menu-bar-mode -1)            ; Disable the menu bar
 
 ;; __________________________________________
 ;; Packages options and management
 
+;; undo-tree
+
+(use-package undo-tree
+  :config
+  (setq undo-tree-visualizer-timestamps t)
+  (global-undo-tree-mode)
+  :diminish (undo-tree-mode))
+
 ;; auto-mode
 (add-to-list 'auto-mode-alist '("\\.g4\\'" . antlr-mode))
 
-;; Global linum-mode except in some major modes
-(require 'linum)
-(define-global-minor-mode my-global-linum-mode linum-mode
-  (lambda ()
-    (when (not (memq major-mode
-                     (list 'doc-view-mode
-			   'undo-tree-visualizer
-			   'pdf-view-mode))) ;; add other major modes in which to disable linum-mode
-      (linum-mode))))
-(my-global-linum-mode t)
+
+;; Global line numbering mode, except in some major modes
+(column-number-mode)
+(global-display-line-numbers-mode t)
+
+;; Disable line numbers for some modes
+(dolist (mode '(org-mode-hook
+                term-mode-hook
+                shell-mode-hook
+                eshell-mode-hook
+		doc-view-mode-hook
+		undo-tree-visualizer-hook
+		pdf-view-mode-hook
+		treemacs-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
+;; Ivy
+(use-package ivy
+  :diminish
+  :bind (("C-s" . swiper)
+	 :map ivy-minibuffer-map
+	 ("TAB" . ivy-partial-or-done)
+	 ("C-l" . ivy-alt-done)
+	 :map ivy-switch-buffer-map
+	 ("C-l" . ivy-done)
+	 ("C-d" . ivy-switch-buffer-kill)
+	 :map ivy-reverse-i-search-map
+	 ("C-d" . ivy-reverse-i-search-kill))
+  :config
+  (ivy-mode 1))
+
+;; Dimmer. Dims buffers that do not have the focus
+(use-package dimmer
+  :config
+  (dimmer-configure-which-key) ; To fix ! Doesn't work
+  (dimmer-configure-magit)
+  (dimmer-configure-org)
+  (dimmer-configure-company-box)
+  (dimmer-mode))
+
+
+;; Themes
+(use-package doom-themes
+  :init (load-theme 'doom-Iosvkem t))
+
+;; First time used: run M-x all-the-icons-install-fonts
+(use-package all-the-icons)
+
+(use-package doom-modeline
+  :init (doom-modeline-mode 1)
+  :custom ((doom-modeline-height 15)))
+
+
+;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+
+;; which-key. Shows all the available key sequences after a prefix
+(use-package which-key
+  :init (which-key-mode)
+  :diminish
+  :config
+  (setq which-key-idle-delay 1))
+
+;; Adds things to Ivy
+(use-package ivy-rich
+  :init
+  (ivy-rich-mode 1))
+
+
+;; Counsel. Adds things to Ivy
+(use-package counsel
+  :init (counsel-mode)
+  :diminish
+  :bind (("M-x" . counsel-M-x)
+         ("C-x b" . counsel-ibuffer)
+         ("C-x C-f" . counsel-find-file)
+         :map minibuffer-local-map
+         ("C-r" . 'counsel-minibuffer-history)))
+
+;; Helpful. Extra documentation when calling for help
+(use-package helpful
+  :custom
+  (counsel-describe-function-function #'helpful-callable)
+  (counsel-describe-variable-function #'helpful-variable)
+  :bind
+  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-command] . helpful-command)
+  ([remap describe-variable] . counsel-describe-variable)
+  ([remap describe-key] . helpful-key))
 
 ;; Autocompletion: auto-complete, yasnippet and company
 
-;; ;;YASnippet
-;; (require 'yasnippet)
-;; (yas-global-mode 1)
+;;YASnippet
+(use-package yasnippet
+  :diminish
+  :hook (lsp-mode . yas-minor-mode))
 
-;; Auto-complete
-(require 'auto-complete)
-(require 'auto-complete-config)
-(setq ac-use-quick-help t)
-(setq-default ac-sources '(ac-source-yasnippet
-			   ac-source-words-in-same-mode-buffers
-			   ac-source-dictionary)) ; see auto-complete doc for other sources
+;; ;; Auto-complete
+;; (use-package auto-complete
+;;   :config
+;;   (setq ac-use-quick-help t)
+;;   (setq-default ac-sources '(ac-source-yasnippet
+;; 			   ac-source-words-in-same-mode-buffers
+;; 			   ac-source-dictionary)) ; see auto-complete doc for other sources
+;;   :diminish (auto-complete-mode))
 
-;; Company
-(require 'company)
-;;(require 'company-c-headers)
-(setq company-idle-delay 0)
-(setq company-minimum-prefix-length 3)
-(company-quickhelp-mode t)
-(setq company-quickhelp-delay 0)
+;; LSP mode. Useful IDE-like features
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+  :config
+  (lsp-enable-which-key-integration t)
+  (setq lsp-diagnostics-provider :none)
+  (setq lsp-ui-sideline-enable nil)
+  (setq lsp-enable-symbol-highlighting nil))
 
-(add-hook 'after-init-hook 'global-company-mode)
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (lsp-ui-doc-position 'bottom)
+  (lsp-ui-doc-delay 1))
+
+(use-package lsp-treemacs
+  :after lsp)
+
+(use-package lsp-ivy)
+
+;; Company. Auto-completion package
+(use-package company
+  :init (company-mode)
+  :diminish
+  :bind (:map company-active-map
+         ("<tab>" . company-complete-selection))
+  :custom
+  (company-minimum-prefix-length 3)
+  (company-idle-delay 0.1))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode)
+  :diminish)
+
+(use-package company-quickhelp
+  ;;:hook (company-mode . company-quickhelp-mode)
+  :diminish
+  :custom (company-quickhelp-delay 1))
+
+;; ;; Company
+;; (use-package company
+;;   :init (global-company-mode t)
+;;   :config
+;;   (setq company-idle-delay 0.1)
+;;   (setq company-minimum-prefix-length 3)
+;;   (setq company-quickhelp-delay 1)
+;;   :diminish
+;;   )
 
 ;; Use pdf-tools to open PDF files
 (pdf-tools-install)
 
-;; Configure ggtags for C and C++
-(require 'cc-mode)
-(require 'ggtags)
-
-(add-hook 'c-mode-common-hook
-	  (lambda ()
-	    (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
-	      (ggtags-mode 1))))
-
-(define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
-(define-key ggtags-mode-map (kbd "C-c g h") 'ggtags-view-tag-history)
-(define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
-(define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
-(define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
-(define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags)
-
-(define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
-
-(setq-local imenu-create-index-function #'ggtags-build-imenu-index)
-
 ;; ;; Semantic
-(require 'semantic)
+(use-package semantic
 ;; (require 'semantic/ia)
 ;; (require 'semantic/bovine/gcc)
 
 ;; (defun my-semantic-hook ()
 ;;   (imenu-add-to-menubar "TAGS"))
 ;; (add-hook 'semantic-init-hooks 'my-semantic-hook)
-
-(global-semanticdb-minor-mode t)
-(global-semantic-idle-scheduler-mode t)
-
-(semantic-mode t)
+  :config
+  (semantic-mode t)
+  (global-semanticdb-minor-mode t)
+  (global-semantic-idle-scheduler-mode t))
 
 
 ;; Flycheck
-(setq flycheck-relevant-error-other-file-show nil)
-(setq flycheck-indication-mode nil)
-(global-flycheck-mode t)
+(use-package flycheck
+  :init
+  (setq flycheck-relevant-error-other-file-show nil)
+  (setq flycheck-indication-mode nil)
+  :diminish
+  ;; :hook (python-mode . flycheck-mode)
+  ) ; Temporary to avoid noise ...
+
+;; Magit
+(use-package magit
+  ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+
+  ;; uncomment previous line to have magit open itself within the same buffer
+  ;; instead of in another buffer  
+  )
+
+
+(use-package projectile
+  :diminish projectile-mode
+  :config (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
+  :init
+  ;; NOTE: Set this to the folder where you keep your Git repos!
+  ;; (when (file-directory-p "path/to/project/dir")
+  ;; (setq projectile-project-search-path '("path/to/project/dir")))
+  (setq projectile-switch-project-action #'projectile-dired))
+
+(use-package counsel-projectile
+  :config (counsel-projectile-mode))
+
+(use-package smartparens
+  :init
+  (smartparens-mode t)
+  :diminish
+  )
+
+;; org-mode
+
+;; Modifies fonts so that it looks more like a document - not fixed-pitch, etc
+
+(let ((my-temp-org-font "Cantarell"))
+  (if (member my-temp-org-font (font-family-list))
+      (setq my-org-mode-font my-temp-org-font)
+    (setq my-org-mode-font "Ubuntu Mono")))
+
+(defun my-org-font-setup ()
+  ;; Replace list hyphen with dot
+  (font-lock-add-keywords 'org-mode
+                          '(("^ *\\([-]\\) "
+                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+
+  ;; Set faces for heading levels
+  ;; For non-headers: org-default
+
+  (dolist (face '((org-level-1 . 1.2)
+                  (org-level-2 . 1.1)
+                  (org-level-3 . 1.05)
+                  (org-level-4 . 1.0)
+                  (org-level-5 . 1.1)
+                  (org-level-6 . 1.1)
+                  (org-level-7 . 1.1)
+                  (org-level-8 . 1.1)))
+    (set-face-attribute (car face) nil :font my-org-mode-font :weight 'regular :height (cdr face)))
+
+  ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
+
+(use-package org
+  :hook (org-mode . my-org-font-setup)
+  :config
+  (setq org-ellipsis " ▾"))
+
+(use-package org-bullets
+  :after org
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+
+
+;; Tuareg (for OCaml and ML like languages)
+(use-package tuareg
+  :config
+  (setq tuareg-indent-align-with-first-arg t)
+  (setq tuareg-match-patterns-aligned t))
 
 ;; __________________________________________
 ;; Language specific configuration
 
 ;; Python
+;; Change to try Elpy ?
 
-(defun my-python-hooks()
-    (interactive)
-    (setq tab-width 4)
-    (setq python-indent-offset 4)
+;; Before using LPS, make sure that the server has been installed !
+;; pip install --user "python-language-server[all]"
+;; Should be able to use the pyls command
 
-    (add-to-list
-        'imenu-generic-expression
-        '("Sections" "^#### \\[ \\(.*\\) \\]$" 1))
-
-    ;; pythom mode keybindings
-    (define-key python-mode-map (kbd "M-.") 'jedi:goto-definition)
-    (define-key python-mode-map (kbd "M-,") 'jedi:goto-definition-pop-marker)
-    (define-key python-mode-map (kbd "M-/") 'jedi:show-doc)
-    (define-key python-mode-map (kbd "M-?") 'helm-jedi-related-names)
-    ;; end python mode keybindings
-
-    (add-to-list 'company-backends 'company-jedi)
-    (jedi-mode)
-    (setq jedi:complete-on-dot t)
-    (setq jedi:tooltip-method '(pos-tip popup))
-    (setq jedi:get-in-function-call-delay 0))
-
-(add-hook 'python-mode-hook 'my-python-hooks)
-;; End Python mode
+(use-package python-mode
+  :ensure t
+  :hook (python-mode . lsp-deferred)
+  :custom
+  (python-shell-interpreter "python3")
+  (setq tab-width 4)
+  (setq python-indent-offset 4))
 
 
 ;;LaTeX
