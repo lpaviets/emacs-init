@@ -1,0 +1,622 @@
+#+title: Emacs Configuration
+#+PROPERTY: header-args:emacs-lisp :tangle ./autogen-init.el
+
+* Configuration
+
+  This file contains a Emacs configuration, written in a Org Mode document. It is largely based on [[https://github.com/daviwil/emacs-from-scratch/][Emacs From Scratch]].
+  It is able to automatically generate a init.el file, loaded by Emacs at startup.
+  If this file is on the path ="~/.emacs.d/emacs-config.org"= then it will automatically generate an output. To modify this behaviour, see the ="Org Mode/Auto-tangle configuration files"= subsection and modify it as you need.
+  If this file is named differently on your system, or simply located in another directory, you can still generate an output without changing anything by invoking the =org-babel-tangle= command (=C-c C-v t=).
+  To avoid conflicts with the currently loaded configuration file , the generated file is actually called  =autogen-init.el=. By default, Emacs reads (and loads) file such as ="~/.emacs"= or ="~/.emacs.d/init.el"= so you might need to rename it in order to have it loaded the next time you start Emacs.
+  If you want to directly modify the name of the output, you can change it in the second line of this document, after the =:tangle= keyword.
+
+  Some commands have to be run manually whenever the generated init.el file is loaded for the first time. 
+  Whenever this is the case, there is a *MANUAL* keyword in front of those commands.
+  If the init.el cannot be properly loaded at startup, try to search for such keywords in this file and execute the corresponding commands. 
+
+** Initialization
+
+   We use another package manager in order to write this configuration file.
+   It makes both installation and customization easier, and also simpler to read.
+
+#+BEGIN_SRC emacs-lisp
+
+;; Initialize package sources
+(require 'package)
+
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                         ("org" . "https://orgmode.org/elpa/")
+                         ("elpa" . "https://elpa.gnu.org/packages/")))
+
+(package-initialize)
+
+(unless package-archive-contents
+ (package-refresh-contents))
+
+;; Initialize use-package on non-Linux platforms
+(unless (package-installed-p 'use-package)
+   (package-install 'use-package))
+
+(require 'use-package)
+(setq use-package-always-ensure t)
+
+#+END_SRC
+
+** UI Configuration
+
+*** Comfort changes
+
+We remove all the unnecessary elements from the interface, /e.g./ menus, scroll bar and so on.
+You can remove or partially modify this block of code if you are a beginner and want to keep some of elements available, especially to be able to navigate with the mouse.
+All the variable names are pretty explicit, so you should be able to customize this to your taste easily.
+
+#+BEGIN_SRC emacs-lisp
+;; Whenever a region is activated, inserting a symbol will first delete the region
+(delete-selection-mode 1)
+
+;; Disable the annoying startup message and Emacs logo
+(setq inhibit-startup-message t)
+
+(scroll-bar-mode -1)        ; Disable visible scrollbar
+(tool-bar-mode -1)          ; Disable the toolbar
+(tooltip-mode -1)           ; Disable tooltips
+(set-fringe-mode 10)        ; Give some breathing room
+
+(menu-bar-mode -1)          ; Disable the menu bar
+
+;; Global line numbering mode, except in some major modes
+(column-number-mode)
+(global-display-line-numbers-mode t)
+
+;; Disable line numbers for some modes
+(dolist (mode '(org-mode-hook
+                term-mode-hook
+                shell-mode-hook
+                eshell-mode-hook
+		doc-view-mode-hook
+		undo-tree-visualizer-hook
+		pdf-view-mode-hook
+		treemacs-mode-hook))
+  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+
+#+END_SRC
+
+Another very useful package is undo-tree, which allows you to visualize the previous "Undos" and navigate them.
+It can act as a small, local version control system due to how Undos are managed by Emacs.
+
+#+BEGIN_SRC emacs-lisp
+(use-package undo-tree
+  :config
+  (setq undo-tree-visualizer-timestamps t)
+  (global-undo-tree-mode)
+  :diminish (undo-tree-mode))
+
+#+END_SRC
+
+*** General appearance
+
+**** Command log mode
+
+This mode allows you to display a small panel on the right of the screen which shows which keys you are pressing, and what commands they are associated to, all of this in real time !
+
+#+BEGIN_SRC emacs-lisp
+(use-package command-log-mode)
+#+END_SRC
+
+**** Theme
+
+This is simply a way to change how Emacs looks. Some themes are more complete than other (they will modify how other packages look, like Magit, or even the minibuffer)
+
+#+BEGIN_SRC emacs-lisp
+;; Themes
+(use-package doom-themes
+  :init (load-theme 'doom-Iosvkem t))
+#+END_SRC 
+
+**** Modeline and icons
+
+This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] looks.
+*MANUAL* If this is your first time running the init.el file, please run the following command:
+M-x all-the-icons-install-fonts
+
+#+BEGIN_SRC emacs-lisp
+;; First time used: run M-x all-the-icons-install-fonts
+(use-package all-the-icons)
+
+(use-package doom-modeline
+  :init (doom-modeline-mode 1)
+  :custom ((doom-modeline-height 15)))
+#+END_SRC
+
+**** Dimmer
+
+Dimmer is a package that will dim all the buffers that do not have the focus. It makes it simpler to see where your point currently is.
+
+#+BEGIN_SRC emacs-lisp
+;; Dimmer. Dims buffers that do not have the focus
+(use-package dimmer
+  :config
+  (dimmer-configure-which-key) ; To fix ! Doesn't work
+  (dimmer-configure-magit)
+  (dimmer-configure-org)
+  (dimmer-configure-company-box)
+  (dimmer-mode))
+
+#+END_SRC
+
+*** Easier search and minibuffer use
+
+Although emacs provides a number of commands to navigate within a file, to find documentation and so on, the following packages will make the general UI easier to use.
+[[https://github.com/justbur/emacs-which-key][which-key]] is a package that shows all the available commands after having typed some prefix.
+For example, if you press =C-c=, then a panel will appear at the bottom of the screen to show how you can currently continue this command.
+
+#+BEGIN_SRC emacs-lisp
+;; which-key. Shows all the available key sequences after a prefix
+(use-package which-key
+  :init (which-key-mode)
+  :diminish
+  :config
+  (setq which-key-idle-delay 1))
+#+END_SRC
+
+[[https://github.com/abo-abo/swiper][Ivy and Counsel]] are completion frameworks that allow you to use the minibuffer more comfortably.
+
+#+BEGIN_SRC emacs-lisp
+;; Ivy
+(use-package ivy
+  :diminish
+  :bind (("C-s" . swiper)
+	 :map ivy-minibuffer-map
+	 ("TAB" . ivy-partial-or-done)
+	 ("C-l" . ivy-alt-done)
+	 :map ivy-switch-buffer-map
+	 ("C-l" . ivy-done)
+	 ("C-d" . ivy-switch-buffer-kill)
+	 :map ivy-reverse-i-search-map
+	 ("C-d" . ivy-reverse-i-search-kill))
+  :config
+  (ivy-mode 1))
+
+;; Adds things to Ivy
+(use-package ivy-rich
+  :init
+  (ivy-rich-mode 1))
+
+
+;; Counsel. Adds things to Ivy
+(use-package counsel
+  :init (counsel-mode)
+  :diminish
+  :bind (("M-x" . counsel-M-x)
+         ("C-x b" . counsel-ibuffer)
+         ("C-x C-f" . counsel-find-file)
+         :map minibuffer-local-map
+         ("C-r" . 'counsel-minibuffer-history)))
+
+#+END_SRC
+
+[[https://github.com/Wilfred/helpful][helpful]] makes things easier to remember and to use without having to search for documentation in multiple places.
+It will condense all the available information about something within a single Help buffer, and will add some documentation to the commands you are currently typing.
+
+#+BEGIN_SRC emacs-lisp
+;; Helpful. Extra documentation when calling for help
+(use-package helpful
+  :custom
+  (counsel-describe-function-function #'helpful-callable)
+  (counsel-describe-variable-function #'helpful-variable)
+  :bind
+  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-command] . helpful-command)
+  ([remap describe-variable] . counsel-describe-variable)
+  ([remap describe-key] . helpful-key))
+
+#+END_SRC
+
+** Org Mode
+
+   [[https://orgmode.org/][Org Mode]] is one of the best reasons to use Emacs.
+   It acts as a markup language, can deal with planning, manage spreadsheets, do project planning, run code blocks to do literate programming ...
+
+**** Font faces
+
+     In order for Org Mode to feel like a document instead of code, we use a different font. 
+
+#+BEGIN_SRC emacs-lisp
+
+(let ((my-temp-org-font "Cantarell"))
+    (if (member my-temp-org-font (font-family-list))
+        (setq my-org-mode-font my-temp-org-font)
+      (setq my-org-mode-font "Ubuntu Mono")))
+
+(defun my-org-font-setup ()
+  ;; Replace list hyphen with dot
+  (font-lock-add-keywords 'org-mode
+                          '(("^ *\\([-]\\) "
+                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+
+  ;; Set faces for heading levels
+  ;; For non-headers: org-default
+
+  (dolist (face '((org-level-1 . 1.2)
+                  (org-level-2 . 1.1)
+                  (org-level-3 . 1.05)
+                  (org-level-4 . 1.0)
+                  (org-level-5 . 1.1)
+                  (org-level-6 . 1.1)
+                  (org-level-7 . 1.1)
+                  (org-level-8 . 1.1)))
+    (set-face-attribute (car face) nil :font my-org-mode-font :weight 'regular :height (cdr face)))
+
+  ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
+
+#+END_SRC
+**** Basic configuration
+
+     We change the general feel of Org Mode documents by using other indentation rules, by changing the headers appearance, and a few other minor changes.
+
+#+BEGIN_SRC emacs-lisp
+(defun my-org-mode-setup ()
+  (my-org-font-setup)
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (visual-line-mode 1))
+
+(use-package org
+  :hook (org-mode . my-org-mode-setup)
+  :config
+  (setq org-ellipsis " ▾")
+ 
+(use-package org-bullets
+  :after org
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+#+END_SRC
+
+**** Org Babel
+
+     Org babel is what allows us to write code and execute it, all within the same document.
+
+#+BEGIN_SRC emacs-lisp
+(org-babel-do-load-languages
+  'org-babel-load-languages
+  '((emacs-lisp . t)
+    (python . t)))
+
+;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
+					; else code
+
+#+END_SRC
+
+**** Auto-tangle configuration files
+
+     In order to concatenate all the code blocks that are written in this document to an external file, we need to "tangle" it.
+     The following code makes it so that each time this file is saved, it generates the corresponding init.el file.
+
+#+BEGIN_SRC emacs-lisp
+;; Automatically tangles this emacs-config config file when we save it
+(defun my-org-babel-tangle-config ()
+  (when (string-equal (buffer-file-name)
+                      (expand-file-name "~/.emacs.d/emacs-config.org"))
+    ;; Dynamic scoping to the rescue
+    (let ((org-confirm-babel-evaluate nil))
+      (org-babel-tangle))))
+
+(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
+#+END_SRC
+
+** Programming
+*** Projectile
+
+    [[https://projectile.mx/][Projectile]] is an Emacs package that makes project management easier. It allows us to navigate between files of the same project, and integrates very well with other tools, such as =lsp-mode= or =counsel=.
+
+#+BEGIN_SRC emacs-lisp
+(use-package projectile
+  :diminish projectile-mode
+  :config (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
+  :init
+  ;; NOTE: Set this to the folder where you keep your Git repos!
+  ;; (when (file-directory-p "path/to/project/dir")
+  ;; (setq projectile-project-search-path '("path/to/project/dir")))
+  (setq projectile-switch-project-action #'projectile-dired))
+
+(use-package counsel-projectile
+  :config (counsel-projectile-mode))
+
+#+END_SRC
+
+*** Magit
+
+    [[https://magit.vc/][Magit]] is a serious contender for the first place in the long list of "Reasons you should use Emacs", along with Org Mode.
+    It is a Text User Interface to Git, which integrates most of Git commands, even the most advanced ones, while making it easy to use even for beginners.
+
+#+BEGIN_SRC emacs-lisp
+(use-package magit
+  ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+
+  ;; uncomment previous line to have magit open itself within the same buffer
+  ;; instead of in another buffer  
+  )
+
+#+END_SRC
+
+*** Parenthesis
+
+    To make it easy to deal with parenthesis in various programming languages, we also use the following packages, which colourize matching parenthesis accordingly and insert brackets pair whenever we insert the opening one - althoug they can do much more.
+
+#+BEGIN_SRC emacs-lisp
+;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+(use-package smartparens)
+
+#+END_SRC
+
+*** Auto-completion
+
+**** YASnippet
+
+     A first useful package is YASnippet, which makes it easy to define and automatically insert snippets of code in various languages.
+
+#+BEGIN_SRC emacs-lisp
+;;YASnippet
+(use-package yasnippet
+  :diminish
+  :hook (lsp-mode . yas-minor-mode))
+
+#+END_SRC
+
+**** Company
+
+     Several packages are available to make auto-completion more efficient and intuitive than the built-in =completion-at-point= function. We use [[https://company-mode.github.io/][Company]] (stands for "comp[lete] any[thing]") as it integrates nicely with other packages that we use, is well-maintained and has a more modern interface than most of its counterparts such as =auto-complete=.
+
+#+BEGIN_SRC emacs-lisp
+;; Company. Auto-completion package
+(use-package company
+  :init (company-mode)
+  :hook (prog-mode . company-mode)
+  :diminish
+  :bind (:map company-active-map
+	      ("<tab>" . company-complete-selection)
+	      ("C-n" . company-select-next)
+	      ("C-p" . company-select-previous)
+	      ("M-n" . nil)
+	      ("M-p" . nil))
+
+  :custom
+  (company-minimum-prefix-length 3)
+  (company-idle-delay 0.1)
+  (company-selection-wrap-around t))
+
+#+END_SRC
+
+To have a cleaner interface and also a bit of documentation added to the suggested completions, we use two extra packages.
+
+#+BEGIN_SRC emacs-lisp
+(use-package company-box
+  :hook (company-mode . company-box-mode)
+  :diminish)
+
+(use-package company-quickhelp
+  :hook (company-mode . company-quickhelp-mode)
+  :diminish
+  :custom (company-quickhelp-delay 1))
+
+#+END_SRC
+
+**** Auto-complete
+
+     We still define a configuration for the auto-complete package, because we might want to use it in other buffers where company is a bit too much.
+
+#+BEGIN_SRC emacs-lisp
+;; Auto-complete
+(use-package auto-complete
+  :config
+  (setq ac-use-quick-help t)
+  (setq-default ac-sources '(ac-source-yasnippet
+			   ac-source-words-in-same-mode-buffers
+			   ac-source-dictionary)) ; see auto-complete doc for other sources
+  :diminish
+)
+
+#+END_SRC
+
+*** Language Server Protocol
+
+    The [[https://en.wikipedia.org/wiki/Language_Server_Protocol][Language Server Protocol]] is a protocol which facilitates the use of several languages with various IDE. Instead of specifying a syntax, ..., for each pair "IDE/Language", it aims at abstracting the specifities of each language, so that each IDE will need to communicate with a server that will give back the information needed to do IDE-y things such as highlighting or auto-completion in an unified manner.
+
+#+BEGIN_SRC emacs-lisp
+;; LSP mode. Useful IDE-like features
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+  :config
+  (lsp-enable-which-key-integration t)
+  (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
+  (setq lsp-prefer-flymake nil)
+  (setq lsp-ui-sideline-enable nil)
+  (setq lsp-ui-doc-enable nil)
+  (setq lsp-signature-render-documentation nil)
+  (setq lsp-signature-auto-activate nil)
+  (setq lsp-enable-symbol-highlighting nil))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (lsp-ui-doc-position 'bottom)
+  (lsp-ui-doc-delay 1))
+
+(use-package lsp-treemacs
+  :after lsp)
+
+(use-package lsp-ivy)
+
+#+END_SRC
+
+*** Real-time syntax checking
+
+    [[https://www.flycheck.org/en/latest/][Flycheck]] is a modern on-the-fly syntax checking extension to Emacs, working for several languages, showing different level of errors (warnings, errors ...), and which has a natural integration to =lsp-mode=.
+
+#+BEGIN_SRC emacs-lisp
+;; Flycheck
+(use-package flycheck
+  :init
+  (setq flycheck-relevant-error-other-file-show nil)
+  (setq flycheck-indication-mode nil)
+  :diminish
+  ;; :hook (python-mode . flycheck-mode)
+  ) ; Temporary to avoid noise ...
+
+#+END_SRC
+
+Another package doing more or less the same thing but in a different way:
+
+#+BEGIN_SRC emacs-lisp
+;; Semantic
+(use-package semantic
+;; (require 'semantic/ia)
+;; (require 'semantic/bovine/gcc)
+
+;; (defun my-semantic-hook ()
+;;   (imenu-add-to-menubar "TAGS"))
+;; (add-hook 'semantic-init-hooks 'my-semantic-hook)
+  :config
+  (semantic-mode t)
+  (global-semanticdb-minor-mode t)
+  (global-semantic-idle-scheduler-mode t))
+
+#+END_SRC
+
+*** Programming languages
+    
+    In this section, we fine-tune our tools to specific programming languages.
+**** Python
+
+     We need to specify which server LSP will use. Several packages are available.
+     *MANUAL* Before using LSP, use the following command to install a server:
+     =pip install --user python-language-server[all]=
+     The command =pyls= needs to be available on the =PATH= environment variable.
+
+     #+BEGIN_SRC emacs-lisp
+
+;; Python
+;; Change to try Elpy ?
+
+;; Before using LPS, make sure that the server has been installed !
+;; pip install --user python-language-server[all]
+;; Should be able to use the pyls command
+
+(use-package python-mode
+  :ensure t
+  :hook (python-mode . lsp-deferred)
+  :custom
+  (setq python-shell-interpreter "python3")
+  (setq tab-width 4)
+  (setq python-indent-offset 4))
+
+     
+     #+END_SRC
+
+**** OCaml
+
+For OCaml, we do not use LSP mode, and we instead choose to work with a specific minor mode called [[https://github.com/ocaml/tuareg][Tuareg]].
+
+#+BEGIN_SRC emacs-lisp
+;; Tuareg (for OCaml and ML like languages)
+(use-package tuareg
+  :config
+  (setq tuareg-indent-align-with-first-arg t)
+  (setq tuareg-match-patterns-aligned t))
+
+#+END_SRC
+
+**** C/C++
+
+For C and C++ (and ObjectiveC), as for Python, we need to install a server for LSP to use. We use the one called [[https://github.com/MaskRay/ccls/wiki/lsp-mode][ccls]].
+*MANUAL* To use the ccls server, follow the instruction [[https://github.com/MaskRay/ccls/][here]].
+
+#+BEGIN_SRC emacs-lisp
+;; C/C++
+;; See https://github.com/MaskRay/ccls/wiki/lsp-mode
+(use-package ccls
+  :init
+  (setq ccls-executable (executable-find "ccls"))
+  :hook ((c-mode c++-mode objc-mode) .
+         lsp))
+
+#+END_SRC
+** LaTeX and PDF
+
+**** PDF viewer
+
+Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tools]].
+
+#+BEGIN_SRC emacs-lisp
+(pdf-tools-install)
+
+#+END_SRC
+
+**** LaTeX
+
+We configure the auto-complete package to work with .tex documents.
+
+#+BEGIN_SRC emacs-lisp
+(use-package auctex)
+
+;; Adding support for LaTeX auto-complete
+(defun ac-LaTeX-mode-setup () ; add ac-sources to default ac-sources
+  (require 'ac-math)
+  (add-to-list 'ac-modes 'latex-mode)   ; make auto-complete aware of `latex-mode`
+
+  (setq ac-sources
+	(append '(ac-source-math-unicode
+		  ac-source-math-latex
+		  ac-source-latex-commands)
+		ac-sources)))
+
+#+END_SRC
+
+We also specify how the source file and the PDF document should interact. For example, we enable forward and backward search.
+
+#+BEGIN_SRC emacs-lisp
+(defun my-pdf-viewer-setup ()
+  (setq TeX-view-program-selection '((output-pdf "PDF Tools")))
+  (setq TeX-source-correlate-start-server t)
+  
+  ;; Update PDF buffers after successful LaTeX runs
+  (add-hook 'TeX-after-compilation-finished-functions
+	    #'TeX-revert-document-buffer)
+  
+  (setq TeX-source-correlate-mode t)
+  (setq TeX-source-correlate-method '((dvi . source-specials) (pdf . synctex)))
+)
+
+(add-hook 'LaTeX-mode-hook 'ac-LaTeX-mode-setup)
+(add-hook 'LaTeX-mode-hook 'my-pdf-viewer-setup)
+#+END_SRC
+
+
+* Additional resources
+
+You might want to install some interesting new packages that are not already loaded in this configuration file.
+Because there exist many Emacs packages, it might be frightening or even overwhelming to search for other packages that you could benefit from.
+In order to solve this issue, [[https://github.com/emacs-tw/awesome-emacs][awesome-emacs]] is a place where you can start this research.
+It references a lot of useful packages, some of which are already installed with this configuration file.
+If you are a beginner, it also includes a list of tutorials or extra-sources for you to learn about Emacs and Emacs Lisp in general.
+
+
+You can also take a look at other people [[https://github.com/grettke/every-emacs-initialization-file][configuration files]] to get an idea on how to write your own elisp code, what packages do other people use, and so much more.
+Be careful though, some of these files are several thousands lines long !

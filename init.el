@@ -180,14 +180,14 @@
   :diminish
   :hook (lsp-mode . yas-minor-mode))
 
-;; ;; Auto-complete
-;; (use-package auto-complete
-;;   :config
-;;   (setq ac-use-quick-help t)
-;;   (setq-default ac-sources '(ac-source-yasnippet
-;; 			   ac-source-words-in-same-mode-buffers
-;; 			   ac-source-dictionary)) ; see auto-complete doc for other sources
-;;   :diminish (auto-complete-mode))
+;; Auto-complete
+(use-package auto-complete
+  :config
+  (setq ac-use-quick-help t)
+  (setq-default ac-sources '(ac-source-yasnippet
+			   ac-source-words-in-same-mode-buffers
+			   ac-source-dictionary)) ; see auto-complete doc for other sources
+  :diminish (auto-complete-mode))
 
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
@@ -330,11 +330,17 @@
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
+(defun my-org-mode-setup ()
+  (my-org-font-setup)
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (visual-line-mode 1))
+
 (use-package org
-  :hook (org-mode . my-org-font-setup)
+  :hook (org-mode . my-org-mode-setup)
   :config
   (setq org-ellipsis " ▾"))
-
+ 
 (use-package org-bullets
   :after org
   :hook (org-mode . org-bullets-mode)
