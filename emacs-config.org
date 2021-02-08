@@ -4,19 +4,28 @@
 * Configuration
 
   This file contains a Emacs configuration, written in a Org Mode document. It is largely based on [[https://github.com/daviwil/emacs-from-scratch/][Emacs From Scratch]].
+
   It is able to automatically generate a init.el file, loaded by Emacs at startup.
-  If this file is on the path ="~/.emacs.d/emacs-config.org"= then it will automatically generate an output. To modify this behaviour, see the ="Org Mode/Auto-tangle configuration files"= subsection and modify it as you need.
+
+  If this file is on the path "~/.emacs.d/emacs-config.org" then it will automatically generate an output. To modify this behaviour, see the "Org Mode/Auto-tangle configuration files" subsection and modify it as you need.
+
   If this file is named differently on your system, or simply located in another directory, you can still generate an output without changing anything by invoking the =org-babel-tangle= command (=C-c C-v t=).
-  To avoid conflicts with the currently loaded configuration file , the generated file is actually called  =autogen-init.el=. By default, Emacs reads (and loads) file such as ="~/.emacs"= or ="~/.emacs.d/init.el"= so you might need to rename it in order to have it loaded the next time you start Emacs.
+
+  To avoid conflicts with the currently loaded configuration file , the generated file is actually called  =autogen-init.el=. By default, Emacs reads (and loads) file such as "~/.emacs" or "~/.emacs.d/init.el" so you might need to rename it in order to have it loaded the next time you start Emacs.
+
   If you want to directly modify the name of the output, you can change it in the second line of this document, after the =:tangle= keyword.
 
+
   Some commands have to be run manually whenever the generated init.el file is loaded for the first time. 
+
   Whenever this is the case, there is a *MANUAL* keyword in front of those commands.
+
   If the init.el cannot be properly loaded at startup, try to search for such keywords in this file and execute the corresponding commands. 
 
 ** Initialization
 
    We use another package manager in order to write this configuration file.
+
    It makes both installation and customization easier, and also simpler to read.
 
 #+BEGIN_SRC emacs-lisp
@@ -47,7 +56,9 @@
 *** Comfort changes
 
 We remove all the unnecessary elements from the interface, /e.g./ menus, scroll bar and so on.
+
 You can remove or partially modify this block of code if you are a beginner and want to keep some of elements available, especially to be able to navigate with the mouse.
+
 All the variable names are pretty explicit, so you should be able to customize this to your taste easily.
 
 #+BEGIN_SRC emacs-lisp
@@ -82,6 +93,7 @@ All the variable names are pretty explicit, so you should be able to customize t
 #+END_SRC
 
 Another very useful package is undo-tree, which allows you to visualize the previous "Undos" and navigate them.
+
 It can act as a small, local version control system due to how Undos are managed by Emacs.
 
 #+BEGIN_SRC emacs-lisp
@@ -116,7 +128,9 @@ This is simply a way to change how Emacs looks. Some themes are more complete th
 **** Modeline and icons
 
 This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] looks.
+
 *MANUAL* If this is your first time running the init.el file, please run the following command:
+
 M-x all-the-icons-install-fonts
 
 #+BEGIN_SRC emacs-lisp
@@ -147,7 +161,9 @@ Dimmer is a package that will dim all the buffers that do not have the focus. It
 *** Easier search and minibuffer use
 
 Although emacs provides a number of commands to navigate within a file, to find documentation and so on, the following packages will make the general UI easier to use.
+
 [[https://github.com/justbur/emacs-which-key][which-key]] is a package that shows all the available commands after having typed some prefix.
+
 For example, if you press =C-c=, then a panel will appear at the bottom of the screen to show how you can currently continue this command.
 
 #+BEGIN_SRC emacs-lisp
@@ -196,6 +212,7 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
 #+END_SRC
 
 [[https://github.com/Wilfred/helpful][helpful]] makes things easier to remember and to use without having to search for documentation in multiple places.
+
 It will condense all the available information about something within a single Help buffer, and will add some documentation to the commands you are currently typing.
 
 #+BEGIN_SRC emacs-lisp
@@ -215,6 +232,7 @@ It will condense all the available information about something within a single H
 ** Org Mode
 
    [[https://orgmode.org/][Org Mode]] is one of the best reasons to use Emacs.
+
    It acts as a markup language, can deal with planning, manage spreadsheets, do project planning, run code blocks to do literate programming ...
 
 **** Font faces
@@ -299,6 +317,7 @@ It will condense all the available information about something within a single H
 **** Auto-tangle configuration files
 
      In order to concatenate all the code blocks that are written in this document to an external file, we need to "tangle" it.
+
      The following code makes it so that each time this file is saved, it generates the corresponding init.el file.
 
 #+BEGIN_SRC emacs-lisp
@@ -339,6 +358,7 @@ It will condense all the available information about something within a single H
 *** Magit
 
     [[https://magit.vc/][Magit]] is a serious contender for the first place in the long list of "Reasons you should use Emacs", along with Org Mode.
+
     It is a Text User Interface to Git, which integrates most of Git commands, even the most advanced ones, while making it easy to use even for beginners.
 
 #+BEGIN_SRC emacs-lisp
@@ -506,8 +526,11 @@ Another package doing more or less the same thing but in a different way:
 **** Python
 
      We need to specify which server LSP will use. Several packages are available.
+
      *MANUAL* Before using LSP, use the following command to install a server:
+
      =pip install --user python-language-server[all]=
+
      The command =pyls= needs to be available on the =PATH= environment variable.
 
      #+BEGIN_SRC emacs-lisp
@@ -546,6 +569,7 @@ For OCaml, we do not use LSP mode, and we instead choose to work with a specific
 **** C/C++
 
 For C and C++ (and ObjectiveC), as for Python, we need to install a server for LSP to use. We use the one called [[https://github.com/MaskRay/ccls/wiki/lsp-mode][ccls]].
+
 *MANUAL* To use the ccls server, follow the instruction [[https://github.com/MaskRay/ccls/][here]].
 
 #+BEGIN_SRC emacs-lisp
@@ -612,11 +636,24 @@ We also specify how the source file and the PDF document should interact. For ex
 * Additional resources
 
 You might want to install some interesting new packages that are not already loaded in this configuration file.
+
 Because there exist many Emacs packages, it might be frightening or even overwhelming to search for other packages that you could benefit from.
+
 In order to solve this issue, [[https://github.com/emacs-tw/awesome-emacs][awesome-emacs]] is a place where you can start this research.
+
 It references a lot of useful packages, some of which are already installed with this configuration file.
+
 If you are a beginner, it also includes a list of tutorials or extra-sources for you to learn about Emacs and Emacs Lisp in general.
 
 
 You can also take a look at other people [[https://github.com/grettke/every-emacs-initialization-file][configuration files]] to get an idea on how to write your own elisp code, what packages do other people use, and so much more.
+
 Be careful though, some of these files are several thousands lines long !
+
+
+* TODO
+- [ ] Regexp with rx, xr and may be other packages.
+- [ ] System stuff: =Tramp=, configure =eshell= or find an even better one, configure =dired= or upgrade it, etc
+- [ ] Do things for other popular languages (Java and C# come to mind).
+- [ ] Configure a Emacs-Lisp (and potentially Common Lisp ?) development environment.
+- [ ] Point to funny/absurd packages (/e.g./ =speed-type=)

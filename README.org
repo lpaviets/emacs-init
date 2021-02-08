@@ -1,0 +1,42 @@
+* Emacs configuration
+
+This repository contains an example of an Emacs configuration file, as well an Org Mode document that generates it.
+
+Its purpose is both to share an example of a working configuration for Emacs from which you can pick up ideas, but that you can also choose to use without any modifications in order to get a modern IDE - and much more, and it is also to provide an example of how you can use the Org Mode of Emacs to manage your configuration files in a documented way.
+
+* Usage Instructions
+
+
+** For everyone:
+
+At several points within the configuration file, /something/ is needed to complete the installation. This can be an Emacs command that you need to run in order to install some package, or even a completely independent tool that you need to install (for example, the configuration uses the Language Server Protocol in order to implement IDE-like features such as syntax highlighting, code completion and so on. This requires the user to install a server for each language. Some of them can be installed directly from Emacs, but other require a more complex installation process).
+
+In any case, such commands are explicitly marked by a *MANUAL* keyword within the =emacs-config.org= document. Please read them carefully before proceeding with the rest of the installation and loading the =init.el= file by starting emacs.
+
+** Linux
+
+1. Clone this repository to a folder on your system: =git clone https://github.com/lpaviets/emacs-init=
+2. Back up any previous Emacs configuration, either located in a standalone file named =.emacs= at the root of your file system, or contained in a =.emacs.d= directory.
+3. Rename the clone of this repository as =~/.emacs.d=. This will allow Emacs to automatically load its content at startup.
+4. An alternate solution is to use the following command to start emacs with another configuration file: =emacs -q -l your-init-file.el=. The =-q= option tells Emacs to ignore any configuration file it might automatically find, and the =-l= option tells it to use this file instead.
+5. Start Emacs. If you encounter some problems, please make sure that you have correctly run all the necessary commands indicated by the *MANUAL* tag in the =emacs-config.org= file. If the problems nevertheless continue, you might want to start Emacs using the =emacs --debug-init= option to get more information on what the source of the problem might be.
+
+
+** MacOS
+
+** Windows
+
+* Start using Emacs
+
+In case you are starting to learn Emacs, here is a short and non-exhaustive list of places where you can go to give you a broad idea of what this editor can do, and how to do it
+
+** While using Emacs
+- At any point within Emacs, the =C-h t= command (you press the =Ctrl= and =h= keys at the same time, release them both, and then press =t=) will start a tutorial.
+- The command =C-h r= will open a manual, in which you can find a lot of information by navigating around.
+- If you are lost, the =C-h C-h= command (press the =Ctrl= and =h= keys at the same time, release them both, and press them both at the same time once again) will open a buffer giving you a brief overview of all the Help commands available. A practical one is =C-h a=, that you can also run with the command =M-x apropos RET your-keywords RET= (press the Meta key -usually =Alt=- and x at the same time, then type =apropos= in the minibuffer area and then press the =Enter=/=Return= key, then type-in what you are looking for, and press =Enter= again), which will return a list of all the commands containing the keywords you asked for.
+
+** External resources
+
+- The [[https://github.com/emacs-tw/awesome-emacs][awesome-emacs]] repository gives a detailed list of useful packages, sorted by (subjective) popularity/usefulness and themes. It also contains a brief list of places to learn Emacs at the end, so you can probably find many useful things there.
+- [[https://tuhdo.github.io/emacs-tutor.html][The Emacs Mini Manual]] gives a very detailed tutorial on how to use Emacs, from commands to window management as well as several other features such as =dired= and =ido=.
+- You can also find here [[https://www.gnu.org/software/emacs/tour/][here]] a Guided Tour of Emacs, giving an overview of the basic, built-in capabilities of the editor, from text-editing to writing mails, debugging code and playing Tetris.
