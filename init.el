@@ -221,10 +221,16 @@
   :hook (prog-mode . company-mode)
   :diminish
   :bind (:map company-active-map
-         ("<tab>" . company-complete-selection))
+	      ("<tab>" . company-complete-selection)
+	      ("C-n" . company-select-next)
+	      ("C-p" . company-select-previous)
+	      ("M-n" . nil)
+	      ("M-p" . nil))
+
   :custom
   (company-minimum-prefix-length 3)
-  (company-idle-delay 0.1))
+  (company-idle-delay 0.1)
+  (company-selection-wrap-around t))
 
 (use-package company-box
   :hook (company-mode . company-box-mode)
@@ -335,7 +341,18 @@
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((emacs-lisp . t)
+   (python . t)))
 
+(setq org-confirm-babel-evaluate nil) ; Take care if executing someone
+					; else code
+
+;; (require 'org-tempo) if org-version >= 9.2
+;; (add-to-list 'org-structure-template-alist '("sh"  "src sh"))
+;; (add-to-list 'org-structure-template-alist '("el"  "src emacs-lisp"))
+;; (add-to-list 'org-structure-template-alist '("py"  "src python"))
 
 ;; Tuareg (for OCaml and ML like languages)
 (use-package tuareg
