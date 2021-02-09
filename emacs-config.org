@@ -1,4 +1,5 @@
 #+title: Emacs Configuration
+#+author: Léo Paviet Salomon
 #+PROPERTY: header-args:emacs-lisp :tangle ./autogen-init.el
 
 * Configuration
@@ -289,7 +290,7 @@ It will condense all the available information about something within a single H
 (use-package org
   :hook (org-mode . my-org-mode-setup)
   :config
-  (setq org-ellipsis " ▾")
+  (setq org-ellipsis " ▾"))
  
 (use-package org-bullets
   :after org
@@ -609,8 +610,9 @@ We configure the auto-complete package to work with .tex documents.
 	(append '(ac-source-math-unicode
 		  ac-source-math-latex
 		  ac-source-latex-commands)
-		ac-sources)))
-
+		ac-sources))
+  (auto-complete-mode))
+                
 #+END_SRC
 
 We also specify how the source file and the PDF document should interact. For example, we enable forward and backward search.
@@ -631,7 +633,24 @@ We also specify how the source file and the PDF document should interact. For ex
 (add-hook 'LaTeX-mode-hook 'ac-LaTeX-mode-setup)
 (add-hook 'LaTeX-mode-hook 'my-pdf-viewer-setup)
 #+END_SRC
+** System
+**** Eshell
 
+Contrary to =term= and =shell= (respectively invoked by =M-x <term/shell>=), [[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]] is not /emulating/ anything: it is, on its own, a shell-like command interpreter implemented in Emacs Lisp. As such, it provides (most of) the usual commands such as =grep=, =ls= and so on, as well as an extra binding to Emacs (for example, you can redirect the output of any command to an Emacs buffer). For this reason, you can use =eshell= on any system that is able to run Emacs, as there is no external dependency.
+
+In fact, some of those commands are reimplemented in Emacs Lisp (/e.g./ =cat=), some of them are using the Emacs tools (for example =grep=), and unknown commands are passed to the /real/ commandline.
+
+A more in-depth guide can be found [[https://www.masteringemacs.org/article/complete-guide-mastering-eshell][here]].
+
+We install a few packages which make eshell easier to use.
+
+#+BEGIN_SRC emacs-lisp
+(use-package eshell-did-you-mean
+:init (eshell-did-you-mean-setup))
+
+(use-package eshell-syntax-highlighting
+:hook (eshell-mode . eshell-syntax-highlighting-mode))
+#+END_SRC
 
 * Additional resources
 
