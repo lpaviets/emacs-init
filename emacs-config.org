@@ -583,6 +583,28 @@ For C and C++ (and ObjectiveC), as for Python, we need to install a server for L
          lsp))
 
 #+END_SRC
+**** LISP
+***** Emacs Lisp
+
+Although Emacs comes with pretty good built-in functionalities, there is still room for improvement.
+
+[[https://github.com/Fanael/highlight-defined][highlight defined]] highlights defined Emacs Lisp symbols (functions, variable names, macros ...) in source code.
+ 
+#+BEGIN_SRC emacs-lisp
+(use-package highlight-defined
+:hook (emacs-lisp-mode . highlight-defined-mode))
+
+#+END_SRC
+
+[[https://github.com/Silex/elmacro][elmacro]] shows keyboard macros and interactive commands as Emacs Lisp, meaning that you know /how to do/ something using advanced keyboard shortcuts or interactive commands, you can get for free an elisp code snippet that does exactly the same thing that you can reuse /e.g./ in a configuration file or in another function.
+
+Because it might be useful everywhere, we do not use it simply in =emacs-lisp-mode= and we activate it everywhere.
+
+#+BEGIN_SRC emacs-lisp
+(use-package elmacro
+:init (elmacro-mode t))
+#+END_SRC
+
 ** LaTeX and PDF
 
 **** PDF viewer
