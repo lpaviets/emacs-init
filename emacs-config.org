@@ -53,6 +53,15 @@
 #+END_SRC
 
 ** UI Configuration
+*** Hydra
+
+[[https://github.com/abo-abo/hydra][Hydra]] is a package that is used to group several related commands into a family of bindings, all starting with the same prefix (= "hydra"). Whenever this common prefix is entered in a suitable mode, a panel shows up, showing all the user-defined commands that can now be invoked with a single keystroke instead of repeatedly using the same long prefix.
+
+#+BEGIN_SRC emacs-lisp
+(use-package hydra)
+#+END_SRC
+
+All the hydras will now be defined after the package to which they correspond, or in the appropriate section.
 
 *** Comfort changes
 
@@ -107,7 +116,6 @@ It can act as a small, local version control system due to how Undos are managed
 #+END_SRC
 
 *** General appearance
-
 **** Command log mode
 
 This mode allows you to display a small panel on the right of the screen which shows which keys you are pressing, and what commands they are associated to, all of this in real time !
@@ -161,12 +169,11 @@ Dimmer is a package that will dim all the buffers that do not have the focus. It
   (dimmer-configure-magit)
   (dimmer-configure-org)
   (dimmer-configure-company-box)
+  (dimmer-configure-hydra)
   (dimmer-mode))
 
 #+END_SRC
-
 *** Easier search and minibuffer use
-
 Although emacs provides a number of commands to navigate within a file, to find documentation and so on, the following packages will make the general UI easier to use.
 
 [[https://github.com/justbur/emacs-which-key][which-key]] is a package that shows all the available commands after having typed some prefix.
@@ -234,6 +241,137 @@ It will condense all the available information about something within a single H
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
+#+END_SRC
+*** Navigation and selection
+**** Window management
+
+Because window management can be a bit tedious with the basic Emacs functionalities, we improve it a bit. First of all, we enable =winner-mode=, which allows us to "undo" and "redo" changes in the Windows' configuration.
+
+#+BEGIN_SRC emacs-lisp
+(winner-mode 1)
+
+#+END_SRC
+
+To facilitate window management, we use an hydra, binding most of the commands that we might ever need.
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key
+ (kbd "C-c w") ; w as in window
+(defhydra hydra-window (:color red
+                        :hint nil)
+  "
+ Split: _v_ert _x_:horz
+Delete: _o_nly  _da_ce  _dw_indow  _db_uffer  _df_rame
+  Move: _s_wap
+Frames: _f_rame new  _df_ delete
+  Misc: _m_ark _a_ce  _u_ndo  _r_edo"
+  ; Move the focus around
+  ("h" windmove-left)
+  ("j" windmove-down)
+  ("k" windmove-up)
+  ("l" windmove-right)
+  ; Changes the size of the current window
+  ("H" hydra-move-splitter-left)
+  ("J" hydra-move-splitter-down)
+  ("K" hydra-move-splitter-up)
+  ("L" hydra-move-splitter-right)
+  ; Split and move (or not)
+  ("|" (lambda ()
+         (interactive)
+         (split-window-right)
+         (windmove-right)))
+  ("_" (lambda ()
+         (interactive)
+         (split-window-below)
+         (windmove-down)))
+  ("v" split-window-right)
+  ("x" split-window-below)
+  ;("t" transpose-frame "'")
+  ;; winner-mode must be enabled
+  ("u" winner-undo)
+  ("r" winner-redo) ;;Fixme, not working?
+  ; Delete windows
+  ("o" delete-other-windows :exit t)
+  ("da" ace-delete-window)
+  ("dw" delete-window)
+  ("db" kill-this-buffer)
+  ("df" delete-frame :exit t)
+  ; Other stuff
+  ("a" ace-window :exit t)
+  ("f" new-frame :exit t)
+  ("s" ace-swap-window)
+  ("q" nil)
+  ;("i" ace-maximize-window "ace-one" :color blue)
+  ;("b" ido-switch-buffer "buf")
+  ("m" headlong-bookmark-jump)))
+#+END_SRC
+
+**** Movement
+
+Because movement keys are the most frequently used ones, it might be useful to create an Hydra helping us navigate around a document.
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key
+ (kbd "C-c m")
+ (defhydra hydra-move ()
+   "Movement" ; m as in movement
+   ("n" next-line)
+   ("p" previous-line)
+   ("f" forward-char)
+   ("b" backward-char)
+   ("a" beginning-of-line)
+   ("e" move-end-of-line)
+   ("v" scroll-up-command)
+   ;; Converting M-v to V here by analogy.
+   ("V" scroll-down-command)
+   ("l" recenter-top-bottom)))
+#+END_SRC
+
+**** Rectangles
+
+Manipulating rectangles is a cool Emacs feature. You can select a region with the shape of a rectangle, copy and yank it, insert strings at the beginning of each line of the selection, and several other features.
+
+Because the functions operating on rectangles are not always the easier to remember, we simply define a new Hydra referencing the most useful ones.
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key
+(kbd "C-c r") ; r as rectangle
+(defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
+                                     :color pink
+                                     :hint nil
+                                     :post (deactivate-mark))
+  "
+  ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_ 
+_b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_ 
+  ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
+^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
+"
+  ("p" rectangle-previous-line)
+  ("n" rectangle-next-line)
+  ("b" rectangle-backward-char)
+  ("f" rectangle-forward-char)
+  ("d" kill-rectangle)                    ;; C-x r k
+  ("y" yank-rectangle)                    ;; C-x r y
+  ("w" copy-rectangle-as-kill)            ;; C-x r M-w
+  ("o" open-rectangle)                    ;; C-x r o
+  ("t" string-rectangle)                  ;; C-x r t
+  ("c" clear-rectangle)                   ;; C-x r c
+  ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
+  ("N" rectangle-number-lines)            ;; C-x r N
+  ("r" (if (region-active-p)
+           (deactivate-mark)
+         (rectangle-mark-mode 1)))        ;; C-x SPC
+  ("i" string-insert-rectangle)
+  ("u" undo nil)
+  ("q" nil)))
+#+END_SRC
+
+**** Selection
+A useful tool to manipulate text and even source code is the [[https://github.com/magnars/expand-region.el][expand-region]] package, as it allows us to increase the selected region to match larger and larger /semantic/ units. For example, by using it repeatedly, you could select in this order a character, a word, a string containing this word, a sexp containing this string, and the function in this sexp is used.
+
+#+BEGIN_SRC emacs-lisp
+(use-package expand-region
+:bind ("C-=" . er/expand-region))
 #+END_SRC
 
 ** Org Mode
@@ -338,6 +476,8 @@ It will condense all the available information about something within a single H
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
 #+END_SRC
+
+** TODO Editing 
 
 ** Programming
 *** Projectile
@@ -673,6 +813,8 @@ A more in-depth guide can be found [[https://www.masteringemacs.org/article/comp
 We install a few packages which make eshell easier to use.
 
 #+BEGIN_SRC emacs-lisp
+;; eshell
+
 (use-package eshell-did-you-mean
 :init (eshell-did-you-mean-setup))
 
@@ -698,10 +840,19 @@ You can also take a look at other people [[https://github.com/grettke/every-emac
 Be careful though, some of these files are several thousands lines long !
 
 * TODO
-- [ ] Hydra ! Install it, define some useful hydras (buffers, org-mode, dired ...), bind it to lsp-mode/ivy/projectile ...
+- [-] Hydra ! Install it, define some useful hydras (buffers, org-mode, dired ...), bind it to lsp-mode/ivy/projectile ...
+  - [X] Install
+  - [ ] Modify hydras from the wiki
+  - [ ] Define some new hydras
 - [ ] Do things for other popular languages (Java and C# come to mind).
-- [ ] System stuff: =Tramp=, configure =eshell= or find an even better one, configure =dired= or upgrade it, etc
+  - [ ] Setup C# with LSP-mode
+  - [ ] Setup Java with LSP-mode
+- [X] System stuff: =Tramp=, configure =eshell= or find an even better one, configure =dired= or upgrade it, etc
+  - [X] =eshell= Basic improvements
+  - [ ] Tramp explanation and configuration
+  - [ ] Dired improvement
 - [ ] Configure a Emacs-Lisp (and potentially Common Lisp ?) development environment.
+  - [  ] Install and configure SLIME
 - [ ] Point to funny/absurd packages (/e.g./ =speed-type=)
 - [ ] Regexp with rx, xr and may be other packages.
-- [ ] Configure a web browser ?
+- [ ] Configure a web browser
