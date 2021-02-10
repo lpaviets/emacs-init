@@ -19,7 +19,7 @@
 
   Some commands have to be run manually whenever the generated init.el file is loaded for the first time. 
 
-  Whenever this is the case, there is a *MANUAL* keyword in front of those commands.
+  Whenever this is the case, it is explicitly signaled by the presence of the *MANUAL* keyword in front of those commands.
 
   If the init.el cannot be properly loaded at startup, try to search for such keywords in this file and execute the corresponding commands. 
 
@@ -254,38 +254,82 @@ Because window management can be a bit tedious with the basic Emacs functionalit
 
 To facilitate window management, we use an hydra, binding most of the commands that we might ever need.
 
+First of all, we use a few helper functions, defined in [[https://github.com/abo-abo/hydra/blob/master/hydra-examples.el][hydra-examples.el]]
+
 #+BEGIN_SRC emacs-lisp
-(global-set-key
- (kbd "C-c w") ; w as in window
+;;* Helpers
+(use-package windmove)
+
+(defun hydra-move-splitter-left (arg)
+  "Move window splitter left."
+  (interactive "p")
+  (if (let ((windmove-wrap-around))
+        (windmove-find-other-window 'right))
+      (shrink-window-horizontally arg)
+    (enlarge-window-horizontally arg)))
+
+(defun hydra-move-splitter-right (arg)
+  "Move window splitter right."
+  (interactive "p")
+  (if (let ((windmove-wrap-around))
+        (windmove-find-other-window 'right))
+      (enlarge-window-horizontally arg)
+    (shrink-window-horizontally arg)))
+
+(defun hydra-move-splitter-up (arg)
+  "Move window splitter up."
+  (interactive "p")
+  (if (let ((windmove-wrap-around))
+        (windmove-find-other-window 'up))
+      (enlarge-window arg)
+    (shrink-window arg)))
+
+(defun hydra-move-splitter-down (arg)
+  "Move window splitter down."
+  (interactive "p")
+  (if (let ((windmove-wrap-around))
+        (windmove-find-other-window 'up))
+      (shrink-window arg)
+    (enlarge-window arg)))
+#+END_SRC
+
+Now, we wrap everything up into a nice hydra
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key 
+(kbd "C-c w") ; w for window
 (defhydra hydra-window (:color red
                         :hint nil)
-  "
- Split: _v_ert _x_:horz
-Delete: _o_nly  _da_ce  _dw_indow  _db_uffer  _df_rame
-  Move: _s_wap
-Frames: _f_rame new  _df_ delete
-  Misc: _m_ark _a_ce  _u_ndo  _r_edo"
+"
+^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
+^^^^^^^^^-------------------------------------------------------------------------------
+_b_move left      _B_left        _V_split-vert-move      _o_del-other      _f_new-frame
+_n_move down      _N_down        _H_split-horiz-move     _da_ace-del       _u_winner-undo
+_p_move up        _P_up          _v_split-vert           _dw_del-window    _r_winner-redo
+_f_move right     _F_right       _h_split-horiz          _df_del-frame
+_q_uit
+"
   ; Move the focus around
-  ("h" windmove-left)
-  ("j" windmove-down)
-  ("k" windmove-up)
-  ("l" windmove-right)
+  ("b" windmove-left)
+  ("n" windmove-down)
+  ("p" windmove-up)
+  ("f" windmove-right)
   ; Changes the size of the current window
-  ("H" hydra-move-splitter-left)
-  ("J" hydra-move-splitter-down)
-  ("K" hydra-move-splitter-up)
-  ("L" hydra-move-splitter-right)
+  ("B" hydra-move-splitter-left)
+  ("N" hydra-move-splitter-down)
+  ("P" hydra-move-splitter-up)
+  ("F" hydra-move-splitter-right)
   ; Split and move (or not)
-  ("|" (lambda ()
+  ("V" (lambda ()
          (interactive)
          (split-window-right)
          (windmove-right)))
-  ("_" (lambda ()
+  ("H" (lambda ()
          (interactive)
          (split-window-below)
          (windmove-down)))
   ("v" split-window-right)
-  ("x" split-window-below)
+  ("h" split-window-below)
   ;("t" transpose-frame "'")
   ;; winner-mode must be enabled
   ("u" winner-undo)
@@ -477,8 +521,7 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
 #+END_SRC
 
-** TODO Editing 
-
+** TODO Editing
 ** Programming
 *** Projectile
 
@@ -842,7 +885,7 @@ Be careful though, some of these files are several thousands lines long !
 * TODO
 - [-] Hydra ! Install it, define some useful hydras (buffers, org-mode, dired ...), bind it to lsp-mode/ivy/projectile ...
   - [X] Install
-  - [ ] Modify hydras from the wiki
+  - [X] Modify hydras from the wiki
   - [ ] Define some new hydras
 - [ ] Do things for other popular languages (Java and C# come to mind).
   - [ ] Setup C# with LSP-mode
