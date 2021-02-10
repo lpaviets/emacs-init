@@ -195,10 +195,15 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
 ;; Ivy
 (use-package ivy
   :diminish
+  :init
+  (defun my-ivy-alt-done-t ()
+    (interactive)
+    (ivy-alt-done t))
+
   :bind (("C-s" . swiper)
 	 :map ivy-minibuffer-map
 	 ("TAB" . ivy-partial-or-done)
-	 ("C-l" . ivy-alt-done)
+	 ("C-l" . my-ivy-alt-done-t) ; Small hack
 	 :map ivy-switch-buffer-map
 	 ("C-l" . ivy-done)
 	 ("C-d" . ivy-switch-buffer-kill)
