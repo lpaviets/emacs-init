@@ -112,8 +112,14 @@ It can act as a small, local version control system due to how Undos are managed
 
 This mode allows you to display a small panel on the right of the screen which shows which keys you are pressing, and what commands they are associated to, all of this in real time !
 
+As of now, you need to enable the mode by using the =command-log-mode= command (or =global-command-log-mode= if you want to record everything, in all the buffers of the current session), and to use the =C-c o= keybinding (which calls the =clm/toggle-command-log-buffer= function) to open a new buffer in which you will see both the keybindings you are currently using and the commands to which they are bound.
+
+If you want =command-log-mode= to be activated by default in certain minor (or even major) modes, simply add a hook. You will still need to explicitly open the buffer, but this could also be dealt with by using other, straightforward hooks.
+
 #+BEGIN_SRC emacs-lisp
-(use-package command-log-mode)
+(use-package command-log-mode
+;; :hook (<your-favourite-mode> . command-log-mode) ; Add here modes in which you want to run the command-log-mode
+)
 #+END_SRC
 
 **** Theme
@@ -459,6 +465,7 @@ To have a cleaner interface and also a bit of documentation added to the suggest
     The [[https://en.wikipedia.org/wiki/Language_Server_Protocol][Language Server Protocol]] is a protocol which facilitates the use of several languages with various IDE. Instead of specifying a syntax, ..., for each pair "IDE/Language", it aims at abstracting the specifities of each language, so that each IDE will need to communicate with a server that will give back the information needed to do IDE-y things such as highlighting or auto-completion in an unified manner.
 
 #+BEGIN_SRC emacs-lisp
+
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
@@ -606,14 +613,21 @@ Because it might be useful everywhere, we do not use it simply in =emacs-lisp-mo
 #+END_SRC
 
 ** LaTeX and PDF
-
 **** PDF viewer
 
 Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tools]].
 
-#+BEGIN_SRC emacs-lisp
-(pdf-tools-install)
+*MANUAL* This package might require some external libraries to be installed. Please refer to the linked page to see exactly what you need to do on your system.
 
+#+BEGIN_SRC emacs-lisp
+;; Might require extra libs to work, see https://github.com/politza/pdf-tools
+
+(use-package pdf-tools
+    :config
+    (pdf-tools-install)
+    (setq TeX-view-program-selection '((output-pdf "pdf-tools")))
+    (setq TeX-view-program-list '(("pdf-tools" "TeX-pdf-tools-sync-view")))
+    (setq TeX-source-correlate-start-server t))
 #+END_SRC
 
 **** LaTeX
@@ -621,7 +635,8 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
 We configure the auto-complete package to work with .tex documents.
 
 #+BEGIN_SRC emacs-lisp
-(use-package auctex)
+(use-package auctex
+:defer t)
 
 ;; Adding support for LaTeX auto-complete
 (defun ac-LaTeX-mode-setup () ; add ac-sources to default ac-sources
@@ -637,23 +652,14 @@ We configure the auto-complete package to work with .tex documents.
                 
 #+END_SRC
 
-We also specify how the source file and the PDF document should interact. For example, we enable forward and backward search.
+And we add a few other utilities, for example we want the PDF to be reloaded whenever we make some change in the source code.
 
 #+BEGIN_SRC emacs-lisp
-(defun my-pdf-viewer-setup ()
-  (setq TeX-view-program-selection '((output-pdf "PDF Tools")))
-  (setq TeX-source-correlate-start-server t)
-  
-  ;; Update PDF buffers after successful LaTeX runs
-  (add-hook 'TeX-after-compilation-finished-functions
+   ;; Update PDF buffers after successful LaTeX runs
+(add-hook 'TeX-after-compilation-finished-functions
 	    #'TeX-revert-document-buffer)
-  
-  (setq TeX-source-correlate-mode t)
-  (setq TeX-source-correlate-method '((dvi . source-specials) (pdf . synctex)))
-)
-
+ 
 (add-hook 'LaTeX-mode-hook 'ac-LaTeX-mode-setup)
-(add-hook 'LaTeX-mode-hook 'my-pdf-viewer-setup)
 #+END_SRC
 ** System
 **** Eshell
@@ -691,10 +697,11 @@ You can also take a look at other people [[https://github.com/grettke/every-emac
 
 Be careful though, some of these files are several thousands lines long !
 
-
 * TODO
-- [ ] Regexp with rx, xr and may be other packages.
-- [ ] System stuff: =Tramp=, configure =eshell= or find an even better one, configure =dired= or upgrade it, etc
+- [ ] Hydra ! Install it, define some useful hydras (buffers, org-mode, dired ...), bind it to lsp-mode/ivy/projectile ...
 - [ ] Do things for other popular languages (Java and C# come to mind).
+- [ ] System stuff: =Tramp=, configure =eshell= or find an even better one, configure =dired= or upgrade it, etc
 - [ ] Configure a Emacs-Lisp (and potentially Common Lisp ?) development environment.
 - [ ] Point to funny/absurd packages (/e.g./ =speed-type=)
+- [ ] Regexp with rx, xr and may be other packages.
+- [ ] Configure a web browser ?
