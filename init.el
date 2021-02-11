@@ -14,10 +14,38 @@
 (unless (package-installed-p 'use-package)
    (package-install 'use-package))
 
+(add-to-list 'load-path "~/.emacs.d/extra-packages")
 (require 'use-package)
 (setq use-package-always-ensure t)
 
 (use-package hydra)
+
+;; Broken for the moment  
+
+;; (use-package posframe)
+
+  ;; ;; Manual load and config of Hydra Posframe
+  ;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
+  ;; (setq hydra-posframe-parameters
+  ;; '((left-fringe . 4) (right-fringe . 4) (top-fringe . 4) (bottom-fringe . 4) (height . 18) (width . 105) (min-height . 17) (max-height . 30) (top . 25)))
+  ;; (add-hook 'after-init-hook  'hydra-posframe-mode)
+
+  ;Pretty Hydra
+  (use-package pretty-hydra)
+
+  ; Avoid unnecessary warnings
+  (declare-function all-the-icons-faicon 'all-the-icons)
+  (declare-function all-the-icons-fileicon 'all-the-icons)
+  (declare-function all-the-icons-material 'all-the-icons)
+  (declare-function all-the-icons-octicon 'all-the-icons)
+
+  ;define an icon function with all-the-icons-faicon
+  ;to use filecon, etc, define same function with icon set
+   (defun with-faicon (icon str &rest height v-adjust)
+      (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
+  ;filecon
+   (defun with-fileicon (icon str &rest height v-adjust)
+      (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
 
 ;; Whenever a region is activated, inserting a symbol will first delete the region
 (delete-selection-mode 1)
@@ -53,6 +81,13 @@
   (global-undo-tree-mode)
   :diminish (undo-tree-mode))
 
+;; Generic UI modes
+
+(use-package beacon)
+(use-package rainbow-mode)
+(use-package fill-column-indicator)
+(use-package visual-fill-column)
+
 (use-package command-log-mode
 ;; :hook (<your-favourite-mode> . command-log-mode) ; Add here modes in which you want to run the command-log-mode
 )
@@ -60,6 +95,12 @@
 ;; Themes
 (use-package doom-themes
   :init (load-theme 'doom-Iosvkem t))
+
+(use-package cycle-themes
+;; :init
+;; (setq cycle-themes-theme-list
+;;        '(leuven monokai solarized-dark)) ; Your favourite themes list
+)
 
 ;; First time used: run M-x all-the-icons-install-fonts
 (use-package all-the-icons)
@@ -75,8 +116,50 @@
   (dimmer-configure-magit)
   (dimmer-configure-org)
   (dimmer-configure-company-box)
-  (dimmer-configure-hydra)
+  (dimmer-configure-hydra) ; To fix for hydra-posframe
   (dimmer-mode))
+
+;define a title function
+(defvar appearance-title (with-faicon "desktop" "Appearance"))
+; Other idea:
+; (defvar appearance-title (with-faicon "toggle-on" "Toggles" 1 -0.05))
+
+;generate hydra
+(pretty-hydra-define hydra-appearance (:title appearance-title
+                                       :quit-key "q"
+                                       )
+("Theme"
+   (
+;    ("o" olivetti-mode "Olivetti" :toggle t)
+;    ("t" toggle-window-transparency "Transparency" :toggle t )
+    ("c" cycle-themes "Cycle Themes" )
+    ("+" text-scale-increase "Zoom In")
+    ("-" text-scale-decrease "Zoom Out")
+    ("x" toggle-frame-maximized "Maximize Frame" :toggle t )
+    ("X" toggle-frame-fullscreen "Fullscreen Frame" :toggle t)
+)
+"Highlighting"
+   (
+     ("d" rainbow-delimiters-mode "Rainbow Delimiters" :toggle t )
+     ("r" rainbow-mode "Show Hex Colours" :toggle t )
+;    ("n" highlight-numbers-mode "Highlight Code Numbers" :toggle t )
+     ("l" display-line-numbers-mode "Show Line Numbers" :toggle t )
+     ("_" global-hl-line-mode "Highlight Current Line" :toggle t )
+;    ("I" rainbow-identifiers-mode "Rainbow Identifiers" :toggle t )
+     ("b" beacon-mode "Show Cursor Trailer" :toggle t )
+     ("w" whitespace-mode "whitespace" :toggle t)
+)
+"Miscellaneous"
+   (("j" visual-line-mode "Wrap Line Window"  :toggle t)
+    ("m" visual-fill-column-mode "Wrap Line Column"  :toggle t)
+;    ("a" adaptive-wrap-prefix-mode "Indent Wrapped Lines" :toggle t )
+;   ("i" highlight-indent-guides-mode  "Show Indent Guides" :toggle t )
+    ("g" fci-mode "Show Fill Column" :toggle t )
+    ("<SPC>" nil "Quit" :color blue )
+)
+)
+)
+(global-set-key (kbd "C-c a") 'hydra-appearance/body)
 
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
