@@ -16,12 +16,11 @@
 
   If you want to directly modify the name of the output, you can change it in the second line of this document, after the =:tangle= keyword.
 
-
-  Some commands have to be run manually whenever the generated init.el file is loaded for the first time. 
+  Some commands have to be run manually whenever the generated init.el file is loaded for the first time.
 
   Whenever this is the case, it is explicitly signaled by the presence of the *MANUAL* keyword in front of those commands.
 
-  If the init.el cannot be properly loaded at startup, try to search for such keywords in this file and execute the corresponding commands. 
+  If the init.el cannot be properly loaded at startup, try to search for such keywords in this file and execute the corresponding commands.
 
 ** Initialization
 
@@ -61,7 +60,7 @@
 (use-package hydra)
 #+END_SRC
 
-All the hydras will now be defined after the package to which they correspond, or in the appropriate section.
+All the hydras will now be defined after the package to which they correspond, or in the appropriate section. Most of them are modifications of hydras that can be found on the [[https://github.com/abo-abo/hydra/wiki][hydra wiki]].
 
 *** Comfort changes
 
@@ -138,8 +137,7 @@ This is simply a way to change how Emacs looks. Some themes are more complete th
 ;; Themes
 (use-package doom-themes
   :init (load-theme 'doom-Iosvkem t))
-#+END_SRC 
-
+#+END_SRC
 **** Modeline and icons
 
 This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] looks.
@@ -247,8 +245,8 @@ It will condense all the available information about something within a single H
   ([remap describe-key] . helpful-key))
 
 #+END_SRC
-*** Navigation and selection
-**** Window management
+
+*** Window management
 
 Because window management can be a bit tedious with the basic Emacs functionalities, we improve it a bit. First of all, we enable =winner-mode=, which allows us to "undo" and "redo" changes in the Windows' configuration.
 
@@ -301,7 +299,7 @@ First of all, we use a few helper functions, defined in [[https://github.com/abo
 Now, we wrap everything up into a nice hydra
 
 #+BEGIN_SRC emacs-lisp
-(global-set-key 
+(global-set-key
 (kbd "C-c w") ; w for window
 (defhydra hydra-window (:color red
                         :hint nil)
@@ -355,74 +353,6 @@ _q_uit
   ("m" headlong-bookmark-jump)))
 #+END_SRC
 
-**** Movement
-
-Because movement keys are the most frequently used ones, it might be useful to create an Hydra helping us navigate around a document.
-
-#+BEGIN_SRC emacs-lisp
-(global-set-key
- (kbd "C-c m")
- (defhydra hydra-move ()
-   "Movement" ; m as in movement
-   ("n" next-line)
-   ("p" previous-line)
-   ("f" forward-char)
-   ("b" backward-char)
-   ("a" beginning-of-line)
-   ("e" move-end-of-line)
-   ("v" scroll-up-command)
-   ;; Converting M-v to V here by analogy.
-   ("V" scroll-down-command)
-   ("l" recenter-top-bottom)))
-#+END_SRC
-
-**** Rectangles
-
-Manipulating rectangles is a cool Emacs feature. You can select a region with the shape of a rectangle, copy and yank it, insert strings at the beginning of each line of the selection, and several other features.
-
-Because the functions operating on rectangles are not always the easier to remember, we simply define a new Hydra referencing the most useful ones.
-
-#+BEGIN_SRC emacs-lisp
-(global-set-key
-(kbd "C-c r") ; r as rectangle
-(defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
-                                     :color pink
-                                     :hint nil
-                                     :post (deactivate-mark))
-  "
-  ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_ 
-_b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_ 
-  ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
-^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
-"
-  ("p" rectangle-previous-line)
-  ("n" rectangle-next-line)
-  ("b" rectangle-backward-char)
-  ("f" rectangle-forward-char)
-  ("d" kill-rectangle)                    ;; C-x r k
-  ("y" yank-rectangle)                    ;; C-x r y
-  ("w" copy-rectangle-as-kill)            ;; C-x r M-w
-  ("o" open-rectangle)                    ;; C-x r o
-  ("t" string-rectangle)                  ;; C-x r t
-  ("c" clear-rectangle)                   ;; C-x r c
-  ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
-  ("N" rectangle-number-lines)            ;; C-x r N
-  ("r" (if (region-active-p)
-           (deactivate-mark)
-         (rectangle-mark-mode 1)))        ;; C-x SPC
-  ("i" string-insert-rectangle)
-  ("u" undo nil)
-  ("q" nil)))
-#+END_SRC
-
-**** Selection
-A useful tool to manipulate text and even source code is the [[https://github.com/magnars/expand-region.el][expand-region]] package, as it allows us to increase the selected region to match larger and larger /semantic/ units. For example, by using it repeatedly, you could select in this order a character, a word, a string containing this word, a sexp containing this string, and the function in this sexp is used.
-
-#+BEGIN_SRC emacs-lisp
-(use-package expand-region
-:bind ("C-=" . er/expand-region))
-#+END_SRC
-
 ** Org Mode
 
    [[https://orgmode.org/][Org Mode]] is one of the best reasons to use Emacs.
@@ -431,7 +361,7 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 
 **** Font faces
 
-     In order for Org Mode to feel like a document instead of code, we use a different font. 
+     In order for Org Mode to feel like a document instead of code, we use a different font.
 
 #+BEGIN_SRC emacs-lisp
 
@@ -484,7 +414,7 @@ A useful tool to manipulate text and even source code is the [[https://github.co
   :hook (org-mode . my-org-mode-setup)
   :config
   (setq org-ellipsis " ▾"))
- 
+
 (use-package org-bullets
   :after org
   :hook (org-mode . org-bullets-mode)
@@ -526,15 +456,96 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
 #+END_SRC
 
-** TODO Editing
+** Editing
+Emacs is fundamentally a text editor. It provides a lot of functions to deal with text, and a way to create macros, to automate things, to repeat something multiple times ... easily. However, because there are /so many/ available functions, we might need some help to navigate around and do fancy things.
+
+*** Multiple cursors
+
+A first improvement is the addition of multiple cursors. The "rectangle region" already gives a way to insert text simultaneously at several places, and to perform some easy operations on a rectangular area, but the [[https://github.com/magnars/multiple-cursors.el][multiple cursor]] package really increases the possibilities.
+
+#+BEGIN_SRC emacs-lisp
+(use-package multiple-cursors) ; TODO: binds
+#+END_SRC
+
+The webpage specifies that the commands provided by this package are best invoked when bound to key sequence rather than by =M-x <mc/command-name>=, although some testing on my part seems to show that it still works relatively well most of the time.
+
+*** Movement
+
+Because movement keys are the most frequently used ones, it might be useful to create an Hydra helping us navigate around a document.
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key
+ (kbd "C-c m")
+ (defhydra hydra-move ()
+   "Movement" ; m as in movement
+   ("n" next-line)
+   ("p" previous-line)
+   ("f" forward-char)
+   ("b" backward-char)
+   ("a" beginning-of-line)
+   ("e" move-end-of-line)
+   ("v" scroll-up-command)
+   ;; Converting M-v to V here by analogy.
+   ("V" scroll-down-command)
+   ("l" recenter-top-bottom)))
+#+END_SRC
+
+*** Rectangles
+
+Manipulating rectangles is a cool Emacs feature. You can select a region with the shape of a rectangle, copy and yank it, insert strings at the beginning of each line of the selection, and several other features.
+
+Because the functions operating on rectangles are not always the easier to remember, we simply define a new Hydra referencing the most useful ones.
+
+#+BEGIN_SRC emacs-lisp
+(global-set-key
+(kbd "C-c r") ; r as rectangle
+(defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
+                                     :color pink
+                                     :hint nil
+                                     :post (deactivate-mark))
+  "
+  ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_
+_b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_
+  ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
+^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
+"
+  ("p" rectangle-previous-line)
+  ("n" rectangle-next-line)
+  ("b" rectangle-backward-char)
+  ("f" rectangle-forward-char)
+  ("d" kill-rectangle)                    ;; C-x r k
+  ("y" yank-rectangle)                    ;; C-x r y
+  ("w" copy-rectangle-as-kill)            ;; C-x r M-w
+  ("o" open-rectangle)                    ;; C-x r o
+  ("t" string-rectangle)                  ;; C-x r t
+  ("c" clear-rectangle)                   ;; C-x r c
+  ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
+  ("N" rectangle-number-lines)            ;; C-x r N
+  ("r" (if (region-active-p)
+           (deactivate-mark)
+         (rectangle-mark-mode 1)))        ;; C-x SPC
+  ("i" string-insert-rectangle)
+  ("u" undo nil)
+  ("q" nil)))
+#+END_SRC
+
+*** Selection
+
+A useful tool to manipulate text and even source code is the [[https://github.com/magnars/expand-region.el][expand-region]] package, as it allows us to increase the selected region to match larger and larger /semantic/ units. For example, by using it repeatedly, you could select in this order a character, a word, a string containing this word, a sexp containing this string, and the function in this sexp is used.
+
+#+BEGIN_SRC emacs-lisp
+(use-package expand-region
+:bind ("C-=" . er/expand-region))
+#+END_SRC
+
 ** Programming
 *** Projectile
 
-    [[https://projectile.mx/][Projectile]] is an Emacs package that makes project management easier. It allows us to navigate between files of the same project, and integrates very well with other tools, such as =lsp-mode= or =counsel=.
+    [[https://projectile.mx/][Projectile]] is an Emacs package that makes project management easier. It allows us /e.g./ to navigate between files of the same project, search/replace within files of the same project, and integrates very well with other tools, such as =lsp-mode= or =counsel=.
 
 #+BEGIN_SRC emacs-lisp
 (use-package projectile
-  :diminish projectile-mode
+  :diminish projectile
   :config (projectile-mode)
   :custom ((projectile-completion-system 'ivy))
   :bind-keymap
@@ -561,7 +572,7 @@ A useful tool to manipulate text and even source code is the [[https://github.co
   ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
 
   ;; uncomment previous line to have magit open itself within the same buffer
-  ;; instead of in another buffer  
+  ;; instead of in another buffer
   )
 
 #+END_SRC
@@ -717,7 +728,7 @@ Another package doing more or less the same thing but in a different way:
 #+END_SRC
 
 *** Programming languages
-    
+
     In this section, we fine-tune our tools to specific programming languages.
 **** Python
 
@@ -746,7 +757,7 @@ Another package doing more or less the same thing but in a different way:
   (setq tab-width 4)
   (setq python-indent-offset 4))
 
-     
+
      #+END_SRC
 
 **** OCaml
@@ -784,7 +795,7 @@ For C and C++ (and ObjectiveC), as for Python, we need to install a server for L
 Although Emacs comes with pretty good built-in functionalities, there is still room for improvement.
 
 [[https://github.com/Fanael/highlight-defined][highlight defined]] highlights defined Emacs Lisp symbols (functions, variable names, macros ...) in source code.
- 
+
 #+BEGIN_SRC emacs-lisp
 (use-package highlight-defined
 :hook (emacs-lisp-mode . highlight-defined-mode))
@@ -837,7 +848,7 @@ We configure the auto-complete package to work with .tex documents.
 		  ac-source-latex-commands)
 		ac-sources))
   (auto-complete-mode))
-                
+
 #+END_SRC
 
 And we add a few other utilities, for example we want the PDF to be reloaded whenever we make some change in the source code.
@@ -846,7 +857,7 @@ And we add a few other utilities, for example we want the PDF to be reloaded whe
    ;; Update PDF buffers after successful LaTeX runs
 (add-hook 'TeX-after-compilation-finished-functions
 	    #'TeX-revert-document-buffer)
- 
+
 (add-hook 'LaTeX-mode-hook 'ac-LaTeX-mode-setup)
 #+END_SRC
 ** System
@@ -895,12 +906,13 @@ Be careful though, some of these files are several thousands lines long !
 - [ ] Do things for other popular languages (Java and C# come to mind).
   - [ ] Setup C# with LSP-mode
   - [ ] Setup Java with LSP-mode
-- [X] System stuff: =Tramp=, configure =eshell= or find an even better one, configure =dired= or upgrade it, etc
+  - [ ] Give a try to [[https://github.com/joaotavora/eglot][eglot]]
+- [-] System stuff: =Tramp=, configure =eshell= or find an even better one, configure =dired= or upgrade it, etc
   - [X] =eshell= Basic improvements
   - [ ] Tramp explanation and configuration
   - [ ] Dired improvement
 - [ ] Configure a Emacs-Lisp (and potentially Common Lisp ?) development environment.
   - [  ] Install and configure SLIME
-- [ ] Point to funny/absurd packages (/e.g./ =speed-type=)
-- [ ] Regexp with rx, xr and may be other packages.
+- [ ] Point to funny/absurd packages (/e.g./ =speed-type=, =key-quiz= ...)
+- [ ] Regexp with [[https://github.com/joddie/pcre2el][pcre2el]] and may be other packages.
 - [ ] Configure a web browser

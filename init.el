@@ -1,19 +1,3 @@
-;; An interesting tutorial:
-;; http://tuhdo.github.io/emacs-tutor.html
-;; __________________________________________
-
-;; Cool packages that might be installed later:
-;; peep-dired ; preview files in dired-mode
-;; Many more available on github: awesome-emacs
-;; __________________________________________
-
-
-;; Other people configuration files !
-;; https://github.com/grettke/every-emacs-initialization-file
-;; Beware ! Some of them are 5k+ lines longs
-;; __________________________________________
-
-
 ;; Initialize package sources
 (require 'package)
 
@@ -33,32 +17,12 @@
 (require 'use-package)
 (setq use-package-always-ensure t)
 
+(use-package hydra)
 
-;; __________________________________________
-;; A set of custom variables, ranging from themes to packages and other options ...
-
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (ccls spinner python-mode org-bullets smartparens counsel-projectile projectile lsp-ivy lsp-treemacs lsp-ui lsp-mode helpful counsel ivy-rich rainbow-delimiters doom-modeline flycheck company-box jedi yasnippet-snippets yasnippet company function-args ggtags magit ac-math which-key pdf-tools auctex gnu-elpa-keyring-update sage-shell-mode doom-themes auto-complete ##))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-
-
-
-;;__________________________________________
-;; Global "comfort" modes and shortcuts
-;; Modes:
+;; Whenever a region is activated, inserting a symbol will first delete the region
 (delete-selection-mode 1)
 
+;; Disable the annoying startup message and Emacs logo
 (setq inhibit-startup-message t)
 
 (scroll-bar-mode -1)        ; Disable visible scrollbar
@@ -66,22 +30,7 @@
 (tooltip-mode -1)           ; Disable tooltips
 (set-fringe-mode 10)        ; Give some breathing room
 
-(menu-bar-mode -1)            ; Disable the menu bar
-
-;; __________________________________________
-;; Packages options and management
-
-;; undo-tree
-
-(use-package undo-tree
-  :config
-  (setq undo-tree-visualizer-timestamps t)
-  (global-undo-tree-mode)
-  :diminish (undo-tree-mode))
-
-;; auto-mode
-(add-to-list 'auto-mode-alist '("\\.g4\\'" . antlr-mode))
-
+(menu-bar-mode -1)          ; Disable the menu bar
 
 ;; Global line numbering mode, except in some major modes
 (column-number-mode)
@@ -98,29 +47,15 @@
 		treemacs-mode-hook))
   (add-hook mode (lambda () (display-line-numbers-mode 0))))
 
-;; Ivy
-(use-package ivy
-  :diminish
-  :bind (("C-s" . swiper)
-	 :map ivy-minibuffer-map
-	 ("TAB" . ivy-partial-or-done)
-	 ("C-l" . ivy-alt-done)
-	 :map ivy-switch-buffer-map
-	 ("C-l" . ivy-done)
-	 ("C-d" . ivy-switch-buffer-kill)
-	 :map ivy-reverse-i-search-map
-	 ("C-d" . ivy-reverse-i-search-kill))
+(use-package undo-tree
   :config
-  (ivy-mode 1))
+  (setq undo-tree-visualizer-timestamps t)
+  (global-undo-tree-mode)
+  :diminish (undo-tree-mode))
 
-;; Dimmer. Dims buffers that do not have the focus
-(use-package dimmer
-  :config
-  (dimmer-configure-which-key) ; To fix ! Doesn't work
-  (dimmer-configure-magit)
-  (dimmer-configure-org)
-  (dimmer-configure-company-box)
-  (dimmer-mode))
+(use-package command-log-mode
+;; :hook (<your-favourite-mode> . command-log-mode) ; Add here modes in which you want to run the command-log-mode
+)
 
 ;; Themes
 (use-package doom-themes
@@ -133,11 +68,15 @@
   :init (doom-modeline-mode 1)
   :custom ((doom-modeline-height 15)))
 
-
-;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
-
+;; Dimmer. Dims buffers that do not have the focus
+(use-package dimmer
+  :config
+  (dimmer-configure-which-key) ; To fix ! Doesn't work
+  (dimmer-configure-magit)
+  (dimmer-configure-org)
+  (dimmer-configure-company-box)
+  (dimmer-configure-hydra)
+  (dimmer-mode))
 
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
@@ -145,6 +84,26 @@
   :diminish
   :config
   (setq which-key-idle-delay 1))
+
+;; Ivy
+(use-package ivy
+  :diminish
+  :init
+  (defun my-ivy-alt-done-t ()
+    (interactive)
+    (ivy-alt-done t))
+
+  :bind (("C-s" . swiper)
+	 :map ivy-minibuffer-map
+	 ("TAB" . ivy-partial-or-done)
+	 ("C-l" . my-ivy-alt-done-t) ; Small hack
+	 :map ivy-switch-buffer-map
+	 ("C-l" . ivy-done)
+	 ("C-d" . ivy-switch-buffer-kill)
+	 :map ivy-reverse-i-search-map
+	 ("C-d" . ivy-reverse-i-search-kill))
+  :config
+  (ivy-mode 1))
 
 ;; Adds things to Ivy
 (use-package ivy-rich
@@ -173,134 +132,100 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
-;; Autocompletion: auto-complete, yasnippet and company
+(winner-mode 1)
 
-;;YASnippet
-(use-package yasnippet
-  :diminish
-  :hook (lsp-mode . yas-minor-mode))
+;;* Helpers
+(use-package windmove)
 
-;; Auto-complete
-(use-package auto-complete
-  :config
-  (setq ac-use-quick-help t)
-  (setq-default ac-sources '(ac-source-yasnippet
-			   ac-source-words-in-same-mode-buffers
-			   ac-source-dictionary)) ; see auto-complete doc for other sources
-  :diminish (auto-complete-mode))
+(defun hydra-move-splitter-left (arg)
+  "Move window splitter left."
+  (interactive "p")
+  (if (let ((windmove-wrap-around))
+        (windmove-find-other-window 'right))
+      (shrink-window-horizontally arg)
+    (enlarge-window-horizontally arg)))
 
-;; LSP mode. Useful IDE-like features
-(use-package lsp-mode
-  :commands (lsp lsp-deferred)
-  :init
-  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
-  :config
-  (lsp-enable-which-key-integration t)
-  (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
-  (setq lsp-prefer-flymake nil)
-  (setq lsp-ui-sideline-enable nil)
-  (setq lsp-ui-doc-enable nil)
-  (setq lsp-signature-render-documentation nil)
-  (setq lsp-signature-auto-activate nil)
-  (setq lsp-enable-symbol-highlighting nil))
+(defun hydra-move-splitter-right (arg)
+  "Move window splitter right."
+  (interactive "p")
+  (if (let ((windmove-wrap-around))
+        (windmove-find-other-window 'right))
+      (enlarge-window-horizontally arg)
+    (shrink-window-horizontally arg)))
 
-(use-package lsp-ui
-  :hook (lsp-mode . lsp-ui-mode)
-  :custom
-  (lsp-ui-doc-position 'bottom)
-  (lsp-ui-doc-delay 1))
+(defun hydra-move-splitter-up (arg)
+  "Move window splitter up."
+  (interactive "p")
+  (if (let ((windmove-wrap-around))
+        (windmove-find-other-window 'up))
+      (enlarge-window arg)
+    (shrink-window arg)))
 
-(use-package lsp-treemacs
-  :after lsp)
+(defun hydra-move-splitter-down (arg)
+  "Move window splitter down."
+  (interactive "p")
+  (if (let ((windmove-wrap-around))
+        (windmove-find-other-window 'up))
+      (shrink-window arg)
+    (enlarge-window arg)))
 
-(use-package lsp-ivy)
-
-;; Company. Auto-completion package
-(use-package company
-  :init (company-mode)
-  :hook (prog-mode . company-mode)
-  :diminish
-  :bind (:map company-active-map
-	      ("<tab>" . company-complete-selection)
-	      ("C-n" . company-select-next)
-	      ("C-p" . company-select-previous)
-	      ("M-n" . nil)
-	      ("M-p" . nil))
-
-  :custom
-  (company-minimum-prefix-length 3)
-  (company-idle-delay 0.1)
-  (company-selection-wrap-around t))
-
-(use-package company-box
-  :hook (company-mode . company-box-mode)
-  :diminish)
-
-(use-package company-quickhelp
-  :hook (company-mode . company-quickhelp-mode)
-  :diminish
-  :custom (company-quickhelp-delay 1))
-
-;; Use pdf-tools to open PDF files
-(pdf-tools-install)
-
-;; ;; Semantic
-(use-package semantic
-;; (require 'semantic/ia)
-;; (require 'semantic/bovine/gcc)
-
-;; (defun my-semantic-hook ()
-;;   (imenu-add-to-menubar "TAGS"))
-;; (add-hook 'semantic-init-hooks 'my-semantic-hook)
-  :config
-  (semantic-mode t)
-  (global-semanticdb-minor-mode t)
-  (global-semantic-idle-scheduler-mode t))
-
-
-;; Flycheck
-(use-package flycheck
-  :init
-  (setq flycheck-relevant-error-other-file-show nil)
-  (setq flycheck-indication-mode nil)
-  :diminish
-  ;; :hook (python-mode . flycheck-mode)
-  ) ; Temporary to avoid noise ...
-
-;; Magit
-(use-package magit
-  ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
-
-  ;; uncomment previous line to have magit open itself within the same buffer
-  ;; instead of in another buffer  
-  )
-
-
-(use-package projectile
-  :diminish projectile-mode
-  :config (projectile-mode)
-  :custom ((projectile-completion-system 'ivy))
-  :bind-keymap
-  ("C-c p" . projectile-command-map)
-  :init
-  ;; NOTE: Set this to the folder where you keep your Git repos!
-  ;; (when (file-directory-p "path/to/project/dir")
-  ;; (setq projectile-project-search-path '("path/to/project/dir")))
-  (setq projectile-switch-project-action #'projectile-dired))
-
-(use-package counsel-projectile
-  :config (counsel-projectile-mode))
-
-(use-package smartparens)
-
-;; org-mode
-
-;; Modifies fonts so that it looks more like a document - not fixed-pitch, etc
+(global-set-key
+(kbd "C-c w") ; w for window
+(defhydra hydra-window (:color red
+                        :hint nil)
+"
+^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
+^^^^^^^^^-------------------------------------------------------------------------------
+_b_move left      _B_left        _V_split-vert-move      _o_del-other      _f_new-frame
+_n_move down      _N_down        _H_split-horiz-move     _da_ace-del       _u_winner-undo
+_p_move up        _P_up          _v_split-vert           _dw_del-window    _r_winner-redo
+_f_move right     _F_right       _h_split-horiz          _df_del-frame
+_q_uit
+"
+  ; Move the focus around
+  ("b" windmove-left)
+  ("n" windmove-down)
+  ("p" windmove-up)
+  ("f" windmove-right)
+  ; Changes the size of the current window
+  ("B" hydra-move-splitter-left)
+  ("N" hydra-move-splitter-down)
+  ("P" hydra-move-splitter-up)
+  ("F" hydra-move-splitter-right)
+  ; Split and move (or not)
+  ("V" (lambda ()
+         (interactive)
+         (split-window-right)
+         (windmove-right)))
+  ("H" (lambda ()
+         (interactive)
+         (split-window-below)
+         (windmove-down)))
+  ("v" split-window-right)
+  ("h" split-window-below)
+  ;("t" transpose-frame "'")
+  ;; winner-mode must be enabled
+  ("u" winner-undo)
+  ("r" winner-redo) ;;Fixme, not working?
+  ; Delete windows
+  ("o" delete-other-windows :exit t)
+  ("da" ace-delete-window)
+  ("dw" delete-window)
+  ("db" kill-this-buffer)
+  ("df" delete-frame :exit t)
+  ; Other stuff
+  ("a" ace-window :exit t)
+  ("f" new-frame :exit t)
+  ("s" ace-swap-window)
+  ("q" nil)
+  ;("i" ace-maximize-window "ace-one" :color blue)
+  ;("b" ido-switch-buffer "buf")
+  ("m" headlong-bookmark-jump)))
 
 (let ((my-temp-org-font "Cantarell"))
-  (if (member my-temp-org-font (font-family-list))
-      (setq my-org-mode-font my-temp-org-font)
-    (setq my-org-mode-font "Ubuntu Mono")))
+    (if (member my-temp-org-font (font-family-list))
+        (setq my-org-mode-font my-temp-org-font)
+      (setq my-org-mode-font "Ubuntu Mono")))
 
 (defun my-org-font-setup ()
   ;; Replace list hyphen with dot
@@ -340,7 +265,7 @@
   :hook (org-mode . my-org-mode-setup)
   :config
   (setq org-ellipsis " ▾"))
- 
+
 (use-package org-bullets
   :after org
   :hook (org-mode . org-bullets-mode)
@@ -348,32 +273,196 @@
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (org-babel-do-load-languages
- 'org-babel-load-languages
- '((emacs-lisp . t)
-   (python . t)))
+  'org-babel-load-languages
+  '((emacs-lisp . t)
+    (python . t)))
 
-(setq org-confirm-babel-evaluate nil) ; Take care if executing someone
+;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
 					; else code
 
-;; (require 'org-tempo) if org-version >= 9.2
-;; (add-to-list 'org-structure-template-alist '("sh"  "src sh"))
-;; (add-to-list 'org-structure-template-alist '("el"  "src emacs-lisp"))
-;; (add-to-list 'org-structure-template-alist '("py"  "src python"))
+;; Automatically tangles this emacs-config config file when we save it
+(defun my-org-babel-tangle-config ()
+  (when (string-equal (buffer-file-name)
+                      (expand-file-name "~/.emacs.d/emacs-config.org"))
+    ;; Dynamic scoping to the rescue
+    (let ((org-confirm-babel-evaluate nil))
+      (org-babel-tangle))))
 
-;; Tuareg (for OCaml and ML like languages)
-(use-package tuareg
+(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
+
+(use-package multiple-cursors) ; TODO: binds
+
+(global-set-key
+ (kbd "C-c m")
+ (defhydra hydra-move ()
+   "Movement" ; m as in movement
+   ("n" next-line)
+   ("p" previous-line)
+   ("f" forward-char)
+   ("b" backward-char)
+   ("a" beginning-of-line)
+   ("e" move-end-of-line)
+   ("v" scroll-up-command)
+   ;; Converting M-v to V here by analogy.
+   ("V" scroll-down-command)
+   ("l" recenter-top-bottom)))
+
+(global-set-key
+(kbd "C-c r") ; r as rectangle
+(defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
+                                     :color pink
+                                     :hint nil
+                                     :post (deactivate-mark))
+  "
+  ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_
+_b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_
+  ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
+^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
+"
+  ("p" rectangle-previous-line)
+  ("n" rectangle-next-line)
+  ("b" rectangle-backward-char)
+  ("f" rectangle-forward-char)
+  ("d" kill-rectangle)                    ;; C-x r k
+  ("y" yank-rectangle)                    ;; C-x r y
+  ("w" copy-rectangle-as-kill)            ;; C-x r M-w
+  ("o" open-rectangle)                    ;; C-x r o
+  ("t" string-rectangle)                  ;; C-x r t
+  ("c" clear-rectangle)                   ;; C-x r c
+  ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
+  ("N" rectangle-number-lines)            ;; C-x r N
+  ("r" (if (region-active-p)
+           (deactivate-mark)
+         (rectangle-mark-mode 1)))        ;; C-x SPC
+  ("i" string-insert-rectangle)
+  ("u" undo nil)
+  ("q" nil)))
+
+(use-package expand-region
+:bind ("C-=" . er/expand-region))
+
+(use-package projectile
+  :diminish projectile
+  :config (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map)
+  :init
+  ;; NOTE: Set this to the folder where you keep your Git repos!
+  ;; (when (file-directory-p "path/to/project/dir")
+  ;; (setq projectile-project-search-path '("path/to/project/dir")))
+  (setq projectile-switch-project-action #'projectile-dired))
+
+(use-package counsel-projectile
+  :config (counsel-projectile-mode))
+
+(use-package magit
+  ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+
+  ;; uncomment previous line to have magit open itself within the same buffer
+  ;; instead of in another buffer
+  )
+
+;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+(use-package smartparens)
+
+;;YASnippet
+(use-package yasnippet
+  :diminish
+  :hook (lsp-mode . yas-minor-mode))
+
+;; Company. Auto-completion package
+(use-package company
+  :init (company-mode)
+  :hook (prog-mode . company-mode)
+  :diminish
+  :bind (:map company-active-map
+	      ("<tab>" . company-complete-selection)
+	      ("C-n" . company-select-next)
+	      ("C-p" . company-select-previous)
+	      ("M-n" . nil)
+	      ("M-p" . nil))
+
+  :custom
+  (company-minimum-prefix-length 3)
+  (company-idle-delay 0.1)
+  (company-selection-wrap-around t))
+
+(use-package company-box
+  :hook (company-mode . company-box-mode)
+  :diminish)
+
+(use-package company-quickhelp
+  :hook (company-mode . company-quickhelp-mode)
+  :diminish
+  :custom (company-quickhelp-delay 1))
+
+;; Auto-complete
+(use-package auto-complete
   :config
-  (setq tuareg-indent-align-with-first-arg t)
-  (setq tuareg-match-patterns-aligned t))
+  (setq ac-use-quick-help t)
+  (setq-default ac-sources '(ac-source-yasnippet
+			   ac-source-words-in-same-mode-buffers
+			   ac-source-dictionary)) ; see auto-complete doc for other sources
+  :diminish
+)
 
-;; __________________________________________
-;; Language specific configuration
+;; LSP mode. Useful IDE-like features
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :init
+  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+  :config
+  (lsp-enable-which-key-integration t)
+  (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
+  (setq lsp-prefer-flymake nil)
+  (setq lsp-ui-sideline-enable nil)
+  (setq lsp-ui-doc-enable nil)
+  (setq lsp-signature-render-documentation nil)
+  (setq lsp-signature-auto-activate nil)
+  (setq lsp-enable-symbol-highlighting nil))
+
+(use-package lsp-ui
+  :hook (lsp-mode . lsp-ui-mode)
+  :custom
+  (lsp-ui-doc-position 'bottom)
+  (lsp-ui-doc-delay 1))
+
+(use-package lsp-treemacs
+  :after lsp)
+
+(use-package lsp-ivy)
+
+;; Flycheck
+(use-package flycheck
+  :init
+  (setq flycheck-relevant-error-other-file-show nil)
+  (setq flycheck-indication-mode nil)
+  :diminish
+  ;; :hook (python-mode . flycheck-mode)
+  ) ; Temporary to avoid noise ...
+
+;; Semantic
+(use-package semantic
+;; (require 'semantic/ia)
+;; (require 'semantic/bovine/gcc)
+
+;; (defun my-semantic-hook ()
+;;   (imenu-add-to-menubar "TAGS"))
+;; (add-hook 'semantic-init-hooks 'my-semantic-hook)
+  :config
+  (semantic-mode t)
+  (global-semanticdb-minor-mode t)
+  (global-semantic-idle-scheduler-mode t))
 
 ;; Python
 ;; Change to try Elpy ?
 
 ;; Before using LPS, make sure that the server has been installed !
-;; pip install --user "python-language-server[all]"
+;; pip install --user python-language-server[all]
 ;; Should be able to use the pyls command
 
 (use-package python-mode
@@ -384,6 +473,11 @@
   (setq tab-width 4)
   (setq python-indent-offset 4))
 
+;; Tuareg (for OCaml and ML like languages)
+(use-package tuareg
+  :config
+  (setq tuareg-indent-align-with-first-arg t)
+  (setq tuareg-match-patterns-aligned t))
 
 ;; C/C++
 ;; See https://github.com/MaskRay/ccls/wiki/lsp-mode
@@ -393,8 +487,23 @@
   :hook ((c-mode c++-mode objc-mode) .
          lsp))
 
+(use-package highlight-defined
+:hook (emacs-lisp-mode . highlight-defined-mode))
 
-;;LaTeX
+(use-package elmacro
+:init (elmacro-mode t))
+
+;; Might require extra libs to work, see https://github.com/politza/pdf-tools
+
+(use-package pdf-tools
+    :config
+    (pdf-tools-install)
+    (setq TeX-view-program-selection '((output-pdf "pdf-tools")))
+    (setq TeX-view-program-list '(("pdf-tools" "TeX-pdf-tools-sync-view")))
+    (setq TeX-source-correlate-start-server t))
+
+(use-package auctex
+:defer t)
 
 ;; Adding support for LaTeX auto-complete
 (defun ac-LaTeX-mode-setup () ; add ac-sources to default ac-sources
@@ -406,16 +515,18 @@
 		  ac-source-math-latex
 		  ac-source-latex-commands)
 		ac-sources))
-  (setq TeX-view-program-selection '((output-pdf "PDF Tools")))
-  (setq TeX-source-correlate-start-server t)
-  
-  ;; Update PDF buffers after successful LaTeX runs
-  (add-hook 'TeX-after-compilation-finished-functions
+  (auto-complete-mode))
+
+;; Update PDF buffers after successful LaTeX runs
+(add-hook 'TeX-after-compilation-finished-functions
 	    #'TeX-revert-document-buffer)
-  
-  (setq TeX-source-correlate-mode t)
-  (setq TeX-source-correlate-method '((dvi . source-specials) (pdf . synctex)))
-  )
 
 (add-hook 'LaTeX-mode-hook 'ac-LaTeX-mode-setup)
-;; End LaTeX mode
+
+;; eshell
+
+(use-package eshell-did-you-mean
+:init (eshell-did-you-mean-setup))
+
+(use-package eshell-syntax-highlighting
+:hook (eshell-mode . eshell-syntax-highlighting-mode))
