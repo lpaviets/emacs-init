@@ -20,32 +20,31 @@
 
 (use-package hydra)
 
-;; Broken for the moment  
+(use-package posframe)
 
-;; (use-package posframe)
+;; Manual load and config of Hydra Posframe
+;; To fix: find a way to override parameters ...
+(load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
+(setq hydra-posframe-border-width 5)
+;; (setq hydra-posframe-parameters
+;; '((left-fringe . 4) (right-fringe . 4) (top-fringe . 4) (bottom-fringe . 4) (height . 18) (width . 105) (min-height . 17) (max-height . 30) (top . 25)))
 
-  ;; ;; Manual load and config of Hydra Posframe
-  ;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
-  ;; (setq hydra-posframe-parameters
-  ;; '((left-fringe . 4) (right-fringe . 4) (top-fringe . 4) (bottom-fringe . 4) (height . 18) (width . 105) (min-height . 17) (max-height . 30) (top . 25)))
-  ;; (add-hook 'after-init-hook  'hydra-posframe-mode)
+;Pretty Hydra
+(use-package pretty-hydra)
 
-  ;Pretty Hydra
-  (use-package pretty-hydra)
+; Avoid unnecessary warnings
+(declare-function all-the-icons-faicon 'all-the-icons)
+(declare-function all-the-icons-fileicon 'all-the-icons)
+(declare-function all-the-icons-material 'all-the-icons)
+(declare-function all-the-icons-octicon 'all-the-icons)
 
-  ; Avoid unnecessary warnings
-  (declare-function all-the-icons-faicon 'all-the-icons)
-  (declare-function all-the-icons-fileicon 'all-the-icons)
-  (declare-function all-the-icons-material 'all-the-icons)
-  (declare-function all-the-icons-octicon 'all-the-icons)
-
-  ;define an icon function with all-the-icons-faicon
-  ;to use filecon, etc, define same function with icon set
-   (defun with-faicon (icon str &rest height v-adjust)
-      (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
-  ;filecon
-   (defun with-fileicon (icon str &rest height v-adjust)
-      (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
+;define an icon function with all-the-icons-faicon
+;to use filecon, etc, define same function with icon set
+(defun with-faicon (icon str &rest height v-adjust)
+   (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
+;filecon
+(defun with-fileicon (icon str &rest height v-adjust)
+   (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
 
 ;; Whenever a region is activated, inserting a symbol will first delete the region
 (delete-selection-mode 1)
@@ -111,13 +110,15 @@
 
 ;; Dimmer. Dims buffers that do not have the focus
 (use-package dimmer
+  :disabled
   :config
   (dimmer-configure-which-key) ; To fix ! Doesn't work
   (dimmer-configure-magit)
   (dimmer-configure-org)
   (dimmer-configure-company-box)
   (dimmer-configure-hydra) ; To fix for hydra-posframe
-  (dimmer-mode))
+  (dimmer-mode 0)
+)
 
 ;define a title function
 (defvar appearance-title (with-faicon "desktop" "Appearance"))
@@ -125,8 +126,11 @@
 ; (defvar appearance-title (with-faicon "toggle-on" "Toggles" 1 -0.05))
 
 ;generate hydra
+
 (pretty-hydra-define hydra-appearance (:title appearance-title
                                        :quit-key "q"
+                                       :pre (hydra-posframe-mode t)
+                                       :post (hydra-posframe-mode 0) ; dirty hack
                                        )
 ("Theme"
    (
