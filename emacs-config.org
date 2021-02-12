@@ -759,6 +759,14 @@ A useful tool to manipulate text and even source code is the [[https://github.co
                    company-files
                    ;;company-dabbrev
                    )))))
+      ((tex-mode latex-mode TeX-mode) . (lambda ()
+                   (set (make-local-variable 'company-backends)
+                   '((;company-auctex
+                     company-math-symbols-unicode
+                      company-math-symbols-latex
+                      company-latex-commands
+                      company-yasnippet
+                      company-files)))))
 )
 
 #+END_SRC
@@ -777,7 +785,9 @@ To have a cleaner interface and also a bit of documentation added to the suggest
 
 #+END_SRC
 
-Finally, because we will be using LSP in several modes, we also use another backend for company.
+***** Company backends
+
+Because we will be using LSP in several programming modes, we also use another backend for company.
 
 #+BEGIN_SRC emacs-lisp
 (use-package company-lsp
@@ -787,6 +797,14 @@ Finally, because we will be using LSP in several modes, we also use another back
     (company-lsp-enable-snippet t)
     (company-lsp-enable-recompletion t))
 
+#+END_SRC
+
+We install other backends specifically for LaTeX
+
+#+BEGIN_SRC emacs-lisp
+  ;; (use-package company-auctex
+  ;; :init (company-auctex-init))
+  (use-package company-math)
 #+END_SRC
 
 **** Auto-complete
@@ -1004,7 +1022,7 @@ And we add a few other utilities, for example we want the PDF to be reloaded whe
 (add-hook 'TeX-after-compilation-finished-functions
 	    #'TeX-revert-document-buffer)
 
-(add-hook 'LaTeX-mode-hook 'ac-LaTeX-mode-setup)
+;;(add-hook 'LaTeX-mode-hook 'ac-LaTeX-mode-setup) ; Remove: we keep Company for completion
 #+END_SRC
 ** System
 **** Eshell

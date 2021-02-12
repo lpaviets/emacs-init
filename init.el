@@ -500,6 +500,14 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
                    company-files
                    ;;company-dabbrev
                    )))))
+      ((tex-mode latex-mode TeX-mode) . (lambda ()
+                   (set (make-local-variable 'company-backends)
+                   '((;company-auctex
+                     company-math-symbols-unicode
+                      company-math-symbols-latex
+                      company-latex-commands
+                      company-yasnippet
+                      company-files)))))
 )
 
 (use-package company-box
@@ -517,6 +525,10 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
     (company-lsp-async t)
     (company-lsp-enable-snippet t)
     (company-lsp-enable-recompletion t))
+
+;; (use-package company-auctex
+;; :init (company-auctex-init))
+(use-package company-math)
 
 ;; Auto-complete
 (use-package auto-complete
@@ -640,7 +652,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (add-hook 'TeX-after-compilation-finished-functions
 	    #'TeX-revert-document-buffer)
 
-(add-hook 'LaTeX-mode-hook 'ac-LaTeX-mode-setup)
+;;(add-hook 'LaTeX-mode-hook 'ac-LaTeX-mode-setup) ; Remove: we keep Company for completion
 
 ;; eshell
 
