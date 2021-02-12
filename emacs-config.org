@@ -106,34 +106,40 @@ You can remove or partially modify this block of code if you are a beginner and 
 All the variable names are pretty explicit, so you should be able to customize this to your taste easily.
 
 #+BEGIN_SRC emacs-lisp
-;; Whenever a region is activated, inserting a symbol will first delete the region
-(delete-selection-mode 1)
+  ;; Whenever a region is activated, inserting a symbol will first delete the region
+  (delete-selection-mode 1)
 
-;; Disable the annoying startup message and Emacs logo
-(setq inhibit-startup-message t)
+  ;; Disable the annoying startup message and Emacs logo
+  (setq inhibit-startup-message t)
 
-(scroll-bar-mode -1)        ; Disable visible scrollbar
-(tool-bar-mode -1)          ; Disable the toolbar
-(tooltip-mode -1)           ; Disable tooltips
-(set-fringe-mode 10)        ; Give some breathing room
+  (scroll-bar-mode -1)        ; Disable visible scrollbar
+  (tool-bar-mode -1)          ; Disable the toolbar
+  (tooltip-mode -1)           ; Disable tooltips
+  (set-fringe-mode 10)        ; Give some breathing room
 
-(menu-bar-mode -1)          ; Disable the menu bar
+  (menu-bar-mode -1)          ; Disable the menu bar
 
-;; Global line numbering mode, except in some major modes
-(column-number-mode)
-(global-display-line-numbers-mode t)
+  ;; Global line numbering mode, except in some major modes
+  (add-hook 'prog-mode 'column-number-mode)
+  (add-hook 'prog-mode 'display-line-numbers-mode)
 
-;; Disable line numbers for some modes
-(dolist (mode '(org-mode-hook
-                term-mode-hook
-                shell-mode-hook
-                eshell-mode-hook
-		doc-view-mode-hook
-		undo-tree-visualizer-hook
-		pdf-view-mode-hook
-		treemacs-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+  ;; Disable line numbering for some modes
+  ;; (dolist (mode '(org-mode-hook
+  ;;                 term-mode-hook
+  ;;                 shell-mode-hook
+  ;;                 eshell-mode-hook
+  ;;                    doc-view-mode-hook
+  ;;                    undo-tree-visualizer-hook
+  ;;                    pdf-view-mode-hook
+  ;;                    treemacs-mode-hook))
+  ;;   (add-hook mode (lambda ()
+  ;;      ((linum-mode 0)
+  ;;       (column-number-mode 0)))))
 
+  ;; Automatically reload a file if it has been modified
+  (global-auto-revert-mode t)
+
+  (setq-default kill-whole-line t) ; Kill the line and the final \n
 #+END_SRC
 
 Another very useful package is undo-tree, which allows you to visualize the previous "Undos" and navigate them.
@@ -725,7 +731,7 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 (use-package company
   :diminish
   :init
-  (setq company-backends '((company-files company-keywords company-capf company-dabbrev-code company-etags company-dabbrev company-yasnippet)))
+  (setq company-backends '((company-files company-keywords company-capf company-etags company-yasnippet))) ;; might want to add company-dabbrev(-code)
 
   :config (global-company-mode t)
 
@@ -751,7 +757,7 @@ A useful tool to manipulate text and even source code is the [[https://github.co
                    '((company-lsp
                    company-yasnippet
                    company-files
-                   company-dabbrev
+                   ;;company-dabbrev
                    )))))
 )
 
@@ -819,6 +825,8 @@ Finally, because we will be using LSP in several modes, we also use another back
   (setq lsp-enable-symbol-highlighting nil)
   (setq lsp-prefer-flymake nil)
   (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
+  :hook
+  ((python-mode c-mode c++-mode) . lsp)
 )
 
 (use-package lsp-ui
@@ -894,13 +902,10 @@ Another package doing more or less the same thing but in a different way:
 ;; Should be able to use the pyls command
 
 (use-package python-mode
-  :ensure t
-  :hook (python-mode . lsp-deferred)
   :custom
   (setq python-shell-interpreter "python3")
   (setq tab-width 4)
   (setq python-indent-offset 4))
-
 
      #+END_SRC
 
@@ -928,10 +933,7 @@ For C and C++ (and ObjectiveC), as for Python, we need to install a server for L
 ;; See https://github.com/MaskRay/ccls/wiki/lsp-mode
 (use-package ccls
   :init
-  (setq ccls-executable (executable-find "ccls"))
-  :hook ((c-mode c++-mode objc-mode) .
-         lsp))
-
+  (setq ccls-executable (executable-find "ccls")))
 #+END_SRC
 **** LISP
 ***** Emacs Lisp

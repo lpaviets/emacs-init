@@ -60,19 +60,26 @@
 (menu-bar-mode -1)          ; Disable the menu bar
 
 ;; Global line numbering mode, except in some major modes
-(column-number-mode)
-(global-display-line-numbers-mode t)
+(add-hook 'prog-mode 'column-number-mode)
+(add-hook 'prog-mode 'display-line-numbers-mode)
 
-;; Disable line numbers for some modes
-(dolist (mode '(org-mode-hook
-                term-mode-hook
-                shell-mode-hook
-                eshell-mode-hook
-		doc-view-mode-hook
-		undo-tree-visualizer-hook
-		pdf-view-mode-hook
-		treemacs-mode-hook))
-  (add-hook mode (lambda () (display-line-numbers-mode 0))))
+;; Disable line numbering for some modes
+;; (dolist (mode '(org-mode-hook
+;;                 term-mode-hook
+;;                 shell-mode-hook
+;;                 eshell-mode-hook
+;;                    doc-view-mode-hook
+;;                    undo-tree-visualizer-hook
+;;                    pdf-view-mode-hook
+;;                    treemacs-mode-hook))
+;;   (add-hook mode (lambda ()
+;;      ((linum-mode 0)
+;;       (column-number-mode 0)))))
+
+;; Automatically reload a file if it has been modified
+(global-auto-revert-mode t)
+
+(setq-default kill-whole-line t) ; Kill the line and the final \n
 
 (use-package undo-tree
   :config
@@ -465,7 +472,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package company
   :diminish
   :init
-  (setq company-backends '((company-files company-keywords company-capf company-dabbrev-code company-etags company-dabbrev company-yasnippet)))
+  (setq company-backends '((company-files company-keywords company-capf company-etags company-yasnippet))) ;; might want to add company-dabbrev(-code)
 
   :config (global-company-mode t)
 
@@ -491,7 +498,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
                    '((company-lsp
                    company-yasnippet
                    company-files
-                   company-dabbrev
+                   ;;company-dabbrev
                    )))))
 )
 
@@ -534,6 +541,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (setq lsp-enable-symbol-highlighting nil)
   (setq lsp-prefer-flymake nil)
   (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
+  :hook
+  ((python-mode c-mode c++-mode) . lsp)
 )
 
 (use-package lsp-ui
@@ -580,8 +589,6 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; Should be able to use the pyls command
 
 (use-package python-mode
-  :ensure t
-  :hook (python-mode . lsp-deferred)
   :custom
   (setq python-shell-interpreter "python3")
   (setq tab-width 4)
@@ -597,9 +604,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; See https://github.com/MaskRay/ccls/wiki/lsp-mode
 (use-package ccls
   :init
-  (setq ccls-executable (executable-find "ccls"))
-  :hook ((c-mode c++-mode objc-mode) .
-         lsp))
+  (setq ccls-executable (executable-find "ccls")))
 
 (use-package highlight-defined
 :hook (emacs-lisp-mode . highlight-defined-mode))
