@@ -24,7 +24,7 @@
 
 ;; Manual load and config of Hydra Posframe
 ;; To fix: find a way to override parameters ...
-(load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
+(load-file "./extra-packages/hydra-posframe.el")
 (setq hydra-posframe-border-width 5)
 ;; (setq hydra-posframe-parameters
 ;; '((left-fringe . 4) (right-fringe . 4) (top-fringe . 4) (bottom-fringe . 4) (height . 18) (width . 105) (min-height . 17) (max-height . 30) (top . 25)))
@@ -459,24 +459,41 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;;YASnippet
 (use-package yasnippet
   :diminish
-  :hook (lsp-mode . yas-minor-mode))
+  :init (yas-global-mode t))
 
 ;; Company. Auto-completion package
 (use-package company
-  :init (company-mode)
-  :hook (prog-mode . company-mode)
   :diminish
-  :bind (:map company-active-map
-	      ("<tab>" . company-complete-selection)
-	      ("C-n" . company-select-next)
-	      ("C-p" . company-select-previous)
-	      ("M-n" . nil)
-	      ("M-p" . nil))
+  :init
+  (setq company-backends '((company-files company-keywords company-capf company-dabbrev-code company-etags company-dabbrev company-yasnippet)))
+
+  :config (global-company-mode t)
+
+  :bind (
+     :map company-active-map
+        ("<tab>" . company-complete-selection)
+        ("C-n" . company-select-next)
+        ("C-p" . company-select-previous)
+        ("M-n" . nil)
+        ("M-p" . nil)
+     :map company-search-map
+        ("C-n" . company-select-next)
+        ("C-p" . company-select-previous))
 
   :custom
-  (company-minimum-prefix-length 3)
-  (company-idle-delay 0.1)
-  (company-selection-wrap-around t))
+     (company-minimum-prefix-length 3)
+     (company-idle-delay 0.1)
+     (company-echo-delay 0.1)
+     (company-selection-wrap-around t)
+  :hook
+     ((python-mode c++-mode c-mode) . (lambda ()
+                   (set (make-local-variable 'company-backends)
+                   '((company-lsp
+                   company-yasnippet
+                   company-files
+                   company-dabbrev
+                   )))))
+)
 
 (use-package company-box
   :hook (company-mode . company-box-mode)
@@ -485,16 +502,24 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package company-quickhelp
   :hook (company-mode . company-quickhelp-mode)
   :diminish
-  :custom (company-quickhelp-delay 1))
+  :custom (company-quickhelp-delay 0.2))
+
+(use-package company-lsp
+    :custom
+    (company-lsp-cache-candidates t) ;; auto, t(always using a cache), or nil
+    (company-lsp-async t)
+    (company-lsp-enable-snippet t)
+    (company-lsp-enable-recompletion t))
 
 ;; Auto-complete
 (use-package auto-complete
   :config
   (setq ac-use-quick-help t)
-  (setq-default ac-sources '(ac-source-yasnippet
+  (setq-default ac-sources '(;ac-source-yasnippet
 			   ac-source-words-in-same-mode-buffers
 			   ac-source-dictionary)) ; see auto-complete doc for other sources
   :diminish
+  :config (auto-complete-mode 0)
 )
 
 ;; LSP mode. Useful IDE-like features
@@ -504,19 +529,21 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   :config
   (lsp-enable-which-key-integration t)
-  (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
-  (setq lsp-prefer-flymake nil)
-  (setq lsp-ui-sideline-enable nil)
-  (setq lsp-ui-doc-enable nil)
   (setq lsp-signature-render-documentation nil)
   (setq lsp-signature-auto-activate nil)
-  (setq lsp-enable-symbol-highlighting nil))
+  (setq lsp-enable-symbol-highlighting nil)
+  (setq lsp-prefer-flymake nil)
+  (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
+)
 
 (use-package lsp-ui
   :hook (lsp-mode . lsp-ui-mode)
   :custom
+  (lsp-ui-doc-enable nil)
   (lsp-ui-doc-position 'bottom)
-  (lsp-ui-doc-delay 1))
+  (lsp-ui-doc-delay 1)
+  (lsp-ui-sideline-enable nil)
+ )
 
 (use-package lsp-treemacs
   :after lsp)
@@ -602,7 +629,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 		  ac-source-math-latex
 		  ac-source-latex-commands)
 		ac-sources))
-  (auto-complete-mode))
+  (auto-complete-mode t))
 
 ;; Update PDF buffers after successful LaTeX runs
 (add-hook 'TeX-after-compilation-finished-functions
