@@ -73,7 +73,7 @@ Some hydras will be called less frequently and for other purposes than getting a
 
 ;; Manual load and config of Hydra Posframe
 ;; To fix: find a way to override parameters ...
-(load-file "./extra-packages/hydra-posframe.el")
+(load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
 (setq hydra-posframe-border-width 5)
 ;; (setq hydra-posframe-parameters
 ;; '((left-fringe . 4) (right-fringe . 4) (top-fringe . 4) (bottom-fringe . 4) (height . 18) (width . 105) (min-height . 17) (max-height . 30) (top . 25)))

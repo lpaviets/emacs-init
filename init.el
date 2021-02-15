@@ -24,7 +24,7 @@
 
 ;; Manual load and config of Hydra Posframe
 ;; To fix: find a way to override parameters ...
-(load-file "./extra-packages/hydra-posframe.el")
+(load-file "$HOME/.emacs.d/extra-packages/hydra-posframe.el")
 (setq hydra-posframe-border-width 5)
 ;; (setq hydra-posframe-parameters
 ;; '((left-fringe . 4) (right-fringe . 4) (top-fringe . 4) (bottom-fringe . 4) (height . 18) (width . 105) (min-height . 17) (max-height . 30) (top . 25)))
@@ -661,3 +661,17 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package eshell-syntax-highlighting
 :hook (eshell-mode . eshell-syntax-highlighting-mode))
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   (quote
+    (nyan-mode tuareg yasnippet-snippets which-key visual-fill-column use-package undo-tree smartparens sage-shell-mode realgud-ipdb rainbow-mode rainbow-delimiters python-mode pretty-hydra pdf-tools org-bullets multiple-cursors magit lsp-ui lsp-treemacs lsp-ivy jedi ivy-rich highlight-defined helpful gnu-elpa-keyring-update ggtags function-args flycheck fill-column-indicator expand-region eshell-syntax-highlighting eshell-did-you-mean elmacro doom-themes doom-modeline dimmer cycle-themes counsel-projectile company-quickhelp company-math company-lsp company-jedi company-irony company-c-headers company-box command-log-mode ccls beacon auctex ac-math))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
