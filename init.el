@@ -24,10 +24,8 @@
 
 ;; Manual load and config of Hydra Posframe
 ;; To fix: find a way to override parameters ...
-(load-file "$HOME/.emacs.d/extra-packages/hydra-posframe.el")
-(setq hydra-posframe-border-width 5)
-;; (setq hydra-posframe-parameters
-;; '((left-fringe . 4) (right-fringe . 4) (top-fringe . 4) (bottom-fringe . 4) (height . 18) (width . 105) (min-height . 17) (max-height . 30) (top . 25)))
+;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
+;; (setq hydra-posframe-border-width 5)
 
 ;Pretty Hydra
 (use-package pretty-hydra)
@@ -89,7 +87,8 @@
 
 ;; Generic UI modes
 
-(use-package beacon)
+(use-package beacon
+  :init (beacon-mode))
 (use-package rainbow-mode)
 (use-package fill-column-indicator)
 (use-package visual-fill-column)
@@ -136,8 +135,8 @@
 
 (pretty-hydra-define hydra-appearance (:title appearance-title
                                        :quit-key "q"
-                                       :pre (hydra-posframe-mode t)
-                                       :post (hydra-posframe-mode 0) ; dirty hack
+                                       ;:pre (hydra-posframe-mode t)
+                                       ;:post (hydra-posframe-mode 0) ; dirty hack
                                        )
 ("Theme"
    (
@@ -472,7 +471,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package company
   :diminish
   :init
-  (setq company-backends '((company-files company-keywords company-capf company-etags company-yasnippet))) ;; might want to add company-dabbrev(-code)
+;  (setq company-backends '((company-files company-keywords company-capf company-etags company-yasnippet))) ;; might want to add company-dabbrev(-code)
 
   :config (global-company-mode t)
 
@@ -493,19 +492,23 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
      (company-echo-delay 0.1)
      (company-selection-wrap-around t)
   :hook
-     ((python-mode c++-mode c-mode) . (lambda ()
-                   (set (make-local-variable 'company-backends)
-                   '((company-lsp
-                   company-yasnippet
-                   company-files
-                   ;;company-dabbrev
-                   )))))
+     ;; ((python-mode c++-mode c-mode) . (lambda ()
+     ;;               (set (make-local-variable 'company-backends)
+     ;;               '((company-capf
+     ;;               company-semantic
+     ;;               company-keywords
+     ;;               company-yasnippet
+     ;;               company-files
+     ;;               ;;company-dabbrev
+     ;;               )))))
       ((tex-mode latex-mode TeX-mode) . (lambda ()
                    (set (make-local-variable 'company-backends)
                    '((;company-auctex
-                     company-math-symbols-unicode
+                      company-capf
+                      company-math-symbols-unicode
                       company-math-symbols-latex
                       company-latex-commands
+                      company-keywords
                       company-yasnippet
                       company-files)))))
 )
@@ -519,12 +522,13 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :diminish
   :custom (company-quickhelp-delay 0.2))
 
-(use-package company-lsp
-    :custom
-    (company-lsp-cache-candidates t) ;; auto, t(always using a cache), or nil
-    (company-lsp-async t)
-    (company-lsp-enable-snippet t)
-    (company-lsp-enable-recompletion t))
+;;company-lsp is deprecated  
+;; (use-package company-lsp
+  ;;     :custom
+  ;;     (company-lsp-cache-candidates t) ;; auto, t(always using a cache), or nil
+  ;;     (company-lsp-async t)
+  ;;     (company-lsp-enable-snippet t)
+  ;;     (company-lsp-enable-recompletion t))
 
 ;; (use-package company-auctex
 ;; :init (company-auctex-init))
@@ -548,9 +552,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   :config
   (lsp-enable-which-key-integration t)
-  (setq lsp-signature-render-documentation nil)
-  (setq lsp-signature-auto-activate nil)
-  (setq lsp-enable-symbol-highlighting nil)
+  ;(setq lsp-signature-render-documentation nil)
+  ;(setq lsp-signature-auto-activate nil)
+  ;(setq lsp-enable-symbol-highlighting nil)
   (setq lsp-prefer-flymake nil)
   (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
   :hook
@@ -563,7 +567,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (lsp-ui-doc-enable nil)
   (lsp-ui-doc-position 'bottom)
   (lsp-ui-doc-delay 1)
-  (lsp-ui-sideline-enable nil)
+  (lsp-ui-sideline-show-code-actions nil)
+  ;(lsp-ui-sideline-enable nil)
  )
 
 (use-package lsp-treemacs
@@ -574,8 +579,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; Flycheck
 (use-package flycheck
   :init
-  (setq flycheck-relevant-error-other-file-show nil)
-  (setq flycheck-indication-mode nil)
+  ;(setq flycheck-relevant-error-other-file-show nil) ;might be useful
+  (setq flycheck-indication-mode 'left-margin)
   :diminish
   ;; :hook (python-mode . flycheck-mode)
   ) ; Temporary to avoid noise ...
@@ -608,6 +613,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 ;; Tuareg (for OCaml and ML like languages)
 (use-package tuareg
+  :defer t
   :config
   (setq tuareg-indent-align-with-first-arg t)
   (setq tuareg-match-patterns-aligned t))
@@ -661,17 +667,3 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package eshell-syntax-highlighting
 :hook (eshell-mode . eshell-syntax-highlighting-mode))
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   (quote
-    (nyan-mode tuareg yasnippet-snippets which-key visual-fill-column use-package undo-tree smartparens sage-shell-mode realgud-ipdb rainbow-mode rainbow-delimiters python-mode pretty-hydra pdf-tools org-bullets multiple-cursors magit lsp-ui lsp-treemacs lsp-ivy jedi ivy-rich highlight-defined helpful gnu-elpa-keyring-update ggtags function-args flycheck fill-column-indicator expand-region eshell-syntax-highlighting eshell-did-you-mean elmacro doom-themes doom-modeline dimmer cycle-themes counsel-projectile company-quickhelp company-math company-lsp company-jedi company-irony company-c-headers company-box command-log-mode ccls beacon auctex ac-math))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )

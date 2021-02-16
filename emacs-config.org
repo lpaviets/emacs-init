@@ -1,6 +1,6 @@
 #+title: Emacs Configuration
 #+author: Léo Paviet Salomon
-#+PROPERTY: header-args:emacs-lisp :tangle ./autogen-init.el
+#+PROPERTY: header-args:emacs-lisp :tangle ~/.emacs.d/init.el
 
 * Configuration
 
@@ -12,11 +12,11 @@
 
   If this file is named differently on your system, or simply located in another directory, you can still generate an output without changing anything by invoking the =org-babel-tangle= command (=C-c C-v t=).
 
-  To avoid conflicts with the currently loaded configuration file , the generated file is actually called  =autogen-init.el=. By default, Emacs reads (and loads) file such as "~/.emacs" or "~/.emacs.d/init.el" so you might need to rename it in order to have it loaded the next time you start Emacs.
+  Because I use a version system on those files, I don't mind conflicts with the currently loaded configuration file, and so the the generated file is actually called  =init.el=. By default, Emacs reads (and loads) file such as "~/.emacs" or "~/.emacs.d/init.el" at startup, so the output of =org-babel-tangle= is automatically replacing the previous configuration file. If you want to avoid those conflicts, you might need to rename it.
 
-  If you want to directly modify the name of the output, you can change it in the second line of this document, after the =:tangle= keyword.
+  To modify the name of the output, you can change it in the second line of this document, after the =:tangle= keyword.
 
-  Some commands have to be run manually whenever the generated init.el file is loaded for the first time.
+  Some commands have to be run manually whenever the generated =init.el= file is loaded for the first time.
 
   Whenever this is the case, it is explicitly signaled by the presence of the *MANUAL* keyword in front of those commands.
 
@@ -69,31 +69,29 @@ Some hydras will be called less frequently and for other purposes than getting a
 *MANUAL* This is not a MELPA package. It can be found [[https://github.com/Ladicle/hydra-posframe][here]]. Install it and change the loading path according to your configuration.
 
 #+BEGIN_SRC emacs-lisp
-(use-package posframe)
+  (use-package posframe)
 
-;; Manual load and config of Hydra Posframe
-;; To fix: find a way to override parameters ...
-(load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
-(setq hydra-posframe-border-width 5)
-;; (setq hydra-posframe-parameters
-;; '((left-fringe . 4) (right-fringe . 4) (top-fringe . 4) (bottom-fringe . 4) (height . 18) (width . 105) (min-height . 17) (max-height . 30) (top . 25)))
+  ;; Manual load and config of Hydra Posframe
+  ;; To fix: find a way to override parameters ...
+  ;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
+  ;; (setq hydra-posframe-border-width 5)
 
-;Pretty Hydra
-(use-package pretty-hydra)
+  ;Pretty Hydra
+  (use-package pretty-hydra)
 
-; Avoid unnecessary warnings
-(declare-function all-the-icons-faicon 'all-the-icons)
-(declare-function all-the-icons-fileicon 'all-the-icons)
-(declare-function all-the-icons-material 'all-the-icons)
-(declare-function all-the-icons-octicon 'all-the-icons)
+  ; Avoid unnecessary warnings
+  (declare-function all-the-icons-faicon 'all-the-icons)
+  (declare-function all-the-icons-fileicon 'all-the-icons)
+  (declare-function all-the-icons-material 'all-the-icons)
+  (declare-function all-the-icons-octicon 'all-the-icons)
 
-;define an icon function with all-the-icons-faicon
-;to use filecon, etc, define same function with icon set
-(defun with-faicon (icon str &rest height v-adjust)
-   (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
-;filecon
-(defun with-fileicon (icon str &rest height v-adjust)
-   (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
+  ;define an icon function with all-the-icons-faicon
+  ;to use filecon, etc, define same function with icon set
+  (defun with-faicon (icon str &rest height v-adjust)
+     (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
+  ;filecon
+  (defun with-fileicon (icon str &rest height v-adjust)
+     (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
 
 #+END_SRC
 
@@ -163,7 +161,8 @@ Some packages are used lated in the configuration, and we want to be able to use
 #+BEGIN_SRC emacs-lisp
 ;; Generic UI modes
 
-(use-package beacon)
+(use-package beacon
+  :init (beacon-mode))
 (use-package rainbow-mode)
 (use-package fill-column-indicator)
 (use-package visual-fill-column)
@@ -210,7 +209,7 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
 
 *MANUAL* If this is your first time running the init.el file, please run the following command:
 
-M-x all-the-icons-install-fonts
+=M-x all-the-icons-install-fonts=
 
 #+BEGIN_SRC emacs-lisp
 ;; First time used: run M-x all-the-icons-install-fonts
@@ -253,8 +252,8 @@ This is one moment where a pretty hydra could help us change general UI paramete
 
 (pretty-hydra-define hydra-appearance (:title appearance-title
                                        :quit-key "q"
-                                       :pre (hydra-posframe-mode t)
-                                       :post (hydra-posframe-mode 0) ; dirty hack
+                                       ;:pre (hydra-posframe-mode t)
+                                       ;:post (hydra-posframe-mode 0) ; dirty hack
                                        )
 ("Theme"
    (
@@ -727,47 +726,51 @@ A useful tool to manipulate text and even source code is the [[https://github.co
      Several packages are available to make auto-completion more efficient and intuitive than the built-in =completion-at-point= function. We use [[https://company-mode.github.io/][Company]] (stands for "comp[lete] any[thing]") as it integrates nicely with other packages that we use, is well-maintained and has a more modern interface than most of its counterparts such as =auto-complete=.
 
 #+BEGIN_SRC emacs-lisp
-;; Company. Auto-completion package
-(use-package company
-  :diminish
-  :init
-  (setq company-backends '((company-files company-keywords company-capf company-etags company-yasnippet))) ;; might want to add company-dabbrev(-code)
+  ;; Company. Auto-completion package
+  (use-package company
+    :diminish
+    :init
+  ;  (setq company-backends '((company-files company-keywords company-capf company-etags company-yasnippet))) ;; might want to add company-dabbrev(-code)
 
-  :config (global-company-mode t)
+    :config (global-company-mode t)
 
-  :bind (
-     :map company-active-map
-        ("<tab>" . company-complete-selection)
-        ("C-n" . company-select-next)
-        ("C-p" . company-select-previous)
-        ("M-n" . nil)
-        ("M-p" . nil)
-     :map company-search-map
-        ("C-n" . company-select-next)
-        ("C-p" . company-select-previous))
+    :bind (
+       :map company-active-map
+          ("<tab>" . company-complete-selection)
+          ("C-n" . company-select-next)
+          ("C-p" . company-select-previous)
+          ("M-n" . nil)
+          ("M-p" . nil)
+       :map company-search-map
+          ("C-n" . company-select-next)
+          ("C-p" . company-select-previous))
 
-  :custom
-     (company-minimum-prefix-length 3)
-     (company-idle-delay 0.1)
-     (company-echo-delay 0.1)
-     (company-selection-wrap-around t)
-  :hook
-     ((python-mode c++-mode c-mode) . (lambda ()
-                   (set (make-local-variable 'company-backends)
-                   '((company-lsp
-                   company-yasnippet
-                   company-files
-                   ;;company-dabbrev
-                   )))))
-      ((tex-mode latex-mode TeX-mode) . (lambda ()
-                   (set (make-local-variable 'company-backends)
-                   '((;company-auctex
-                     company-math-symbols-unicode
-                      company-math-symbols-latex
-                      company-latex-commands
-                      company-yasnippet
-                      company-files)))))
-)
+    :custom
+       (company-minimum-prefix-length 3)
+       (company-idle-delay 0.1)
+       (company-echo-delay 0.1)
+       (company-selection-wrap-around t)
+    :hook
+       ;; ((python-mode c++-mode c-mode) . (lambda ()
+       ;;               (set (make-local-variable 'company-backends)
+       ;;               '((company-capf
+       ;;               company-semantic
+       ;;               company-keywords
+       ;;               company-yasnippet
+       ;;               company-files
+       ;;               ;;company-dabbrev
+       ;;               )))))
+        ((tex-mode latex-mode TeX-mode) . (lambda ()
+                     (set (make-local-variable 'company-backends)
+                     '((;company-auctex
+                        company-capf
+                        company-math-symbols-unicode
+                        company-math-symbols-latex
+                        company-latex-commands
+                        company-keywords
+                        company-yasnippet
+                        company-files)))))
+  )
 
 #+END_SRC
 
@@ -790,12 +793,13 @@ To have a cleaner interface and also a bit of documentation added to the suggest
 Because we will be using LSP in several programming modes, we also use another backend for company.
 
 #+BEGIN_SRC emacs-lisp
-(use-package company-lsp
-    :custom
-    (company-lsp-cache-candidates t) ;; auto, t(always using a cache), or nil
-    (company-lsp-async t)
-    (company-lsp-enable-snippet t)
-    (company-lsp-enable-recompletion t))
+;;company-lsp is deprecated  
+;; (use-package company-lsp
+  ;;     :custom
+  ;;     (company-lsp-cache-candidates t) ;; auto, t(always using a cache), or nil
+  ;;     (company-lsp-async t)
+  ;;     (company-lsp-enable-snippet t)
+  ;;     (company-lsp-enable-recompletion t))
 
 #+END_SRC
 
@@ -838,9 +842,9 @@ We install other backends specifically for LaTeX
   (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   :config
   (lsp-enable-which-key-integration t)
-  (setq lsp-signature-render-documentation nil)
-  (setq lsp-signature-auto-activate nil)
-  (setq lsp-enable-symbol-highlighting nil)
+  ;(setq lsp-signature-render-documentation nil)
+  ;(setq lsp-signature-auto-activate nil)
+  ;(setq lsp-enable-symbol-highlighting nil)
   (setq lsp-prefer-flymake nil)
   (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
   :hook
@@ -853,7 +857,8 @@ We install other backends specifically for LaTeX
   (lsp-ui-doc-enable nil)
   (lsp-ui-doc-position 'bottom)
   (lsp-ui-doc-delay 1)
-  (lsp-ui-sideline-enable nil)
+  (lsp-ui-sideline-show-code-actions nil)
+  ;(lsp-ui-sideline-enable nil)
  )
 
 (use-package lsp-treemacs
@@ -871,8 +876,8 @@ We install other backends specifically for LaTeX
 ;; Flycheck
 (use-package flycheck
   :init
-  (setq flycheck-relevant-error-other-file-show nil)
-  (setq flycheck-indication-mode nil)
+  ;(setq flycheck-relevant-error-other-file-show nil) ;might be useful
+  (setq flycheck-indication-mode 'left-margin)
   :diminish
   ;; :hook (python-mode . flycheck-mode)
   ) ; Temporary to avoid noise ...
@@ -934,6 +939,7 @@ For OCaml, we do not use LSP mode, and we instead choose to work with a specific
 #+BEGIN_SRC emacs-lisp
 ;; Tuareg (for OCaml and ML like languages)
 (use-package tuareg
+  :defer t
   :config
   (setq tuareg-indent-align-with-first-arg t)
   (setq tuareg-match-patterns-aligned t))
