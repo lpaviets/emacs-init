@@ -1,3 +1,8 @@
 /elpa/
 /semanticdb/
 /transient/
+*.el~
+/#autogen-init.el#
+/eshell/
+/auto-save-list/
+/tramp

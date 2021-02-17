@@ -363,6 +363,21 @@ It will condense all the available information about something within a single H
   ([remap describe-key] . helpful-key))
 
 #+END_SRC
+*** Buffer management
+
+Emacs is sometimes all over the place, opening buffers at seemingly random places, switching your focus only in some circumstances ... We will customize this behaviour so that we have a better control on what Emacs is doing when we open new buffers
+
+#+BEGIN_SRC emacs-lisp
+(setq display-buffer-base-action
+  '((display-buffer-reuse-window)
+    (display-buffer-reuse-mode-window)
+    (display-buffer-same-window)
+    (display-buffer-in-previous-window)))
+
+;; Can even have further control with
+;; display-buffer-alist, or using extra-parameters
+
+#+END_SRC
 
 *** Window management
 

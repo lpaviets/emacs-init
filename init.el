@@ -225,6 +225,15 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
+(setq display-buffer-base-action
+  '((display-buffer-reuse-window)
+    (display-buffer-reuse-mode-window)
+    (display-buffer-same-window)
+    (display-buffer-in-previous-window)))
+
+;; Can even have further control with
+;; display-buffer-alist, or using extra-parameters
+
 (winner-mode 1)
 
 ;;* Helpers
