@@ -704,7 +704,8 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
-(use-package smartparens)
+(use-package smartparens
+  :init (smartparens-global-mode))
 
 #+END_SRC
 
@@ -926,7 +927,7 @@ Another package doing more or less the same thing but in a different way:
 
 (use-package python-mode
   :custom
-  (setq python-shell-interpreter "python3")
+  ;(setq python-shell-interpreter "python3")
   (setq tab-width 4)
   (setq python-indent-offset 4))
 
@@ -979,6 +980,16 @@ Because it might be useful everywhere, we do not use it simply in =emacs-lisp-mo
 #+BEGIN_SRC emacs-lisp
 (use-package elmacro
 :init (elmacro-mode t))
+#+END_SRC
+
+***** Common Lisp
+
+We could, of course, use LSP to write Common Lisp code. However, Emacs already provides nice editing functionalities for programming in Lisp-like languages, and CL is no exception. On top of the built-in Emacs functions, we use another minor mode, specifically designed to write Common Lisp: [[https://common-lisp.net/project/slime/][SLIME]]. More precisely, we use a /fork/ of SLIME, known as [[https://github.com/joaotavora/sly][SLY]]
+
+#+BEGIN_SRC emacs-lisp
+(use-package sly
+:custom (inferior-lisp-program "/usr/bin/clisp") ; Might want to give SCBL a try
+)
 #+END_SRC
 
 ** LaTeX and PDF
@@ -1074,10 +1085,10 @@ Some other interesting ones:
 - [[https://ladicle.com/post/config/][Ladicle's]] configuration file
 
 * TODO
-- [-] Hydra ! Install it, define some useful hydras (buffers, org-mode, dired ...), bind it to lsp-mode/ivy/projectile ...
+- [X] Hydra ! Install it, define some useful hydras (buffers, org-mode, dired ...), bind it to lsp-mode/ivy/projectile ...
   - [X] Install
   - [X] Modify hydras from the wiki
-  - [ ] Define some new hydras
+  - [X] Define some new hydras
 - [ ] Do things for other popular languages (Java and C# come to mind).
   - [ ] Setup C# with LSP-mode
   - [ ] Setup Java with LSP-mode

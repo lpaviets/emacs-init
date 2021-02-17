@@ -460,7 +460,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
-(use-package smartparens)
+(use-package smartparens
+  :init (smartparens-global-mode))
 
 ;;YASnippet
 (use-package yasnippet
@@ -607,7 +608,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package python-mode
   :custom
-  (setq python-shell-interpreter "python3")
+  ;(setq python-shell-interpreter "python3")
   (setq tab-width 4)
   (setq python-indent-offset 4))
 
@@ -629,6 +630,10 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package elmacro
 :init (elmacro-mode t))
+
+(use-package sly
+:custom (inferior-lisp-program "/usr/bin/clisp") ; Might want to give SCBL a try
+)
 
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
