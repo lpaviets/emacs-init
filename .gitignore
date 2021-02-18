@@ -6,3 +6,6 @@
 /eshell/
 /auto-save-list/
 /tramp
+%backup%
+/projectile-bookmarks.eld
+/.lsp-session-v1
