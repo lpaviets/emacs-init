@@ -77,7 +77,7 @@
 ;; Automatically reload a file if it has been modified
 (global-auto-revert-mode t)
 
-(setq-default kill-whole-line t) ; Kill the line and the final \n
+;(setq-default kill-whole-line t) ; Kill the line and the final \n
 
 (use-package undo-tree
   :config
@@ -466,29 +466,66 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   )
 
 ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
-(use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
+  (use-package rainbow-delimiters
+    :hook (prog-mode . rainbow-delimiters-mode))
 
-;; Smartparens is currently bugged
-(use-package smartparens
-:custom (sp-highlight-pair-overlay nil)
-:hook (smartparens-mode . show-smartparens-mode))
+  ;; Smartparens is currently bugged
+  (use-package smartparens
+  :custom (sp-highlight-pair-overlay nil)
+  :hook (smartparens-mode . show-smartparens-mode)
+  :bind
+  ("C-M-f" . sp-forward-sexp)
+  ("C-M-b" . sp-backward-sexp)
 
-(use-package paredit
-:hook ((mrepl-mode
-        eshell-mode
-        ielm-mode
-        eval-expression-minibuffer-setup) . enable-paredit-mode))
+  ("C-M-e" . sp-up-sexp)
+  ("C-M-d" . sp-down-sexp)
 
-(defun paredit-or-smartparens ()
-"Enable paredit or smartparens depending on the major mode"
-(if (member major-mode '(emacs-lisp-mode
-                       lisp-mode
-                       lisp-interaction-mode))
-  (enable-paredit-mode)
-(smartparens-strict-mode)))
+  ("C-M-u" . sp-backward-up-sexp)
+  ("C-M-a" . sp-backward-down-sexp)
 
-(add-hook 'prog-mode-hook #'paredit-or-smartparens)
+  ("C-S-d" . sp-beginning-of-sexp)
+  ("C-S-a" . sp-end-of-sexp)
+
+  ("C-M-t" . sp-transpose-sexp)
+
+  ("C-M-k" . sp-kill-sexp)
+  ("C-M-w" . sp-copy-sexp)
+
+  ("M-<delete>" . sp-unwrap-sexp)
+  ("M-<backspace>" . sp-backward-unwrap-sexp)
+
+  ("C-<right>" . sp-forward-slurp-sexp)
+  ("C-<left>" . sp-forward-barf-sexp)
+  ("M-<left>" . sp-backward-slurp-sexp)
+  ("M-<right>" . sp-backward-barf-sexp)
+
+  ;; ("M-D" . sp-splice-sexp)
+  ;; ("C-M-<delete>" . sp-splice-sexp-killing-forward)
+  ;; ("C-M-<backspace>" . sp-splice-sexp-killing-backward)
+  ;; ("C-S-<backspace>" . sp-splice-sexp-killing-around)
+
+  ("M-F" . sp-forward-symbol)
+  ("M-B" . sp-backward-symbol)
+  )
+
+  (use-package paredit
+  :hook ((mrepl-mode
+          eshell-mode
+          ielm-mode
+          eval-expression-minibuffer-setup)) . paredit-mode)
+
+  (defun paredit-or-smartparens ()
+  "Enable paredit or smartparens depending on the major mode"
+  (if (member major-mode '(emacs-lisp-mode
+                         lisp-mode
+                         lisp-interaction-mode))
+    (enable-paredit-mode)
+  (smartparens-mode)))
+;; Bug with strict-mode in cc-mode (Java, C/C++ ...)
+;; Bindings are overriden by the cc-mode one, so sp-strict-mode does not
+;; work properly (e.g. <DEL> is not bound to sp-backward-delete-char)
+
+  (add-hook 'prog-mode-hook #'paredit-or-smartparens)
 
 ;;YASnippet
 (use-package yasnippet
