@@ -727,14 +727,14 @@ A useful tool to manipulate text and even source code is the [[https://github.co
   ("C-M-f" . sp-forward-sexp)
   ("C-M-b" . sp-backward-sexp)
 
-  ("C-M-e" . sp-up-sexp)
+  ;; Define those as in paredit
+  ("C-M-n" . sp-up-sexp)
   ("C-M-d" . sp-down-sexp)
-
   ("C-M-u" . sp-backward-up-sexp)
-  ("C-M-a" . sp-backward-down-sexp)
+  ("C-M-p" . sp-backward-down-sexp)
 
-  ("C-S-d" . sp-beginning-of-sexp)
-  ("C-S-a" . sp-end-of-sexp)
+  ("C-S-a" . sp-beginning-of-sexp)
+  ("C-S-e" . sp-end-of-sexp)
 
   ("C-M-t" . sp-transpose-sexp)
 
@@ -746,17 +746,17 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 
   ("C-<right>" . sp-forward-slurp-sexp)
   ("C-<left>" . sp-forward-barf-sexp)
-  ("M-<left>" . sp-backward-slurp-sexp)
-  ("M-<right>" . sp-backward-barf-sexp)
+  ("C-M-<left>" . sp-backward-slurp-sexp) ; kbd ghosting ?
+  ("C-M-<right>" . sp-backward-barf-sexp) ; kbd ghosting ?
 
-  ;; ("M-D" . sp-splice-sexp)
+  ("M-s" . sp-splice-sexp) ; unbinds "occur"
   ;; ("C-M-<delete>" . sp-splice-sexp-killing-forward)
   ;; ("C-M-<backspace>" . sp-splice-sexp-killing-backward)
   ;; ("C-S-<backspace>" . sp-splice-sexp-killing-around)
 
   ("M-F" . sp-forward-symbol)
-  ("M-B" . sp-backward-symbol)
-  )
+  ("M-B" . sp-backward-symbol))
+  
 
   (use-package paredit
   :hook ((mrepl-mode
