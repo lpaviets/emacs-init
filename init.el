@@ -45,7 +45,7 @@
    (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
 
 ;; Whenever a region is activated, inserting a symbol will first delete the region
-(delete-selection-mode 1)
+; (delete-selection-mode 1)
 
 ;; Disable the annoying startup message and Emacs logo
 (setq inhibit-startup-message t)
@@ -469,8 +469,26 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
+;; Smartparens is currently bugged
 (use-package smartparens
-  :init (smartparens-global-mode))
+:custom (sp-highlight-pair-overlay nil)
+:hook (smartparens-mode . show-smartparens-mode))
+
+(use-package paredit
+:hook ((mrepl-mode
+        eshell-mode
+        ielm-mode
+        eval-expression-minibuffer-setup) . enable-paredit-mode))
+
+(defun paredit-or-smartparens ()
+"Enable paredit or smartparens depending on the major mode"
+(if (member major-mode '(emacs-lisp-mode
+                       lisp-mode
+                       lisp-interaction-mode))
+  (enable-paredit-mode)
+(smartparens-strict-mode)))
+
+(add-hook 'prog-mode-hook #'paredit-or-smartparens)
 
 ;;YASnippet
 (use-package yasnippet

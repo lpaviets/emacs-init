@@ -105,7 +105,7 @@ All the variable names are pretty explicit, so you should be able to customize t
 
 #+BEGIN_SRC emacs-lisp
   ;; Whenever a region is activated, inserting a symbol will first delete the region
-  (delete-selection-mode 1)
+  ; (delete-selection-mode 1)
 
   ;; Disable the annoying startup message and Emacs logo
   (setq inhibit-startup-message t)
@@ -719,9 +719,26 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
+;; Smartparens is currently bugged
 (use-package smartparens
-  :init (smartparens-global-mode))
+:custom (sp-highlight-pair-overlay nil)
+:hook (smartparens-mode . show-smartparens-mode))
 
+(use-package paredit
+:hook ((mrepl-mode
+        eshell-mode
+        ielm-mode
+        eval-expression-minibuffer-setup) . enable-paredit-mode))
+
+(defun paredit-or-smartparens ()
+"Enable paredit or smartparens depending on the major mode"
+(if (member major-mode '(emacs-lisp-mode
+                       lisp-mode
+                       lisp-interaction-mode))
+  (enable-paredit-mode)
+(smartparens-strict-mode)))
+
+(add-hook 'prog-mode-hook #'paredit-or-smartparens)
 #+END_SRC
 
 *** Auto-completion
