@@ -14,41 +14,35 @@
 (unless (package-installed-p 'use-package)
    (package-install 'use-package))
 
+;; Other packages
 (add-to-list 'load-path "~/.emacs.d/extra-packages")
+
 (require 'use-package)
+;; Comment this line if you don't want to automatically install packages
 (setq use-package-always-ensure t)
+(setq use-package-verbose t)
 
-(use-package hydra)
+(defun my-display-startup-time ()
+  (message "Emacs started in %s seconds"
+    (format "%.2f"
+      (float-time
+        (time-subtract after-init-time before-init-time)))))
 
-(use-package posframe)
+(defun my-display-garbage-collection ()
+  (message "Emacs performed %d garbage collection"
+    gcs-done))
 
-;; Manual load and config of Hydra Posframe
-;; To fix: find a way to override parameters ...
-;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
-;; (setq hydra-posframe-border-width 5)
-
-;Pretty Hydra
-(use-package pretty-hydra)
-
-; Avoid unnecessary warnings
-(declare-function all-the-icons-faicon 'all-the-icons)
-(declare-function all-the-icons-fileicon 'all-the-icons)
-(declare-function all-the-icons-material 'all-the-icons)
-(declare-function all-the-icons-octicon 'all-the-icons)
-
-;define an icon function with all-the-icons-faicon
-;to use filecon, etc, define same function with icon set
-(defun with-faicon (icon str &rest height v-adjust)
-   (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
-;filecon
-(defun with-fileicon (icon str &rest height v-adjust)
-   (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
+(add-hook 'emacs-startup-hook #'my-display-startup-time)
+(add-hook 'emacs-startup-hook #'my-display-garbage-collection)
 
 ;; Whenever a region is activated, inserting a symbol will first delete the region
 ; (delete-selection-mode 1)
 
 ;; Disable the annoying startup message and Emacs logo
 (setq inhibit-startup-message t)
+
+;; Maximize the frame
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 (scroll-bar-mode -1)        ; Disable visible scrollbar
 (tool-bar-mode -1)          ; Disable the toolbar
@@ -85,16 +79,36 @@
   (global-undo-tree-mode)
   :diminish (undo-tree-mode))
 
+(use-package hydra
+  :defer t)
+
+(use-package posframe
+  :defer t)
+
+;; Manual load and config of Hydra Posframe
+;; To fix: find a way to override parameters ...
+;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
+;; (setq hydra-posframe-border-width 5)
+
+;Pretty Hydra
+(use-package pretty-hydra
+  :defer t
+  :after hydra)
+
 ;; Generic UI modes
 
 (use-package beacon
   :init (beacon-mode))
-(use-package rainbow-mode)
-(use-package fill-column-indicator)
-(use-package visual-fill-column)
+(use-package rainbow-mode
+  :defer t)
+(use-package fill-column-indicator
+  :defer t)
+(use-package visual-fill-column
+  :defer t)
 
 (use-package command-log-mode
 ;; :hook (<your-favourite-mode> . command-log-mode) ; Add here modes in which you want to run the command-log-mode
+  :commands command-log-mode
 )
 
 ;; Themes
@@ -102,74 +116,92 @@
   :init (load-theme 'doom-Iosvkem t))
 
 (use-package cycle-themes
-;; :init
+  :defer t
+;; :config
 ;; (setq cycle-themes-theme-list
 ;;        '(leuven monokai solarized-dark)) ; Your favourite themes list
 )
 
 ;; First time used: run M-x all-the-icons-install-fonts
-(use-package all-the-icons)
+(use-package all-the-icons
+  :config
+  ;; Avoid unnecessary warnings
+  (declare-function all-the-icons-faicon 'all-the-icons)
+  (declare-function all-the-icons-fileicon 'all-the-icons)
+  (declare-function all-the-icons-material 'all-the-icons)
+  (declare-function all-the-icons-octicon 'all-the-icons)
+
+  ;;define an icon function with all-the-icons-faicon
+  ;;to use filecon, etc, define same function with icon set
+  (defun with-faicon (icon str &rest height v-adjust)
+     (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
+  ;filecon
+  (defun with-fileicon (icon str &rest height v-adjust)
+     (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
+)
 
 (use-package doom-modeline
+  :after all-the-icons
   :init (doom-modeline-mode 1)
   :custom ((doom-modeline-height 15)))
 
 ;; Dimmer. Dims buffers that do not have the focus
-(use-package dimmer
-  :disabled
-  :config
-  (dimmer-configure-which-key) ; To fix ! Doesn't work
-  (dimmer-configure-magit)
-  (dimmer-configure-org)
-  (dimmer-configure-company-box)
-  (dimmer-configure-hydra) ; To fix for hydra-posframe
-  (dimmer-mode 0)
-)
+;; (use-package dimmer
+;;   :init (dimmer-mode)
+;;   :config
+;;   (dimmer-configure-which-key) ; To fix ! Doesn't work
+;;   (dimmer-configure-magit)
+;;   (dimmer-configure-org)
+;;   (dimmer-configure-company-box)
+;;   (dimmer-configure-hydra) ; To fix for hydra-posframe
+;; )
 
+(with-eval-after-load 'hydra
 ;define a title function
-(defvar appearance-title (with-faicon "desktop" "Appearance"))
-; Other idea:
-; (defvar appearance-title (with-faicon "toggle-on" "Toggles" 1 -0.05))
+  (defvar appearance-title (with-faicon "desktop" "Appearance"))
 
-;generate hydra
+  ; Other idea:
+  ; (defvar appearance-title (with-faicon "toggle-on" "Toggles" 1 -0.05))
 
-(pretty-hydra-define hydra-appearance (:title appearance-title
-                                       :quit-key "q"
-                                       ;:pre (hydra-posframe-mode t)
-                                       ;:post (hydra-posframe-mode 0) ; dirty hack
-                                       )
-("Theme"
-   (
-;    ("o" olivetti-mode "Olivetti" :toggle t)
-;    ("t" toggle-window-transparency "Transparency" :toggle t )
-    ("c" cycle-themes "Cycle Themes" )
-    ("+" text-scale-increase "Zoom In")
-    ("-" text-scale-decrease "Zoom Out")
-    ("x" toggle-frame-maximized "Maximize Frame" :toggle t )
-    ("X" toggle-frame-fullscreen "Fullscreen Frame" :toggle t)
-)
-"Highlighting"
-   (
-     ("d" rainbow-delimiters-mode "Rainbow Delimiters" :toggle t )
-     ("r" rainbow-mode "Show Hex Colours" :toggle t )
-;    ("n" highlight-numbers-mode "Highlight Code Numbers" :toggle t )
-     ("l" display-line-numbers-mode "Show Line Numbers" :toggle t )
-     ("_" global-hl-line-mode "Highlight Current Line" :toggle t )
-;    ("I" rainbow-identifiers-mode "Rainbow Identifiers" :toggle t )
-     ("b" beacon-mode "Show Cursor Trailer" :toggle t )
-     ("w" whitespace-mode "whitespace" :toggle t)
-)
-"Miscellaneous"
-   (("j" visual-line-mode "Wrap Line Window"  :toggle t)
-    ("m" visual-fill-column-mode "Wrap Line Column"  :toggle t)
-;    ("a" adaptive-wrap-prefix-mode "Indent Wrapped Lines" :toggle t )
-;   ("i" highlight-indent-guides-mode  "Show Indent Guides" :toggle t )
-    ("g" fci-mode "Show Fill Column" :toggle t )
-    ("<SPC>" nil "Quit" :color blue )
-)
-)
-)
-(global-set-key (kbd "C-c a") 'hydra-appearance/body)
+  ;generate hydra
+  
+  (pretty-hydra-define hydra-appearance (:title appearance-title
+                                         :quit-key "q"
+					 ;:pre (hydra-posframe-mode t)
+					 ;:post (hydra-posframe-mode 0) ; dirty hack
+					 )
+  ("Theme"
+    (
+;     ("o" olivetti-mode "Olivetti" :toggle t)
+;     ("t" toggle-window-transparency "Transparency" :toggle t )
+      ("c" cycle-themes "Cycle Themes" )
+      ("+" text-scale-increase "Zoom In")
+      ("-" text-scale-decrease "Zoom Out")
+      ("x" toggle-frame-maximized "Maximize Frame" :toggle t )
+      ("X" toggle-frame-fullscreen "Fullscreen Frame" :toggle t)
+    )
+    "Highlighting"
+    (
+      ("d" rainbow-delimiters-mode "Rainbow Delimiters" :toggle t )
+      ("r" rainbow-mode "Show Hex Colours" :toggle t )
+      ;    ("n" highlight-numbers-mode "Highlight Code Numbers" :toggle t )
+      ("l" display-line-numbers-mode "Show Line Numbers" :toggle t )
+      ("_" global-hl-line-mode "Highlight Current Line" :toggle t )
+      ;    ("I" rainbow-identifiers-mode "Rainbow Identifiers" :toggle t )
+      ("b" beacon-mode "Show Cursor Trailer" :toggle t )
+      ("w" whitespace-mode "whitespace" :toggle t)
+    )
+    "Miscellaneous"
+    (
+      ("j" visual-line-mode "Wrap Line Window"  :toggle t)
+      ("m" visual-fill-column-mode "Wrap Line Column"  :toggle t)
+      ;    ("a" adaptive-wrap-prefix-mode "Indent Wrapped Lines" :toggle t )
+      ;   ("i" highlight-indent-guides-mode  "Show Indent Guides" :toggle t )
+      ("g" fci-mode "Show Fill Column" :toggle t )
+      ("<SPC>" nil "Quit" :color blue )
+  ))))
+
+  (global-set-key (kbd "C-c a") 'hydra-appearance/body)
 
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
@@ -180,12 +212,7 @@
 
 ;; Ivy
 (use-package ivy
-  :diminish
-  :init
-  (defun my-ivy-alt-done-t ()
-    (interactive)
-    (ivy-alt-done t))
-
+  :diminish 
   :bind (("C-s" . swiper)
 	 :map ivy-minibuffer-map
 	 ("TAB" . ivy-partial-or-done)
@@ -196,17 +223,19 @@
 	 :map ivy-reverse-i-search-map
 	 ("C-d" . ivy-reverse-i-search-kill))
   :config
+  (defun my-ivy-alt-done-t ()
+    (interactive)
+    (ivy-alt-done t))
+
   (ivy-mode 1))
 
 ;; Adds things to Ivy
 (use-package ivy-rich
-  :init
-  (ivy-rich-mode 1))
-
+  :hook (ivy . ivy-rich-mode))
 
 ;; Counsel. Adds things to Ivy
 (use-package counsel
-  :init (counsel-mode)
+  :config (counsel-mode)
   :diminish
   :bind (("M-x" . counsel-M-x)
          ("C-x b" . counsel-ibuffer)
@@ -216,6 +245,8 @@
 
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
+  :after counsel
+  :commands (helpful-callable helpful-variable helpful-command helpful-key)
   :custom
   (counsel-describe-function-function #'helpful-callable)
   (counsel-describe-variable-function #'helpful-variable)
@@ -225,6 +256,7 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
+;;Buffer management
 (setq display-buffer-base-action
   '((display-buffer-reuse-window)
     (display-buffer-reuse-mode-window)
@@ -237,7 +269,8 @@
 (winner-mode 1)
 
 ;;* Helpers
-(use-package windmove)
+(use-package windmove
+  :defer t)
 
 (defun hydra-move-splitter-left (arg)
   "Move window splitter left."
@@ -362,22 +395,24 @@ _q_uit
   (org-indent-mode)
   (variable-pitch-mode 1)
   (visual-line-mode 1))
+  
 
 (use-package org
-  :hook (org-mode . my-org-mode-setup)
   :config
-  (setq org-ellipsis " ▾"))
+  (setq org-ellipsis " ▾")
+  :hook (org-mode . my-org-mode-setup)
+)
 
 (use-package org-bullets
-  :after org
   :hook (org-mode . org-bullets-mode)
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
+(with-eval-after-load 'org
 (org-babel-do-load-languages
   'org-babel-load-languages
   '((emacs-lisp . t)
-    (python . t)))
+    (python . t))))
 
 ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
 					; else code
@@ -392,7 +427,8 @@ _q_uit
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
 
-(use-package multiple-cursors) ; TODO: binds
+(use-package multiple-cursors
+  :defer t) ; TODO: binds
 
 (global-set-key
  (kbd "C-c m")
@@ -444,18 +480,21 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 :bind ("C-=" . er/expand-region))
 
 (use-package projectile
-  :diminish projectile
-  :config (projectile-mode)
-  :custom ((projectile-completion-system 'ivy))
-  :bind-keymap
-  ("C-c p" . projectile-command-map)
+  :diminish
   :init
   ;; NOTE: Set this to the folder where you keep your Git repos!
   ;; (when (file-directory-p "path/to/project/dir")
   ;; (setq projectile-project-search-path '("path/to/project/dir")))
-  (setq projectile-switch-project-action #'projectile-dired))
+  (setq projectile-switch-project-action #'projectile-dired)
+
+  :config
+  (projectile-mode)
+  :custom ((projectile-completion-system 'ivy))
+  :bind-keymap
+  ("C-c p" . projectile-command-map))
 
 (use-package counsel-projectile
+  :after (counsel projectile)
   :config (counsel-projectile-mode))
 
 (use-package magit
@@ -463,6 +502,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
   ;; uncomment previous line to have magit open itself within the same buffer
   ;; instead of in another buffer
+  :bind ("C-x g" . magit)
   )
 
 ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
@@ -512,14 +552,14 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :hook ((mrepl-mode
           eshell-mode
           ielm-mode
-          eval-expression-minibuffer-setup)) . paredit-mode)
+          eval-expression-minibuffer-setup) . enable-paredit-mode))
 
   (defun paredit-or-smartparens ()
   "Enable paredit or smartparens depending on the major mode"
   (if (member major-mode '(emacs-lisp-mode
                          lisp-mode
                          lisp-interaction-mode))
-    (enable-paredit-mode)
+    (paredit-mode)
   (smartparens-mode)))
 ;; Bug with strict-mode in cc-mode (Java, C/C++ ...)
 ;; Bindings are overriden by the cc-mode one, so sp-strict-mode does not
@@ -535,10 +575,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; Company. Auto-completion package
 (use-package company
   :diminish
-  :init
-;  (setq company-backends '((company-files company-keywords company-capf company-etags company-yasnippet))) ;; might want to add company-dabbrev(-code)
 
-  :config (global-company-mode t)
+  :init (global-company-mode t)
 
   :bind (
      :map company-active-map
@@ -579,10 +617,12 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 )
 
 (use-package company-box
+  :after company
   :hook (company-mode . company-box-mode)
   :diminish)
 
 (use-package company-quickhelp
+  :after company
   :hook (company-mode . company-quickhelp-mode)
   :diminish
   :custom (company-quickhelp-delay 0.2))
@@ -601,21 +641,19 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 ;; Auto-complete
 (use-package auto-complete
+  :diminish
   :config
   (setq ac-use-quick-help t)
   (setq-default ac-sources '(;ac-source-yasnippet
 			   ac-source-words-in-same-mode-buffers
 			   ac-source-dictionary)) ; see auto-complete doc for other sources
-  :diminish
-  :config (auto-complete-mode 0)
 )
 
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
-  :init
-  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   :config
+  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   (lsp-enable-which-key-integration t)
   ;(setq lsp-signature-render-documentation nil)
   ;(setq lsp-signature-auto-activate nil)
@@ -627,6 +665,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 )
 
 (use-package lsp-ui
+  :after lsp-mode
   :hook (lsp-mode . lsp-ui-mode)
   :custom
   (lsp-ui-doc-enable nil)
@@ -637,13 +676,15 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
  )
 
 (use-package lsp-treemacs
-  :after lsp)
+  :after lsp-mode)
 
-(use-package lsp-ivy)
+(use-package lsp-ivy
+  :after (lsp-mode ivy))
 
 ;; Flycheck
 (use-package flycheck
-  :init
+  :defer t
+  :config
   ;(setq flycheck-relevant-error-other-file-show nil) ;might be useful
   (setq flycheck-indication-mode 'left-margin)
   :diminish
@@ -658,19 +699,20 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; (defun my-semantic-hook ()
 ;;   (imenu-add-to-menubar "TAGS"))
 ;; (add-hook 'semantic-init-hooks 'my-semantic-hook)
+  :defer t
   :config
   (semantic-mode t)
   (global-semanticdb-minor-mode t)
   (global-semantic-idle-scheduler-mode t))
 
 ;; Python
-;; Change to try Elpy ?
 
 ;; Before using LPS, make sure that the server has been installed !
 ;; pip install --user python-language-server[all]
 ;; Should be able to use the pyls command
 
 (use-package python-mode
+  :defer t
   :custom
   ;(setq python-shell-interpreter "python3")
   (setq tab-width 4)
@@ -686,7 +728,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; C/C++
 ;; See https://github.com/MaskRay/ccls/wiki/lsp-mode
 (use-package ccls
-  :init
+  :defer t
+  :config
   (setq ccls-executable (executable-find "ccls")))
 
 (use-package highlight-defined
@@ -696,32 +739,22 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 :init (elmacro-mode t))
 
 (use-package sly
-:custom (inferior-lisp-program "/usr/bin/clisp") ; Might want to give SCBL a try
+  :defer t
+  :custom (inferior-lisp-program "/usr/bin/clisp") ; Might want to give SCBL a try
 )
 
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
 (use-package pdf-tools
-    :config
-    (pdf-tools-install)
-    (setq TeX-view-program-selection '((output-pdf "pdf-tools")))
-    (setq TeX-view-program-list '(("pdf-tools" "TeX-pdf-tools-sync-view")))
-    (setq TeX-source-correlate-start-server t))
+ :defer t
+ :config
+   (pdf-tools-install)
+   (setq TeX-view-program-selection '((output-pdf "pdf-tools")))
+   (setq TeX-view-program-list '(("pdf-tools" "TeX-pdf-tools-sync-view")))
+   (setq TeX-source-correlate-start-server t))
 
 (use-package auctex
-:defer t)
-
-;; Adding support for LaTeX auto-complete
-(defun ac-LaTeX-mode-setup () ; add ac-sources to default ac-sources
-  (require 'ac-math)
-  (add-to-list 'ac-modes 'latex-mode)   ; make auto-complete aware of `latex-mode`
-
-  (setq ac-sources
-	(append '(ac-source-math-unicode
-		  ac-source-math-latex
-		  ac-source-latex-commands)
-		ac-sources))
-  (auto-complete-mode t))
+  :defer t)
 
 ;; Update PDF buffers after successful LaTeX runs
 (add-hook 'TeX-after-compilation-finished-functions
@@ -732,7 +765,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; eshell
 
 (use-package eshell-did-you-mean
-:init (eshell-did-you-mean-setup))
+  :defer t
+  :config (eshell-did-you-mean-setup))
 
 (use-package eshell-syntax-highlighting
-:hook (eshell-mode . eshell-syntax-highlighting-mode))
+  :hook (eshell-mode . eshell-syntax-highlighting-mode))
