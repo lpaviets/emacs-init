@@ -23,10 +23,39 @@
   If the init.el cannot be properly loaded at startup, try to search for such keywords in this file and execute the corresponding commands.
 
 ** Initialization
+*** Emacs performance
 
-   We use another package manager in order to write this configuration file.
+First, we set things up so that Emacs starts /fast/.
 
-   It makes both installation and customization easier, and also simpler to read.
+#+BEGIN_SRC emacs-lisp
+(setq gc-cons-threshold 100000000) ; 1e8 = 100 MB (default: 800kB)
+#+END_SRC
+
+Another thing that might be of interest is to know how long it took for Emacs to start. Although there is already a built-in function to do this (try to call =emacs-init-time= in any Emacs session), we want it to be automatically displayed anytime we start Emacs
+
+#+BEGIN_SRC emacs-lisp
+(defun my-display-startup-time ()
+  (message "Emacs started in %s seconds"
+    (format "%.2f"
+      (float-time
+        (time-subtract after-init-time before-init-time)))))
+
+(defun my-display-garbage-collection ()
+  (message "Emacs performed %d garbage collection"
+    gcs-done))
+
+(add-hook 'emacs-startup-hook #'my-display-startup-time)
+(add-hook 'emacs-startup-hook #'my-display-garbage-collection)
+
+; After startup, we restore gc-cons-threshold to a more reasonable value
+(setq gc-cons-threshold 2000000) ; 2e6 = 2 MB
+#+END_SRC
+
+*** Package management
+
+Then, we need to configure how we will install packages. We use another package manager that the default one: =use-package=.
+
+It makes both installation and customization easier, and the code is also simpler to read.
 
 #+BEGIN_SRC emacs-lisp
 
@@ -52,29 +81,19 @@
 (require 'use-package)
 ;; Comment this line if you don't want to automatically install packages
 (setq use-package-always-ensure t)
-(setq use-package-verbose t)
 
 #+END_SRC
 
-Another thing that might be of interest is to know how long it took for Emacs to start. Although there is already a built-in function to do this (try to call =emacs-init-time= in any Emacs session), we want it to be automatically displayed anytime we start Emacs
+*** Quick restart
+
+In order to test things more rapidly and to be able to apply configuration changes without ever leaving Emacs, we also install another package to restart Emacs with a simple command.
 
 #+BEGIN_SRC emacs-lisp
-(defun my-display-startup-time ()
-  (message "Emacs started in %s seconds"
-    (format "%.2f"
-      (float-time
-        (time-subtract after-init-time before-init-time)))))
-
-(defun my-display-garbage-collection ()
-  (message "Emacs performed %d garbage collection"
-    gcs-done))
-
-(add-hook 'emacs-startup-hook #'my-display-startup-time)
-(add-hook 'emacs-startup-hook #'my-display-garbage-collection)
+(use-package restart-emacs
+  :commands (restart-emacs restart-emacs-start-new-emacs))
 #+END_SRC
 
 ** UI Configuration
-
 *** Comfort changes
 
 We remove all the unnecessary elements from the interface, /e.g./ menus, scroll bar and so on.
@@ -628,6 +647,7 @@ _q_uit
 #+END_SRC
 
 ** Editing
+
    Emacs is fundamentally a text editor. It provides a lot of functions to deal with text, and a way to create macros, to automate things, to repeat something multiple times ... easily. However, because there are /so many/ available functions, we might need some help to navigate around and do fancy things.
 
 *** Multiple cursors
@@ -748,7 +768,7 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 
   ;; uncomment previous line to have magit open itself within the same buffer
   ;; instead of in another buffer
-  :bind ("C-x g" . magit)
+  :bind ("C-x g" . magit-status)
   )
 
 #+END_SRC
@@ -1103,7 +1123,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
 
 #+BEGIN_SRC emacs-lisp
 (use-package sly
-  :defer t
+  :commands sly
   :custom (inferior-lisp-program "/usr/bin/clisp") ; Might want to give SCBL a try
 )
 #+END_SRC
@@ -1159,8 +1179,11 @@ We install a few packages which make eshell easier to use.
 #+BEGIN_SRC emacs-lisp
 ;; eshell
 
+(setq eshell-hist-ignoredups t
+      eshell-scroll-to-bottom-on-input t)
+
 (use-package eshell-did-you-mean
-  :defer t
+  :commands eshell
   :config (eshell-did-you-mean-setup))
 
 (use-package eshell-syntax-highlighting

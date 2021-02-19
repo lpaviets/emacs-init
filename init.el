@@ -1,3 +1,21 @@
+(setq gc-cons-threshold 100000000) ; 1e8 = 100 MB (default: 800kB)
+
+(defun my-display-startup-time ()
+  (message "Emacs started in %s seconds"
+    (format "%.2f"
+      (float-time
+        (time-subtract after-init-time before-init-time)))))
+
+(defun my-display-garbage-collection ()
+  (message "Emacs performed %d garbage collection"
+    gcs-done))
+
+(add-hook 'emacs-startup-hook #'my-display-startup-time)
+(add-hook 'emacs-startup-hook #'my-display-garbage-collection)
+
+; After startup, we restore gc-cons-threshold to a more reasonable value
+(setq gc-cons-threshold 2000000) ; 2e6 = 2 MB
+
 ;; Initialize package sources
 (require 'package)
 
@@ -20,20 +38,9 @@
 (require 'use-package)
 ;; Comment this line if you don't want to automatically install packages
 (setq use-package-always-ensure t)
-(setq use-package-verbose t)
 
-(defun my-display-startup-time ()
-  (message "Emacs started in %s seconds"
-    (format "%.2f"
-      (float-time
-        (time-subtract after-init-time before-init-time)))))
-
-(defun my-display-garbage-collection ()
-  (message "Emacs performed %d garbage collection"
-    gcs-done))
-
-(add-hook 'emacs-startup-hook #'my-display-startup-time)
-(add-hook 'emacs-startup-hook #'my-display-garbage-collection)
+(use-package restart-emacs
+  :commands (restart-emacs restart-emacs-start-new-emacs))
 
 ;; Whenever a region is activated, inserting a symbol will first delete the region
 ; (delete-selection-mode 1)
@@ -502,7 +509,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
   ;; uncomment previous line to have magit open itself within the same buffer
   ;; instead of in another buffer
-  :bind ("C-x g" . magit)
+  :bind ("C-x g" . magit-status)
   )
 
 ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
@@ -739,7 +746,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 :init (elmacro-mode t))
 
 (use-package sly
-  :defer t
+  :commands sly
   :custom (inferior-lisp-program "/usr/bin/clisp") ; Might want to give SCBL a try
 )
 
@@ -764,8 +771,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 ;; eshell
 
+(setq eshell-hist-ignoredups t
+      eshell-scroll-to-bottom-on-input t)
+
 (use-package eshell-did-you-mean
-  :defer t
+  :commands eshell
   :config (eshell-did-you-mean-setup))
 
 (use-package eshell-syntax-highlighting
