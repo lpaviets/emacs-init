@@ -58,9 +58,10 @@
 
 (menu-bar-mode -1)          ; Disable the menu bar
 
-;; Global line numbering mode, except in some major modes
-(add-hook 'prog-mode 'column-number-mode)
-(add-hook 'prog-mode 'display-line-numbers-mode)
+;; Global line/column numbering mode
+;; To fix: disable it in some modes (eshell ...)
+(column-number-mode t)
+(global-display-line-numbers-mode t)
 
 ;; Disable line numbering for some modes
 ;; (dolist (mode '(org-mode-hook
@@ -170,7 +171,7 @@
     (
 ;     ("o" olivetti-mode "Olivetti" :toggle t)
 ;     ("t" toggle-window-transparency "Transparency" :toggle t )
-      ("c" cycle-themes "Cycle Themes" )
+      ("c" cycle-themes-mode "Cycle Themes" )
       ("+" text-scale-increase "Zoom In")
       ("-" text-scale-decrease "Zoom Out")
       ("x" toggle-frame-maximized "Maximize Frame" :toggle t )
@@ -734,10 +735,17 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package elmacro
 :init (elmacro-mode t))
 
+;; Needs a fix: crashes
+;; Error: "HTTPS protocol not supported yet"
+
 (use-package sly
-  :commands sly
-  :custom (inferior-lisp-program "/usr/bin/clisp") ; Might want to give SCBL a try
-)
+  :hook (lisp-mode . sly-editing-mode)
+  :custom (inferior-lisp-program "sbcl") ; Clisp makes SLY crash
+  :config
+  (add-hook 'sly-mode-hook
+            (lambda ()
+               (unless (sly-connected-p)
+                 (save-excursion (sly))))))
 
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
