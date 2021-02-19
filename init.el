@@ -152,17 +152,6 @@
   :init (doom-modeline-mode 1)
   :custom ((doom-modeline-height 15)))
 
-;; Dimmer. Dims buffers that do not have the focus
-;; (use-package dimmer
-;;   :init (dimmer-mode)
-;;   :config
-;;   (dimmer-configure-which-key) ; To fix ! Doesn't work
-;;   (dimmer-configure-magit)
-;;   (dimmer-configure-org)
-;;   (dimmer-configure-company-box)
-;;   (dimmer-configure-hydra) ; To fix for hydra-posframe
-;; )
-
 (with-eval-after-load 'hydra
 ;define a title function
   (defvar appearance-title (with-faicon "desktop" "Appearance"))
