@@ -124,26 +124,22 @@ All the variable names are pretty explicit, so you should be able to customize t
 
   ;; Global line/column numbering mode
   ;; To fix: disable it in some modes (eshell ...)
+  ;; Modes in which we might want to disable it:
+  ;; org, term, shell, eshell, doc-view, pdf-view, treemacs, undo-tree
+
   (column-number-mode t)
   (global-display-line-numbers-mode t)
-
-  ;; Disable line numbering for some modes
-  ;; (dolist (mode '(org-mode-hook
-  ;;                 term-mode-hook
-  ;;                 shell-mode-hook
-  ;;                 eshell-mode-hook
-  ;;                    doc-view-mode-hook
-  ;;                    undo-tree-visualizer-hook
-  ;;                    pdf-view-mode-hook
-  ;;                    treemacs-mode-hook))
-  ;;   (add-hook mode (lambda ()
-  ;;      ((linum-mode 0)
-  ;;       (column-number-mode 0)))))
 
   ;; Automatically reload a file if it has been modified
   (global-auto-revert-mode t)
 
-  ;(setq-default kill-whole-line t) ; Kill the line and the final \n
+  ;; Tab behaviour and whitespaces
+  (setq-default indent-tabs-mode nil)
+  (setq tab-width 4)
+  (setq c-basic-offset 4)
+
+  ;; Type "y" instead of "yes" for confirmation
+  (defalias 'yes-or-no-p 'y-or-n-p)
 #+END_SRC
 
 Another very useful package is undo-tree, which allows you to visualize the previous "Undos" and navigate them.
@@ -328,7 +324,7 @@ This is one moment where a pretty hydra could help us change general UI paramete
       ("<SPC>" nil "Quit" :color blue )
   ))))
 
-  (global-set-key (kbd "C-c a") 'hydra-appearance/body)
+  (global-set-key (kbd "C-c h a") 'hydra-appearance/body)
 
 #+END_SRC
 ** Easier search and minibuffer use
@@ -476,7 +472,7 @@ Now, we wrap everything up into a nice hydra
 
 #+BEGIN_SRC emacs-lisp
 (global-set-key
-(kbd "C-c w") ; w for window
+(kbd "C-c h w") ; w for window
 (defhydra hydra-window (:color red
                         :hint nil)
 "
@@ -643,7 +639,21 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
 
 #+BEGIN_SRC emacs-lisp
 (use-package multiple-cursors
-  :defer t) ; TODO: binds
+  :bind
+  (("C-c o <SPC>" . mc/vertical-align-with-space)
+   ("C-c o a"     . mc/vertical-align)
+   ("C-c o e"     . mc/mark-more-like-this-extended)
+   ("C-c o h"     . mc/mark-all-like-this-dwim)
+   ("C-c o l"     . mc/edit-lines)
+   ("C-c o n"     . mc/mark-next-like-this)
+   ("C-c o p"     . mc/mark-previous-like-this)
+   ("C-c o C-a"   . mc/edit-beginnings-of-lines)
+   ("C-c o C-e"   . mc/edit-ends-of-lines)
+   ("C-c o C-s"   . mc/mark-all-in-region)
+   ("C-c e"       . mc/edit-lines)
+   ("C-c o C-<"   . mc/mark-previous-like-this)
+   ("C-c o C->"   . mc/mark-next-like-this)
+   ("C-c o C-,"   . mc/mark-all-like-this)))
 #+END_SRC
 
 The webpage specifies that the commands provided by this package are best invoked when bound to key sequence rather than by =M-x <mc/command-name>=, although some testing on my part seems to show that it still works relatively well most of the time.
@@ -654,7 +664,7 @@ Because movement keys are the most frequently used ones, it might be useful to c
 
 #+BEGIN_SRC emacs-lisp
 (global-set-key
- (kbd "C-c m")
+ (kbd "C-c h m")
  (defhydra hydra-move ()
    "Movement" ; m as in movement
    ("n" next-line)
@@ -677,7 +687,7 @@ Because the functions operating on rectangles are not always the easier to remem
 
 #+BEGIN_SRC emacs-lisp
 (global-set-key
-(kbd "C-c r") ; r as rectangle
+(kbd "C-c h r") ; r as rectangle
 (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
                                      :color pink
                                      :hint nil
@@ -836,6 +846,7 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 #+BEGIN_SRC emacs-lisp
 ;;YASnippet
 (use-package yasnippet
+  :disabled
   :diminish
   :init (yas-global-mode t))
 
@@ -868,27 +879,11 @@ A useful tool to manipulate text and even source code is the [[https://github.co
        (company-idle-delay 0.1)
        (company-echo-delay 0.1)
        (company-selection-wrap-around t)
-    :hook
-       ;; ((python-mode c++-mode c-mode) . (lambda ()
-       ;;               (set (make-local-variable 'company-backends)
-       ;;               '((company-capf
-       ;;               company-semantic
-       ;;               company-keywords
-       ;;               company-yasnippet
-       ;;               company-files
-       ;;               ;;company-dabbrev
-       ;;               )))))
-        ((tex-mode latex-mode TeX-mode) . (lambda ()
-                     (set (make-local-variable 'company-backends)
-                     '((;company-auctex
-                        company-capf
-                        company-math-symbols-unicode
-                        company-math-symbols-latex
-                        company-latex-commands
-                        company-keywords
-                        company-yasnippet
-                        company-files)))))
-  )
+
+    :config
+      (setq company-tooltip-align-annotations t
+            company-tooltip-flip-when-above t
+            company-show-numbers t))
 
 #+END_SRC
 
@@ -910,42 +905,14 @@ To have a cleaner interface and also a bit of documentation added to the suggest
 
 ***** Company backends
 
-Because we will be using LSP in several programming modes, we also use another backend for company.
+We install another backend specifically for LaTeX
 
 #+BEGIN_SRC emacs-lisp
-;;company-lsp is deprecated  
-;; (use-package company-lsp
-  ;;     :custom
-  ;;     (company-lsp-cache-candidates t) ;; auto, t(always using a cache), or nil
-  ;;     (company-lsp-async t)
-  ;;     (company-lsp-enable-snippet t)
-  ;;     (company-lsp-enable-recompletion t))
-
-#+END_SRC
-
-We install other backends specifically for LaTeX
-
-#+BEGIN_SRC emacs-lisp
-  ;; (use-package company-auctex
-  ;; :init (company-auctex-init))
-  (use-package company-math)
-#+END_SRC
-
-**** Auto-complete
-
-     We still define a configuration for the auto-complete package, because we might want to use it in other buffers where company is a bit too much.
-
-#+BEGIN_SRC emacs-lisp
-;; Auto-complete
-(use-package auto-complete
-  :diminish
+(use-package company-math
+  :after company
   :config
-  (setq ac-use-quick-help t)
-  (setq-default ac-sources '(;ac-source-yasnippet
-			   ac-source-words-in-same-mode-buffers
-			   ac-source-dictionary)) ; see auto-complete doc for other sources
-)
-
+  (add-to-list 'company-backends 'company-math-symbols-unicode)
+  (add-to-list 'company-backends 'company-math-symbols-latex))
 #+END_SRC
 
 ** Language Server Protocol
@@ -1205,6 +1172,7 @@ Be careful though, some of these files are several thousands lines long !
 Some other interesting ones:
 
 - [[https://ladicle.com/post/config/][Ladicle's]] configuration file
+- [[https://github.com/caisah/emacs.dz][Another list of nice config files]] on github
   
 * TODO
 - [X] Hydra ! Install it, define some useful hydras (buffers, org-mode, dired ...), bind it to lsp-mode/ivy/projectile ...

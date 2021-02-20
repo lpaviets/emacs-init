@@ -60,26 +60,22 @@
 
 ;; Global line/column numbering mode
 ;; To fix: disable it in some modes (eshell ...)
+;; Modes in which we might want to disable it:
+;; org, term, shell, eshell, doc-view, pdf-view, treemacs, undo-tree
+
 (column-number-mode t)
 (global-display-line-numbers-mode t)
-
-;; Disable line numbering for some modes
-;; (dolist (mode '(org-mode-hook
-;;                 term-mode-hook
-;;                 shell-mode-hook
-;;                 eshell-mode-hook
-;;                    doc-view-mode-hook
-;;                    undo-tree-visualizer-hook
-;;                    pdf-view-mode-hook
-;;                    treemacs-mode-hook))
-;;   (add-hook mode (lambda ()
-;;      ((linum-mode 0)
-;;       (column-number-mode 0)))))
 
 ;; Automatically reload a file if it has been modified
 (global-auto-revert-mode t)
 
-;(setq-default kill-whole-line t) ; Kill the line and the final \n
+;; Tab behaviour and whitespaces
+(setq-default indent-tabs-mode nil)
+(setq tab-width 4)
+(setq c-basic-offset 4)
+
+;; Type "y" instead of "yes" for confirmation
+(defalias 'yes-or-no-p 'y-or-n-p)
 
 (use-package undo-tree
   :config
@@ -198,7 +194,7 @@
       ("<SPC>" nil "Quit" :color blue )
   ))))
 
-  (global-set-key (kbd "C-c a") 'hydra-appearance/body)
+  (global-set-key (kbd "C-c h a") 'hydra-appearance/body)
 
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
@@ -302,7 +298,7 @@
     (enlarge-window arg)))
 
 (global-set-key
-(kbd "C-c w") ; w for window
+(kbd "C-c h w") ; w for window
 (defhydra hydra-window (:color red
                         :hint nil)
 "
@@ -425,10 +421,24 @@ _q_uit
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
 
 (use-package multiple-cursors
-  :defer t) ; TODO: binds
+  :bind
+  (("C-c o <SPC>" . mc/vertical-align-with-space)
+   ("C-c o a"     . mc/vertical-align)
+   ("C-c o e"     . mc/mark-more-like-this-extended)
+   ("C-c o h"     . mc/mark-all-like-this-dwim)
+   ("C-c o l"     . mc/edit-lines)
+   ("C-c o n"     . mc/mark-next-like-this)
+   ("C-c o p"     . mc/mark-previous-like-this)
+   ("C-c o C-a"   . mc/edit-beginnings-of-lines)
+   ("C-c o C-e"   . mc/edit-ends-of-lines)
+   ("C-c o C-s"   . mc/mark-all-in-region)
+   ("C-c e"       . mc/edit-lines)
+   ("C-c o C-<"   . mc/mark-previous-like-this)
+   ("C-c o C->"   . mc/mark-next-like-this)
+   ("C-c o C-,"   . mc/mark-all-like-this)))
 
 (global-set-key
- (kbd "C-c m")
+ (kbd "C-c h m")
  (defhydra hydra-move ()
    "Movement" ; m as in movement
    ("n" next-line)
@@ -443,7 +453,7 @@ _q_uit
    ("l" recenter-top-bottom)))
 
 (global-set-key
-(kbd "C-c r") ; r as rectangle
+(kbd "C-c h r") ; r as rectangle
 (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
                                      :color pink
                                      :hint nil
@@ -566,6 +576,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 ;;YASnippet
 (use-package yasnippet
+  :disabled
   :diminish
   :init (yas-global-mode t))
 
@@ -591,27 +602,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
      (company-idle-delay 0.1)
      (company-echo-delay 0.1)
      (company-selection-wrap-around t)
-  :hook
-     ;; ((python-mode c++-mode c-mode) . (lambda ()
-     ;;               (set (make-local-variable 'company-backends)
-     ;;               '((company-capf
-     ;;               company-semantic
-     ;;               company-keywords
-     ;;               company-yasnippet
-     ;;               company-files
-     ;;               ;;company-dabbrev
-     ;;               )))))
-      ((tex-mode latex-mode TeX-mode) . (lambda ()
-                   (set (make-local-variable 'company-backends)
-                   '((;company-auctex
-                      company-capf
-                      company-math-symbols-unicode
-                      company-math-symbols-latex
-                      company-latex-commands
-                      company-keywords
-                      company-yasnippet
-                      company-files)))))
-)
+
+  :config
+    (setq company-tooltip-align-annotations t
+          company-tooltip-flip-when-above t
+          company-show-numbers t))
 
 (use-package company-box
   :after company
@@ -624,27 +619,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :diminish
   :custom (company-quickhelp-delay 0.2))
 
-;;company-lsp is deprecated  
-;; (use-package company-lsp
-  ;;     :custom
-  ;;     (company-lsp-cache-candidates t) ;; auto, t(always using a cache), or nil
-  ;;     (company-lsp-async t)
-  ;;     (company-lsp-enable-snippet t)
-  ;;     (company-lsp-enable-recompletion t))
-
-;; (use-package company-auctex
-;; :init (company-auctex-init))
-(use-package company-math)
-
-;; Auto-complete
-(use-package auto-complete
-  :diminish
+(use-package company-math
+  :after company
   :config
-  (setq ac-use-quick-help t)
-  (setq-default ac-sources '(;ac-source-yasnippet
-			   ac-source-words-in-same-mode-buffers
-			   ac-source-dictionary)) ; see auto-complete doc for other sources
-)
+  (add-to-list 'company-backends 'company-math-symbols-unicode)
+  (add-to-list 'company-backends 'company-math-symbols-latex))
 
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
