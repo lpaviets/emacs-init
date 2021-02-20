@@ -140,6 +140,9 @@ All the variable names are pretty explicit, so you should be able to customize t
 
   ;; Type "y" instead of "yes" for confirmation
   (defalias 'yes-or-no-p 'y-or-n-p)
+
+  ;; Always highlight matching parenthesis
+  (show-paren-mode t)
 #+END_SRC
 
 Another very useful package is undo-tree, which allows you to visualize the previous "Undos" and navigate them.
@@ -585,6 +588,11 @@ _q_uit
 (use-package org
   :config
   (setq org-ellipsis " ▾")
+  
+  ;; Coding in blocks
+  (setq org-src-fontify-natively t
+        org-src-tab-acts-natively t)
+
   :hook (org-mode . my-org-mode-setup)
 )
 
@@ -846,7 +854,7 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 #+BEGIN_SRC emacs-lisp
 ;;YASnippet
 (use-package yasnippet
-  :disabled
+  :disabled t
   :diminish
   :init (yas-global-mode t))
 
@@ -1097,34 +1105,54 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
 *MANUAL* This package might require some external libraries to be installed. Please refer to the linked page to see exactly what you need to do on your system.
 
 #+BEGIN_SRC emacs-lisp
-;; Might require extra libs to work, see https://github.com/politza/pdf-tools
+  ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
-(use-package pdf-tools
- :defer t
- :config
-   (pdf-tools-install)
-   (setq TeX-view-program-selection '((output-pdf "pdf-tools")))
-   (setq TeX-view-program-list '(("pdf-tools" "TeX-pdf-tools-sync-view")))
-   (setq TeX-source-correlate-start-server t))
+  (use-package pdf-tools
+    :magic ("%PDF" . pdf-view-mode)
+    :config
+    (pdf-tools-install :no-query))
 #+END_SRC
 
 *** LaTeX
 
-We use a package to write LaTeX documents
+It is also possible to configure Emacs to comfortably write and edit LaTeX documents
 
 #+BEGIN_SRC emacs-lisp
-(use-package auctex
-  :defer t)
-#+END_SRC
+(use-package tex
+  :ensure auctex
+  :config
+  (setq TeX-parse-self t                ; Parse documents to provide completion
+                                        ; for packages, etc.
+        TeX-auto-save t                 ; Automatically save style information
+        TeX-electric-sub-and-superscript t ; Automatically insert braces after
+                                        ; sub- and superscripts in math mode
+        ;; Don't insert magic quotes right away.
+        TeX-quote-after-quote t
 
-And we add a few other utilities, for example we want the PDF to be reloaded whenever we make some change in the source code.
+        TeX-master nil
 
-#+BEGIN_SRC emacs-lisp
-   ;; Update PDF buffers after successful LaTeX runs
-(add-hook 'TeX-after-compilation-finished-functions
-	    #'TeX-revert-document-buffer)
+        ;; Don't ask for confirmation when cleaning
+        TeX-clean-confirm nil
 
-;;(add-hook 'LaTeX-mode-hook 'ac-LaTeX-mode-setup) ; Remove: we keep Company for completion
+        ;; Provide forward and inverse search with SyncTeX
+        TeX-source-correlate-mode t
+        TeX-source-correlate-method 'synctex
+        TeX-source-correlate-start-server t
+  
+        ;; Produce a PDF by default
+        TeX-PDF-mode t)
+
+    (unless (assoc "PDF tools" TeX-view-program-list-builtin)
+      (push '("PDF tools" TeX-pdf-tools-sync-view) TeX-view-program-list))
+
+    (setq TeX-view-program-selection '((output-pdf "PDF tools")))
+    
+    ;; Update PDF buffers after successful LaTeX runs
+    (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
+
+    ;; Insert math symbols quickly
+    (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode))
+
 #+END_SRC
 * System
 *** Eshell

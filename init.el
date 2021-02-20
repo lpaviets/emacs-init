@@ -77,6 +77,9 @@
 ;; Type "y" instead of "yes" for confirmation
 (defalias 'yes-or-no-p 'y-or-n-p)
 
+;; Always highlight matching parenthesis
+(show-paren-mode t)
+
 (use-package undo-tree
   :config
   (setq undo-tree-visualizer-timestamps t)
@@ -393,6 +396,11 @@ _q_uit
 (use-package org
   :config
   (setq org-ellipsis " ▾")
+  
+  ;; Coding in blocks
+  (setq org-src-fontify-natively t
+        org-src-tab-acts-natively t)
+
   :hook (org-mode . my-org-mode-setup)
 )
 
@@ -576,7 +584,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 ;;YASnippet
 (use-package yasnippet
-  :disabled
+  :disabled t
   :diminish
   :init (yas-global-mode t))
 
@@ -729,21 +737,44 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
 (use-package pdf-tools
- :defer t
- :config
-   (pdf-tools-install)
-   (setq TeX-view-program-selection '((output-pdf "pdf-tools")))
-   (setq TeX-view-program-list '(("pdf-tools" "TeX-pdf-tools-sync-view")))
-   (setq TeX-source-correlate-start-server t))
+  :magic ("%PDF" . pdf-view-mode)
+  :config
+  (pdf-tools-install :no-query))
 
-(use-package auctex
-  :defer t)
+(use-package tex
+  :ensure auctex
+  :config
+  (setq TeX-parse-self t                ; Parse documents to provide completion
+                                        ; for packages, etc.
+        TeX-auto-save t                 ; Automatically save style information
+        TeX-electric-sub-and-superscript t ; Automatically insert braces after
+                                        ; sub- and superscripts in math mode
+        ;; Don't insert magic quotes right away.
+        TeX-quote-after-quote t
 
-;; Update PDF buffers after successful LaTeX runs
-(add-hook 'TeX-after-compilation-finished-functions
-	    #'TeX-revert-document-buffer)
+        TeX-master nil
 
-;;(add-hook 'LaTeX-mode-hook 'ac-LaTeX-mode-setup) ; Remove: we keep Company for completion
+        ;; Don't ask for confirmation when cleaning
+        TeX-clean-confirm nil
+
+        ;; Provide forward and inverse search with SyncTeX
+        TeX-source-correlate-mode t
+        TeX-source-correlate-method 'synctex
+        TeX-source-correlate-start-server t
+  
+        ;; Produce a PDF by default
+        TeX-PDF-mode t)
+
+    (unless (assoc "PDF tools" TeX-view-program-list-builtin)
+      (push '("PDF tools" TeX-pdf-tools-sync-view) TeX-view-program-list))
+
+    (setq TeX-view-program-selection '((output-pdf "PDF tools")))
+    
+    ;; Update PDF buffers after successful LaTeX runs
+    (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
+
+    ;; Insert math symbols quickly
+    (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode))
 
 ;; eshell
 
