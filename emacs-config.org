@@ -646,22 +646,19 @@ _q_uit
 A first improvement is the addition of multiple cursors. The "rectangle region" already gives a way to insert text simultaneously at several places, and to perform some easy operations on a rectangular area, but the [[https://github.com/magnars/multiple-cursors.el][multiple cursor]] package really increases the possibilities.
 
 #+BEGIN_SRC emacs-lisp
-(use-package multiple-cursors
-  :bind
-  (("C-c o <SPC>" . mc/vertical-align-with-space)
-   ("C-c o a"     . mc/vertical-align)
-   ("C-c o e"     . mc/mark-more-like-this-extended)
-   ("C-c o h"     . mc/mark-all-like-this-dwim)
-   ("C-c o l"     . mc/edit-lines)
-   ("C-c o n"     . mc/mark-next-like-this)
-   ("C-c o p"     . mc/mark-previous-like-this)
-   ("C-c o C-a"   . mc/edit-beginnings-of-lines)
-   ("C-c o C-e"   . mc/edit-ends-of-lines)
-   ("C-c o C-s"   . mc/mark-all-in-region)
-   ("C-c e"       . mc/edit-lines)
-   ("C-c o C-<"   . mc/mark-previous-like-this)
-   ("C-c o C->"   . mc/mark-next-like-this)
-   ("C-c o C-,"   . mc/mark-all-like-this)))
+  (use-package multiple-cursors
+    :bind
+    (("C-c o <SPC>" . mc/vertical-align-with-space)
+     ("C-c o a"     . mc/vertical-align)
+     ("C-c o m"     . mc/mark-more-like-this-extended)
+     ("C-c o h"     . mc/mark-all-like-this-dwim)
+     ("C-c o l"     . mc/edit-lines)
+     ("C-c o n"     . mc/mark-next-like-this)
+     ("C-c o p"     . mc/mark-previous-like-this)
+     ("C-c o C-,"   . mc/mark-all-like-this)
+     ("C-c o C-a"   . mc/edit-beginnings-of-lines)
+     ("C-c o C-e"   . mc/edit-ends-of-lines)
+     ("C-c o r"     . mc/mark-all-in-region)))
 #+END_SRC
 
 The webpage specifies that the commands provided by this package are best invoked when bound to key sequence rather than by =M-x <mc/command-name>=, although some testing on my part seems to show that it still works relatively well most of the time.
@@ -889,9 +886,7 @@ A useful tool to manipulate text and even source code is the [[https://github.co
        (company-selection-wrap-around t)
 
     :config
-      (setq company-tooltip-align-annotations t
-            company-tooltip-flip-when-above t
-            company-show-numbers t))
+      (setq company-show-numbers t))
 
 #+END_SRC
 
@@ -1217,6 +1212,8 @@ Some other interesting ones:
   - [ ] Dired improvement
 - [ ] Configure a Emacs-Lisp (and potentially Common Lisp ?) development environment.
   - [X ] Install and configure SLIME (Used SLY instead)
+  - [ ] Try to undestand why CLISP makes it crash
 - [ ] Point to funny/absurd packages (/e.g./ =speed-type=, =key-quiz= ...)
 - [ ] Regexp with [[https://github.com/joddie/pcre2el][pcre2el]] and may be other packages.
 - [ ] Configure a web browser
+- [ ] Setup Forge for Magit

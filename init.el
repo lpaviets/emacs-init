@@ -432,18 +432,15 @@ _q_uit
   :bind
   (("C-c o <SPC>" . mc/vertical-align-with-space)
    ("C-c o a"     . mc/vertical-align)
-   ("C-c o e"     . mc/mark-more-like-this-extended)
+   ("C-c o m"     . mc/mark-more-like-this-extended)
    ("C-c o h"     . mc/mark-all-like-this-dwim)
    ("C-c o l"     . mc/edit-lines)
    ("C-c o n"     . mc/mark-next-like-this)
    ("C-c o p"     . mc/mark-previous-like-this)
+   ("C-c o C-,"   . mc/mark-all-like-this)
    ("C-c o C-a"   . mc/edit-beginnings-of-lines)
    ("C-c o C-e"   . mc/edit-ends-of-lines)
-   ("C-c o C-s"   . mc/mark-all-in-region)
-   ("C-c e"       . mc/edit-lines)
-   ("C-c o C-<"   . mc/mark-previous-like-this)
-   ("C-c o C->"   . mc/mark-next-like-this)
-   ("C-c o C-,"   . mc/mark-all-like-this)))
+   ("C-c o r"     . mc/mark-all-in-region)))
 
 (global-set-key
  (kbd "C-c h m")
@@ -612,9 +609,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
      (company-selection-wrap-around t)
 
   :config
-    (setq company-tooltip-align-annotations t
-          company-tooltip-flip-when-above t
-          company-show-numbers t))
+    (setq company-show-numbers t))
 
 (use-package company-box
   :after company
