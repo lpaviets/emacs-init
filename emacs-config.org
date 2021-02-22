@@ -1,5 +1,6 @@
 #+title: Emacs Configuration
 #+author: Léo Paviet Salomon
+#+STARTUP: content
 #+PROPERTY: header-args:emacs-lisp :tangle ~/.emacs.d/init.el
 
 * Organization of this file
@@ -126,12 +127,33 @@ All the variable names are pretty explicit, so you should be able to customize t
   (menu-bar-mode -1)          ; Disable the menu bar
 
   ;; Global line/column numbering mode
-  ;; To fix: disable it in some modes (eshell ...)
   ;; Modes in which we might want to disable it:
-  ;; org, term, shell, eshell, doc-view, pdf-view, treemacs, undo-tree
 
   (column-number-mode t)
   (global-display-line-numbers-mode t)
+
+  (defun my-disable-line-numbers ()
+    (display-line-numbers-mode 0))
+
+  (dolist (mode '(org-mode-hook
+                 ; Term & Shells
+                  eshell-mode-hook
+                  shell-mode-hook
+                  term-mode-hook
+                  ; PDF viewers
+                  pdf-view-mode-hook
+                  doc-view-mode-hook
+                  ; Help modes
+                  helpful-mode-hook
+                  help-mode-hook
+                  apropos-mode-hook
+                  ; Extra modes
+                  undo-tree-visualizer-mode-hook
+                  treemacs-mode-hook
+                  dired-mode-hook
+                  ))
+
+  (add-hook mode #'my-disable-line-numbers))
 
   ;; Automatically reload a file if it has been modified
   (global-auto-revert-mode t)
@@ -146,6 +168,12 @@ All the variable names are pretty explicit, so you should be able to customize t
 
   ;; Always highlight matching parenthesis
   (show-paren-mode t)
+
+  ;; Don't disable any command
+  ;; BE CAREFUL
+  ;; If you are a new user, you might to comment out this line
+  (setq disabled-command-function nil)
+
 #+END_SRC
 
 Another very useful package is undo-tree, which allows you to visualize the previous "Undos" and navigate them.
@@ -530,120 +558,9 @@ _q_uit
   ;("b" ido-switch-buffer "buf")
   ("m" headlong-bookmark-jump)))
 #+END_SRC
-
-* Org Mode
-
-   [[https://orgmode.org/][Org Mode]] is one of the best reasons to use Emacs.
-
-   It acts as a markup language, can deal with planning, manage spreadsheets, do project planning, run code blocks to do literate programming ...
-
-*** Font faces
-
-     In order for Org Mode to feel like a document instead of code, we use a different font.
-
-#+BEGIN_SRC emacs-lisp
-(let ((my-temp-org-font "Cantarell"))
-    (if (member my-temp-org-font (font-family-list))
-        (setq my-org-mode-font my-temp-org-font)
-      (setq my-org-mode-font "Ubuntu Mono")))
-
-(defun my-org-font-setup ()
-  ;; Replace list hyphen with dot
-  (font-lock-add-keywords 'org-mode
-                          '(("^ *\\([-]\\) "
-                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
-
-  ;; Set faces for heading levels
-  ;; For non-headers: org-default
-
-  (dolist (face '((org-level-1 . 1.2)
-                  (org-level-2 . 1.1)
-                  (org-level-3 . 1.05)
-                  (org-level-4 . 1.0)
-                  (org-level-5 . 1.1)
-                  (org-level-6 . 1.1)
-                  (org-level-7 . 1.1)
-                  (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil :font my-org-mode-font :weight 'regular :height (cdr face)))
-
-  ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
-
-#+END_SRC
-*** Basic configuration
-
-     We change the general feel of Org Mode documents by using other indentation rules, by changing the headers appearance, and a few other minor changes.
-
-#+BEGIN_SRC emacs-lisp
-(defun my-org-mode-setup ()
-  (my-org-font-setup)
-  (org-indent-mode)
-  (variable-pitch-mode 1)
-  (visual-line-mode 1))
-  
-
-(use-package org
-  :config
-  (setq org-ellipsis " ▾")
-  
-  ;; Coding in blocks
-  (setq org-src-fontify-natively t
-        org-src-tab-acts-natively t)
-
-  :hook (org-mode . my-org-mode-setup)
-)
-
-(use-package org-bullets
-  :hook (org-mode . org-bullets-mode)
-  :custom
-  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
-
-#+END_SRC
-
-*** Org Babel
-
-     Org babel is what allows us to write code and execute it, all within the same document.
-
-#+BEGIN_SRC emacs-lisp
-(with-eval-after-load 'org
-(org-babel-do-load-languages
-  'org-babel-load-languages
-  '((emacs-lisp . t)
-    (python . t))))
-
-;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
-					; else code
-
-#+END_SRC
-
-*** Auto-tangle configuration files
-
-     In order to concatenate all the code blocks that are written in this document to an external file, we need to "tangle" it.
-
-     The following code makes it so that each time this file is saved, it generates the corresponding init.el file.
-
-#+BEGIN_SRC emacs-lisp
-;; Automatically tangles this emacs-config config file when we save it
-(defun my-org-babel-tangle-config ()
-  (when (string-equal (buffer-file-name)
-                      (expand-file-name "~/.emacs.d/emacs-config.org"))
-    ;; Dynamic scoping to the rescue
-    (let ((org-confirm-babel-evaluate nil))
-      (org-babel-tangle))))
-
-(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
-#+END_SRC
-
 * Editing
 
    Emacs is fundamentally a text editor. It provides a lot of functions to deal with text, and a way to create macros, to automate things, to repeat something multiple times ... easily. However, because there are /so many/ available functions, we might need some help to navigate around and do fancy things.
-
 ** Multiple cursors
 
 A first improvement is the addition of multiple cursors. The "rectangle region" already gives a way to insert text simultaneously at several places, and to perform some easy operations on a rectangular area, but the [[https://github.com/magnars/multiple-cursors.el][multiple cursor]] package really increases the possibilities.
@@ -735,6 +652,25 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 :bind ("C-=" . er/expand-region))
 #+END_SRC
 
+We also define functions that Emacs is surprinsingly lacking.
+
+The first one is used to copy without deleting the current line (internally, it uses =kill-ring-save=, and so it can be used in a read-only context (unlike a sequence like =C-a C-k C-y=). It is also much quicker than variations on the sequence  =C-e C-SPC C-a M-w=.
+
+#+BEGIN_SRC emacs-lisp
+   (defun copy-line-at-point (arg)
+     "Copy ARG lines in the kill ring, starting from the line at point and copying subsequent ones if ARG > 1"
+     (interactive "p")
+     (kill-ring-save (line-beginning-position)
+                     (line-beginning-position (+ 1 arg))))
+
+  ; Note that this keybinding overrides other functions
+  ; By default, M-k is kill-sentence, which I never use
+  ; I bound it this way to mirror the C-w/M-w symmetry 
+
+  ;; Might want to find a more clever way to use personal
+  ;; keybindings, such as defining a minor mode ...
+  (global-set-key (kbd "M-k") 'copy-line-at-point)
+#+END_SRC
 * Programming
 ** Projectile
 
@@ -1079,12 +1015,12 @@ Because it might be useful everywhere, we do not use it simply in =emacs-lisp-mo
 
 ***** Common Lisp
 
-We could, of course, use LSP to write Common Lisp code. However, Emacs already provides nice editing functionalities for programming in Lisp-like languages, and CL is no exception. On top of the built-in Emacs functions, we use another minor mode, specifically designed to write Common Lisp: [[https://common-lisp.net/project/slime/][SLIME]]. More precisely, we use a /fork/ of SLIME, known as [[https://github.com/joaotavora/sly][SLY]]
+We could, of course, use LSP to write Common Lisp code. However, Emacs already provides nice editing functionalities for programming in Lisp-like languages, and CL is no exception. On top of the built-in Emacs functions, we use another minor mode, specifically designed to write Common Lisp: [[https://common-lisp.net/project/slime/][SLIME]]. More precisely, we use a /fork/ of SLIME, known as [[https://github.com/joaotavora/sly][SLY]].
+
+*MANUAL* It is likely that =sbcl= is not already installed. Hence, in order to run the following code, you will need to install it. If you install it manuallyby compiling the source code, make sure that the =sbcl= command is available on the PATH, or modify  =:custom (inferior-lisp-program "<path/to/sbcl>")= accordingly in the following block.
 
 #+BEGIN_SRC emacs-lisp
-;; Needs a fix: crashes
-;; Error: "HTTPS protocol not supported yet"
-
+;; Make sure that sbcl is available on PATH
 (use-package sly
   :hook (lisp-mode . sly-editing-mode)
   :custom (inferior-lisp-program "sbcl") ; Clisp makes SLY crash
@@ -1093,6 +1029,115 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
             (lambda ()
                (unless (sly-connected-p)
                  (save-excursion (sly))))))
+#+END_SRC
+* Org Mode
+
+   [[https://orgmode.org/][Org Mode]] is one of the best reasons to use Emacs.
+
+   It acts as a markup language, can deal with planning, manage spreadsheets, do project planning, run code blocks to do literate programming ...
+
+*** Font faces
+
+     In order for Org Mode to feel like a document instead of code, we use a different font.
+
+#+BEGIN_SRC emacs-lisp
+(let ((my-temp-org-font "Cantarell"))
+    (if (member my-temp-org-font (font-family-list))
+        (setq my-org-mode-font my-temp-org-font)
+      (setq my-org-mode-font "Ubuntu Mono")))
+
+(defun my-org-font-setup ()
+  ;; Replace list hyphen with dot
+  (font-lock-add-keywords 'org-mode
+                          '(("^ *\\([-]\\) "
+                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+
+  ;; Set faces for heading levels
+  ;; For non-headers: org-default
+
+  (dolist (face '((org-level-1 . 1.2)
+                  (org-level-2 . 1.1)
+                  (org-level-3 . 1.05)
+                  (org-level-4 . 1.0)
+                  (org-level-5 . 1.1)
+                  (org-level-6 . 1.1)
+                  (org-level-7 . 1.1)
+                  (org-level-8 . 1.1)))
+    (set-face-attribute (car face) nil :font my-org-mode-font :weight 'regular :height (cdr face)))
+
+  ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
+
+#+END_SRC
+*** Basic configuration
+
+     We change the general feel of Org Mode documents by using other indentation rules, by changing the headers appearance, and a few other minor changes.
+
+#+BEGIN_SRC emacs-lisp
+(defun my-org-mode-setup ()
+  (my-org-font-setup)
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (visual-line-mode 1))
+  
+
+(use-package org
+  :config
+  (setq org-ellipsis " ▾")
+  
+  ;; Coding in blocks
+  (setq org-src-fontify-natively t
+        org-src-tab-acts-natively t)
+
+  :hook (org-mode . my-org-mode-setup)
+)
+
+(use-package org-bullets
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+#+END_SRC
+
+*** Org Babel
+
+     Org babel is what allows us to write code and execute it, all within the same document.
+
+#+BEGIN_SRC emacs-lisp
+  (with-eval-after-load 'org
+  (org-babel-do-load-languages
+    'org-babel-load-languages
+    '((emacs-lisp . t)
+      (python . t)
+      (shell . t))))
+
+  ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
+                                          ; else code
+
+#+END_SRC
+
+*** Auto-tangle configuration files
+
+     In order to concatenate all the code blocks that are written in this document to an external file, we need to "tangle" it.
+
+     The following code makes it so that each time this file is saved, it generates the corresponding init.el file.
+
+#+BEGIN_SRC emacs-lisp
+;; Automatically tangles this emacs-config config file when we save it
+(defun my-org-babel-tangle-config ()
+  (when (string-equal (buffer-file-name)
+                      (expand-file-name "~/.emacs.d/emacs-config.org"))
+    ;; Dynamic scoping to the rescue
+    (let ((org-confirm-babel-evaluate nil))
+      (org-babel-tangle))))
+
+(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
 #+END_SRC
 
 * LaTeX and PDF
@@ -1108,7 +1153,8 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
   (use-package pdf-tools
     :magic ("%PDF" . pdf-view-mode)
     :config
-    (pdf-tools-install :no-query))
+    (pdf-tools-install :no-query)
+    (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode))
 #+END_SRC
 
 *** LaTeX
@@ -1164,18 +1210,28 @@ A more in-depth guide can be found [[https://www.masteringemacs.org/article/comp
 We install a few packages which make eshell easier to use.
 
 #+BEGIN_SRC emacs-lisp
-;; eshell
+  ;; eshell
 
-(setq eshell-hist-ignoredups t
-      eshell-scroll-to-bottom-on-input t)
+  (setq eshell-hist-ignoredups t
+        eshell-scroll-to-bottom-on-input t)
 
-(use-package eshell-did-you-mean
-  :commands eshell
-  :config (eshell-did-you-mean-setup))
+  (use-package eshell-did-you-mean
+    :commands eshell
+    :config (eshell-did-you-mean-setup))
 
-(use-package eshell-syntax-highlighting
-  :hook (eshell-mode . eshell-syntax-highlighting-mode))
+  (use-package eshell-syntax-highlighting
+    :hook (eshell-mode . eshell-syntax-highlighting-mode))
 #+END_SRC
+
+*MANUAL* One thing that we might want to do is to be able to use aliases defined in =.bashrc= in =eshell=. There are [[https://www.emacswiki.org/emacs/EshellAlias][several solutions]] to this problem, and the one I use only allows us to use bash aliases in =eshell= and not the contrary, for example.
+
+We do this by adding the following line at the end of the =.bashrc= file:
+
+#+BEGIN_SRC sh
+alias | sed -E "s/^alias ([^=]+)='(.*)'$/alias \1 \2 \$*/g; s/'\\\''/'/g;" >~/.emacs.d/eshell/alias
+#+END_SRC
+
+It will simply go through the file, and each time it sees a line starting with =alias=, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where =eshell= reads its aliases.
 
 * Additional resources
 
@@ -1214,9 +1270,9 @@ Some other interesting ones:
   - [ ] Tramp explanation and configuration
   - [ ] Dired improvement
 - [ ] Configure a Emacs-Lisp (and potentially Common Lisp ?) development environment.
-  - [X ] Install and configure SLIME (Used SLY instead)
-  - [ ] Try to undestand why CLISP makes it crash
+  - [X] Install and configure SLIME (Used SLY instead)
 - [ ] Point to funny/absurd packages (/e.g./ =speed-type=, =key-quiz= ...)
 - [ ] Regexp with [[https://github.com/joddie/pcre2el][pcre2el]] and may be other packages.
 - [ ] Configure a web browser
+- [ ] Configure a mail client
 - [ ] Setup Forge for Magit
