@@ -374,82 +374,6 @@ _q_uit
   ;("b" ido-switch-buffer "buf")
   ("m" headlong-bookmark-jump)))
 
-(let ((my-temp-org-font "Cantarell"))
-    (if (member my-temp-org-font (font-family-list))
-        (setq my-org-mode-font my-temp-org-font)
-      (setq my-org-mode-font "Ubuntu Mono")))
-
-(defun my-org-font-setup ()
-  ;; Replace list hyphen with dot
-  (font-lock-add-keywords 'org-mode
-                          '(("^ *\\([-]\\) "
-                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
-
-  ;; Set faces for heading levels
-  ;; For non-headers: org-default
-
-  (dolist (face '((org-level-1 . 1.2)
-                  (org-level-2 . 1.1)
-                  (org-level-3 . 1.05)
-                  (org-level-4 . 1.0)
-                  (org-level-5 . 1.1)
-                  (org-level-6 . 1.1)
-                  (org-level-7 . 1.1)
-                  (org-level-8 . 1.1)))
-    (set-face-attribute (car face) nil :font my-org-mode-font :weight 'regular :height (cdr face)))
-
-  ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
-
-(defun my-org-mode-setup ()
-  (my-org-font-setup)
-  (org-indent-mode)
-  (variable-pitch-mode 1)
-  (visual-line-mode 1))
-  
-
-(use-package org
-  :config
-  (setq org-ellipsis " ▾")
-  
-  ;; Coding in blocks
-  (setq org-src-fontify-natively t
-        org-src-tab-acts-natively t)
-
-  :hook (org-mode . my-org-mode-setup)
-)
-
-(use-package org-bullets
-  :hook (org-mode . org-bullets-mode)
-  :custom
-  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
-
-(with-eval-after-load 'org
-(org-babel-do-load-languages
-  'org-babel-load-languages
-  '((emacs-lisp . t)
-    (python . t)
-    (shell . t))))
-
-;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
-                                        ; else code
-
-;; Automatically tangles this emacs-config config file when we save it
-(defun my-org-babel-tangle-config ()
-  (when (string-equal (buffer-file-name)
-                      (expand-file-name "~/.emacs.d/emacs-config.org"))
-    ;; Dynamic scoping to the rescue
-    (let ((org-confirm-babel-evaluate nil))
-      (org-babel-tangle))))
-
-(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
-
 (use-package multiple-cursors
   :bind
   (("C-c o <SPC>" . mc/vertical-align-with-space)
@@ -767,6 +691,82 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
             (lambda ()
                (unless (sly-connected-p)
                  (save-excursion (sly))))))
+
+(let ((my-temp-org-font "Cantarell"))
+    (if (member my-temp-org-font (font-family-list))
+        (setq my-org-mode-font my-temp-org-font)
+      (setq my-org-mode-font "Ubuntu Mono")))
+
+(defun my-org-font-setup ()
+  ;; Replace list hyphen with dot
+  (font-lock-add-keywords 'org-mode
+                          '(("^ *\\([-]\\) "
+                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+
+  ;; Set faces for heading levels
+  ;; For non-headers: org-default
+
+  (dolist (face '((org-level-1 . 1.2)
+                  (org-level-2 . 1.1)
+                  (org-level-3 . 1.05)
+                  (org-level-4 . 1.0)
+                  (org-level-5 . 1.1)
+                  (org-level-6 . 1.1)
+                  (org-level-7 . 1.1)
+                  (org-level-8 . 1.1)))
+    (set-face-attribute (car face) nil :font my-org-mode-font :weight 'regular :height (cdr face)))
+
+  ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
+
+(defun my-org-mode-setup ()
+  (my-org-font-setup)
+  (org-indent-mode)
+  (variable-pitch-mode 1)
+  (visual-line-mode 1))
+  
+
+(use-package org
+  :config
+  (setq org-ellipsis " ▾")
+  
+  ;; Coding in blocks
+  (setq org-src-fontify-natively t
+        org-src-tab-acts-natively t)
+
+  :hook (org-mode . my-org-mode-setup)
+)
+
+(use-package org-bullets
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+(with-eval-after-load 'org
+(org-babel-do-load-languages
+  'org-babel-load-languages
+  '((emacs-lisp . t)
+    (python . t)
+    (shell . t))))
+
+;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
+                                        ; else code
+
+;; Automatically tangles this emacs-config config file when we save it
+(defun my-org-babel-tangle-config ()
+  (when (string-equal (buffer-file-name)
+                      (expand-file-name "~/.emacs.d/emacs-config.org"))
+    ;; Dynamic scoping to the rescue
+    (let ((org-confirm-babel-evaluate nil))
+      (org-babel-tangle))))
+
+(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
 
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
