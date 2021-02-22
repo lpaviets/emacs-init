@@ -48,6 +48,9 @@
 ;; Disable the annoying startup message and Emacs logo
 (setq inhibit-startup-message t)
 
+;; Disable the message on top of the Scratch buffer
+(setq initial-scratch-message nil)
+
 ;; Maximize the frame
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
