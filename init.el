@@ -59,12 +59,33 @@
 (menu-bar-mode -1)          ; Disable the menu bar
 
 ;; Global line/column numbering mode
-;; To fix: disable it in some modes (eshell ...)
 ;; Modes in which we might want to disable it:
-;; org, term, shell, eshell, doc-view, pdf-view, treemacs, undo-tree
 
 (column-number-mode t)
 (global-display-line-numbers-mode t)
+
+(defun my-disable-line-numbers ()
+  (display-line-numbers-mode 0))
+
+(dolist (mode '(org-mode-hook
+               ; Term & Shells
+                eshell-mode-hook
+                shell-mode-hook
+                term-mode-hook
+                ; PDF viewers
+                pdf-view-mode-hook
+                doc-view-mode-hook
+                ; Help modes
+                helpful-mode-hook
+                help-mode-hook
+                apropos-mode-hook
+                ; Extra modes
+                undo-tree-visualizer-mode-hook
+                treemacs-mode-hook
+                dired-mode-hook
+                ))
+
+(add-hook mode #'my-disable-line-numbers))
 
 ;; Automatically reload a file if it has been modified
 (global-auto-revert-mode t)
@@ -413,10 +434,11 @@ _q_uit
 (org-babel-do-load-languages
   'org-babel-load-languages
   '((emacs-lisp . t)
-    (python . t))))
+    (python . t)
+    (shell . t))))
 
 ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
-					; else code
+                                        ; else code
 
 ;; Automatically tangles this emacs-config config file when we save it
 (defun my-org-babel-tangle-config ()

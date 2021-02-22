@@ -123,12 +123,33 @@ All the variable names are pretty explicit, so you should be able to customize t
   (menu-bar-mode -1)          ; Disable the menu bar
 
   ;; Global line/column numbering mode
-  ;; To fix: disable it in some modes (eshell ...)
   ;; Modes in which we might want to disable it:
-  ;; org, term, shell, eshell, doc-view, pdf-view, treemacs, undo-tree
 
   (column-number-mode t)
   (global-display-line-numbers-mode t)
+
+  (defun my-disable-line-numbers ()
+    (display-line-numbers-mode 0))
+
+  (dolist (mode '(org-mode-hook
+                 ; Term & Shells
+                  eshell-mode-hook
+                  shell-mode-hook
+                  term-mode-hook
+                  ; PDF viewers
+                  pdf-view-mode-hook
+                  doc-view-mode-hook
+                  ; Help modes
+                  helpful-mode-hook
+                  help-mode-hook
+                  apropos-mode-hook
+                  ; Extra modes
+                  undo-tree-visualizer-mode-hook
+                  treemacs-mode-hook
+                  dired-mode-hook
+                  ))
+
+  (add-hook mode #'my-disable-line-numbers))
 
   ;; Automatically reload a file if it has been modified
   (global-auto-revert-mode t)
@@ -608,14 +629,15 @@ _q_uit
      Org babel is what allows us to write code and execute it, all within the same document.
 
 #+BEGIN_SRC emacs-lisp
-(with-eval-after-load 'org
-(org-babel-do-load-languages
-  'org-babel-load-languages
-  '((emacs-lisp . t)
-    (python . t))))
+  (with-eval-after-load 'org
+  (org-babel-do-load-languages
+    'org-babel-load-languages
+    '((emacs-lisp . t)
+      (python . t)
+      (shell . t))))
 
-;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
-					; else code
+  ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
+                                          ; else code
 
 #+END_SRC
 
@@ -1166,18 +1188,28 @@ A more in-depth guide can be found [[https://www.masteringemacs.org/article/comp
 We install a few packages which make eshell easier to use.
 
 #+BEGIN_SRC emacs-lisp
-;; eshell
+  ;; eshell
 
-(setq eshell-hist-ignoredups t
-      eshell-scroll-to-bottom-on-input t)
+  (setq eshell-hist-ignoredups t
+        eshell-scroll-to-bottom-on-input t)
 
-(use-package eshell-did-you-mean
-  :commands eshell
-  :config (eshell-did-you-mean-setup))
+  (use-package eshell-did-you-mean
+    :commands eshell
+    :config (eshell-did-you-mean-setup))
 
-(use-package eshell-syntax-highlighting
-  :hook (eshell-mode . eshell-syntax-highlighting-mode))
+  (use-package eshell-syntax-highlighting
+    :hook (eshell-mode . eshell-syntax-highlighting-mode))
 #+END_SRC
+
+*MANUAL* One thing that we might want to do is to be able to use aliases defined in =.bashrc= in =eshell=. There are [[https://www.emacswiki.org/emacs/EshellAlias][several solutions]] to this problem, and the one I use only allows us to use bash aliases in =eshell= and not the contrary, for example.
+
+We do this by adding the following line at the end of the =.bashrc= file:
+
+#+BEGIN_SRC sh
+alias | sed -E "s/^alias ([^=]+)='(.*)'$/alias \1 \2 \$*/g; s/'\\\''/'/g;" >~/.emacs.d/eshell/alias
+#+END_SRC
+
+It will simply go through the file, and each time it sees a line starting with =alias=, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where =eshell= reads its aliases.
 
 * Additional resources
 
@@ -1216,7 +1248,8 @@ Some other interesting ones:
   - [ ] Tramp explanation and configuration
   - [ ] Dired improvement
 - [ ] Configure a Emacs-Lisp (and potentially Common Lisp ?) development environment.
-  - [X ] Install and configure SLIME (Used SLY instead)
+  - [X] Install and configure SLIME (Used SLY instead)
 - [ ] Point to funny/absurd packages (/e.g./ =speed-type=, =key-quiz= ...)
 - [ ] Regexp with [[https://github.com/joddie/pcre2el][pcre2el]] and may be other packages.
 - [ ] Configure a web browser
+- [ ] Configure a mail client
