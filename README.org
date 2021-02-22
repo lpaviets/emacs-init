@@ -2,7 +2,7 @@
 
 This repository contains an example of an Emacs configuration file, as well an Org Mode document that generates it.
 
-Its purpose is both to share an example of a working configuration for Emacs from which you can pick up ideas, but that you can also choose to use without any modifications in order to get a modern IDE - and much more, and it is also to provide an example of how you can use the Org Mode of Emacs to manage your configuration files in a documented way.
+Its purpose is both to share an example of a working configuration for Emacs from which you can pick up ideas, but that you can also choose to use without any modifications in order to get a modern IDE (and much more). Another interest is to provide an example of how you can use Emacs' Org Mode to write, organize and document manage your configuration files.
 
 * Usage Instructions
 
@@ -13,12 +13,14 @@ At several points within the configuration file, /something/ is needed to comple
 
 In any case, such commands are explicitly marked by a *MANUAL* keyword within the =emacs-config.org= document. Please read them carefully before proceeding with the rest of the installation and loading the =init.el= file by starting emacs.
 
+Please note that all of this configuration has only been tested on a GNU/Linux distribution. Although most packages should work the same on other systems, some of them (/e.g./ =lsp=) might be harder to configure in a different environment than what was intended by this configuration file. If you find any bug on other OS/on some Linux distributions, feel free to make a pull request if you succesfully solve them, or simply let me know so that I can investigate.
+
 ** Linux
 
 1. Clone this repository to a folder on your system: =git clone https://github.com/lpaviets/emacs-init=
 2. Back up any previous Emacs configuration, either located in a standalone file named =.emacs= at the root of your file system, or contained in a =.emacs.d= directory.
 3. Rename the clone of this repository as =~/.emacs.d=. This will allow Emacs to automatically load its content at startup.
-4. An alternate solution is to use the following command to start emacs with another configuration file: =emacs -q -l your-init-file.el=. The =-q= option tells Emacs to ignore any configuration file it might automatically find, and the =-l= option tells it to use this file instead.
+4. An alternate solution is to use the following command to start emacs with another configuration file: =emacs -l your-init-file.el=. The =-q= option tells Emacs to ignore any configuration file it might automatically find, which might be good to do some debugging if something does not work the way it should, and the =-l <path/to/file>= option tells it to use this file instead.
 5. Start Emacs. If you encounter some problems, please make sure that you have correctly run all the necessary commands indicated by the *MANUAL* tag in the =emacs-config.org= file. If the problems nevertheless continue, you might want to start Emacs using the =emacs --debug-init= option to get more information on what the source of the problem might be.
 
 
@@ -33,10 +35,55 @@ In case you are starting to learn Emacs, here is a short and non-exhaustive list
 ** While using Emacs
 - At any point within Emacs, the =C-h t= command (you press the =Ctrl= and =h= keys at the same time, release them both, and then press =t=) will start a tutorial.
 - The command =C-h r= will open a manual, in which you can find a lot of information by navigating around.
-- If you are lost, the =C-h C-h= command (press the =Ctrl= and =h= keys at the same time, release them both, and press them both at the same time once again) will open a buffer giving you a brief overview of all the Help commands available. A practical one is =C-h a=, that you can also run with the command =M-x apropos RET your-keywords RET= (press the Meta key -usually =Alt=- and x at the same time, then type =apropos= in the minibuffer area and then press the =Enter=/=Return= key, then type-in what you are looking for, and press =Enter= again), which will return a list of all the commands containing the keywords you asked for.
+- Using both the tutorial and the manual, one of the first thing you want to look at is how Emacs denotes (and uses) keys sequences to do things. This way, you will be able to understand the syntax of the various and often quite complex key sequences that you need to perform in order to get a certain result.
+- If you are lost, the =C-h C-h= command (press the =Ctrl= and =h= keys at the same time, release them both, and press them both at the same time once again) will open a buffer giving you a brief overview of all the Help commands available. A practical one is =C-h a=, that you can also run with the command =M-x apropos RET your-keywords RET= (press the Meta key -usually =Alt=- and x at the same time, then type =apropos= in the minibuffer area and then press the =Enter= key (also called =Return=) then type-in what you are looking for, and press =Enter= again), which will return a list of all the commands containing the keywords you asked for.
 
 ** External resources
 
 - The [[https://github.com/emacs-tw/awesome-emacs][awesome-emacs]] repository gives a detailed list of useful packages, sorted by (subjective) popularity/usefulness and themes. It also contains a brief list of places to learn Emacs at the end, so you can probably find many useful things there.
 - [[https://tuhdo.github.io/emacs-tutor.html][The Emacs Mini Manual]] gives a very detailed tutorial on how to use Emacs, from commands to window management as well as several other features such as =dired= and =ido=.
 - You can also find here [[https://www.gnu.org/software/emacs/tour/][here]] a Guided Tour of Emacs, giving an overview of the basic, built-in capabilities of the editor, from text-editing to writing mails, debugging code and playing Tetris.
+
+* Additional resources
+
+You might want to install some interesting new packages that are not already loaded in this configuration file.
+
+Because there exist many Emacs packages, it might be frightening or even overwhelming to search for other packages that you could benefit from.
+
+In order to solve this issue, [[https://github.com/emacs-tw/awesome-emacs][awesome-emacs]] is a place where you can start this research.
+
+It references a lot of useful packages, some of which are already installed with this configuration file.
+
+If you are a beginner, it also includes a list of tutorials or extra-sources for you to learn about Emacs and Emacs Lisp in general.
+
+** Other configuration files
+
+You can also take a look at other people [[https://github.com/grettke/every-emacs-initialization-file][configuration files]] to get an idea on how to write your own elisp code, what packages do other people use, and so much more.
+
+Be careful though, some of these files are several thousands lines long !
+
+Some other interesting ones:
+
+- [[https://ladicle.com/post/config/][Ladicle's]] configuration file
+- [[https://github.com/caisah/emacs.dz][Another list of nice config files]] on github
+  
+* TODO
+- [X] Hydra ! Install it, define some useful hydras (buffers, org-mode, dired ...), bind it to lsp-mode/ivy/projectile ...
+  - [X] Install
+  - [X] Modify hydras from the wiki
+  - [X] Define some new hydras
+- [ ] Do things for other popular languages (Java and C# come to mind).
+  - [ ] Setup C# with LSP-mode
+  - [ ] Setup Java with LSP-mode
+  - [ ] Give a try to [[https://github.com/joaotavora/eglot][eglot]]
+- [-] System stuff: =Tramp=, configure =eshell= or find an even better one, configure =dired= or upgrade it, etc
+  - [X] =eshell= Basic improvements
+  - [ ] Tramp explanation and configuration
+  - [ ] Dired improvement
+- [ ] Configure a Emacs-Lisp (and potentially Common Lisp ?) development environment.
+  - [X] Install and configure SLIME (Used SLY instead)
+- [ ] Point to funny/absurd packages (/e.g./ =speed-type=, =key-quiz= ...)
+- [ ] Regexp with [[https://github.com/joddie/pcre2el][pcre2el]] and may be other packages.
+- [ ] Configure a web browser
+- [ ] Configure a mail client
+- [ ] Setup Forge for Magit
