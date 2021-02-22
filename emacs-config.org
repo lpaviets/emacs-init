@@ -757,6 +757,25 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 :bind ("C-=" . er/expand-region))
 #+END_SRC
 
+We also define functions that Emacs is surprinsingly lacking.
+
+The first one is used to copy without deleting the current line (internally, it uses =kill-ring-save=, and so it can be used in a read-only context (unlike a sequence like =C-a C-k C-y=). It is also much quicker than variations on the sequence  =C-e C-SPC C-a M-w=.
+
+#+BEGIN_SRC emacs-lisp
+   (defun copy-line-at-point (arg)
+     "Copy ARG lines in the kill ring, starting from the line at point and copying subsequent ones if ARG > 1"
+     (interactive "p")
+     (kill-ring-save (line-beginning-position)
+                     (line-beginning-position (+ 1 arg))))
+
+  ; Note that this keybinding overrides other functions
+  ; By default, M-k is kill-sentence, which I never use
+  ; I bound it this way to mirror the C-w/M-w symmetry 
+
+  ;; Might want to find a more clever way to use personal
+  ;; keybindings, such as defining a minor mode ...
+  (global-set-key (kbd "M-k") 'copy-line-at-point)
+#+END_SRC
 * Programming
 ** Projectile
 
