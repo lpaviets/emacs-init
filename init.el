@@ -744,9 +744,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package elmacro
 :init (elmacro-mode t))
 
-;; Needs a fix: crashes
-;; Error: "HTTPS protocol not supported yet"
-
+;; Make sure that sbcl is available on PATH
 (use-package sly
   :hook (lisp-mode . sly-editing-mode)
   :custom (inferior-lisp-program "sbcl") ; Clisp makes SLY crash
@@ -761,7 +759,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package pdf-tools
   :magic ("%PDF" . pdf-view-mode)
   :config
-  (pdf-tools-install :no-query))
+  (pdf-tools-install :no-query)
+  (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode))
 
 (use-package tex
   :ensure auctex
