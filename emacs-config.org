@@ -165,6 +165,12 @@ All the variable names are pretty explicit, so you should be able to customize t
 
   ;; Always highlight matching parenthesis
   (show-paren-mode t)
+
+  ;; Don't disable any command
+  ;; BE CAREFUL
+  ;; If you are a new user, you might to comment out this line
+  (setq disabled-command-function nil)
+
 #+END_SRC
 
 Another very useful package is undo-tree, which allows you to visualize the previous "Undos" and navigate them.

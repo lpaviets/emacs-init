@@ -101,6 +101,11 @@
 ;; Always highlight matching parenthesis
 (show-paren-mode t)
 
+;; Don't disable any command
+;; BE CAREFUL
+;; If you are a new user, you might to comment out this line
+(setq disabled-command-function nil)
+
 (use-package undo-tree
   :config
   (setq undo-tree-visualizer-timestamps t)
