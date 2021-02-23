@@ -49,7 +49,7 @@ Another thing that might be of interest is to know how long it took for Emacs to
 (add-hook 'emacs-startup-hook #'my-display-garbage-collection)
 
 ; After startup, we restore gc-cons-threshold to a more reasonable value
-(setq gc-cons-threshold 2000000) ; 2e6 = 2 MB
+(setq gc-cons-threshold 10000000) ; 1e7 = 10 MB
 #+END_SRC
 
 ** Package management
@@ -1080,28 +1080,26 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
      We change the general feel of Org Mode documents by using other indentation rules, by changing the headers appearance, and a few other minor changes.
 
 #+BEGIN_SRC emacs-lisp
-(defun my-org-mode-setup ()
-  (my-org-font-setup)
-  (org-indent-mode)
-  (variable-pitch-mode 1)
-  (visual-line-mode 1))
-  
+  (defun my-org-mode-setup ()
+    (my-org-font-setup)
+    (org-indent-mode)
+    (variable-pitch-mode 1)
+    (visual-line-mode 1))
 
-(use-package org
-  :config
-  (setq org-ellipsis " ▾")
-  
-  ;; Coding in blocks
-  (setq org-src-fontify-natively t
-        org-src-tab-acts-natively t)
+  (use-package org
+    :config
+    (setq org-ellipsis " ▾")
 
-  :hook (org-mode . my-org-mode-setup)
-)
+    ;; Coding in blocks
+    (setq org-src-fontify-natively t
+          org-src-tab-acts-natively t)
 
-(use-package org-bullets
-  :hook (org-mode . org-bullets-mode)
-  :custom
-  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+    :hook (org-mode . my-org-mode-setup))
+
+  (use-package org-bullets
+    :hook (org-mode . org-bullets-mode)
+    :custom
+    (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 #+END_SRC
 

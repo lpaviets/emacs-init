@@ -14,7 +14,7 @@
 (add-hook 'emacs-startup-hook #'my-display-garbage-collection)
 
 ; After startup, we restore gc-cons-threshold to a more reasonable value
-(setq gc-cons-threshold 2000000) ; 2e6 = 2 MB
+(setq gc-cons-threshold 10000000) ; 1e7 = 10 MB
 
 ;; Initialize package sources
 (require 'package)
@@ -733,18 +733,16 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (org-indent-mode)
   (variable-pitch-mode 1)
   (visual-line-mode 1))
-  
 
 (use-package org
   :config
   (setq org-ellipsis " ▾")
-  
+
   ;; Coding in blocks
   (setq org-src-fontify-natively t
         org-src-tab-acts-natively t)
 
-  :hook (org-mode . my-org-mode-setup)
-)
+  :hook (org-mode . my-org-mode-setup))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
