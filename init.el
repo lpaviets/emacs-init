@@ -549,9 +549,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 ;;YASnippet
 (use-package yasnippet
-  :disabled t
   :diminish
   :init (yas-global-mode t))
+
+(use-package yasnippet-snippets
+  :after yasnippet)
 
 ;; Company. Auto-completion package
 (use-package company
