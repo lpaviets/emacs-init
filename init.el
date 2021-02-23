@@ -553,6 +553,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :init (yas-global-mode t))
 
 (use-package yasnippet-snippets
+  :disabled t
   :after yasnippet)
 
 ;; Company. Auto-completion package
@@ -591,6 +592,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :hook (company-mode . company-quickhelp-mode)
   :diminish
   :custom (company-quickhelp-delay 0.2))
+
+;; (add-to-list 'company-backends 'company-yasnippet)
 
 (use-package company-math
   :after company

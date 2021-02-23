@@ -798,6 +798,7 @@ It is even possible to define your own snippets. The following package contains 
 
 #+BEGIN_SRC emacs-lisp
   (use-package yasnippet-snippets
+    :disabled t
     :after yasnippet)
 #+END_SRC
 
@@ -852,6 +853,12 @@ To have a cleaner interface and also a bit of documentation added to the suggest
 
 ***** Company backends
 
+A first backend that we want to consider is the one using snippets provided by =yasnippet=
+
+#+BEGIN_SRC emacs-lisp
+;; (add-to-list 'company-backends 'company-yasnippet)
+#+END_SRC
+
 We install another backend specifically for LaTeX
 
 #+BEGIN_SRC emacs-lisp
@@ -861,6 +868,9 @@ We install another backend specifically for LaTeX
   (add-to-list 'company-backends 'company-math-symbols-unicode)
   (add-to-list 'company-backends 'company-math-symbols-latex))
 #+END_SRC
+
+***** TODO Yasnippet, Company and LSP
+Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP are no longer shown.
 
 ** Language Server Protocol
 
