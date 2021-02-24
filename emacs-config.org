@@ -161,7 +161,6 @@ All the variable names are pretty explicit, so you should be able to customize t
   ;; Tab behaviour and whitespaces
   (setq-default indent-tabs-mode nil)
   (setq tab-width 4)
-  (setq c-basic-offset 4)
 
   ;; Type "y" instead of "yes" for confirmation
   (defalias 'yes-or-no-p 'y-or-n-p)
@@ -1175,6 +1174,9 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
 It is also possible to configure Emacs to comfortably write and edit LaTeX documents
 
 #+BEGIN_SRC emacs-lisp
+  (use-package tex-site                   ; AUCTeX initialization
+    :ensure auctex)
+
   (use-package tex
     :ensure auctex
     :config
@@ -1185,7 +1187,12 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
                                           ; sub- and superscripts in math mode
           ;; Don't insert magic quotes right away.
           TeX-quote-after-quote t
+          ;; But do insert closing $ when inserting the first one
+          TeX-electric-math '("$" . "$")
+          ;; Automatically insert closing brackets
+          LaTeX-electric-left-right-brace t
 
+          ;; Ask for the master file & don't assume anything
           TeX-master nil
 
           ;; Don't ask for confirmation when cleaning
@@ -1195,7 +1202,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
           TeX-source-correlate-mode t
           TeX-source-correlate-method 'synctex
           TeX-source-correlate-start-server t
-  
+
           ;; Produce a PDF by default
           TeX-PDF-mode t)
 
@@ -1203,7 +1210,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
         (push '("PDF tools" TeX-pdf-tools-sync-view) TeX-view-program-list))
 
       (setq TeX-view-program-selection '((output-pdf "PDF tools")))
-    
+
       ;; Update PDF buffers after successful LaTeX runs
       (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
 

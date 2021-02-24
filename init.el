@@ -97,7 +97,6 @@
 ;; Tab behaviour and whitespaces
 (setq-default indent-tabs-mode nil)
 (setq tab-width 4)
-(setq c-basic-offset 4)
 
 ;; Type "y" instead of "yes" for confirmation
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -783,6 +782,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (pdf-tools-install :no-query)
   (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode))
 
+(use-package tex-site                   ; AUCTeX initialization
+  :ensure auctex)
+
 (use-package tex
   :ensure auctex
   :config
@@ -793,7 +795,12 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
                                         ; sub- and superscripts in math mode
         ;; Don't insert magic quotes right away.
         TeX-quote-after-quote t
+        ;; But do insert closing $ when inserting the first one
+        TeX-electric-math '("$" . "$")
+        ;; Automatically insert closing brackets
+        LaTeX-electric-left-right-brace t
 
+        ;; Ask for the master file & don't assume anything
         TeX-master nil
 
         ;; Don't ask for confirmation when cleaning
