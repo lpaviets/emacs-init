@@ -1175,42 +1175,79 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
 It is also possible to configure Emacs to comfortably write and edit LaTeX documents
 
 #+BEGIN_SRC emacs-lisp
-(use-package tex
-  :ensure auctex
-  :config
-  (setq TeX-parse-self t                ; Parse documents to provide completion
-                                        ; for packages, etc.
-        TeX-auto-save t                 ; Automatically save style information
-        TeX-electric-sub-and-superscript t ; Automatically insert braces after
-                                        ; sub- and superscripts in math mode
-        ;; Don't insert magic quotes right away.
-        TeX-quote-after-quote t
+  (use-package tex
+    :ensure auctex
+    :config
+    (setq TeX-parse-self t                ; Parse documents to provide completion
+                                          ; for packages, etc.
+          TeX-auto-save t                 ; Automatically save style information
+          TeX-electric-sub-and-superscript t ; Automatically insert braces after
+                                          ; sub- and superscripts in math mode
+          ;; Don't insert magic quotes right away.
+          TeX-quote-after-quote t
 
-        TeX-master nil
+          TeX-master nil
 
-        ;; Don't ask for confirmation when cleaning
-        TeX-clean-confirm nil
+          ;; Don't ask for confirmation when cleaning
+          TeX-clean-confirm nil
 
-        ;; Provide forward and inverse search with SyncTeX
-        TeX-source-correlate-mode t
-        TeX-source-correlate-method 'synctex
-        TeX-source-correlate-start-server t
+          ;; Provide forward and inverse search with SyncTeX
+          TeX-source-correlate-mode t
+          TeX-source-correlate-method 'synctex
+          TeX-source-correlate-start-server t
   
-        ;; Produce a PDF by default
-        TeX-PDF-mode t)
+          ;; Produce a PDF by default
+          TeX-PDF-mode t)
 
-    (unless (assoc "PDF tools" TeX-view-program-list-builtin)
-      (push '("PDF tools" TeX-pdf-tools-sync-view) TeX-view-program-list))
+      (unless (assoc "PDF tools" TeX-view-program-list-builtin)
+        (push '("PDF tools" TeX-pdf-tools-sync-view) TeX-view-program-list))
 
-    (setq TeX-view-program-selection '((output-pdf "PDF tools")))
+      (setq TeX-view-program-selection '((output-pdf "PDF tools")))
     
-    ;; Update PDF buffers after successful LaTeX runs
-    (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
+      ;; Update PDF buffers after successful LaTeX runs
+      (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
 
-    ;; Insert math symbols quickly
-    (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode))
+      ;; Insert math symbols quickly
+      (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode))
 
 #+END_SRC
+
+We also configure BibTeX
+
+#+BEGIN_SRC emacs-lisp
+  (use-package bibtex                     ; BibTeX editing
+    :defer t
+    :config
+    ;; Use a modern BibTeX dialect
+    ; (bibtex-set-dialect 'biblatex) ; Useful esp. in social sci.
+)
+#+END_SRC
+
+Another useful package to deal with references, bibliography, citations and so on, is [[https://www.gnu.org/software/emacs/manual/html_mono/reftex.html][RefTeX]].
+
+#+BEGIN_SRC emacs-lisp
+  (use-package reftex                     ; TeX/BibTeX cross-reference management
+    :diminish
+    :hook (LaTeX-mode . reftex-mode)
+    :config
+    ;; Plug into AUCTeX
+    (setq reftex-plug-into-AUCTeX t
+          ;; Provide basic RefTeX support for biblatex
+          ;; (unless (assq 'biblatex reftex-cite-format-builtin)
+          ;;   (add-to-list 'reftex-cite-format-builtin
+          ;;                '(biblatex "The biblatex package"
+          ;;                           ((?\C-m . "\\cite[]{%l}")
+          ;;                            (?t . "\\textcite{%l}")
+          ;;                            (?a . "\\autocite[]{%l}")
+          ;;                            (?p . "\\parencite{%l}")
+          ;;                            (?f . "\\footcite[][]{%l}")
+          ;;                            (?F . "\\fullcite[]{%l}")
+          ;;                            (?x . "[]{%l}")
+          ;;                            (?X . "{%l}"))))
+          ;;   (setq reftex-cite-format 'biblatex))
+          ))
+#+END_SRC
+
 * System
 *** Eshell
 

@@ -802,7 +802,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
         TeX-source-correlate-mode t
         TeX-source-correlate-method 'synctex
         TeX-source-correlate-start-server t
-  
+
         ;; Produce a PDF by default
         TeX-PDF-mode t)
 
@@ -810,12 +810,40 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
       (push '("PDF tools" TeX-pdf-tools-sync-view) TeX-view-program-list))
 
     (setq TeX-view-program-selection '((output-pdf "PDF tools")))
-    
+
     ;; Update PDF buffers after successful LaTeX runs
     (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
 
     ;; Insert math symbols quickly
     (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode))
+
+(use-package bibtex                     ; BibTeX editing
+    :defer t
+    :config
+    ;; Use a modern BibTeX dialect
+    ; (bibtex-set-dialect 'biblatex) ; Useful esp. in social sci.
+)
+
+(use-package reftex                     ; TeX/BibTeX cross-reference management
+  :diminish
+  :hook (LaTeX-mode . reftex-mode)
+  :config
+  ;; Plug into AUCTeX
+  (setq reftex-plug-into-AUCTeX t
+        ;; Provide basic RefTeX support for biblatex
+        ;; (unless (assq 'biblatex reftex-cite-format-builtin)
+        ;;   (add-to-list 'reftex-cite-format-builtin
+        ;;                '(biblatex "The biblatex package"
+        ;;                           ((?\C-m . "\\cite[]{%l}")
+        ;;                            (?t . "\\textcite{%l}")
+        ;;                            (?a . "\\autocite[]{%l}")
+        ;;                            (?p . "\\parencite{%l}")
+        ;;                            (?f . "\\footcite[][]{%l}")
+        ;;                            (?F . "\\fullcite[]{%l}")
+        ;;                            (?x . "[]{%l}")
+        ;;                            (?X . "{%l}"))))
+        ;;   (setq reftex-cite-format 'biblatex))
+        ))
 
 ;; eshell
 
