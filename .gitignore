@@ -1,12 +1,58 @@
-/elpa/
-/semanticdb/
-/transient/
-*.el~
-/#autogen-init.el#
-/eshell/
-/auto-save-list/
-/tramp
+# General
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
 %backup%
-/projectile-bookmarks.eld
-/.lsp-session-v1
+
+# cask packages
+.cask/
+dist/
+
+# server auth directory
+/server/
+
+# Packages
+/elpa/
+
+#Semantic files
+/semanticdb/
+
+# Magit
+/transient/
+
+# Eshell aliases, history & so on
+/eshell/
+
+# AucTex
 /auto/
+
+#RefTeX
+*.rel
+
+# Ignore tramp backup & history
+/tramp
+
+# Projectile
+/projectile-bookmarks.eld
+.projectile
+
+# LSP
+/.lsp-session-v1
+
+# Flycheck
+flycheck_*.el
+
+# Auto-complete
+/ac-comphist.dat
+
+# Game logs
+/games/
+
+# Speed-type
+/speed-type/
+
+# EWW
+/url/
