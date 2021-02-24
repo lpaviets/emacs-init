@@ -479,11 +479,12 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package magit
   ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
-
   ;; uncomment previous line to have magit open itself within the same buffer
   ;; instead of in another buffer
-  :bind ("C-x g" . magit-status)
-  )
+  :bind ("C-x g" . magit-status))
+
+(use-package git-timemachine
+  :defer t)
 
 ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
   (use-package rainbow-delimiters

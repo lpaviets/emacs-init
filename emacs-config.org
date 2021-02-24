@@ -696,23 +696,31 @@ The first one is used to copy without deleting the current line (internally, it 
 
 #+END_SRC
 
-** Magit
+** Git
+*** Magit
+[[https://magit.vc/][Magit]] is a serious contender for the first place in the long list of "Reasons you should use Emacs", along with Org Mode.
 
-    [[https://magit.vc/][Magit]] is a serious contender for the first place in the long list of "Reasons you should use Emacs", along with Org Mode.
-
-    It is a Text User Interface to Git, which integrates most of Git commands, even the most advanced ones, while making it easy to use even for beginners.
+It is a Text User Interface to Git, which integrates most of Git commands, even the most advanced ones, while making it easy to use even for beginners.
 
 #+BEGIN_SRC emacs-lisp
-(use-package magit
-  ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
-
-  ;; uncomment previous line to have magit open itself within the same buffer
-  ;; instead of in another buffer
-  :bind ("C-x g" . magit-status)
-  )
+  (use-package magit
+    ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
+    ;; uncomment previous line to have magit open itself within the same buffer
+    ;; instead of in another buffer
+    :bind ("C-x g" . magit-status))
 
 #+END_SRC
 
+*** Git-timemachine
+
+Another useful package is [[https://github.com/emacsmirror/git-timemachine][git-timemachine]], which allows to easily navigate the history of a git-controlled file with a few key presses.
+
+Although Magit is more or less able to do the same thing, the interface there is cleaner and you are less likely to get lost than in the fully-featured super-package that Magit is.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package git-timemachine
+    :defer t)
+#+END_SRC
 ** Parenthesis
 
     To make it easy to deal with parenthesis in various programming languages, we also use the following packages, which colourize matching parenthesis accordingly and insert brackets pair whenever we insert the opening one - althoug they can do much more.
