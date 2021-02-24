@@ -30,9 +30,29 @@ Please note that all of this configuration has only been tested on a GNU/Linux d
 
 * Start using Emacs
 
-In case you are starting to learn Emacs, here is a short and non-exhaustive list of places where you can go to give you a broad idea of what this editor can do, and how to do it
+If you are new to the Emacs world, it is normal to feel overwhelmed by what the editor can do and how to configure it properly to be able to do all those fancy things. However, it is possible to learn everything step-by-step, and there is a lot of documentation and tutorials to help you.
+
+I will give a completely subjective view how what I consider to be the most important sections of this configuration file for you, in order to give a pleasant but complete experience.
+
+** Important sections of this configuration
+
+Here are, in order, the sections and subsections that I think will be the most helpful to understand and copy into your own configuration file if you are a complete beginner.
+
+- *Initialization/Package Management*. It properly setups the access to various package repositories, and will install the =use-package= package, which makes everything not only look nicer but also easier to write.
+- *UI Configuration/Comfort changes*. Here, you will need to take a proper look at which options you want to enable or not. Most of them are self-explanatory or commented, and you should be able to handle it. In particular, it might a good idea to keep the menu-bar and the tool-bar at the beginning.
+- *UI Configuration/General appearance/Theme*. It gives a simple example on how to setup a theme. Of course, you do not have to use the same theme, but using a theme that you like will make everything more comfortable. [[https://emacsthemes.com/][Emacs Themes]], [[https://github.com/hlissner/emacs-doom-themes][Doom Themes]] or [[https://peach-melpa.org/][Peach Melpa]] are amongst the most popular places to find a theme, but feel free to explore the Internet to find something that suits you.
+- *UI Configuration/Easier search and minibuffer use*. This section installs and configures various packages, all of them malking your like easier by giving access to a lot of information on the screen rapidly, whether it is documentation, command names, key sequences ...
+- *Programming/Company*. This section configures =company=, one of the two main package (along with =auto-complete=) used for auto-completion. Whether you are using Emacs to write source code, notes, documentation or even books, having a good auto-completion system and a nice interface for it will really help you.
+- *LaTeX and PDF* Only if you are using LaTeX. If this is the case, then you definitely want to use those settings, as they will make your life much easier for visualizing the PDF files that you produce, to write LaTeX source code, to compile files that contain bibliography ...
+
+Most of the other things can be ignored for the moment.
+
+Of course, nothing forces you to stay away from the other features that this configuration file introduces, such as hydras or LSP for programming; however, most of them are either very opinionated - meaning that there are a lot of other good options to do same thing, and that they are very personal and subjective choices - or completely unnecessary most of the time (/e.g./ the =multiple-cursors= package, or a configuration of =SLY= to write Common Lisp). Furthermore, they often require to write a rather substantial amount of Emacs Lisp, and are sometimes not easy to understand, to debug or to configure according to your taste.
 
 ** While using Emacs
+
+While inside the editor, you can already have access to a lot of helpful tools:
+
 - At any point within Emacs, the =C-h t= command (you press the =Ctrl= and =h= keys at the same time, release them both, and then press =t=) will start a tutorial.
 - The command =C-h r= will open a manual, in which you can find a lot of information by navigating around.
 - Using both the tutorial and the manual, one of the first thing you want to look at is how Emacs denotes (and uses) keys sequences to do things. This way, you will be able to understand the syntax of the various and often quite complex key sequences that you need to perform in order to get a certain result.

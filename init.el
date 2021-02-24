@@ -36,7 +36,8 @@
 (add-to-list 'load-path "~/.emacs.d/extra-packages")
 
 (require 'use-package)
-;; Comment this line if you don't want to automatically install packages
+;; Comment this line if you don't want to automatically install
+;; all the packages that you are missing
 (setq use-package-always-ensure t)
 
 (use-package restart-emacs
@@ -51,7 +52,7 @@
 ;; Disable the message on top of the Scratch buffer
 (setq initial-scratch-message nil)
 
-;; Maximize the frame
+;; Maximize the Emacs frame at startup
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
 (scroll-bar-mode -1)        ; Disable visible scrollbar

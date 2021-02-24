@@ -62,29 +62,29 @@ It makes both installation and customization easier, and the code is also simple
 =(setq use-package-always-ensure t)= is used to install all the packages mentioned in this file automatically if you do not already have them. Depending on your environment, you might want to consider another, more appropriate behaviour (/e.g./  if you lack space, time, if you use another OS, if you are already compiling some of those packages by yourself, and so on).
 
 #+BEGIN_SRC emacs-lisp
+  ;; Initialize package sources
+  (require 'package)
 
-;; Initialize package sources
-(require 'package)
+  (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                           ("org" . "https://orgmode.org/elpa/")
+                           ("elpa" . "https://elpa.gnu.org/packages/")))
 
-(setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                         ("org" . "https://orgmode.org/elpa/")
-                         ("elpa" . "https://elpa.gnu.org/packages/")))
+  (package-initialize)
 
-(package-initialize)
+  (unless package-archive-contents
+   (package-refresh-contents))
 
-(unless package-archive-contents
- (package-refresh-contents))
+  ;; Initialize use-package on non-Linux platforms
+  (unless (package-installed-p 'use-package)
+     (package-install 'use-package))
 
-;; Initialize use-package on non-Linux platforms
-(unless (package-installed-p 'use-package)
-   (package-install 'use-package))
+  ;; Other packages
+  (add-to-list 'load-path "~/.emacs.d/extra-packages")
 
-;; Other packages
-(add-to-list 'load-path "~/.emacs.d/extra-packages")
-
-(require 'use-package)
-;; Comment this line if you don't want to automatically install packages
-(setq use-package-always-ensure t)
+  (require 'use-package)
+  ;; Comment this line if you don't want to automatically install
+  ;; all the packages that you are missing
+  (setq use-package-always-ensure t)
 
 #+END_SRC
 
@@ -93,8 +93,8 @@ It makes both installation and customization easier, and the code is also simple
 In order to test things more rapidly and to be able to apply configuration changes without ever leaving Emacs, we also install another package to restart Emacs with a simple command.
 
 #+BEGIN_SRC emacs-lisp
-(use-package restart-emacs
-  :commands (restart-emacs restart-emacs-start-new-emacs))
+  (use-package restart-emacs
+    :commands (restart-emacs restart-emacs-start-new-emacs))
 #+END_SRC
 
 * UI Configuration
@@ -116,7 +116,7 @@ All the variable names are pretty explicit, so you should be able to customize t
   ;; Disable the message on top of the Scratch buffer
   (setq initial-scratch-message nil)
 
-  ;; Maximize the frame
+  ;; Maximize the Emacs frame at startup
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
   (scroll-bar-mode -1)        ; Disable visible scrollbar
@@ -308,7 +308,7 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
   :custom ((doom-modeline-height 15)))
 #+END_SRC
 
-*** Change parameters
+*** Interactively change the UI
 
 This is one moment where a pretty hydra could help us change general UI parameters, such as the text size, some highlighting options and so on.
 
