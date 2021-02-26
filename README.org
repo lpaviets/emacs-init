@@ -85,6 +85,7 @@ Some other interesting ones:
 
 - [[https://ladicle.com/post/config/][Ladicle's]] configuration file
 - [[https://github.com/caisah/emacs.dz][Another list of nice config files]] on github
+- [[https://github.com/farlado/dotemacs][An opinionated]] but complete and very detailed configuration
   
 * TODO
 - [X] Hydra ! Install it, define some useful hydras (buffers, org-mode, dired ...), bind it to lsp-mode/ivy/projectile ...

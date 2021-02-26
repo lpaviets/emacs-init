@@ -311,6 +311,16 @@ First of all, we never want "TAB" to insert actual tab characters.
   (setq tab-width 4)
 #+END_SRC
 
+Then, we do not want to repeatedly spam the =<DEL>= key in order to delete a long sequence of whitespaces.
+
+#+BEGIN_SRC emacs-lisp
+(use-package hungry-delete
+  :ensure t
+  :defer t
+  :init
+  (global-hungry-delete-mode 1))
+#+END_SRC
+
 ** Hydra
 
 [[https://github.com/abo-abo/hydra][Hydra]] is a package that is used to group several related commands into a family of bindings, all starting with the same prefix (= "hydra"). Whenever this common prefix is entered in a suitable mode, a panel shows up, showing all the user-defined commands that can now be invoked with a single keystroke instead of repeatedly using the same long prefix.

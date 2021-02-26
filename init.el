@@ -184,6 +184,12 @@
 (setq-default indent-tabs-mode nil)
 (setq tab-width 4)
 
+(use-package hungry-delete
+  :ensure t
+  :defer t
+  :init
+  (global-hungry-delete-mode 1))
+
 (use-package hydra
   :defer t)
 
