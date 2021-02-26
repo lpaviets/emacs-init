@@ -798,14 +798,13 @@ Although Magit is more or less able to do the same thing, the interface there is
   ;;YASnippet
   (use-package yasnippet
     :diminish
-    :init (yas-global-mode t))
+    :init (yas-global-mode 0))
 #+END_SRC
 
 It is even possible to define your own snippets. The following package contains a lot of useful snippets for various programming languages or tools, such a C++, Clojure, various Makefiles, Emacs' Org-Mode ...
 
 #+BEGIN_SRC emacs-lisp
   (use-package yasnippet-snippets
-    :disabled t
     :after yasnippet)
 #+END_SRC
 
@@ -885,37 +884,35 @@ Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP 
 
 #+BEGIN_SRC emacs-lisp
 
-;; LSP mode. Useful IDE-like features
-(use-package lsp-mode
-  :commands (lsp lsp-deferred)
-  :config
-  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
-  (lsp-enable-which-key-integration t)
-  ;(setq lsp-signature-render-documentation nil)
-  ;(setq lsp-signature-auto-activate nil)
-  ;(setq lsp-enable-symbol-highlighting nil)
-  (setq lsp-prefer-flymake nil)
-  (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
-  :hook
-  ((python-mode c-mode c++-mode) . lsp)
-)
+  ;; LSP mode. Useful IDE-like features
+  (use-package lsp-mode
+    :commands (lsp lsp-deferred)
+    :config
+    (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+    (lsp-enable-which-key-integration t)
+    (setq lsp-prefer-flymake nil)
+    (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
+    (setq read-process-output-max (* 2 1024 1024)) ;; 2mb
+    :hook
+    ((python-mode c-mode c++-mode) . lsp))
 
-(use-package lsp-ui
-  :after lsp-mode
-  :hook (lsp-mode . lsp-ui-mode)
-  :custom
-  (lsp-ui-doc-enable nil)
-  (lsp-ui-doc-position 'bottom)
-  (lsp-ui-doc-delay 1)
-  (lsp-ui-sideline-show-code-actions nil)
-  ;(lsp-ui-sideline-enable nil)
- )
+  (use-package lsp-ui
+    :after lsp-mode
+    :hook (lsp-mode . lsp-ui-mode)
+    :custom
+    (lsp-ui-doc-enable nil)
+    (lsp-ui-doc-position 'bottom)
+    (lsp-ui-doc-delay 1)
+    (lsp-ui-sideline-show-code-actions nil)
+    ;(lsp-ui-sideline-enable nil)
+   )
 
-(use-package lsp-treemacs
-  :after lsp-mode)
+  (use-package lsp-treemacs
+    :after lsp-mode
+    :config (lsp-treemacs-sync-mode 1))
 
-(use-package lsp-ivy
-  :after (lsp-mode ivy))
+  (use-package lsp-ivy
+    :after (lsp-mode ivy))
 
 #+END_SRC
 

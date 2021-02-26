@@ -551,10 +551,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;;YASnippet
 (use-package yasnippet
   :diminish
-  :init (yas-global-mode t))
+  :init (yas-global-mode 0))
 
 (use-package yasnippet-snippets
-  :disabled t
   :after yasnippet)
 
 ;; Company. Auto-completion package
@@ -608,14 +607,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :config
   (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
   (lsp-enable-which-key-integration t)
-  ;(setq lsp-signature-render-documentation nil)
-  ;(setq lsp-signature-auto-activate nil)
-  ;(setq lsp-enable-symbol-highlighting nil)
   (setq lsp-prefer-flymake nil)
   (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
+  (setq read-process-output-max (* 2 1024 1024)) ;; 2mb
   :hook
-  ((python-mode c-mode c++-mode) . lsp)
-)
+  ((python-mode c-mode c++-mode) . lsp))
 
 (use-package lsp-ui
   :after lsp-mode
@@ -629,7 +625,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
  )
 
 (use-package lsp-treemacs
-  :after lsp-mode)
+  :after lsp-mode
+  :config (lsp-treemacs-sync-mode 1))
 
 (use-package lsp-ivy
   :after (lsp-mode ivy))

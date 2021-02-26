@@ -3,12 +3,13 @@
 
 (setq mc/cmds-to-run-for-all
       '(
-	counsel-M-x
-	org-beginning-of-line
-	org-end-of-line
-	org-self-insert-command
-	))
+        c-indent-line-or-region
+        counsel-M-x
+        org-beginning-of-line
+        org-end-of-line
+        org-self-insert-command
+        ))
 
 (setq mc/cmds-to-run-once
       '(
-	))
+        ))
