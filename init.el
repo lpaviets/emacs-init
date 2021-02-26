@@ -379,15 +379,16 @@ _q_uit
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
   :after counsel
-  :commands (helpful-callable helpful-variable helpful-command helpful-key)
   :custom
+  (counsel-describe-symbol-function   #'helpful-symbol) 
   (counsel-describe-function-function #'helpful-callable)
   (counsel-describe-variable-function #'helpful-variable)
   :bind
   ([remap describe-function] . counsel-describe-function)
-  ([remap describe-command] . helpful-command)
   ([remap describe-variable] . counsel-describe-variable)
-  ([remap describe-key] . helpful-key))
+  ([remap describe-symbol]   . counsel-describe-symbol)
+  ([remap describe-key]      . helpful-key)
+  ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
 
 (use-package multiple-cursors
   :bind
