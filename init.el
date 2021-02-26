@@ -578,9 +578,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
      (company-idle-delay 0.1)
      (company-echo-delay 0.1)
      (company-selection-wrap-around t)
-
-  :config
-    (setq company-show-numbers t))
+     (company-show-numbers t))
 
 (use-package company-box
   :after company
@@ -600,6 +598,14 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :config
   (add-to-list 'company-backends 'company-math-symbols-unicode)
   (add-to-list 'company-backends 'company-math-symbols-latex))
+
+(use-package company-shell
+  :defer t
+  :config
+(defun my-company-shell-modes ()
+  (setq-local company-backends '((company-capf company-shell company-shell-env company-files company-dabbrev)))
+
+  (add-hook 'eshell-mode-hook #'my-company-shell-modes))
 
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode

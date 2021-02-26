@@ -6,7 +6,6 @@ Its purpose is both to share an example of a working configuration for Emacs fro
 
 * Usage Instructions
 
-
 ** For everyone:
 
 At several points within the configuration file, /something/ is needed to complete the installation. This can be an Emacs command that you need to run in order to install some package, or even a completely independent tool that you need to install (for example, the configuration uses the Language Server Protocol in order to implement IDE-like features such as syntax highlighting, code completion and so on. This requires the user to install a server for each language. Some of them can be installed directly from Emacs, but other require a more complex installation process).
@@ -22,7 +21,6 @@ Please note that all of this configuration has only been tested on a GNU/Linux d
 3. Rename the clone of this repository as =~/.emacs.d=. This will allow Emacs to automatically load its content at startup.
 4. An alternate solution is to use the following command to start emacs with another configuration file: =emacs -l your-init-file.el=. The =-q= option tells Emacs to ignore any configuration file it might automatically find, which might be good to do some debugging if something does not work the way it should, and the =-l <path/to/file>= option tells it to use this file instead.
 5. Start Emacs. If you encounter some problems, please make sure that you have correctly run all the necessary commands indicated by the *MANUAL* tag in the =emacs-config.org= file. If the problems nevertheless continue, you might want to start Emacs using the =emacs --debug-init= option to get more information on what the source of the problem might be.
-
 
 ** MacOS
 

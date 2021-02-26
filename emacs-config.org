@@ -828,25 +828,23 @@ It is even possible to define your own snippets. The following package contains 
        (company-idle-delay 0.1)
        (company-echo-delay 0.1)
        (company-selection-wrap-around t)
-
-    :config
-      (setq company-show-numbers t))
+       (company-show-numbers t))
 
 #+END_SRC
 
 To have a cleaner interface and also a bit of documentation added to the suggested completions, we use two extra packages.
 
 #+BEGIN_SRC emacs-lisp
-(use-package company-box
-  :after company
-  :hook (company-mode . company-box-mode)
-  :diminish)
+  (use-package company-box
+    :after company
+    :hook (company-mode . company-box-mode)
+    :diminish)
 
-(use-package company-quickhelp
-  :after company
-  :hook (company-mode . company-quickhelp-mode)
-  :diminish
-  :custom (company-quickhelp-delay 0.2))
+  (use-package company-quickhelp
+    :after company
+    :hook (company-mode . company-quickhelp-mode)
+    :diminish
+    :custom (company-quickhelp-delay 0.2))
 
 #+END_SRC
 
@@ -861,11 +859,22 @@ A first backend that we want to consider is the one using snippets provided by =
 We install another backend specifically for LaTeX
 
 #+BEGIN_SRC emacs-lisp
-(use-package company-math
-  :after company
-  :config
-  (add-to-list 'company-backends 'company-math-symbols-unicode)
-  (add-to-list 'company-backends 'company-math-symbols-latex))
+  (use-package company-math
+    :after company
+    :config
+    (add-to-list 'company-backends 'company-math-symbols-unicode)
+    (add-to-list 'company-backends 'company-math-symbols-latex))
+#+END_SRC
+
+We add another backend to support completion in shell and terminal-modes
+#+BEGIN_SRC emacs-lisp
+  (use-package company-shell
+    :defer t
+    :config
+  (defun my-company-shell-modes ()
+    (setq-local company-backends '((company-capf company-shell company-shell-env company-files company-dabbrev)))
+
+    (add-hook 'eshell-mode-hook #'my-company-shell-modes))
 #+END_SRC
 
 ***** TODO Yasnippet, Company and LSP
@@ -1050,7 +1059,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
 
    It acts as a markup language, can deal with planning, manage spreadsheets, do project planning, run code blocks to do literate programming ...
 
-*** Font faces
+** Font faces
 
      In order for Org Mode to feel like a document instead of code, we use a different font.
 
@@ -1089,7 +1098,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
   (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
 #+END_SRC
-*** Basic configuration
+** Basic configuration
 
      We change the general feel of Org Mode documents by using other indentation rules, by changing the headers appearance, and a few other minor changes.
 
@@ -1117,7 +1126,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
 
 #+END_SRC
 
-*** Org Babel
+** Org Babel
 
      Org babel is what allows us to write code and execute it, all within the same document.
 
@@ -1134,7 +1143,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
 
 #+END_SRC
 
-*** Auto-tangle configuration files
+** Auto-tangle configuration files
 
      In order to concatenate all the code blocks that are written in this document to an external file, we need to "tangle" it.
 
@@ -1256,7 +1265,8 @@ Another useful package to deal with references, bibliography, citations and so o
 #+END_SRC
 
 * System
-*** Eshell
+** Eshell
+*** Visual
 
 Contrary to =term= and =shell= (respectively invoked by =M-x <term/shell>=), [[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]] is not /emulating/ anything: it is, on its own, a shell-like command interpreter implemented in Emacs Lisp. As such, it provides (most of) the usual commands such as =grep=, =ls= and so on, as well as an extra binding to Emacs (for example, you can redirect the output of any command to an Emacs buffer). For this reason, you can use =eshell= on any system that is able to run Emacs, as there is no external dependency.
 
@@ -1280,6 +1290,7 @@ We install a few packages which make eshell easier to use.
     :hook (eshell-mode . eshell-syntax-highlighting-mode))
 #+END_SRC
 
+*** Binding with .bashrc
 *MANUAL* One thing that we might want to do is to be able to use aliases defined in =.bashrc= in =eshell=. There are [[https://www.emacswiki.org/emacs/EshellAlias][several solutions]] to this problem, and the one I use only allows us to use bash aliases in =eshell= and not the contrary, for example.
 
 We do this by adding the following line at the end of the =.bashrc= file:
