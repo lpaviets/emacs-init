@@ -56,3 +56,4 @@ flycheck_*.el
 
 # EWW
 /url/
+/.cache/
