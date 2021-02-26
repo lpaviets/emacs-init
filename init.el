@@ -43,9 +43,6 @@
 (use-package restart-emacs
   :commands (restart-emacs restart-emacs-start-new-emacs))
 
-;; Whenever a region is activated, inserting a symbol will first delete the region
-; (delete-selection-mode 1)
-
 ;; Disable the annoying startup message and Emacs logo
 (setq inhibit-startup-message t)
 
@@ -86,66 +83,11 @@
                 ; Extra modes
                 undo-tree-visualizer-mode-hook
                 treemacs-mode-hook
-                dired-mode-hook
-                ))
+                dired-mode-hook))
 
 (add-hook mode #'my-disable-line-numbers))
 
-;; Automatically reload a file if it has been modified
-(global-auto-revert-mode t)
-
-;; Tab behaviour and whitespaces
-(setq-default indent-tabs-mode nil)
-(setq tab-width 4)
-
-;; Type "y" instead of "yes" for confirmation
-(defalias 'yes-or-no-p 'y-or-n-p)
-
-;; Always highlight matching parenthesis
-(show-paren-mode t)
-
-;; Don't disable any command
-;; BE CAREFUL
-;; If you are a new user, you might to comment out this line
-(setq disabled-command-function nil)
-
-(use-package undo-tree
-  :config
-  (setq undo-tree-visualizer-timestamps t)
-  (global-undo-tree-mode)
-  :diminish (undo-tree-mode))
-
-(use-package hydra
-  :defer t)
-
-(use-package posframe
-  :defer t)
-
-;; Manual load and config of Hydra Posframe
-;; To fix: find a way to override parameters ...
-;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
-;; (setq hydra-posframe-border-width 5)
-
-;Pretty Hydra
-(use-package pretty-hydra
-  :defer t
-  :after hydra)
-
-;; Generic UI modes
-
-(use-package beacon
-  :init (beacon-mode))
-(use-package rainbow-mode
-  :defer t)
-(use-package fill-column-indicator
-  :defer t)
-(use-package visual-fill-column
-  :defer t)
-
-(use-package command-log-mode
-;; :hook (<your-favourite-mode> . command-log-mode) ; Add here modes in which you want to run the command-log-mode
-  :commands command-log-mode
-)
+(global-visual-line-mode 1)
 
 ;; Themes
 (use-package doom-themes
@@ -153,10 +95,10 @@
 
 (use-package cycle-themes
   :defer t
-;; :config
-;; (setq cycle-themes-theme-list
-;;        '(leuven monokai solarized-dark)) ; Your favourite themes list
-)
+  ;; :config
+  ;; (setq cycle-themes-theme-list
+  ;;        '(leuven monokai solarized-dark)) ; Your favourite themes list
+  )
 
 ;; First time used: run M-x all-the-icons-install-fonts
 (use-package all-the-icons
@@ -170,11 +112,10 @@
   ;;define an icon function with all-the-icons-faicon
   ;;to use filecon, etc, define same function with icon set
   (defun with-faicon (icon str &rest height v-adjust)
-     (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
-  ;filecon
+    (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
+  ;; filecon
   (defun with-fileicon (icon str &rest height v-adjust)
-     (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
-)
+    (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str)))
 
 (use-package doom-modeline
   :after all-the-icons
@@ -228,6 +169,66 @@
 
   (global-set-key (kbd "C-c h a") 'hydra-appearance/body)
 
+;; Generic UI modes
+
+(use-package beacon
+  :init (beacon-mode))
+(use-package rainbow-mode
+  :defer t)
+(use-package fill-column-indicator
+  :defer t)
+(use-package visual-fill-column
+  :defer t)
+
+;; Tab behaviour and whitespaces
+(setq-default indent-tabs-mode nil)
+(setq tab-width 4)
+
+(use-package hungry-delete
+  :ensure t
+  :defer t
+  :init
+  (global-hungry-delete-mode 1))
+
+(use-package hydra
+  :defer t)
+
+(use-package posframe
+  :defer t)
+
+;; Manual load and config of Hydra Posframe
+;; To fix: find a way to override parameters ...
+;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
+;; (setq hydra-posframe-border-width 5)
+
+;Pretty Hydra
+(use-package pretty-hydra
+  :defer t
+  :after hydra)
+
+(prefer-coding-system 'utf-8)
+(setq locale-coding-system 'utf-8)
+(set-language-environment "UTF-8")
+(set-default-coding-systems 'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+(set-selection-coding-system 'utf-8)
+
+;; Don't disable any command
+;; BE CAREFUL
+;; If you are a new user, you might to comment out this line
+(setq disabled-command-function nil)
+
+(global-unset-key (kbd "C-z"))
+
+(use-package command-log-mode
+;; :hook (<your-favourite-mode> . command-log-mode) ; Add here modes in which you want to run the command-log-mode
+  :commands command-log-mode
+)
+
+;; Type "y" instead of "yes RET" for confirmation
+(defalias 'yes-or-no-p 'y-or-n-p)
+
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
   :init (which-key-mode)
@@ -268,28 +269,21 @@
          :map minibuffer-local-map
          ("C-r" . 'counsel-minibuffer-history)))
 
-;; Helpful. Extra documentation when calling for help
-(use-package helpful
-  :after counsel
-  :commands (helpful-callable helpful-variable helpful-command helpful-key)
-  :custom
-  (counsel-describe-function-function #'helpful-callable)
-  (counsel-describe-variable-function #'helpful-variable)
-  :bind
-  ([remap describe-function] . counsel-describe-function)
-  ([remap describe-command] . helpful-command)
-  ([remap describe-variable] . counsel-describe-variable)
-  ([remap describe-key] . helpful-key))
+;; Automatically reload a file if it has been modified
+(global-auto-revert-mode t)
 
 ;;Buffer management
 (setq display-buffer-base-action
-  '((display-buffer-reuse-window)
-    (display-buffer-reuse-mode-window)
-    (display-buffer-same-window)
-    (display-buffer-in-previous-window)))
+      '((display-buffer-reuse-window)
+        (display-buffer-reuse-mode-window)
+        (display-buffer-same-window)
+        (display-buffer-in-previous-window)))
 
 ;; Can even have further control with
 ;; display-buffer-alist, or using extra-parameters
+
+(setq uniquify-buffer-name-style 'forward)
+(setq uniquify-after-kill-buffer-p t)
 
 (winner-mode 1)
 
@@ -382,6 +376,20 @@ _q_uit
   ;("b" ido-switch-buffer "buf")
   ("m" headlong-bookmark-jump)))
 
+;; Helpful. Extra documentation when calling for help
+(use-package helpful
+  :after counsel
+  :custom
+  (counsel-describe-symbol-function   #'helpful-symbol) 
+  (counsel-describe-function-function #'helpful-callable)
+  (counsel-describe-variable-function #'helpful-variable)
+  :bind
+  ([remap describe-function] . counsel-describe-function)
+  ([remap describe-variable] . counsel-describe-variable)
+  ([remap describe-symbol]   . counsel-describe-symbol)
+  ([remap describe-key]      . helpful-key)
+  ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
+
 (use-package multiple-cursors
   :bind
   (("C-c o <SPC>" . mc/vertical-align-with-space)
@@ -459,6 +467,12 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; keybindings, such as defining a minor mode ...
 (global-set-key (kbd "M-k") 'copy-line-at-point)
 
+(use-package undo-tree
+  :config
+  (setq undo-tree-visualizer-timestamps t)
+  (global-undo-tree-mode)
+  :diminish (undo-tree-mode))
+
 (use-package projectile
   :diminish
   :init
@@ -486,12 +500,15 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package git-timemachine
   :defer t)
 
-;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
-  (use-package rainbow-delimiters
-    :hook (prog-mode . rainbow-delimiters-mode))
+;; Always highlight matching parenthesis
+(show-paren-mode t)
 
-  ;; Smartparens is currently bugged
-  (use-package smartparens
+;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
+(use-package rainbow-delimiters
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+;; Smartparens is currently bugged
+(use-package smartparens
   :custom (sp-highlight-pair-overlay nil)
   :hook (smartparens-mode . show-smartparens-mode)
   :bind
@@ -527,26 +544,26 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
   ("M-F" . sp-forward-symbol)
   ("M-B" . sp-backward-symbol))
-  
 
-  (use-package paredit
+
+(use-package paredit
   :hook ((mrepl-mode
           eshell-mode
           ielm-mode
           eval-expression-minibuffer-setup) . enable-paredit-mode))
 
-  (defun paredit-or-smartparens ()
+(defun paredit-or-smartparens ()
   "Enable paredit or smartparens depending on the major mode"
   (if (member major-mode '(emacs-lisp-mode
-                         lisp-mode
-                         lisp-interaction-mode))
-    (paredit-mode)
-  (smartparens-mode)))
+                           lisp-mode
+                           lisp-interaction-mode))
+      (paredit-mode)
+    (smartparens-mode)))
 ;; Bug with strict-mode in cc-mode (Java, C/C++ ...)
 ;; Bindings are overriden by the cc-mode one, so sp-strict-mode does not
 ;; work properly (e.g. <DEL> is not bound to sp-backward-delete-char)
 
-  (add-hook 'prog-mode-hook #'paredit-or-smartparens)
+(add-hook 'prog-mode-hook #'paredit-or-smartparens)
 
 ;;YASnippet
 (use-package yasnippet
@@ -578,9 +595,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
      (company-idle-delay 0.1)
      (company-echo-delay 0.1)
      (company-selection-wrap-around t)
-
-  :config
-    (setq company-show-numbers t))
+     (company-show-numbers t))
 
 (use-package company-box
   :after company
@@ -600,6 +615,14 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :config
   (add-to-list 'company-backends 'company-math-symbols-unicode)
   (add-to-list 'company-backends 'company-math-symbols-latex))
+
+(use-package company-shell
+  :defer t
+  :config
+(defun my-company-shell-modes ()
+  (setq-local company-backends '((company-capf company-shell company-shell-env company-files company-dabbrev)))
+
+  (add-hook 'eshell-mode-hook #'my-company-shell-modes)))
 
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode

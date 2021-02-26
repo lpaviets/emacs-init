@@ -98,7 +98,7 @@ In order to test things more rapidly and to be able to apply configuration chang
 #+END_SRC
 
 * UI Configuration
-** Comfort changes
+** Visual interface changes
 
 We remove all the unnecessary elements from the interface, /e.g./ menus, scroll bar and so on.
 
@@ -106,26 +106,42 @@ You can remove or partially modify this block of code if you are a beginner and 
 
 All the variable names are pretty explicit, so you should be able to customize this to your taste easily.
 
-#+BEGIN_SRC emacs-lisp
-  ;; Whenever a region is activated, inserting a symbol will first delete the region
-  ; (delete-selection-mode 1)
+*** Startup
 
+Who wants to be told the same thing over and over again each time they start Emacs ?
+#+BEGIN_SRC emacs-lisp
   ;; Disable the annoying startup message and Emacs logo
   (setq inhibit-startup-message t)
 
   ;; Disable the message on top of the Scratch buffer
   (setq initial-scratch-message nil)
+#+END_SRC
 
+However, we would like to see Emacs in full-screen if we are to use it
+
+#+BEGIN_SRC emacs-lisp
   ;; Maximize the Emacs frame at startup
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
+#+END_SRC
 
+*** Menus and toolbars
+
+Emacs is very much keyboard-oriented. As such, we have little-to-no use of the various menus, toolbars and scrollbars that Emacs provides.
+
+#+BEGIN_SRC emacs-lisp
   (scroll-bar-mode -1)        ; Disable visible scrollbar
   (tool-bar-mode -1)          ; Disable the toolbar
   (tooltip-mode -1)           ; Disable tooltips
   (set-fringe-mode 10)        ; Give some breathing room
 
   (menu-bar-mode -1)          ; Disable the menu bar
+#+END_SRC
 
+*** Lines and columns
+
+Because we now have plenty of free space on our screen, we can sacrifice a bit of it to put useful information there, such as line numbers. We also want to see the current line and column in the modeline.
+
+#+BEGIN_SRC emacs-lisp
   ;; Global line/column numbering mode
   ;; Modes in which we might want to disable it:
 
@@ -150,106 +166,15 @@ All the variable names are pretty explicit, so you should be able to customize t
                   ; Extra modes
                   undo-tree-visualizer-mode-hook
                   treemacs-mode-hook
-                  dired-mode-hook
-                  ))
+                  dired-mode-hook))
 
   (add-hook mode #'my-disable-line-numbers))
-
-  ;; Automatically reload a file if it has been modified
-  (global-auto-revert-mode t)
-
-  ;; Tab behaviour and whitespaces
-  (setq-default indent-tabs-mode nil)
-  (setq tab-width 4)
-
-  ;; Type "y" instead of "yes" for confirmation
-  (defalias 'yes-or-no-p 'y-or-n-p)
-
-  ;; Always highlight matching parenthesis
-  (show-paren-mode t)
-
-  ;; Don't disable any command
-  ;; BE CAREFUL
-  ;; If you are a new user, you might to comment out this line
-  (setq disabled-command-function nil)
-
 #+END_SRC
 
-Another very useful package is undo-tree, which allows you to visualize the previous "Undos" and navigate them.
-
-It can act as a small, local version control system due to how Undos are managed by Emacs.
+While we are at it, we also want Emacs to wrap our lines, so that we never have to scroll horizontally to see the end of a long line (besides, how would we do it, now that we don't have a scrollbar anymore ?!)
 
 #+BEGIN_SRC emacs-lisp
-(use-package undo-tree
-  :config
-  (setq undo-tree-visualizer-timestamps t)
-  (global-undo-tree-mode)
-  :diminish (undo-tree-mode))
-
-#+END_SRC
-
-** Hydra
-
-[[https://github.com/abo-abo/hydra][Hydra]] is a package that is used to group several related commands into a family of bindings, all starting with the same prefix (= "hydra"). Whenever this common prefix is entered in a suitable mode, a panel shows up, showing all the user-defined commands that can now be invoked with a single keystroke instead of repeatedly using the same long prefix.
-
-#+BEGIN_SRC emacs-lisp
-(use-package hydra
-  :defer t)
-#+END_SRC
-
-All the hydras will now be defined after the package to which they correspond, or in the appropriate section. Most of them are modifications of hydras that can be found on the [[https://github.com/abo-abo/hydra/wiki][hydra wiki]].
-
-Some hydras will be called less frequently and for other purposes than getting a "quick-and-dirty" access to commonly used functions. Hence, we will make them prettier (the compromise being that they are less minimalistic and take much more space visually)
-
-
-*MANUAL* This is not a MELPA package. It can be found [[https://github.com/Ladicle/hydra-posframe][here]]. Install it and change the loading path according to your configuration.
-
-#+BEGIN_SRC emacs-lisp
-  (use-package posframe
-    :defer t)
-
-  ;; Manual load and config of Hydra Posframe
-  ;; To fix: find a way to override parameters ...
-  ;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
-  ;; (setq hydra-posframe-border-width 5)
-
-  ;Pretty Hydra
-  (use-package pretty-hydra
-    :defer t
-    :after hydra)
-#+END_SRC
-
-** General appearance
-*** Extra packages
-
-Some packages are used lated in the configuration, and we want to be able to use those comfortable modes.
-
-#+BEGIN_SRC emacs-lisp
-;; Generic UI modes
-
-(use-package beacon
-  :init (beacon-mode))
-(use-package rainbow-mode
-  :defer t)
-(use-package fill-column-indicator
-  :defer t)
-(use-package visual-fill-column
-  :defer t)
-#+END_SRC
-
-*** Command log mode
-
-This mode allows you to display a small panel on the right of the screen which shows which keys you are pressing, and what commands they are associated to, all of this in real time !
-
-As of now, you need to enable the mode by using the =command-log-mode= command (or =global-command-log-mode= if you want to record everything, in all the buffers of the current session), and to use the =C-c o= keybinding (which calls the =clm/toggle-command-log-buffer= function) to open a new buffer in which you will see both the keybindings you are currently using and the commands to which they are bound.
-
-If you want =command-log-mode= to be activated by default in certain minor (or even major) modes, simply add a hook. You will still need to explicitly open the buffer, but this could also be dealt with by using other, straightforward hooks.
-
-#+BEGIN_SRC emacs-lisp
-(use-package command-log-mode
-;; :hook (<your-favourite-mode> . command-log-mode) ; Add here modes in which you want to run the command-log-mode
-  :commands command-log-mode
-)
+(global-visual-line-mode 1)
 #+END_SRC
 
 *** Theme
@@ -257,20 +182,20 @@ If you want =command-log-mode= to be activated by default in certain minor (or e
 This is simply a way to change how Emacs looks. Some themes are more complete than other (they will modify how other packages look, like Magit, or even the minibuffer)
 
 #+BEGIN_SRC emacs-lisp
-;; Themes
-(use-package doom-themes
-  :init (load-theme 'doom-Iosvkem t))
+  ;; Themes
+  (use-package doom-themes
+    :init (load-theme 'doom-Iosvkem t))
 #+END_SRC
 
 We also install an extra package to cycle through all (or a predefined list) the themes.
 
 #+BEGIN_SRC emacs-lisp
-(use-package cycle-themes
-  :defer t
-;; :config
-;; (setq cycle-themes-theme-list
-;;        '(leuven monokai solarized-dark)) ; Your favourite themes list
-)
+  (use-package cycle-themes
+    :defer t
+    ;; :config
+    ;; (setq cycle-themes-theme-list
+    ;;        '(leuven monokai solarized-dark)) ; Your favourite themes list
+    )
 
 #+END_SRC
 
@@ -283,28 +208,27 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
 =M-x all-the-icons-install-fonts=
 
 #+BEGIN_SRC emacs-lisp
-;; First time used: run M-x all-the-icons-install-fonts
-(use-package all-the-icons
-  :config
-  ;; Avoid unnecessary warnings
-  (declare-function all-the-icons-faicon 'all-the-icons)
-  (declare-function all-the-icons-fileicon 'all-the-icons)
-  (declare-function all-the-icons-material 'all-the-icons)
-  (declare-function all-the-icons-octicon 'all-the-icons)
+  ;; First time used: run M-x all-the-icons-install-fonts
+  (use-package all-the-icons
+    :config
+    ;; Avoid unnecessary warnings
+    (declare-function all-the-icons-faicon 'all-the-icons)
+    (declare-function all-the-icons-fileicon 'all-the-icons)
+    (declare-function all-the-icons-material 'all-the-icons)
+    (declare-function all-the-icons-octicon 'all-the-icons)
 
-  ;;define an icon function with all-the-icons-faicon
-  ;;to use filecon, etc, define same function with icon set
-  (defun with-faicon (icon str &rest height v-adjust)
-     (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
-  ;filecon
-  (defun with-fileicon (icon str &rest height v-adjust)
-     (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
-)
+    ;;define an icon function with all-the-icons-faicon
+    ;;to use filecon, etc, define same function with icon set
+    (defun with-faicon (icon str &rest height v-adjust)
+      (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
+    ;; filecon
+    (defun with-fileicon (icon str &rest height v-adjust)
+      (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str)))
 
-(use-package doom-modeline
-  :after all-the-icons
-  :init (doom-modeline-mode 1)
-  :custom ((doom-modeline-height 15)))
+  (use-package doom-modeline
+    :after all-the-icons
+    :init (doom-modeline-mode 1)
+    :custom ((doom-modeline-height 15)))
 #+END_SRC
 
 *** Interactively change the UI
@@ -360,12 +284,136 @@ This is one moment where a pretty hydra could help us change general UI paramete
   (global-set-key (kbd "C-c h a") 'hydra-appearance/body)
 
 #+END_SRC
-** Easier search and minibuffer use
-Although emacs provides a number of commands to navigate within a file, to find documentation and so on, the following packages will make the general UI easier to use.
+*** Extra packages
 
-[[https://github.com/justbur/emacs-which-key][which-key]] is a package that shows all the available commands after having typed some prefix.
+Some packages are used lated in the configuration, and we want to be able to use those comfortable modes.
 
-For example, if you press =C-c=, then a panel will appear at the bottom of the screen to show how you can currently continue this command.
+#+BEGIN_SRC emacs-lisp
+;; Generic UI modes
+
+(use-package beacon
+  :init (beacon-mode))
+(use-package rainbow-mode
+  :defer t)
+(use-package fill-column-indicator
+  :defer t)
+(use-package visual-fill-column
+  :defer t)
+#+END_SRC
+
+** Whitespaces
+
+First of all, we never want "TAB" to insert actual tab characters.
+
+#+BEGIN_SRC emacs-lisp
+  ;; Tab behaviour and whitespaces
+  (setq-default indent-tabs-mode nil)
+  (setq tab-width 4)
+#+END_SRC
+
+Then, we do not want to repeatedly spam the =<DEL>= key in order to delete a long sequence of whitespaces.
+
+#+BEGIN_SRC emacs-lisp
+(use-package hungry-delete
+  :ensure t
+  :defer t
+  :init
+  (global-hungry-delete-mode 1))
+#+END_SRC
+
+** Hydra
+
+[[https://github.com/abo-abo/hydra][Hydra]] is a package that is used to group several related commands into a family of bindings, all starting with the same prefix (= "hydra"). Whenever this common prefix is entered in a suitable mode, a panel shows up, showing all the user-defined commands that can now be invoked with a single keystroke instead of repeatedly using the same long prefix.
+
+#+BEGIN_SRC emacs-lisp
+(use-package hydra
+  :defer t)
+#+END_SRC
+
+All the hydras will now be defined after the package to which they correspond, or in the appropriate section. Most of them are modifications of hydras that can be found on the [[https://github.com/abo-abo/hydra/wiki][hydra wiki]].
+
+Some hydras will be called less frequently and for other purposes than getting a "quick-and-dirty" access to commonly used functions. Hence, we will make them prettier (the compromise being that they are less minimalistic and take much more space visually)
+
+
+*MANUAL* This is not a MELPA package. It can be found [[https://github.com/Ladicle/hydra-posframe][here]]. Install it and change the loading path according to your configuration.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package posframe
+    :defer t)
+
+  ;; Manual load and config of Hydra Posframe
+  ;; To fix: find a way to override parameters ...
+  ;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
+  ;; (setq hydra-posframe-border-width 5)
+
+  ;Pretty Hydra
+  (use-package pretty-hydra
+    :defer t
+    :after hydra)
+#+END_SRC
+
+** Font and encoding
+
+Even if most of the time, you should be working with UTF-8, we still want to make sure that this is the default and that Emacs assumes that we are using UTF-8
+
+#+BEGIN_SRC emacs-lisp
+  (prefer-coding-system 'utf-8)
+  (setq locale-coding-system 'utf-8)
+  (set-language-environment "UTF-8")
+  (set-default-coding-systems 'utf-8)
+  (set-terminal-coding-system 'utf-8)
+  (set-keyboard-coding-system 'utf-8)
+  (set-selection-coding-system 'utf-8)
+#+END_SRC
+
+** Commands
+*** Disable
+
+We want to use the full Emacs power. However, if you find yourself using repeatedly a dangerous command by mistake, you might want to disable it
+
+#+BEGIN_SRC emacs-lisp
+  ;; Don't disable any command
+  ;; BE CAREFUL
+  ;; If you are a new user, you might to comment out this line
+  (setq disabled-command-function nil)
+
+#+END_SRC
+
+There is, however, one really annoying binding, especially for new users or people used to ... computers, calling the =suspend-frame= command. For people who are using it, do not worry, it is still available on =C-x C-z= anyway.
+
+#+BEGIN_SRC emacs-lisp
+(global-unset-key (kbd "C-z"))
+#+END_SRC
+
+*** Command log mode
+
+This mode allows you to display a small panel on the right of the screen which shows which keys you are pressing, and what commands they are associated to, all of this in real time !
+
+As of now, you need to enable the mode by using the =command-log-mode= command (or =global-command-log-mode= if you want to record everything, in all the buffers of the current session), and to use the =C-c o= keybinding (which calls the =clm/toggle-command-log-buffer= function) to open a new buffer in which you will see both the keybindings you are currently using and the commands to which they are bound.
+
+If you want =command-log-mode= to be activated by default in certain minor (or even major) modes, simply add a hook. You will still need to explicitly open the buffer, but this could also be dealt with by using other, straightforward hooks.
+
+#+BEGIN_SRC emacs-lisp
+(use-package command-log-mode
+;; :hook (<your-favourite-mode> . command-log-mode) ; Add here modes in which you want to run the command-log-mode
+  :commands command-log-mode
+)
+#+END_SRC
+
+*** Confirmation
+
+Typing "yes" and "no" might be a bit too tiring
+
+#+BEGIN_SRC emacs-lisp
+  ;; Type "y" instead of "yes RET" for confirmation
+  (defalias 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+
+*** Help
+
+Because there are a lot of similar commands, it is quite easy to get lost. [[https://github.com/justbur/emacs-which-key][which-key]] is a package that shows all the available commands after having typed some prefix, meaning that knowing the beginning of a key sequence is enough to get the rest of the information.
+
+For example, if you press =C-c=, then a panel will appear at the bottom of the screen to show how you can currently continue this command, depending on which buffer you are in.
 
 #+BEGIN_SRC emacs-lisp
 ;; which-key. Shows all the available key sequences after a prefix
@@ -376,7 +424,11 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
   (setq which-key-idle-delay 1))
 #+END_SRC
 
-[[https://github.com/abo-abo/swiper][Ivy and Counsel]] are completion frameworks that allow you to use the minibuffer more comfortably.
+** Minibuffer
+
+Although emacs provides a number of commands to navigate within a file, to find documentation and so on, the following packages will make the general UI easier to use.
+
+[[https://github.com/abo-abo/swiper][Ivy and Counsel]] are completion and narrowing frameworks that allow you to use the minibuffer more comfortably.
 
 #+BEGIN_SRC emacs-lisp
 ;; Ivy
@@ -414,43 +466,34 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
 
 #+END_SRC
 
-[[https://github.com/Wilfred/helpful][helpful]] makes things easier to remember and to use without having to search for documentation in multiple places.
-
-It will condense all the available information about something within a single Help buffer, and will add some documentation to the commands you are currently typing.
-
-#+BEGIN_SRC emacs-lisp
-;; Helpful. Extra documentation when calling for help
-(use-package helpful
-  :after counsel
-  :commands (helpful-callable helpful-variable helpful-command helpful-key)
-  :custom
-  (counsel-describe-function-function #'helpful-callable)
-  (counsel-describe-variable-function #'helpful-variable)
-  :bind
-  ([remap describe-function] . counsel-describe-function)
-  ([remap describe-command] . helpful-command)
-  ([remap describe-variable] . counsel-describe-variable)
-  ([remap describe-key] . helpful-key))
-
-#+END_SRC
-** Buffer management
-
+** Buffer and windows
+*** Buffer management
 Emacs is sometimes all over the place, opening buffers at seemingly random places, switching your focus only in some circumstances ... We will customize this behaviour so that we have a better control on what Emacs is doing when we open new buffers
 
 #+BEGIN_SRC emacs-lisp
-;;Buffer management
-(setq display-buffer-base-action
-  '((display-buffer-reuse-window)
-    (display-buffer-reuse-mode-window)
-    (display-buffer-same-window)
-    (display-buffer-in-previous-window)))
+  ;; Automatically reload a file if it has been modified
+  (global-auto-revert-mode t)
 
-;; Can even have further control with
-;; display-buffer-alist, or using extra-parameters
+  ;;Buffer management
+  (setq display-buffer-base-action
+        '((display-buffer-reuse-window)
+          (display-buffer-reuse-mode-window)
+          (display-buffer-same-window)
+          (display-buffer-in-previous-window)))
+
+  ;; Can even have further control with
+  ;; display-buffer-alist, or using extra-parameters
 
 #+END_SRC
 
-** Window management
+Another annoying thing is that we tend to have /a lot/ of open buffers at the same time, and there will invariably be some conflicts in their names. We want to be able to quickly distinguish which file is buffer is visiting.
+
+#+BEGIN_SRC emacs-lisp
+  (setq uniquify-buffer-name-style 'forward)
+  (setq uniquify-after-kill-buffer-p t)
+#+END_SRC
+
+*** Window management
 
 Because window management can be a bit tedious with the basic Emacs functionalities, we improve it a bit. First of all, we enable =winner-mode=, which allows us to "undo" and "redo" changes in the Windows' configuration.
 
@@ -557,6 +600,29 @@ _q_uit
   ;("b" ido-switch-buffer "buf")
   ("m" headlong-bookmark-jump)))
 #+END_SRC
+** Help !
+
+Emacs already has a /great/ documentation system, but it is still possible to improve it ! [[https://github.com/Wilfred/helpful][helpful]] makes things easier to remember and to use without having to search for documentation in multiple places.
+
+It will condense all the available information about something within a single Help buffer, and will add some documentation to the commands you are currently typing.
+
+#+BEGIN_SRC emacs-lisp
+  ;; Helpful. Extra documentation when calling for help
+  (use-package helpful
+    :after counsel
+    :custom
+    (counsel-describe-symbol-function   #'helpful-symbol) 
+    (counsel-describe-function-function #'helpful-callable)
+    (counsel-describe-variable-function #'helpful-variable)
+    :bind
+    ([remap describe-function] . counsel-describe-function)
+    ([remap describe-variable] . counsel-describe-variable)
+    ([remap describe-symbol]   . counsel-describe-symbol)
+    ([remap describe-key]      . helpful-key)
+    ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
+
+#+END_SRC
+
 * Editing
 
    Emacs is fundamentally a text editor. It provides a lot of functions to deal with text, and a way to create macros, to automate things, to repeat something multiple times ... easily. However, because there are /so many/ available functions, we might need some help to navigate around and do fancy things.
@@ -670,6 +736,22 @@ The first one is used to copy without deleting the current line (internally, it 
   ;; keybindings, such as defining a minor mode ...
   (global-set-key (kbd "M-k") 'copy-line-at-point)
 #+END_SRC
+
+** Undo
+
+Another very useful package is undo-tree, which allows you to visualize the previous "Undos" and navigate them.
+
+It can act as a small, local version control system due to how Undos are managed by Emacs.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package undo-tree
+    :config
+    (setq undo-tree-visualizer-timestamps t)
+    (global-undo-tree-mode)
+    :diminish (undo-tree-mode))
+
+#+END_SRC
+
 * Programming
 ** Projectile
 
@@ -708,7 +790,6 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
     ;; uncomment previous line to have magit open itself within the same buffer
     ;; instead of in another buffer
     :bind ("C-x g" . magit-status))
-
 #+END_SRC
 
 *** Git-timemachine
@@ -723,68 +804,75 @@ Although Magit is more or less able to do the same thing, the interface there is
 #+END_SRC
 ** Parenthesis
 
-    To make it easy to deal with parenthesis in various programming languages, we also use the following packages, which colourize matching parenthesis accordingly and insert brackets pair whenever we insert the opening one - althoug they can do much more.
+First of all, we want to easily be able to tell with a quick glance which parenthesis are matching
 
 #+BEGIN_SRC emacs-lisp
+  ;; Always highlight matching parenthesis
+  (show-paren-mode t)
+
   ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
   (use-package rainbow-delimiters
     :hook (prog-mode . rainbow-delimiters-mode))
+#+END_SRC
 
+Now, in order to work with structured text, such as source code, we want to be able to directly manipulate "expressions" rather than lines or words. This is why we use the following packages, as they provide a lot of functionalities to navigate and edit those expressions.
+
+#+BEGIN_SRC emacs-lisp
   ;; Smartparens is currently bugged
   (use-package smartparens
-  :custom (sp-highlight-pair-overlay nil)
-  :hook (smartparens-mode . show-smartparens-mode)
-  :bind
-  ("C-M-f" . sp-forward-sexp)
-  ("C-M-b" . sp-backward-sexp)
+    :custom (sp-highlight-pair-overlay nil)
+    :hook (smartparens-mode . show-smartparens-mode)
+    :bind
+    ("C-M-f" . sp-forward-sexp)
+    ("C-M-b" . sp-backward-sexp)
 
-  ;; Define those as in paredit
-  ("C-M-n" . sp-up-sexp)
-  ("C-M-d" . sp-down-sexp)
-  ("C-M-u" . sp-backward-up-sexp)
-  ("C-M-p" . sp-backward-down-sexp)
+    ;; Define those as in paredit
+    ("C-M-n" . sp-up-sexp)
+    ("C-M-d" . sp-down-sexp)
+    ("C-M-u" . sp-backward-up-sexp)
+    ("C-M-p" . sp-backward-down-sexp)
 
-  ("C-S-a" . sp-beginning-of-sexp)
-  ("C-S-e" . sp-end-of-sexp)
+    ("C-S-a" . sp-beginning-of-sexp)
+    ("C-S-e" . sp-end-of-sexp)
 
-  ("C-M-t" . sp-transpose-sexp)
+    ("C-M-t" . sp-transpose-sexp)
 
-  ("C-M-k" . sp-kill-sexp)
-  ("C-M-w" . sp-copy-sexp)
+    ("C-M-k" . sp-kill-sexp)
+    ("C-M-w" . sp-copy-sexp)
 
-  ("M-<delete>" . sp-unwrap-sexp)
-  ("M-<backspace>" . sp-backward-unwrap-sexp)
+    ("M-<delete>" . sp-unwrap-sexp)
+    ("M-<backspace>" . sp-backward-unwrap-sexp)
 
-  ("C-<right>" . sp-forward-slurp-sexp)
-  ("C-<left>" . sp-forward-barf-sexp)
-  ("C-M-<left>" . sp-backward-slurp-sexp) ; kbd ghosting ?
-  ("C-M-<right>" . sp-backward-barf-sexp) ; kbd ghosting ?
+    ("C-<right>" . sp-forward-slurp-sexp)
+    ("C-<left>" . sp-forward-barf-sexp)
+    ("C-M-<left>" . sp-backward-slurp-sexp) ; kbd ghosting ?
+    ("C-M-<right>" . sp-backward-barf-sexp) ; kbd ghosting ?
 
-  ("M-s" . sp-splice-sexp) ; unbinds "occur"
-  ;; ("C-M-<delete>" . sp-splice-sexp-killing-forward)
-  ;; ("C-M-<backspace>" . sp-splice-sexp-killing-backward)
-  ;; ("C-S-<backspace>" . sp-splice-sexp-killing-around)
+    ("M-s" . sp-splice-sexp) ; unbinds "occur"
+    ;; ("C-M-<delete>" . sp-splice-sexp-killing-forward)
+    ;; ("C-M-<backspace>" . sp-splice-sexp-killing-backward)
+    ;; ("C-S-<backspace>" . sp-splice-sexp-killing-around)
 
-  ("M-F" . sp-forward-symbol)
-  ("M-B" . sp-backward-symbol))
-  
+    ("M-F" . sp-forward-symbol)
+    ("M-B" . sp-backward-symbol))
+
 
   (use-package paredit
-  :hook ((mrepl-mode
-          eshell-mode
-          ielm-mode
-          eval-expression-minibuffer-setup) . enable-paredit-mode))
+    :hook ((mrepl-mode
+            eshell-mode
+            ielm-mode
+            eval-expression-minibuffer-setup) . enable-paredit-mode))
 
   (defun paredit-or-smartparens ()
-  "Enable paredit or smartparens depending on the major mode"
-  (if (member major-mode '(emacs-lisp-mode
-                         lisp-mode
-                         lisp-interaction-mode))
-    (paredit-mode)
-  (smartparens-mode)))
-;; Bug with strict-mode in cc-mode (Java, C/C++ ...)
-;; Bindings are overriden by the cc-mode one, so sp-strict-mode does not
-;; work properly (e.g. <DEL> is not bound to sp-backward-delete-char)
+    "Enable paredit or smartparens depending on the major mode"
+    (if (member major-mode '(emacs-lisp-mode
+                             lisp-mode
+                             lisp-interaction-mode))
+        (paredit-mode)
+      (smartparens-mode)))
+  ;; Bug with strict-mode in cc-mode (Java, C/C++ ...)
+  ;; Bindings are overriden by the cc-mode one, so sp-strict-mode does not
+  ;; work properly (e.g. <DEL> is not bound to sp-backward-delete-char)
 
   (add-hook 'prog-mode-hook #'paredit-or-smartparens)
 #+END_SRC
@@ -835,25 +923,23 @@ It is even possible to define your own snippets. The following package contains 
        (company-idle-delay 0.1)
        (company-echo-delay 0.1)
        (company-selection-wrap-around t)
-
-    :config
-      (setq company-show-numbers t))
+       (company-show-numbers t))
 
 #+END_SRC
 
 To have a cleaner interface and also a bit of documentation added to the suggested completions, we use two extra packages.
 
 #+BEGIN_SRC emacs-lisp
-(use-package company-box
-  :after company
-  :hook (company-mode . company-box-mode)
-  :diminish)
+  (use-package company-box
+    :after company
+    :hook (company-mode . company-box-mode)
+    :diminish)
 
-(use-package company-quickhelp
-  :after company
-  :hook (company-mode . company-quickhelp-mode)
-  :diminish
-  :custom (company-quickhelp-delay 0.2))
+  (use-package company-quickhelp
+    :after company
+    :hook (company-mode . company-quickhelp-mode)
+    :diminish
+    :custom (company-quickhelp-delay 0.2))
 
 #+END_SRC
 
@@ -868,11 +954,22 @@ A first backend that we want to consider is the one using snippets provided by =
 We install another backend specifically for LaTeX
 
 #+BEGIN_SRC emacs-lisp
-(use-package company-math
-  :after company
-  :config
-  (add-to-list 'company-backends 'company-math-symbols-unicode)
-  (add-to-list 'company-backends 'company-math-symbols-latex))
+  (use-package company-math
+    :after company
+    :config
+    (add-to-list 'company-backends 'company-math-symbols-unicode)
+    (add-to-list 'company-backends 'company-math-symbols-latex))
+#+END_SRC
+
+We add another backend to support completion in shell and terminal-modes
+#+BEGIN_SRC emacs-lisp
+  (use-package company-shell
+    :defer t
+    :config
+  (defun my-company-shell-modes ()
+    (setq-local company-backends '((company-capf company-shell company-shell-env company-files company-dabbrev)))
+
+    (add-hook 'eshell-mode-hook #'my-company-shell-modes)))
 #+END_SRC
 
 ***** TODO Yasnippet, Company and LSP
@@ -1055,7 +1152,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
 
    It acts as a markup language, can deal with planning, manage spreadsheets, do project planning, run code blocks to do literate programming ...
 
-*** Font faces
+** Font faces
 
      In order for Org Mode to feel like a document instead of code, we use a different font.
 
@@ -1094,7 +1191,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
   (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
 #+END_SRC
-*** Basic configuration
+** Basic configuration
 
      We change the general feel of Org Mode documents by using other indentation rules, by changing the headers appearance, and a few other minor changes.
 
@@ -1122,7 +1219,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
 
 #+END_SRC
 
-*** Org Babel
+** Org Babel
 
      Org babel is what allows us to write code and execute it, all within the same document.
 
@@ -1139,7 +1236,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
 
 #+END_SRC
 
-*** Auto-tangle configuration files
+** Auto-tangle configuration files
 
      In order to concatenate all the code blocks that are written in this document to an external file, we need to "tangle" it.
 
@@ -1261,7 +1358,8 @@ Another useful package to deal with references, bibliography, citations and so o
 #+END_SRC
 
 * System
-*** Eshell
+** Eshell
+*** Visual
 
 Contrary to =term= and =shell= (respectively invoked by =M-x <term/shell>=), [[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]] is not /emulating/ anything: it is, on its own, a shell-like command interpreter implemented in Emacs Lisp. As such, it provides (most of) the usual commands such as =grep=, =ls= and so on, as well as an extra binding to Emacs (for example, you can redirect the output of any command to an Emacs buffer). For this reason, you can use =eshell= on any system that is able to run Emacs, as there is no external dependency.
 
@@ -1285,6 +1383,7 @@ We install a few packages which make eshell easier to use.
     :hook (eshell-mode . eshell-syntax-highlighting-mode))
 #+END_SRC
 
+*** Binding with .bashrc
 *MANUAL* One thing that we might want to do is to be able to use aliases defined in =.bashrc= in =eshell=. There are [[https://www.emacswiki.org/emacs/EshellAlias][several solutions]] to this problem, and the one I use only allows us to use bash aliases in =eshell= and not the contrary, for example.
 
 We do this by adding the following line at the end of the =.bashrc= file:
