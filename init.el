@@ -2,19 +2,21 @@
 
 (defun my-display-startup-time ()
   (message "Emacs started in %s seconds"
-    (format "%.2f"
-      (float-time
-        (time-subtract after-init-time before-init-time)))))
+           (format "%.2f"
+                   (float-time
+                    (time-subtract after-init-time before-init-time)))))
 
 (defun my-display-garbage-collection ()
   (message "Emacs performed %d garbage collection"
-    gcs-done))
+           gcs-done))
+
+(defun my-restore-gc-cons ()
+  ;; After startup, we restore gc-cons-threshold to a more reasonable value
+  (setq gc-cons-threshold 10000000)) ; 1e7 = 10 MB
 
 (add-hook 'emacs-startup-hook #'my-display-startup-time)
 (add-hook 'emacs-startup-hook #'my-display-garbage-collection)
-
-; After startup, we restore gc-cons-threshold to a more reasonable value
-(setq gc-cons-threshold 10000000) ; 1e7 = 10 MB
+(add-hook 'emacs-startup-hook #'my-restore-gc-cons)
 
 ;; Initialize package sources
 (require 'package)
@@ -208,8 +210,10 @@
 
 (prefer-coding-system 'utf-8)
 (setq locale-coding-system 'utf-8)
-(set-language-environment "UTF-8")
+(set-language-environment 'utf-8)
 (set-default-coding-systems 'utf-8)
+(set-clipboard-coding-system 'utf-8)
+(set-file-name-coding-system 'utf-8)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 (set-selection-coding-system 'utf-8)
@@ -269,6 +273,9 @@
          :map minibuffer-local-map
          ("C-r" . 'counsel-minibuffer-history)))
 
+(use-package amx
+   :init (setq amx-history-length 10))
+
 ;; Automatically reload a file if it has been modified
 (global-auto-revert-mode t)
 
@@ -284,6 +291,13 @@
 
 (setq uniquify-buffer-name-style 'forward)
 (setq uniquify-after-kill-buffer-p t)
+
+(use-package all-the-icons-ibuffer
+  :after ibuffer
+  :hook (ibuffer . all-the-icons-ibuffer-mode))
+
+(use-package ibuffer
+  :bind ("C-x C-b" . ibuffer))
 
 (winner-mode 1)
 

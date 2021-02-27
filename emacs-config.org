@@ -35,21 +35,24 @@ First, we set things up so that Emacs starts /fast/.
 Another thing that might be of interest is to know how long it took for Emacs to start. Although there is already a built-in function to do this (try to call =emacs-init-time= in any Emacs session), we want it to be automatically displayed anytime we start Emacs
 
 #+BEGIN_SRC emacs-lisp
-(defun my-display-startup-time ()
-  (message "Emacs started in %s seconds"
-    (format "%.2f"
-      (float-time
-        (time-subtract after-init-time before-init-time)))))
+  (defun my-display-startup-time ()
+    (message "Emacs started in %s seconds"
+             (format "%.2f"
+                     (float-time
+                      (time-subtract after-init-time before-init-time)))))
 
-(defun my-display-garbage-collection ()
-  (message "Emacs performed %d garbage collection"
-    gcs-done))
+  (defun my-display-garbage-collection ()
+    (message "Emacs performed %d garbage collection"
+             gcs-done))
 
-(add-hook 'emacs-startup-hook #'my-display-startup-time)
-(add-hook 'emacs-startup-hook #'my-display-garbage-collection)
+  (defun my-restore-gc-cons ()
+    ;; After startup, we restore gc-cons-threshold to a more reasonable value
+    (setq gc-cons-threshold 10000000)) ; 1e7 = 10 MB
 
-; After startup, we restore gc-cons-threshold to a more reasonable value
-(setq gc-cons-threshold 10000000) ; 1e7 = 10 MB
+  (add-hook 'emacs-startup-hook #'my-display-startup-time)
+  (add-hook 'emacs-startup-hook #'my-display-garbage-collection)
+  (add-hook 'emacs-startup-hook #'my-restore-gc-cons)
+
 #+END_SRC
 
 ** Package management
@@ -359,8 +362,10 @@ Even if most of the time, you should be working with UTF-8, we still want to mak
 #+BEGIN_SRC emacs-lisp
   (prefer-coding-system 'utf-8)
   (setq locale-coding-system 'utf-8)
-  (set-language-environment "UTF-8")
+  (set-language-environment 'utf-8)
   (set-default-coding-systems 'utf-8)
+  (set-clipboard-coding-system 'utf-8)
+  (set-file-name-coding-system 'utf-8)
   (set-terminal-coding-system 'utf-8)
   (set-keyboard-coding-system 'utf-8)
   (set-selection-coding-system 'utf-8)
@@ -466,6 +471,13 @@ Although emacs provides a number of commands to navigate within a file, to find 
 
 #+END_SRC
 
+Because we often find ourselves repeating the same command  (or variants of it) in the minibuffer, we might want to have a quick access to the history
+
+#+BEGIN_SRC emacs-lisp
+  (use-package amx
+     :init (setq amx-history-length 10))
+#+END_SRC
+
 ** Buffer and windows
 *** Buffer management
 Emacs is sometimes all over the place, opening buffers at seemingly random places, switching your focus only in some circumstances ... We will customize this behaviour so that we have a better control on what Emacs is doing when we open new buffers
@@ -491,6 +503,18 @@ Another annoying thing is that we tend to have /a lot/ of open buffers at the sa
 #+BEGIN_SRC emacs-lisp
   (setq uniquify-buffer-name-style 'forward)
   (setq uniquify-after-kill-buffer-p t)
+#+END_SRC
+
+We also improve the appearance (and functionalities) of the buffer that we get when we want to list all the buffers that are currently opened.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package all-the-icons-ibuffer
+    :after ibuffer
+    :hook (ibuffer . all-the-icons-ibuffer-mode))
+
+  (use-package ibuffer
+    :bind ("C-x C-b" . ibuffer))
+
 #+END_SRC
 
 *** Window management
