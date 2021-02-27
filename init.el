@@ -258,15 +258,16 @@
     (interactive)
     (ivy-alt-done t))
 
-  (ivy-mode 1))
+  :init (ivy-mode 1))
 
 ;; Adds things to Ivy
 (use-package ivy-rich
-  :hook (ivy . ivy-rich-mode))
+  :after ivy
+  :init (ivy-rich-mode 1))
 
 ;; Counsel. Adds things to Ivy
 (use-package counsel
-  :config (counsel-mode)
+  :init (counsel-mode 1)
   :diminish
   :bind (("M-x" . counsel-M-x)
          ("C-x b" . counsel-ibuffer)
@@ -643,7 +644,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
   :config
-  (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+  (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
   (lsp-enable-which-key-integration t)
   (setq lsp-prefer-flymake nil)
   (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
@@ -925,16 +926,3 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package all-the-icons-dired
   :diminish
   :hook (dired-mode . all-the-icons-dired-mode))
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages
-   '(all-the-icons-dired yasnippet-snippets which-key visual-fill-column use-package undo-tree tuareg smartparens sly restart-emacs rainbow-mode rainbow-delimiters python-mode pretty-hydra pdf-tools paredit org-bullets multiple-cursors magit lsp-ui lsp-treemacs lsp-ivy ivy-rich hungry-delete highlight-defined helpful git-timemachine flycheck fill-column-indicator expand-region eshell-syntax-highlighting eshell-did-you-mean elmacro doom-themes doom-modeline cycle-themes counsel-projectile company-shell company-quickhelp company-math company-box command-log-mode ccls beacon auctex amx all-the-icons-ibuffer)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )

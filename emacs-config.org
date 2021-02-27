@@ -454,15 +454,16 @@ Although emacs provides a number of commands to navigate within a file, to find 
       (interactive)
       (ivy-alt-done t))
 
-    (ivy-mode 1))
+    :init (ivy-mode 1))
 
   ;; Adds things to Ivy
   (use-package ivy-rich
-    :hook (ivy . ivy-rich-mode))
+    :after ivy
+    :init (ivy-rich-mode 1))
 
   ;; Counsel. Adds things to Ivy
   (use-package counsel
-    :config (counsel-mode)
+    :init (counsel-mode 1)
     :diminish
     :bind (("M-x" . counsel-M-x)
            ("C-x b" . counsel-ibuffer)
@@ -1010,7 +1011,7 @@ Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP 
   (use-package lsp-mode
     :commands (lsp lsp-deferred)
     :config
-    (setq lsp-keymap-prefix "C-c l")  ;; Or 'C-l', 's-l'
+    (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
     (lsp-enable-which-key-integration t)
     (setq lsp-prefer-flymake nil)
     (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
