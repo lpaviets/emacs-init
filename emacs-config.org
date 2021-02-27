@@ -1425,15 +1425,31 @@ We install a few packages which make eshell easier to use.
 
   (use-package eshell-syntax-highlighting
     :hook (eshell-mode . eshell-syntax-highlighting-mode))
-#+END_SRC
+#+end_src
 
 *** Binding with .bashrc
 *MANUAL* One thing that we might want to do is to be able to use aliases defined in =.bashrc= in =eshell=. There are [[https://www.emacswiki.org/emacs/EshellAlias][several solutions]] to this problem, and the one I use only allows us to use bash aliases in =eshell= and not the contrary, for example.
 
 We do this by adding the following line at the end of the =.bashrc= file:
 
-#+BEGIN_SRC sh
+#+begin_src sh
 alias | sed -E "s/^alias ([^=]+)='(.*)'$/alias \1 \2 \$*/g; s/'\\\''/'/g;" >~/.emacs.d/eshell/alias
-#+END_SRC
+#+end_src
 
 It will simply go through the file, and each time it sees a line starting with =alias=, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where =eshell= reads its aliases.
+*** Dired
+
+Now, we try to add things on top of the built-in file manager, Dired.
+
+#+begin_src emacs-lisp
+  (use-package dired
+    :ensure nil
+    :config
+    ;; Delete and copy directories recursively
+    (setq dired-recursive-deletes 'always
+          dired-recursive-copies 'always))
+
+  (use-package all-the-icons-dired
+    :diminish
+    :hook (dired-mode . all-the-icons-dired-mode))
+#+end_src

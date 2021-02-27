@@ -813,9 +813,6 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
       (unless
           (member (car key-template) bound-key-templates)
         (add-to-list 'org-structure-template-alist key-template)))))
-  ;; (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
-  ;; (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-  ;; (add-to-list 'org-structure-template-alist '("py" . "src python")))
 
 ;; Automatically tangles this emacs-config config file when we save it
 (defun my-org-babel-tangle-config ()
@@ -917,3 +914,27 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package eshell-syntax-highlighting
   :hook (eshell-mode . eshell-syntax-highlighting-mode))
+
+(use-package dired
+  :ensure nil
+  :config
+  ;; Delete and copy directories recursively
+  (setq dired-recursive-deletes 'always
+        dired-recursive-copies 'always))
+
+(use-package all-the-icons-dired
+  :diminish
+  :hook (dired-mode . all-the-icons-dired-mode))
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(package-selected-packages
+   '(all-the-icons-dired yasnippet-snippets which-key visual-fill-column use-package undo-tree tuareg smartparens sly restart-emacs rainbow-mode rainbow-delimiters python-mode pretty-hydra pdf-tools paredit org-bullets multiple-cursors magit lsp-ui lsp-treemacs lsp-ivy ivy-rich hungry-delete highlight-defined helpful git-timemachine flycheck fill-column-indicator expand-region eshell-syntax-highlighting eshell-did-you-mean elmacro doom-themes doom-modeline cycle-themes counsel-projectile company-shell company-quickhelp company-math company-box command-log-mode ccls beacon auctex amx all-the-icons-ibuffer)))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
