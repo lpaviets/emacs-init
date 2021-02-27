@@ -28,13 +28,13 @@
 
 First, we set things up so that Emacs starts /fast/.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (setq gc-cons-threshold 100000000) ; 1e8 = 100 MB (default: 800kB)
-#+END_SRC
+#+end_src
 
 Another thing that might be of interest is to know how long it took for Emacs to start. Although there is already a built-in function to do this (try to call =emacs-init-time= in any Emacs session), we want it to be automatically displayed anytime we start Emacs
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun my-display-startup-time ()
     (message "Emacs started in %s seconds"
              (format "%.2f"
@@ -53,7 +53,7 @@ Another thing that might be of interest is to know how long it took for Emacs to
   (add-hook 'emacs-startup-hook #'my-display-garbage-collection)
   (add-hook 'emacs-startup-hook #'my-restore-gc-cons)
 
-#+END_SRC
+#+end_src
 
 ** Package management
 
@@ -64,7 +64,7 @@ It makes both installation and customization easier, and the code is also simple
 *MANUAL* You might want to configure =use-package= differently, as it is the tool used everywhere else in this configuration file to install and setup other packages. For example, the line
 =(setq use-package-always-ensure t)= is used to install all the packages mentioned in this file automatically if you do not already have them. Depending on your environment, you might want to consider another, more appropriate behaviour (/e.g./  if you lack space, time, if you use another OS, if you are already compiling some of those packages by yourself, and so on).
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Initialize package sources
   (require 'package)
 
@@ -89,16 +89,16 @@ It makes both installation and customization easier, and the code is also simple
   ;; all the packages that you are missing
   (setq use-package-always-ensure t)
 
-#+END_SRC
+#+end_src
 
 ** Quick restart
 
 In order to test things more rapidly and to be able to apply configuration changes without ever leaving Emacs, we also install another package to restart Emacs with a simple command.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package restart-emacs
     :commands (restart-emacs restart-emacs-start-new-emacs))
-#+END_SRC
+#+end_src
 
 * UI Configuration
 ** Visual interface changes
@@ -112,39 +112,39 @@ All the variable names are pretty explicit, so you should be able to customize t
 *** Startup
 
 Who wants to be told the same thing over and over again each time they start Emacs ?
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Disable the annoying startup message and Emacs logo
   (setq inhibit-startup-message t)
 
   ;; Disable the message on top of the Scratch buffer
   (setq initial-scratch-message nil)
-#+END_SRC
+#+end_src
 
 However, we would like to see Emacs in full-screen if we are to use it
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Maximize the Emacs frame at startup
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
-#+END_SRC
+#+end_src
 
 *** Menus and toolbars
 
 Emacs is very much keyboard-oriented. As such, we have little-to-no use of the various menus, toolbars and scrollbars that Emacs provides.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (scroll-bar-mode -1)        ; Disable visible scrollbar
   (tool-bar-mode -1)          ; Disable the toolbar
   (tooltip-mode -1)           ; Disable tooltips
   (set-fringe-mode 10)        ; Give some breathing room
 
   (menu-bar-mode -1)          ; Disable the menu bar
-#+END_SRC
+#+end_src
 
 *** Lines and columns
 
 Because we now have plenty of free space on our screen, we can sacrifice a bit of it to put useful information there, such as line numbers. We also want to see the current line and column in the modeline.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Global line/column numbering mode
   ;; Modes in which we might want to disable it:
 
@@ -172,27 +172,27 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
                   dired-mode-hook))
 
   (add-hook mode #'my-disable-line-numbers))
-#+END_SRC
+#+end_src
 
 While we are at it, we also want Emacs to wrap our lines, so that we never have to scroll horizontally to see the end of a long line (besides, how would we do it, now that we don't have a scrollbar anymore ?!)
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (global-visual-line-mode 1)
-#+END_SRC
+#+end_src
 
 *** Theme
 
 This is simply a way to change how Emacs looks. Some themes are more complete than other (they will modify how other packages look, like Magit, or even the minibuffer)
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Themes
   (use-package doom-themes
     :init (load-theme 'doom-Iosvkem t))
-#+END_SRC
+#+end_src
 
 We also install an extra package to cycle through all (or a predefined list) the themes.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package cycle-themes
     :defer t
     ;; :config
@@ -200,7 +200,7 @@ We also install an extra package to cycle through all (or a predefined list) the
     ;;        '(leuven monokai solarized-dark)) ; Your favourite themes list
     )
 
-#+END_SRC
+#+end_src
 
 *** Modeline and icons
 
@@ -210,7 +210,7 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
 
 =M-x all-the-icons-install-fonts=
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; First time used: run M-x all-the-icons-install-fonts
   (use-package all-the-icons
     :config
@@ -232,13 +232,13 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
     :after all-the-icons
     :init (doom-modeline-mode 1)
     :custom ((doom-modeline-height 15)))
-#+END_SRC
+#+end_src
 
 *** Interactively change the UI
 
 This is one moment where a pretty hydra could help us change general UI parameters, such as the text size, some highlighting options and so on.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (with-eval-after-load 'hydra
 ;define a title function
   (defvar appearance-title (with-faicon "desktop" "Appearance"))
@@ -286,12 +286,12 @@ This is one moment where a pretty hydra could help us change general UI paramete
 
   (global-set-key (kbd "C-c h a") 'hydra-appearance/body)
 
-#+END_SRC
+#+end_src
 *** Extra packages
 
 Some packages are used lated in the configuration, and we want to be able to use those comfortable modes.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;; Generic UI modes
 
 (use-package beacon
@@ -302,36 +302,36 @@ Some packages are used lated in the configuration, and we want to be able to use
   :defer t)
 (use-package visual-fill-column
   :defer t)
-#+END_SRC
+#+end_src
 
 ** Whitespaces
 
 First of all, we never want "TAB" to insert actual tab characters.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Tab behaviour and whitespaces
   (setq-default indent-tabs-mode nil)
   (setq tab-width 4)
-#+END_SRC
+#+end_src
 
 Then, we do not want to repeatedly spam the =<DEL>= key in order to delete a long sequence of whitespaces.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package hungry-delete
   :ensure t
   :defer t
   :init
   (global-hungry-delete-mode 1))
-#+END_SRC
+#+end_src
 
 ** Hydra
 
 [[https://github.com/abo-abo/hydra][Hydra]] is a package that is used to group several related commands into a family of bindings, all starting with the same prefix (= "hydra"). Whenever this common prefix is entered in a suitable mode, a panel shows up, showing all the user-defined commands that can now be invoked with a single keystroke instead of repeatedly using the same long prefix.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package hydra
   :defer t)
-#+END_SRC
+#+end_src
 
 All the hydras will now be defined after the package to which they correspond, or in the appropriate section. Most of them are modifications of hydras that can be found on the [[https://github.com/abo-abo/hydra/wiki][hydra wiki]].
 
@@ -340,7 +340,7 @@ Some hydras will be called less frequently and for other purposes than getting a
 
 *MANUAL* This is not a MELPA package. It can be found [[https://github.com/Ladicle/hydra-posframe][here]]. Install it and change the loading path according to your configuration.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package posframe
     :defer t)
 
@@ -353,13 +353,13 @@ Some hydras will be called less frequently and for other purposes than getting a
   (use-package pretty-hydra
     :defer t
     :after hydra)
-#+END_SRC
+#+end_src
 
 ** Font and encoding
 
 Even if most of the time, you should be working with UTF-8, we still want to make sure that this is the default and that Emacs assumes that we are using UTF-8
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (prefer-coding-system 'utf-8)
   (setq locale-coding-system 'utf-8)
   (set-language-environment 'utf-8)
@@ -369,26 +369,26 @@ Even if most of the time, you should be working with UTF-8, we still want to mak
   (set-terminal-coding-system 'utf-8)
   (set-keyboard-coding-system 'utf-8)
   (set-selection-coding-system 'utf-8)
-#+END_SRC
+#+end_src
 
 ** Commands
 *** Disable
 
 We want to use the full Emacs power. However, if you find yourself using repeatedly a dangerous command by mistake, you might want to disable it
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Don't disable any command
   ;; BE CAREFUL
   ;; If you are a new user, you might to comment out this line
   (setq disabled-command-function nil)
 
-#+END_SRC
+#+end_src
 
 There is, however, one really annoying binding, especially for new users or people used to ... computers, calling the =suspend-frame= command. For people who are using it, do not worry, it is still available on =C-x C-z= anyway.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (global-unset-key (kbd "C-z"))
-#+END_SRC
+#+end_src
 
 *** Command log mode
 
@@ -398,21 +398,21 @@ As of now, you need to enable the mode by using the =command-log-mode= command (
 
 If you want =command-log-mode= to be activated by default in certain minor (or even major) modes, simply add a hook. You will still need to explicitly open the buffer, but this could also be dealt with by using other, straightforward hooks.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package command-log-mode
 ;; :hook (<your-favourite-mode> . command-log-mode) ; Add here modes in which you want to run the command-log-mode
   :commands command-log-mode
 )
-#+END_SRC
+#+end_src
 
 *** Confirmation
 
 Typing "yes" and "no" might be a bit too tiring
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Type "y" instead of "yes RET" for confirmation
   (defalias 'yes-or-no-p 'y-or-n-p)
-#+END_SRC
+#+end_src
 
 *** Help
 
@@ -420,14 +420,14 @@ Because there are a lot of similar commands, it is quite easy to get lost. [[htt
 
 For example, if you press =C-c=, then a panel will appear at the bottom of the screen to show how you can currently continue this command, depending on which buffer you are in.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
   :init (which-key-mode)
   :diminish
   :config
   (setq which-key-idle-delay 1))
-#+END_SRC
+#+end_src
 
 ** Minibuffer
 
@@ -435,54 +435,55 @@ Although emacs provides a number of commands to navigate within a file, to find 
 
 [[https://github.com/abo-abo/swiper][Ivy and Counsel]] are completion and narrowing frameworks that allow you to use the minibuffer more comfortably.
 
-#+BEGIN_SRC emacs-lisp
-;; Ivy
-(use-package ivy
-  :diminish 
-  :bind (("C-s" . swiper)
-	 :map ivy-minibuffer-map
-	 ("TAB" . ivy-partial-or-done)
-	 ("C-l" . my-ivy-alt-done-t) ; Small hack
-	 :map ivy-switch-buffer-map
-	 ("C-l" . ivy-done)
-	 ("C-d" . ivy-switch-buffer-kill)
-	 :map ivy-reverse-i-search-map
-	 ("C-d" . ivy-reverse-i-search-kill))
-  :config
-  (defun my-ivy-alt-done-t ()
-    (interactive)
-    (ivy-alt-done t))
+#+begin_src emacs-lisp
+  ;; Ivy
+  (use-package ivy
+    :diminish 
+    :bind (("C-s" . swiper)
+           :map ivy-minibuffer-map
+           ("TAB" . ivy-partial-or-done)
+           ("C-l" . my-ivy-alt-done-t) ; Small hack
+           :map ivy-switch-buffer-map
+           ("C-l" . ivy-done)
+           ("C-d" . ivy-switch-buffer-kill)
+           :map ivy-reverse-i-search-map
+           ("C-d" . ivy-reverse-i-search-kill))
+    :config
+    ;; Todo: check if ivy-use-selectable-prompt does the trick
+    (defun my-ivy-alt-done-t ()
+      (interactive)
+      (ivy-alt-done t))
 
-  (ivy-mode 1))
+    (ivy-mode 1))
 
-;; Adds things to Ivy
-(use-package ivy-rich
-  :hook (ivy . ivy-rich-mode))
+  ;; Adds things to Ivy
+  (use-package ivy-rich
+    :hook (ivy . ivy-rich-mode))
 
-;; Counsel. Adds things to Ivy
-(use-package counsel
-  :config (counsel-mode)
-  :diminish
-  :bind (("M-x" . counsel-M-x)
-         ("C-x b" . counsel-ibuffer)
-         ("C-x C-f" . counsel-find-file)
-         :map minibuffer-local-map
-         ("C-r" . 'counsel-minibuffer-history)))
+  ;; Counsel. Adds things to Ivy
+  (use-package counsel
+    :config (counsel-mode)
+    :diminish
+    :bind (("M-x" . counsel-M-x)
+           ("C-x b" . counsel-ibuffer)
+           ("C-x C-f" . counsel-find-file)
+           :map minibuffer-local-map
+           ("C-r" . 'counsel-minibuffer-history)))
 
-#+END_SRC
+#+end_src
 
 Because we often find ourselves repeating the same command  (or variants of it) in the minibuffer, we might want to have a quick access to the history
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package amx
      :init (setq amx-history-length 10))
-#+END_SRC
+#+end_src
 
 ** Buffer and windows
 *** Buffer management
 Emacs is sometimes all over the place, opening buffers at seemingly random places, switching your focus only in some circumstances ... We will customize this behaviour so that we have a better control on what Emacs is doing when we open new buffers
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Automatically reload a file if it has been modified
   (global-auto-revert-mode t)
 
@@ -496,18 +497,18 @@ Emacs is sometimes all over the place, opening buffers at seemingly random place
   ;; Can even have further control with
   ;; display-buffer-alist, or using extra-parameters
 
-#+END_SRC
+#+end_src
 
 Another annoying thing is that we tend to have /a lot/ of open buffers at the same time, and there will invariably be some conflicts in their names. We want to be able to quickly distinguish which file is buffer is visiting.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (setq uniquify-buffer-name-style 'forward)
   (setq uniquify-after-kill-buffer-p t)
-#+END_SRC
+#+end_src
 
 We also improve the appearance (and functionalities) of the buffer that we get when we want to list all the buffers that are currently opened.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package all-the-icons-ibuffer
     :after ibuffer
     :hook (ibuffer . all-the-icons-ibuffer-mode))
@@ -515,22 +516,22 @@ We also improve the appearance (and functionalities) of the buffer that we get w
   (use-package ibuffer
     :bind ("C-x C-b" . ibuffer))
 
-#+END_SRC
+#+end_src
 
 *** Window management
 
 Because window management can be a bit tedious with the basic Emacs functionalities, we improve it a bit. First of all, we enable =winner-mode=, which allows us to "undo" and "redo" changes in the Windows' configuration.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (winner-mode 1)
 
-#+END_SRC
+#+end_src
 
 To facilitate window management, we use an hydra, binding most of the commands that we might ever need.
 
 First of all, we use a few helper functions, defined in [[https://github.com/abo-abo/hydra/blob/master/hydra-examples.el][hydra-examples.el]]
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;;* Helpers
 (use-package windmove
   :defer t)
@@ -566,11 +567,11 @@ First of all, we use a few helper functions, defined in [[https://github.com/abo
         (windmove-find-other-window 'up))
       (shrink-window arg)
     (enlarge-window arg)))
-#+END_SRC
+#+end_src
 
 Now, we wrap everything up into a nice hydra
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (global-set-key
 (kbd "C-c h w") ; w for window
 (defhydra hydra-window (:color red
@@ -623,14 +624,14 @@ _q_uit
   ;("i" ace-maximize-window "ace-one" :color blue)
   ;("b" ido-switch-buffer "buf")
   ("m" headlong-bookmark-jump)))
-#+END_SRC
+#+end_src
 ** Help !
 
 Emacs already has a /great/ documentation system, but it is still possible to improve it ! [[https://github.com/Wilfred/helpful][helpful]] makes things easier to remember and to use without having to search for documentation in multiple places.
 
 It will condense all the available information about something within a single Help buffer, and will add some documentation to the commands you are currently typing.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Helpful. Extra documentation when calling for help
   (use-package helpful
     :after counsel
@@ -645,7 +646,7 @@ It will condense all the available information about something within a single H
     ([remap describe-key]      . helpful-key)
     ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
 
-#+END_SRC
+#+end_src
 
 * Editing
 
@@ -654,7 +655,7 @@ It will condense all the available information about something within a single H
 
 A first improvement is the addition of multiple cursors. The "rectangle region" already gives a way to insert text simultaneously at several places, and to perform some easy operations on a rectangular area, but the [[https://github.com/magnars/multiple-cursors.el][multiple cursor]] package really increases the possibilities.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package multiple-cursors
     :bind
     (("C-c o <SPC>" . mc/vertical-align-with-space)
@@ -668,7 +669,7 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
      ("C-c o C-a"   . mc/edit-beginnings-of-lines)
      ("C-c o C-e"   . mc/edit-ends-of-lines)
      ("C-c o r"     . mc/mark-all-in-region)))
-#+END_SRC
+#+end_src
 
 The webpage specifies that the commands provided by this package are best invoked when bound to key sequence rather than by =M-x <mc/command-name>=, although some testing on my part seems to show that it still works relatively well most of the time.
 
@@ -676,7 +677,7 @@ The webpage specifies that the commands provided by this package are best invoke
 
 Because movement keys are the most frequently used ones, it might be useful to create an Hydra helping us navigate around a document.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (global-set-key
  (kbd "C-c h m")
  (defhydra hydra-move ()
@@ -691,7 +692,7 @@ Because movement keys are the most frequently used ones, it might be useful to c
    ;; Converting M-v to V here by analogy.
    ("V" scroll-down-command)
    ("l" recenter-top-bottom)))
-#+END_SRC
+#+end_src
 
 ** Rectangles
 
@@ -699,7 +700,7 @@ Manipulating rectangles is a cool Emacs feature. You can select a region with th
 
 Because the functions operating on rectangles are not always the easier to remember, we simply define a new Hydra referencing the most useful ones.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (global-set-key
 (kbd "C-c h r") ; r as rectangle
 (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
@@ -730,22 +731,22 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   ("i" string-insert-rectangle)
   ("u" undo nil)
   ("q" nil)))
-#+END_SRC
+#+end_src
 
 ** Selection
 
 A useful tool to manipulate text and even source code is the [[https://github.com/magnars/expand-region.el][expand-region]] package, as it allows us to increase the selected region to match larger and larger /semantic/ units. For example, by using it repeatedly, you could select in this order a character, a word, a string containing this word, a sexp containing this string, and the function in this sexp is used.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package expand-region
 :bind ("C-=" . er/expand-region))
-#+END_SRC
+#+end_src
 
 We also define functions that Emacs is surprinsingly lacking.
 
 The first one is used to copy without deleting the current line (internally, it uses =kill-ring-save=, and so it can be used in a read-only context (unlike a sequence like =C-a C-k C-y=). It is also much quicker than variations on the sequence  =C-e C-SPC C-a M-w=.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
    (defun copy-line-at-point (arg)
      "Copy ARG lines in the kill ring, starting from the line at point and copying subsequent ones if ARG > 1"
      (interactive "p")
@@ -759,7 +760,7 @@ The first one is used to copy without deleting the current line (internally, it 
   ;; Might want to find a more clever way to use personal
   ;; keybindings, such as defining a minor mode ...
   (global-set-key (kbd "M-k") 'copy-line-at-point)
-#+END_SRC
+#+end_src
 
 ** Undo
 
@@ -767,21 +768,21 @@ Another very useful package is undo-tree, which allows you to visualize the prev
 
 It can act as a small, local version control system due to how Undos are managed by Emacs.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package undo-tree
     :config
     (setq undo-tree-visualizer-timestamps t)
     (global-undo-tree-mode)
     :diminish (undo-tree-mode))
 
-#+END_SRC
+#+end_src
 
 * Programming
 ** Projectile
 
     [[https://projectile.mx/][Projectile]] is an Emacs package that makes project management easier. It allows us /e.g./ to navigate between files of the same project, search/replace within files of the same project, and integrates very well with other tools, such as =lsp-mode= or =counsel=.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package projectile
   :diminish
   :init
@@ -800,7 +801,7 @@ It can act as a small, local version control system due to how Undos are managed
   :after (counsel projectile)
   :config (counsel-projectile-mode))
 
-#+END_SRC
+#+end_src
 
 ** Git
 *** Magit
@@ -808,13 +809,13 @@ It can act as a small, local version control system due to how Undos are managed
 
 It is a Text User Interface to Git, which integrates most of Git commands, even the most advanced ones, while making it easy to use even for beginners.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package magit
     ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
     ;; uncomment previous line to have magit open itself within the same buffer
     ;; instead of in another buffer
     :bind ("C-x g" . magit-status))
-#+END_SRC
+#+end_src
 
 *** Git-timemachine
 
@@ -822,26 +823,26 @@ Another useful package is [[https://github.com/emacsmirror/git-timemachine][git-
 
 Although Magit is more or less able to do the same thing, the interface there is cleaner and you are less likely to get lost than in the fully-featured super-package that Magit is.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package git-timemachine
     :defer t)
-#+END_SRC
+#+end_src
 ** Parenthesis
 
 First of all, we want to easily be able to tell with a quick glance which parenthesis are matching
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Always highlight matching parenthesis
   (show-paren-mode t)
 
   ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
   (use-package rainbow-delimiters
     :hook (prog-mode . rainbow-delimiters-mode))
-#+END_SRC
+#+end_src
 
 Now, in order to work with structured text, such as source code, we want to be able to directly manipulate "expressions" rather than lines or words. This is why we use the following packages, as they provide a lot of functionalities to navigate and edit those expressions.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Smartparens is currently bugged
   (use-package smartparens
     :custom (sp-highlight-pair-overlay nil)
@@ -899,32 +900,32 @@ Now, in order to work with structured text, such as source code, we want to be a
   ;; work properly (e.g. <DEL> is not bound to sp-backward-delete-char)
 
   (add-hook 'prog-mode-hook #'paredit-or-smartparens)
-#+END_SRC
+#+end_src
 
 ** Auto-completion
 **** YASnippet
 
      A first useful package is YASnippet, which makes it easy to define and automatically insert snippets of code in various languages.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;;YASnippet
   (use-package yasnippet
     :diminish
     :init (yas-global-mode 0))
-#+END_SRC
+#+end_src
 
 It is even possible to define your own snippets. The following package contains a lot of useful snippets for various programming languages or tools, such a C++, Clojure, various Makefiles, Emacs' Org-Mode ...
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package yasnippet-snippets
     :after yasnippet)
-#+END_SRC
+#+end_src
 
 **** Company
 
      Several packages are available to make auto-completion more efficient and intuitive than the built-in =completion-at-point= function. We use [[https://company-mode.github.io/][Company]] (stands for "comp[lete] any[thing]") as it integrates nicely with other packages that we use, is well-maintained and has a more modern interface than most of its counterparts such as =auto-complete=.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Company. Auto-completion package
   (use-package company
     :diminish
@@ -949,11 +950,11 @@ It is even possible to define your own snippets. The following package contains 
        (company-selection-wrap-around t)
        (company-show-numbers t))
 
-#+END_SRC
+#+end_src
 
 To have a cleaner interface and also a bit of documentation added to the suggested completions, we use two extra packages.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package company-box
     :after company
     :hook (company-mode . company-box-mode)
@@ -965,28 +966,28 @@ To have a cleaner interface and also a bit of documentation added to the suggest
     :diminish
     :custom (company-quickhelp-delay 0.2))
 
-#+END_SRC
+#+end_src
 
 ***** Company backends
 
 A first backend that we want to consider is the one using snippets provided by =yasnippet=
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;; (add-to-list 'company-backends 'company-yasnippet)
-#+END_SRC
+#+end_src
 
 We install another backend specifically for LaTeX
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package company-math
     :after company
     :config
     (add-to-list 'company-backends 'company-math-symbols-unicode)
     (add-to-list 'company-backends 'company-math-symbols-latex))
-#+END_SRC
+#+end_src
 
 We add another backend to support completion in shell and terminal-modes
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package company-shell
     :defer t
     :config
@@ -994,7 +995,7 @@ We add another backend to support completion in shell and terminal-modes
     (setq-local company-backends '((company-capf company-shell company-shell-env company-files company-dabbrev)))
 
     (add-hook 'eshell-mode-hook #'my-company-shell-modes)))
-#+END_SRC
+#+end_src
 
 ***** TODO Yasnippet, Company and LSP
 Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP are no longer shown.
@@ -1003,7 +1004,7 @@ Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP 
 
     The [[https://en.wikipedia.org/wiki/Language_Server_Protocol][Language Server Protocol]] is a protocol which facilitates the use of several languages with various IDE. Instead of specifying a syntax, ..., for each pair "IDE/Language", it aims at abstracting the specifities of each language, so that each IDE will need to communicate with a server that will give back the information needed to do IDE-y things such as highlighting or auto-completion in an unified manner.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 
   ;; LSP mode. Useful IDE-like features
   (use-package lsp-mode
@@ -1035,13 +1036,13 @@ Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP 
   (use-package lsp-ivy
     :after (lsp-mode ivy))
 
-#+END_SRC
+#+end_src
 
 ** Real-time syntax checking
 
     [[https://www.flycheck.org/en/latest/][Flycheck]] is a modern on-the-fly syntax checking extension to Emacs, working for several languages, showing different level of errors (warnings, errors ...), and which has a natural integration to =lsp-mode=.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;; Flycheck
 (use-package flycheck
   :defer t
@@ -1052,11 +1053,11 @@ Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP 
   ;; :hook (python-mode . flycheck-mode)
   ) ; Temporary to avoid noise ...
 
-#+END_SRC
+#+end_src
 
 Another package doing more or less the same thing but in a different way:
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;; Semantic
 (use-package semantic
 ;; (require 'semantic/ia)
@@ -1071,7 +1072,7 @@ Another package doing more or less the same thing but in a different way:
   (global-semanticdb-minor-mode t)
   (global-semantic-idle-scheduler-mode t))
 
-#+END_SRC
+#+end_src
 
 ** Programming languages
 
@@ -1086,7 +1087,7 @@ Another package doing more or less the same thing but in a different way:
 
      The command =pyls= needs to be available on the =PATH= environment variable.
 
-     #+BEGIN_SRC emacs-lisp
+     #+begin_src emacs-lisp
 
 ;; Python
 
@@ -1101,13 +1102,13 @@ Another package doing more or less the same thing but in a different way:
   (setq tab-width 4)
   (setq python-indent-offset 4))
 
-     #+END_SRC
+     #+end_src
 
 *** OCaml
 
 For OCaml, we do not use LSP mode, and we instead choose to work with a specific minor mode called [[https://github.com/ocaml/tuareg][Tuareg]].
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;; Tuareg (for OCaml and ML like languages)
 (use-package tuareg
   :defer t
@@ -1115,7 +1116,7 @@ For OCaml, we do not use LSP mode, and we instead choose to work with a specific
   (setq tuareg-indent-align-with-first-arg t)
   (setq tuareg-match-patterns-aligned t))
 
-#+END_SRC
+#+end_src
 
 *** C/C++
 
@@ -1123,14 +1124,14 @@ For C and C++ (and ObjectiveC), as for Python, we need to install a server for L
 
 *MANUAL* To use the ccls server, follow the instruction [[https://github.com/MaskRay/ccls/][here]].
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;; C/C++
 ;; See https://github.com/MaskRay/ccls/wiki/lsp-mode
 (use-package ccls
   :defer t
   :config
   (setq ccls-executable (executable-find "ccls")))
-#+END_SRC
+#+end_src
 *** LISP
 ***** Emacs Lisp
 
@@ -1138,20 +1139,20 @@ Although Emacs comes with pretty good built-in functionalities, there is still r
 
 [[https://github.com/Fanael/highlight-defined][highlight defined]] highlights defined Emacs Lisp symbols (functions, variable names, macros ...) in source code.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package highlight-defined
 :hook (emacs-lisp-mode . highlight-defined-mode))
 
-#+END_SRC
+#+end_src
 
 [[https://github.com/Silex/elmacro][elmacro]] shows keyboard macros and interactive commands as Emacs Lisp, meaning that you know /how to do/ something using advanced keyboard shortcuts or interactive commands, you can get for free an elisp code snippet that does exactly the same thing that you can reuse /e.g./ in a configuration file or in another function.
 
 Because it might be useful everywhere, we do not use it simply in =emacs-lisp-mode= and we activate it everywhere.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (use-package elmacro
 :init (elmacro-mode t))
-#+END_SRC
+#+end_src
 
 ***** Common Lisp
 
@@ -1159,7 +1160,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
 
 *MANUAL* It is likely that =sbcl= is not already installed. Hence, in order to run the following code, you will need to install it. If you install it manuallyby compiling the source code, make sure that the =sbcl= command is available on the PATH, or modify  =:custom (inferior-lisp-program "<path/to/sbcl>")= accordingly in the following block.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;; Make sure that sbcl is available on PATH
 (use-package sly
   :hook (lisp-mode . sly-editing-mode)
@@ -1169,7 +1170,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
             (lambda ()
                (unless (sly-connected-p)
                  (save-excursion (sly))))))
-#+END_SRC
+#+end_src
 * Org Mode
 
    [[https://orgmode.org/][Org Mode]] is one of the best reasons to use Emacs.
@@ -1180,7 +1181,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
 
      In order for Org Mode to feel like a document instead of code, we use a different font.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 (let ((my-temp-org-font "Cantarell"))
     (if (member my-temp-org-font (font-family-list))
         (setq my-org-mode-font my-temp-org-font)
@@ -1214,12 +1215,12 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
-#+END_SRC
+#+end_src
 ** Basic configuration
 
      We change the general feel of Org Mode documents by using other indentation rules, by changing the headers appearance, and a few other minor changes.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (defun my-org-mode-setup ()
     (my-org-font-setup)
     (org-indent-mode)
@@ -1241,24 +1242,43 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
     :custom
     (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
-#+END_SRC
+#+end_src
 
 ** Org Babel
 
-     Org babel is what allows us to write code and execute it, all within the same document.
+Org babel is what allows us to write code and execute it, all within the same document.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (with-eval-after-load 'org
-  (org-babel-do-load-languages
-    'org-babel-load-languages
-    '((emacs-lisp . t)
-      (python . t)
-      (shell . t))))
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((emacs-lisp . t)
+       (python . t)
+       (shell . t))))
 
   ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
-                                          ; else code
+                                           ; else code
 
-#+END_SRC
+#+end_src
+
+We also add templates to insert code blocks with a few key presses
+
+#+begin_src emacs-lisp
+  (with-eval-after-load 'org
+    ;; This is needed as of Org 9.2
+    (require 'org-tempo)
+
+    (let ((bound-key-templates
+           (mapcar 'cdr org-structure-template-alist)))
+      (dolist (key-template '(("sh" . "src shell")
+                              ("el" . "src emacs-lisp")
+                              ("py" . "src python")))
+
+        (unless
+            (member (car key-template) bound-key-templates)
+          (add-to-list 'org-structure-template-alist key-template)))))
+
+#+end_src
 
 ** Auto-tangle configuration files
 
@@ -1266,7 +1286,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
 
      The following code makes it so that each time this file is saved, it generates the corresponding init.el file.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
 ;; Automatically tangles this emacs-config config file when we save it
 (defun my-org-babel-tangle-config ()
   (when (string-equal (buffer-file-name)
@@ -1276,7 +1296,7 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
       (org-babel-tangle))))
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
-#+END_SRC
+#+end_src
 
 * LaTeX and PDF
 *** PDF viewer
@@ -1285,7 +1305,7 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
 
 *MANUAL* This package might require some external libraries to be installed. Please refer to the linked page to see exactly what you need to do on your system.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
   (use-package pdf-tools
@@ -1293,13 +1313,13 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
     :config
     (pdf-tools-install :no-query)
     (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode))
-#+END_SRC
+#+end_src
 
 *** LaTeX
 
 It is also possible to configure Emacs to comfortably write and edit LaTeX documents
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package tex-site                   ; AUCTeX initialization
     :ensure auctex)
 
@@ -1343,22 +1363,22 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
       ;; Insert math symbols quickly
       (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode))
 
-#+END_SRC
+#+end_src
 
 We also configure BibTeX
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package bibtex                     ; BibTeX editing
     :defer t
     :config
     ;; Use a modern BibTeX dialect
     ; (bibtex-set-dialect 'biblatex) ; Useful esp. in social sci.
 )
-#+END_SRC
+#+end_src
 
 Another useful package to deal with references, bibliography, citations and so on, is [[https://www.gnu.org/software/emacs/manual/html_mono/reftex.html][RefTeX]].
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   (use-package reftex                     ; TeX/BibTeX cross-reference management
     :diminish
     :hook (LaTeX-mode . reftex-mode)
@@ -1379,7 +1399,7 @@ Another useful package to deal with references, bibliography, citations and so o
           ;;                            (?X . "{%l}"))))
           ;;   (setq reftex-cite-format 'biblatex))
           ))
-#+END_SRC
+#+end_src
 
 * System
 ** Eshell
@@ -1393,7 +1413,7 @@ A more in-depth guide can be found [[https://www.masteringemacs.org/article/comp
 
 We install a few packages which make eshell easier to use.
 
-#+BEGIN_SRC emacs-lisp
+#+begin_src emacs-lisp
   ;; eshell
 
   (setq eshell-hist-ignoredups t

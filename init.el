@@ -244,15 +244,16 @@
 (use-package ivy
   :diminish 
   :bind (("C-s" . swiper)
-	 :map ivy-minibuffer-map
-	 ("TAB" . ivy-partial-or-done)
-	 ("C-l" . my-ivy-alt-done-t) ; Small hack
-	 :map ivy-switch-buffer-map
-	 ("C-l" . ivy-done)
-	 ("C-d" . ivy-switch-buffer-kill)
-	 :map ivy-reverse-i-search-map
-	 ("C-d" . ivy-reverse-i-search-kill))
+         :map ivy-minibuffer-map
+         ("TAB" . ivy-partial-or-done)
+         ("C-l" . my-ivy-alt-done-t) ; Small hack
+         :map ivy-switch-buffer-map
+         ("C-l" . ivy-done)
+         ("C-d" . ivy-switch-buffer-kill)
+         :map ivy-reverse-i-search-map
+         ("C-d" . ivy-reverse-i-search-kill))
   :config
+  ;; Todo: check if ivy-use-selectable-prompt does the trick
   (defun my-ivy-alt-done-t ()
     (interactive)
     (ivy-alt-done t))
@@ -790,14 +791,31 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (with-eval-after-load 'org
-(org-babel-do-load-languages
-  'org-babel-load-languages
-  '((emacs-lisp . t)
-    (python . t)
-    (shell . t))))
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)
+     (shell . t))))
 
 ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
-                                        ; else code
+                                         ; else code
+
+(with-eval-after-load 'org
+  ;; This is needed as of Org 9.2
+  (require 'org-tempo)
+
+  (let ((bound-key-templates
+         (mapcar 'cdr org-structure-template-alist)))
+    (dolist (key-template '(("sh" . "src shell")
+                            ("el" . "src emacs-lisp")
+                            ("py" . "src python")))
+
+      (unless
+          (member (car key-template) bound-key-templates)
+        (add-to-list 'org-structure-template-alist key-template)))))
+  ;; (add-to-list 'org-structure-template-alist '("sh" . "src shell"))
+  ;; (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+  ;; (add-to-list 'org-structure-template-alist '("py" . "src python")))
 
 ;; Automatically tangles this emacs-config config file when we save it
 (defun my-org-babel-tangle-config ()
