@@ -921,8 +921,15 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :config
   ;; Delete and copy directories recursively
   (setq dired-recursive-deletes 'always
-        dired-recursive-copies 'always))
+        dired-recursive-copies 'always)
 
+  (setq dired-auto-revert-buffer t))
+
+;; Make things prettier 
 (use-package all-the-icons-dired
   :diminish
   :hook (dired-mode . all-the-icons-dired-mode))
+
+(use-package dired-x
+  :ensure nil
+  :after dired)
