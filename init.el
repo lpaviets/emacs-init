@@ -240,6 +240,29 @@
   :config
   (setq which-key-idle-delay 1))
 
+;; Macro to use "python-style" affectation in lexical bindings
+(defmacro multi-let (vars values body)
+  "Binds each symbol of VARS to its corresponding expression in VALUES,
+  in order.
+  multi-let (a b) (e1 e2) body is thus equivalent to
+  (let ((a e1)) (let ((b e2)) body))
+  Expressions at position k in VALUES might depend on symbol from
+  VARS at position strictly less than k, as with let*"
+  (defun rec-expand-let (vars values body)
+    (if (= (length vars) (length values))
+        (if (and vars (symbolp (car vars)))
+            `(let ((,(car vars) ,(car values)))
+               ,(rec-expand-let (cdr vars)
+                                (cdr values)
+                                body))
+          body)
+      (message
+       (format "Trying to bind %d symbols to %d values"
+               (length vars)
+               (length values)))))
+
+  (rec-expand-let vars values body))
+
 ;; Ivy
 (use-package ivy
   :diminish 
