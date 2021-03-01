@@ -416,13 +416,42 @@ Because there are a lot of similar commands, it is quite easy to get lost. [[htt
 For example, if you press =C-c=, then a panel will appear at the bottom of the screen to show how you can currently continue this command, depending on which buffer you are in.
 
 #+BEGIN_SRC emacs-lisp
-;; which-key. Shows all the available key sequences after a prefix
-(use-package which-key
-  :init (which-key-mode)
-  :diminish
-  :config
-  (setq which-key-idle-delay 1))
+  ;; which-key. Shows all the available key sequences after a prefix
+  (use-package which-key
+    :init (which-key-mode)
+    :diminish
+    :config
+    (setq which-key-idle-delay 1))
 #+END_SRC
+
+*** Some macros
+
+In this section, we define some useful macros to write code in Emacs Lisp.
+
+#+begin_src emacs-lisp
+  ;; Macro to use "python-style" affectation in lexical bindings
+  (defmacro multi-let (vars values body)
+    "Binds each symbol of VARS to its corresponding expression in VALUES,
+    in order.
+    multi-let (a b) (e1 e2) body is thus equivalent to
+    (let ((a e1)) (let ((b e2)) body))
+    Expressions at position k in VALUES might depend on symbol from
+    VARS at position strictly less than k, as with let*"
+    (defun rec-expand-let (vars values body)
+      (if (= (length vars) (length values))
+          (if (and vars (symbolp (car vars)))
+              `(let ((,(car vars) ,(car values)))
+                 ,(rec-expand-let (cdr vars)
+                                  (cdr values)
+                                  body))
+            body)
+        (message
+         (format "Trying to bind %d symbols to %d values"
+                 (length vars)
+                 (length values)))))
+
+    (rec-expand-let vars values body))
+#+end_src
 
 ** Minibuffer
 
