@@ -825,18 +825,19 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
                                          ; else code
 
 (with-eval-after-load 'org
-  ;; This is needed as of Org 9.2
-  (require 'org-tempo)
+  (if (version<= "9.2" org-version)
+      ;; This is needed as of Org 9.2
+      (require 'org-tempo)
 
-  (let ((bound-key-templates
-         (mapcar 'cdr org-structure-template-alist)))
-    (dolist (key-template '(("sh" . "src shell")
-                            ("el" . "src emacs-lisp")
-                            ("py" . "src python")))
+    (let ((bound-key-templates
+           (mapcar 'cdr org-structure-template-alist)))
+      (dolist (key-template '(("sh" . "src shell")
+                              ("el" . "src emacs-lisp")
+                              ("py" . "src python")))
 
-      (unless
-          (member (car key-template) bound-key-templates)
-        (add-to-list 'org-structure-template-alist key-template)))))
+        (unless
+            (member (car key-template) bound-key-templates)
+          (push 'org-structure-template-alist key-template))))))
 
 ;; Automatically tangles this emacs-config config file when we save it
 (defun my-org-babel-tangle-config ()
