@@ -73,8 +73,7 @@
 (dolist (mode '(org-mode-hook
                ; Term & Shells
                 eshell-mode-hook
-                shell-mode-hook
-                term-mode-hook
+                comint-mode-hook
                 ; PDF viewers
                 pdf-view-mode-hook
                 doc-view-mode-hook
@@ -318,8 +317,8 @@
 (setq uniquify-after-kill-buffer-p t)
 
 (use-package all-the-icons-ibuffer
-  :after ibuffer
-  :hook (ibuffer . all-the-icons-ibuffer-mode))
+  :after ibuffer counsel
+  :init (all-the-icons-ibuffer-mode 1))
 
 (use-package ibuffer
   :bind ("C-x C-b" . ibuffer))
@@ -726,7 +725,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package python-mode
   :defer t
   :custom
-  ;(setq python-shell-interpreter "python3")
+  (setq python-shell-interpreter "python3")
   (setq tab-width 4)
   (setq python-indent-offset 4))
 
