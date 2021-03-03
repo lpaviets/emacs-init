@@ -91,15 +91,46 @@
 (global-visual-line-mode 1)
 
 ;; Themes
+(use-package solarized-theme)
+
 (use-package doom-themes
   :init (load-theme 'doom-Iosvkem t))
 
-(use-package cycle-themes
-  :defer t
-  ;; :config
-  ;; (setq cycle-themes-theme-list
-  ;;        '(leuven monokai solarized-dark)) ; Your favourite themes list
-  )
+;; Use this to store your favourite themes
+;; Save your usual, default theme in first position
+;; so that you can easily switch back to it with
+;; (load-theme (car lps/rotate-themes-list) t)
+(setq lps/rotate-themes-list
+      '(doom-Iosvkem doom-monokai-pro doom-palenight tsdh-dark solarized-dark))
+
+;; Try to save the current theme
+;; Be careful ! Some visual changes are NOT stored in
+;; a theme, and will not be retrieved by the restoring
+;; functions. For example, any font configuration might
+;; be "lost" for this session
+(setq lps/initial-enabled-themes custom-enabled-themes)
+
+(setq lps/rotate-theme-index 0)
+
+(defun lps/rotate-through-themes ()
+  "Cycles through the next theme in the `lps/rotate-themes-list'.
+If this list is empty or does not exist, cycle through all the
+installed themes instead."
+  (interactive)
+  (mapc #'disable-theme lps/initial-enabled-themes)
+  (let* ((themes-list (or (and (boundp 'lps/rotate-themes-list) lps/rotate-themes-list)
+                          (custom-available-themes)))
+         (next-index (mod (+ lps/rotate-theme-index 1) (length themes-list)))
+         (current-theme (nth lps/rotate-theme-index themes-list))
+         (next-theme (nth next-index themes-list)))
+    (setq lps/rotate-theme-index next-index)
+    (disable-theme current-theme)
+    (load-theme next-theme t)))
+
+(defun lps/restore-initial-themes ()
+  (interactive)
+  (mapc #'disable-theme custom-enabled-themes)
+  (mapc (lambda (theme) (funcall #'load-theme theme t)) lps/initial-enabled-themes))
 
 ;; First time used: run M-x all-the-icons-install-fonts
 (use-package all-the-icons
