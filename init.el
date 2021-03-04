@@ -582,20 +582,10 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :hook ((mrepl-mode
           eshell-mode
           ielm-mode
-          eval-expression-minibuffer-setup) . enable-paredit-mode))
-
-(defun paredit-or-smartparens ()
-  "Enable paredit or smartparens depending on the major mode"
-  (if (member major-mode '(emacs-lisp-mode
-                           lisp-mode
-                           lisp-interaction-mode))
-      (paredit-mode)
-    (smartparens-mode)))
-;; Bug with strict-mode in cc-mode (Java, C/C++ ...)
-;; Bindings are overriden by the cc-mode one, so sp-strict-mode does not
-;; work properly (e.g. <DEL> is not bound to sp-backward-delete-char)
-
-(add-hook 'prog-mode-hook #'paredit-or-smartparens)
+          eval-expression-minibuffer-setup
+          emacs-lisp-mode
+          lisp-mode
+          lisp-interaction-mode) . paredit-mode))
 
 ;;YASnippet
 (use-package yasnippet
