@@ -124,51 +124,46 @@
   :custom ((doom-modeline-height 15)))
 
 (with-eval-after-load 'hydra
-;define a title function
+  ;; define a title function
   (defvar appearance-title (with-faicon "desktop" "Appearance"))
 
-  ; Other idea:
-  ; (defvar appearance-title (with-faicon "toggle-on" "Toggles" 1 -0.05))
+  ;; Other idea:
+  ;; (defvar appearance-title (with-faicon "toggle-on" "Toggles" 1 -0.05))
 
-  ;generate hydra
-  
+  ;; generate hydra
+
   (pretty-hydra-define hydra-appearance (:title appearance-title
                                          :quit-key "q"
-					 ;:pre (hydra-posframe-mode t)
-					 ;:post (hydra-posframe-mode 0) ; dirty hack
-					 )
-  ("Theme"
-    (
-;     ("o" olivetti-mode "Olivetti" :toggle t)
-;     ("t" toggle-window-transparency "Transparency" :toggle t )
+                                        ;:pre (hydra-posframe-mode t)
+                                        ;:post (hydra-posframe-mode 0) ; dirty hack
+                                                )
+    ("Theme"
+     (
+      ;;     ("o" olivetti-mode "Olivetti" :toggle t)
+      ;;     ("t" toggle-window-transparency "Transparency" :toggle t )
       ("c" cycle-themes-mode "Cycle Themes" )
       ("+" text-scale-increase "Zoom In")
       ("-" text-scale-decrease "Zoom Out")
       ("x" toggle-frame-maximized "Maximize Frame" :toggle t )
-      ("X" toggle-frame-fullscreen "Fullscreen Frame" :toggle t)
-    )
-    "Highlighting"
-    (
-      ("d" rainbow-delimiters-mode "Rainbow Delimiters" :toggle t )
+      ("X" toggle-frame-fullscreen "Fullscreen Frame" :toggle t))
+     "Highlighting"
+     (("d" rainbow-delimiters-mode "Rainbow Delimiters" :toggle t )
       ("r" rainbow-mode "Show Hex Colours" :toggle t )
-      ;    ("n" highlight-numbers-mode "Highlight Code Numbers" :toggle t )
+      ;;    ("n" highlight-numbers-mode "Highlight Code Numbers" :toggle t )
       ("l" display-line-numbers-mode "Show Line Numbers" :toggle t )
       ("_" global-hl-line-mode "Highlight Current Line" :toggle t )
-      ;    ("I" rainbow-identifiers-mode "Rainbow Identifiers" :toggle t )
+      ;;    ("I" rainbow-identifiers-mode "Rainbow Identifiers" :toggle t )
       ("b" beacon-mode "Show Cursor Trailer" :toggle t )
-      ("w" whitespace-mode "whitespace" :toggle t)
-    )
+      ("w" whitespace-mode "whitespace" :toggle t))
     "Miscellaneous"
-    (
-      ("j" visual-line-mode "Wrap Line Window"  :toggle t)
-      ("m" visual-fill-column-mode "Wrap Line Column"  :toggle t)
-      ;    ("a" adaptive-wrap-prefix-mode "Indent Wrapped Lines" :toggle t )
-      ;   ("i" highlight-indent-guides-mode  "Show Indent Guides" :toggle t )
-      ("g" fci-mode "Show Fill Column" :toggle t )
-      ("<SPC>" nil "Quit" :color blue )
-  ))))
+    (("j" visual-line-mode "Wrap Line Window"  :toggle t)
+     ("m" visual-fill-column-mode "Wrap Line Column"  :toggle t)
+     ;;    ("a" adaptive-wrap-prefix-mode "Indent Wrapped Lines" :toggle t )
+     ;;   ("i" highlight-indent-guides-mode  "Show Indent Guides" :toggle t )
+     ("g" fci-mode "Show Fill Column" :toggle t )
+     ("<SPC>" nil "Quit" :color blue )))))
 
-  (global-set-key (kbd "C-c h a") 'hydra-appearance/body)
+(global-set-key (kbd "C-c h a") 'hydra-appearance/body)
 
 ;; Generic UI modes
 
@@ -236,8 +231,7 @@
 (use-package which-key
   :init (which-key-mode)
   :diminish
-  :config
-  (setq which-key-idle-delay 1))
+  :custom (which-key-idle-delay 1))
 
 ;; Macro to use "python-style" affectation in lexical bindings
 (defmacro multi-let (vars values body)
@@ -861,43 +855,39 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package tex
   :ensure auctex
-  :config
-  (setq TeX-parse-self t                ; Parse documents to provide completion
-                                        ; for packages, etc.
-        TeX-auto-save t                 ; Automatically save style information
-        TeX-electric-sub-and-superscript t ; Automatically insert braces after
+  :custom ;; Automatically insert closing brackets
+  (LaTeX-electric-left-right-brace t)
+  (TeX-parse-self t)                ; Parse documents to provide completion
+  (TeX-auto-save t)                 ; Automatically save style information
+  (TeX-electric-sub-and-superscript t)  ; Automatically insert braces after
                                         ; sub- and superscripts in math mode
-        ;; Don't insert magic quotes right away.
-        TeX-quote-after-quote t
-        ;; But do insert closing $ when inserting the first one
-        TeX-electric-math '("$" . "$")
-        ;; Automatically insert closing brackets
-        LaTeX-electric-left-right-brace t
+  ;; Don't insert magic quotes right away.
+  (TeX-quote-after-quote t)
+  ;; But do insert closing $ when inserting the first one
+  (TeX-electric-math '("$" . "$"))
 
-        ;; Ask for the master file & don't assume anything
-        TeX-master nil
+  ;; Don't ask for confirmation when cleaning
+  (TeX-clean-confirm nil)
 
-        ;; Don't ask for confirmation when cleaning
-        TeX-clean-confirm nil
+  (TeX-source-correlate-method 'synctex)
+  (TeX-source-correlate-start-server t)
+  (TeX-view-program-selection '((output-pdf "PDF tools")))
 
-        ;; Provide forward and inverse search with SyncTeX
-        TeX-source-correlate-mode t
-        TeX-source-correlate-method 'synctex
-        TeX-source-correlate-start-server t
+  :config
+  (setq TeX-master nil) ; Ask for the master file & don't assume anything
 
+  (setq TeX-source-correlate-mode t ; SyncTeX forward and inverse search
         ;; Produce a PDF by default
         TeX-PDF-mode t)
 
-    (unless (assoc "PDF tools" TeX-view-program-list-builtin)
-      (push '("PDF tools" TeX-pdf-tools-sync-view) TeX-view-program-list))
+  (unless (assoc "PDF tools" TeX-view-program-list-builtin)
+    (push '("PDF tools" TeX-pdf-tools-sync-view) TeX-view-program-list))
 
-    (setq TeX-view-program-selection '((output-pdf "PDF tools")))
+  ;; Update PDF buffers after successful LaTeX runs
+  (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
 
-    ;; Update PDF buffers after successful LaTeX runs
-    (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
-
-    ;; Insert math symbols quickly
-    (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode))
+  ;; Insert math symbols quickly
+  (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode))
 
 (use-package bibtex                     ; BibTeX editing
     :defer t
