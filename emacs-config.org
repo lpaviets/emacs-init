@@ -542,6 +542,29 @@ We also improve the appearance (and functionalities) of the buffer that we get w
 
 #+end_src
 
+A cool function to rename both a buffer and the file that it is visiting, while being careful e.g. not to override anything
+
+#+begin_src emacs-lisp
+  ;; From Magnars, from emacsrocks.com
+  (defun rename-current-buffer-file ()
+      "Renames current buffer and file it is visiting."
+      (interactive)
+      (let* ((name (buffer-name))
+            (filename (buffer-file-name))
+            (basename (file-name-nondirectory filename)))
+        (if (not (and filename (file-exists-p filename)))
+            (error "Buffer '%s' is not visiting a file!" name)
+          (let ((new-name (read-file-name "New name: " (file-name-directory filename) basename nil basename)))
+            (if (get-buffer new-name)
+                (error "A buffer named '%s' already exists!" new-name)
+              (rename-file filename new-name 1)
+              (rename-buffer new-name)
+              (set-visited-file-name new-name)
+              (set-buffer-modified-p nil)
+              (message "File '%s' successfully renamed to '%s'"
+                       name (file-name-nondirectory new-name)))))))
+#+end_src
+
 *** Window management
 
 Because window management can be a bit tedious with the basic Emacs functionalities, we improve it a bit. First of all, we enable =winner-mode=, which allows us to "undo" and "redo" changes in the Windows' configuration.
@@ -1325,6 +1348,8 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
 
   (use-package pdf-tools
     :magic ("%PDF" . pdf-view-mode)
+    :bind (:map pdf-view-mode-map
+                ("C-s" . isearch-forward))
     :config
     (pdf-tools-install :no-query)
     (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode))
