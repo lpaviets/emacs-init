@@ -1506,7 +1506,7 @@ It will simply go through the =.bashrc= file whenever you open a bash terminal, 
 
 **** TODO Rewrite this, using two different files that are "loaded" by eshell.
 
-*** Dired
+** Dired
 
 Now, we try to add things on top of the built-in file manager, Dired.
 

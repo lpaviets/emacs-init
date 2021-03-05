@@ -87,7 +87,10 @@ Some other interesting ones:
 - [[https://github.com/caisah/emacs.dz][Another list of nice config files]] on github
 - [[https://github.com/farlado/dotemacs][An opinionated]] but complete and very detailed configuration
   
-* TODO
+* TODO 
+
+List of things that could be added to this configuration file if needed, whether for me, or to share:
+
 - [X] Hydra ! Install it, define some useful hydras (buffers, org-mode, dired ...), bind it to lsp-mode/ivy/projectile ...
   - [X] Install
   - [X] Modify hydras from the wiki
@@ -95,15 +98,17 @@ Some other interesting ones:
 - [ ] Do things for other popular languages (Java and C# come to mind).
   - [ ] Setup C# with LSP-mode
   - [ ] Setup Java with LSP-mode
-  - [ ] Give a try to [[https://github.com/joaotavora/eglot][eglot]]
-- [-] System stuff: =Tramp=, configure =eshell= or find an even better one, configure =dired= or upgrade it, etc
+  - [ ] Give [[https://github.com/joaotavora/eglot][eglot]] a try ?
+- [X] System stuff: =Tramp=, configure =eshell= or find an even better one, configure =dired= or upgrade it, etc
   - [X] =eshell= Basic improvements
   - [ ] Tramp explanation and configuration
-  - [ ] Dired improvement
-- [ ] Configure a Emacs-Lisp (and potentially Common Lisp ?) development environment.
+  - [X] Dired improvement
+- [X] Configure a Emacs-Lisp (and potentially Common Lisp ?) development environment.
   - [X] Install and configure SLIME (Used SLY instead)
-- [ ] Point to funny/absurd packages (/e.g./ =speed-type=, =key-quiz= ...)
 - [ ] Regexp with [[https://github.com/joddie/pcre2el][pcre2el]] and may be other packages.
-- [ ] Configure a web browser
-- [ ] Configure a mail client
 - [ ] Setup Forge for Magit
+- [ ] Configure packages to replace other softwares
+  - [ ] Configure a web browser
+  - [ ] Configure a mail client
+  - [ ] [[https://code.librehq.com/qhong/crdt.el][crdt]] for collaborative editing
+- [ ] Point to funny/absurd packages (/e.g./ =speed-type=, =key-quiz= ...)
