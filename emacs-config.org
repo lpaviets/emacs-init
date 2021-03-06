@@ -1,3 +1,4 @@
+
 #+title: Emacs Configuration
 #+author: Léo Paviet Salomon
 #+STARTUP: content
@@ -1069,6 +1070,8 @@ Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP 
 
 ** Language Server Protocol
 
+*** LSP-mode
+
     The [[https://en.wikipedia.org/wiki/Language_Server_Protocol][Language Server Protocol]] is a protocol which facilitates the use of several languages with various IDE. Instead of specifying a syntax, ..., for each pair "IDE/Language", it aims at abstracting the specifities of each language, so that each IDE will need to communicate with a server that will give back the information needed to do IDE-y things such as highlighting or auto-completion in an unified manner.
 
 #+begin_src emacs-lisp
@@ -1082,9 +1085,9 @@ Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP 
     (setq lsp-prefer-flymake nil)
     (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
     (setq read-process-output-max (* 2 1024 1024)) ;; 2mb
-    :hook
-    ((python-mode c-mode c++-mode) . lsp))
-
+    ;;:hook
+    ;;((python-mode c-mode c++-mode) . lsp)
+    )
   (use-package lsp-ui
     :after lsp-mode
     :hook (lsp-mode . lsp-ui-mode)
@@ -1103,6 +1106,22 @@ Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP 
   (use-package lsp-ivy
     :after (lsp-mode ivy))
 
+#+end_src
+
+*** Eglot
+
+There exists another implementation of the Language Server Protocol in Emacs, called [[https://github.com/joaotavora/eglot][eglot]]. It is much more integrated within "core" Emacs, as it only uses built-in packages, such as =project.el= instead of =projectile=, or =flymake= rather than =flycheck=.
+
+#+begin_src emacs-lisp
+  ;; Might not work, recommended to use package-install instead
+  ;; Dependencies might not be the correct ones
+
+  (use-package eglot
+    :hook ((python-mode c-mode c++-mode) . eglot-ensure)
+    :bind (:map eglot-mode-map
+                ("C-c l r" . eglot-rename)
+                ("C-c l g" . xref-find-definitions)
+                ("C-c l h" . eldoc)))
 #+end_src
 
 ** Real-time syntax checking
@@ -1155,19 +1174,17 @@ Another package doing more or less the same thing but in a different way:
      The command =pyls= needs to be available on the =PATH= environment variable.
 
      #+begin_src emacs-lisp
-
-;; Python
-
-;; Before using LPS, make sure that the server has been installed !
-;; pip install --user python-language-server[all]
-;; Should be able to use the pyls command
-
-(use-package python-mode
-  :defer t
-  :custom
-  (setq python-shell-interpreter "python3")
-  (setq tab-width 4)
-  (setq python-indent-offset 4))
+  ;; Python
+  ;; Before using LPS, make sure that the server has been installed !
+  ;; pip install --user python-language-server[all]
+  ;; Should be able to use the pyls command
+  
+  (use-package python
+    :ensure nil
+    :custom
+    (tab-width 4)
+    (python-indent-offset 4)
+    (python-shell-interpreter "python3"))
 
      #+end_src
 
@@ -1176,12 +1193,12 @@ Another package doing more or less the same thing but in a different way:
 For OCaml, we do not use LSP mode, and we instead choose to work with a specific minor mode called [[https://github.com/ocaml/tuareg][Tuareg]].
 
 #+begin_src emacs-lisp
-;; Tuareg (for OCaml and ML like languages)
-(use-package tuareg
-  :defer t
-  :config
-  (setq tuareg-indent-align-with-first-arg t)
-  (setq tuareg-match-patterns-aligned t))
+  ;; Tuareg (for OCaml and ML like languages)
+  (use-package tuareg
+    :defer t
+    :config
+    (setq tuareg-indent-align-with-first-arg t)
+    (setq tuareg-match-patterns-aligned t))
 
 #+end_src
 
@@ -1334,17 +1351,18 @@ We also add templates to insert code blocks with a few key presses
   (with-eval-after-load 'org
     (if (version<= "9.2" org-version)
         ;; This is needed as of Org 9.2
+      (progn
         (require 'org-tempo)
 
-      (let ((bound-key-templates
-             (mapcar 'cdr org-structure-template-alist)))
-        (dolist (key-template '(("sh" . "src shell")
-                                ("el" . "src emacs-lisp")
-                                ("py" . "src python")))
+        (let ((bound-key-templates
+               (mapcar #'car org-structure-template-alist)))
+          (dolist (key-template '(("sh" . "src shell")
+                                  ("el" . "src emacs-lisp")
+                                  ("py" . "src python")))
 
-          (unless
-              (member (car key-template) bound-key-templates)
-            (push 'org-structure-template-alist key-template))))))
+            (unless
+                (member (car key-template) bound-key-templates)
+              (push key-template org-structure-template-alist)))))))
 
 #+end_src
 

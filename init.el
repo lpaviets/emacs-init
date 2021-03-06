@@ -705,9 +705,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (setq lsp-prefer-flymake nil)
   (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
   (setq read-process-output-max (* 2 1024 1024)) ;; 2mb
-  :hook
-  ((python-mode c-mode c++-mode) . lsp))
-
+  ;;:hook
+  ;;((python-mode c-mode c++-mode) . lsp)
+  )
 (use-package lsp-ui
   :after lsp-mode
   :hook (lsp-mode . lsp-ui-mode)
@@ -725,6 +725,16 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package lsp-ivy
   :after (lsp-mode ivy))
+
+;; Might not work, recommended to use package-install instead
+;; Dependencies might not be the correct ones
+
+(use-package eglot
+  :hook ((python-mode c-mode c++-mode) . eglot-ensure)
+  :bind (:map eglot-mode-map
+              ("C-c l r" . eglot-rename)
+              ("C-c l g" . xref-find-definitions)
+              ("C-c l h" . eldoc)))
 
 ;; Flycheck
 (use-package flycheck
@@ -751,17 +761,16 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (global-semantic-idle-scheduler-mode t))
 
 ;; Python
-
 ;; Before using LPS, make sure that the server has been installed !
 ;; pip install --user python-language-server[all]
 ;; Should be able to use the pyls command
 
-(use-package python-mode
-  :defer t
+(use-package python
+  :ensure nil
   :custom
-  (setq python-shell-interpreter "python3")
-  (setq tab-width 4)
-  (setq python-indent-offset 4))
+  (tab-width 4)
+  (python-indent-offset 4)
+  (python-shell-interpreter "python3"))
 
 ;; Tuareg (for OCaml and ML like languages)
 (use-package tuareg
@@ -860,17 +869,18 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (with-eval-after-load 'org
   (if (version<= "9.2" org-version)
       ;; This is needed as of Org 9.2
+    (progn
       (require 'org-tempo)
 
-    (let ((bound-key-templates
-           (mapcar 'cdr org-structure-template-alist)))
-      (dolist (key-template '(("sh" . "src shell")
-                              ("el" . "src emacs-lisp")
-                              ("py" . "src python")))
+      (let ((bound-key-templates
+             (mapcar #'car org-structure-template-alist)))
+        (dolist (key-template '(("sh" . "src shell")
+                                ("el" . "src emacs-lisp")
+                                ("py" . "src python")))
 
-        (unless
-            (member (car key-template) bound-key-templates)
-          (push 'org-structure-template-alist key-template))))))
+          (unless
+              (member (car key-template) bound-key-templates)
+            (push key-template org-structure-template-alist)))))))
 
 ;; Automatically tangles this emacs-config config file when we save it
 (defun my-org-babel-tangle-config ()
