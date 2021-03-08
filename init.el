@@ -705,9 +705,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (setq lsp-prefer-flymake nil)
   (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
   (setq read-process-output-max (* 2 1024 1024)) ;; 2mb
-  ;;:hook
-  ;;((python-mode c-mode c++-mode) . lsp)
-  )
+  :hook
+  ((python-mode c-mode c++-mode) . lsp))
+
 (use-package lsp-ui
   :after lsp-mode
   :hook (lsp-mode . lsp-ui-mode)
@@ -730,11 +730,13 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; Dependencies might not be the correct ones
 
 (use-package eglot
-  :hook ((python-mode c-mode c++-mode) . eglot-ensure)
+  ;;:hook ((python-mode c-mode c++-mode) . eglot-ensure)
+  :bind-keymap ("C-c l" . eglot-mode-map)
   :bind (:map eglot-mode-map
-              ("C-c l r" . eglot-rename)
-              ("C-c l g" . xref-find-definitions)
-              ("C-c l h" . eldoc)))
+              ("r" . eglot-rename)
+              ("g g" . xref-find-definitions)
+              ("g r" . xref-find-references)
+              ("h" . eldoc)))
 
 ;; Flycheck
 (use-package flycheck
