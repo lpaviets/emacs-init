@@ -127,6 +127,11 @@ However, we would like to see Emacs in full-screen if we are to use it
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
 #+end_src
 
+Because we tend to use =eshell= for everything that is shell-related (see the Eshell section later in this file), we also start it whenever we start Emacs.
+#+begin_src emacs-lisp
+(add-hook 'emacs-startup-hook (lambda () (eshell) (previous-buffer)))
+#+end_src
+
 *** Menus and toolbars
 
 Emacs is very much keyboard-oriented. As such, we have little-to-no use of the various menus, toolbars and scrollbars that Emacs provides.
@@ -922,6 +927,7 @@ Now, in order to work with structured text, such as source code, we want to be a
 #+begin_src emacs-lisp
   ;; Smartparens is currently bugged
   (use-package smartparens
+    :disabled t
     :custom (sp-highlight-pair-overlay nil)
     :hook (smartparens-mode . show-smartparens-mode)
     :bind
@@ -1505,7 +1511,6 @@ alias | sed -E "s/^alias ([^=]+)='(.*)'$/alias \1 \2 \$*/g; s/'\\\''/'/g;" >~/.e
 It will simply go through the =.bashrc= file whenever you open a bash terminal, and each time it sees a line starting with =alias=, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where =eshell= reads its aliases.
 
 **** TODO Rewrite this, using two different files that are "loaded" by eshell.
-
 ** Dired
 
 Now, we try to add things on top of the built-in file manager, Dired.

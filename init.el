@@ -54,6 +54,8 @@
 ;; Maximize the Emacs frame at startup
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
+(add-hook 'emacs-startup-hook (lambda () (eshell) (previous-buffer)))
+
 (scroll-bar-mode -1)        ; Disable visible scrollbar
 (tool-bar-mode -1)          ; Disable the toolbar
 (tooltip-mode -1)           ; Disable tooltips
@@ -591,6 +593,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 ;; Smartparens is currently bugged
 (use-package smartparens
+  :disabled t
   :custom (sp-highlight-pair-overlay nil)
   :hook (smartparens-mode . show-smartparens-mode)
   :bind
