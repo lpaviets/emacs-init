@@ -821,14 +821,14 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 
 We also define functions that Emacs is surprinsingly lacking.
 
-The first one is used to copy without deleting the current line (internally, it uses =kill-ring-save=, and so it can be used in a read-only context (unlike a sequence like =C-a C-k C-y=). It is also much quicker than variations on the sequence  =C-e C-SPC C-a M-w=.
+The first one is used to copy without deleting the current line (internally, it uses =kill-ring-save=, and so it can be used in a read-only context, unlike a sequence like =C-a C-k C-y=). It is also much quicker than variations on the sequence  =C-e C-SPC C-a M-w=.
 
 #+begin_src emacs-lisp
-   (defun copy-line-at-point (arg)
+   (defun lps/copy-line-at-point (arg)
      "Copy ARG lines in the kill ring, starting from the line at point and copying subsequent ones if ARG > 1"
      (interactive "p")
      (kill-ring-save (line-beginning-position)
-                     (line-beginning-position (+ 1 arg))))
+                     (line-end-position arg)))
 
   ; Note that this keybinding overrides other functions
   ; By default, M-k is kill-sentence, which I never use
@@ -836,7 +836,7 @@ The first one is used to copy without deleting the current line (internally, it 
 
   ;; Might want to find a more clever way to use personal
   ;; keybindings, such as defining a minor mode ...
-  (global-set-key (kbd "M-k") 'copy-line-at-point)
+  (global-set-key (kbd "M-k") 'lps/copy-line-at-point)
 #+end_src
 
 ** Undo
@@ -978,7 +978,7 @@ Now, in order to work with structured text, such as source code, we want to be a
   ;;YASnippet
   (use-package yasnippet
     :diminish
-    :init (yas-global-mode 0))
+    :init (yas-global-mode 1))
 #+end_src
 
 It is even possible to define your own snippets. The following package contains a lot of useful snippets for various programming languages or tools, such a C++, Clojure, various Makefiles, Emacs' Org-Mode ...

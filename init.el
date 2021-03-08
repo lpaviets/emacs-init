@@ -535,11 +535,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package expand-region
 :bind ("C-=" . er/expand-region))
 
-(defun copy-line-at-point (arg)
+(defun lps/copy-line-at-point (arg)
    "Copy ARG lines in the kill ring, starting from the line at point and copying subsequent ones if ARG > 1"
    (interactive "p")
    (kill-ring-save (line-beginning-position)
-                   (line-beginning-position (+ 1 arg))))
+                   (line-end-position arg)))
 
 ; Note that this keybinding overrides other functions
 ; By default, M-k is kill-sentence, which I never use
@@ -547,7 +547,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 ;; Might want to find a more clever way to use personal
 ;; keybindings, such as defining a minor mode ...
-(global-set-key (kbd "M-k") 'copy-line-at-point)
+(global-set-key (kbd "M-k") 'lps/copy-line-at-point)
 
 (use-package undo-tree
   :config
@@ -640,7 +640,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;;YASnippet
 (use-package yasnippet
   :diminish
-  :init (yas-global-mode 0))
+  :init (yas-global-mode 1))
 
 (use-package yasnippet-snippets
   :after yasnippet)
