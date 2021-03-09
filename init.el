@@ -643,7 +643,10 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;;YASnippet
 (use-package yasnippet
   :diminish
-  :init (yas-global-mode 1))
+  :init (yas-global-mode 1)
+  :bind (:map yas-minor-mode-map
+              ("<tab>" . nil)
+              ("C-<tab>" . yas-expand)))
 
 (use-package yasnippet-snippets
   :after yasnippet)
@@ -797,6 +800,15 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package elmacro
 :init (elmacro-mode t))
+
+(defun lps/eval-and-replace-last-sexp ()
+  "Evaluate the last s-expression, and replace it with the result"
+  (interactive)
+  (let ((value (eval (preceding-sexp))))
+      (kill-sexp -1)
+      (insert (format "%S" value))))
+
+(global-set-key (kbd "C-c C-e") 'lps/eval-and-replace-last-sexp)
 
 ;; Make sure that sbcl is available on PATH
 (use-package sly

@@ -985,7 +985,10 @@ Now, in order to work with structured text, such as source code, we want to be a
   ;;YASnippet
   (use-package yasnippet
     :diminish
-    :init (yas-global-mode 1))
+    :init (yas-global-mode 1)
+    :bind (:map yas-minor-mode-map
+                ("<tab>" . nil)
+                ("C-<tab>" . yas-expand)))
 #+end_src
 
 It is even possible to define your own snippets. The following package contains a lot of useful snippets for various programming languages or tools, such a C++, Clojure, various Makefiles, Emacs' Org-Mode ...
@@ -1245,6 +1248,19 @@ Because it might be useful everywhere, we do not use it simply in =emacs-lisp-mo
 #+begin_src emacs-lisp
 (use-package elmacro
 :init (elmacro-mode t))
+#+end_src
+
+We define a useful macro to evaluate an expression, and replace it with the result. This, in conjunction with macros and multiple cursors, is a great tool to automate otherwise boring tasks.
+
+#+begin_src emacs-lisp
+  (defun lps/eval-and-replace-last-sexp ()
+    "Evaluate the last s-expression, and replace it with the result"
+    (interactive)
+    (let ((value (eval (preceding-sexp))))
+        (kill-sexp -1)
+        (insert (format "%S" value))))
+
+  (global-set-key (kbd "C-c C-e") 'lps/eval-and-replace-last-sexp)
 #+end_src
 
 ***** Common Lisp

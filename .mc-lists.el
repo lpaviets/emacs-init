@@ -3,8 +3,11 @@
 
 (setq mc/cmds-to-run-for-all
       '(
+        beginning-of-visual-line
         c-indent-line-or-region
         counsel-M-x
+        end-of-visual-line
+        lps/eval-and-replace-last-sexp
         org-beginning-of-line
         org-end-of-line
         org-self-insert-command
