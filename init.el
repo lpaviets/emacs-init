@@ -410,58 +410,53 @@ installed themes instead."
       (shrink-window arg)
     (enlarge-window arg)))
 
-(global-set-key
-(kbd "C-c h w") ; w for window
-(defhydra hydra-window (:color red
-                        :hint nil)
-"
+(global-set-key (kbd "C-c h w") ; w for window
+                (defhydra hydra-window (:color red
+                                               :hint nil)
+                  "
 ^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
 ^^^^^^^^^-------------------------------------------------------------------------------
-_b_move left      _B_left        _V_split-vert-move      _o_del-other      _nf_new-frame
+_b_move left      _B_left        _V_split-vert-move      _o_del-other      _n_new-frame
 _n_move down      _N_down        _H_split-horiz-move     _da_ace-del       _u_winner-undo
 _p_move up        _P_up          _v_split-vert           _dw_del-window    _r_winner-redo
 _f_move right     _F_right       _h_split-horiz          _df_del-frame
 _q_uit
 "
-  ; Move the focus around
-  ("b" windmove-left)
-  ("n" windmove-down)
-  ("p" windmove-up)
-  ("f" windmove-right)
-  ; Changes the size of the current window
-  ("B" hydra-move-splitter-left)
-  ("N" hydra-move-splitter-down)
-  ("P" hydra-move-splitter-up)
-  ("F" hydra-move-splitter-right)
-  ; Split and move (or not)
-  ("V" (lambda ()
-         (interactive)
-         (split-window-right)
-         (windmove-right)))
-  ("H" (lambda ()
-         (interactive)
-         (split-window-below)
-         (windmove-down)))
-  ("v" split-window-right)
-  ("h" split-window-below)
-  ;("t" transpose-frame "'")
-  ;; winner-mode must be enabled
-  ("u" winner-undo)
-  ("r" winner-redo) ;;Fixme, not working?
-  ; Delete windows
-  ("o" delete-other-windows :exit t)
-  ("da" ace-delete-window)
-  ("dw" delete-window)
-  ("db" kill-this-buffer)
-  ("df" delete-frame :exit t)
-  ; Other stuff
-  ("a" ace-window :exit t)
-  ("nf" new-frame :exit t)
-  ("s" ace-swap-window)
-  ("q" nil)
-  ;("i" ace-maximize-window "ace-one" :color blue)
-  ;("b" ido-switch-buffer "buf")
-  ("m" headlong-bookmark-jump)))
+                  ;; Move the focus around
+                  ("b" windmove-left)
+                  ("n" windmove-down)
+                  ("p" windmove-up)
+                  ("f" windmove-right)
+                  ;;  Changes the size of the current window
+                  ("B" hydra-move-splitter-left)
+                  ("N" hydra-move-splitter-down)
+                  ("P" hydra-move-splitter-up)
+                  ("F" hydra-move-splitter-right)
+                  ;; Split and move (or not)
+                  ("V" (lambda ()
+                         (interactive)
+                         (split-window-right)
+                         (windmove-right)))
+                  ("H" (lambda ()
+                         (interactive)
+                         (split-window-below)
+                         (windmove-down)))
+                  ("v" split-window-right)
+                  ("h" split-window-below)
+                  ;; winner-mode must be enabled
+                  ("u" winner-undo)
+                  ("r" winner-redo) ;;Fixme, not working?
+                  ;; Delete windows
+                  ("o" delete-other-windows :exit t)
+                  ("da" ace-delete-window)
+                  ("dw" delete-window)
+                  ("db" kill-this-buffer)
+                  ("df" delete-frame :exit t)
+                  ;; Other stuff
+                  ("a" ace-window :exit t)
+                  ("n" make-frame :exit t)
+                  ("s" ace-swap-window)
+                  ("q" nil)))
 
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
