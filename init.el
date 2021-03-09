@@ -94,7 +94,7 @@
 
 ;; Themes
 (use-package solarized-theme)
-
+(use-package kaolin-themes)
 (use-package doom-themes
   :init (load-theme 'doom-Iosvkem t))
 
@@ -103,7 +103,7 @@
 ;; so that you can easily switch back to it with
 ;; (load-theme (car lps/rotate-themes-list) t)
 (setq lps/rotate-themes-list
-      '(doom-Iosvkem doom-monokai-pro doom-palenight tsdh-dark solarized-dark))
+      '(doom-Iosvkem kaolin-ocean kaolin-aurora doom-monokai-pro doom-palenight tsdh-dark solarized-dark))
 
 ;; Try to save the current theme
 ;; Be careful ! Some visual changes are NOT stored in
@@ -414,7 +414,7 @@ installed themes instead."
 "
 ^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
 ^^^^^^^^^-------------------------------------------------------------------------------
-_b_move left      _B_left        _V_split-vert-move      _o_del-other      _f_new-frame
+_b_move left      _B_left        _V_split-vert-move      _o_del-other      _nf_new-frame
 _n_move down      _N_down        _H_split-horiz-move     _da_ace-del       _u_winner-undo
 _p_move up        _P_up          _v_split-vert           _dw_del-window    _r_winner-redo
 _f_move right     _F_right       _h_split-horiz          _df_del-frame
@@ -453,7 +453,7 @@ _q_uit
   ("df" delete-frame :exit t)
   ; Other stuff
   ("a" ace-window :exit t)
-  ("f" new-frame :exit t)
+  ("nf" new-frame :exit t)
   ("s" ace-swap-window)
   ("q" nil)
   ;("i" ace-maximize-window "ace-one" :color blue)
@@ -1003,3 +1003,13 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package dired-x
   :ensure nil
   :after dired)
+
+(use-package xkcd
+  :defer t)
+
+(use-package speed-type
+  :defer t
+  :custom (speed-type-default-lang 'French)) ; Todo: fix bad behaviour !
+
+(use-package key-quiz
+  :defer t)

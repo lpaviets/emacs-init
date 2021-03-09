@@ -60,3 +60,4 @@ flycheck_*.el
 
 # AMX
 /amx-items
+/xkcd/
