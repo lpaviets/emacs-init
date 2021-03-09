@@ -1018,11 +1018,12 @@ It is even possible to define your own snippets. The following package contains 
           ("C-p" . company-select-previous))
 
     :custom
-       (company-minimum-prefix-length 3)
-       (company-idle-delay 0.1)
-       (company-echo-delay 0.1)
+       (company-minimum-prefix-length 1)
+       (company-idle-delay 0.0)
        (company-selection-wrap-around t)
-       (company-show-numbers t))
+       (company-show-numbers t)
+       (company-tooltip-align-annotations t)
+       (company-tooltip-flip-when-above t))
 
 #+end_src
 

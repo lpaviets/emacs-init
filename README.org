@@ -86,7 +86,7 @@ Some other interesting ones:
 - [[https://ladicle.com/post/config/][Ladicle's]] configuration file
 - [[https://github.com/caisah/emacs.dz][Another list of nice config files]] on github
 - [[https://github.com/farlado/dotemacs][An opinionated]] but complete and very detailed configuration
-  
+- [[https://luca.cambiaghi.me/vanilla-emacs/readme.html][Lucas Cambiaghi's]] configuration.
 * TODO 
 
 List of things that could be added to this configuration file if needed, whether for me, or to share:

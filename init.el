@@ -666,11 +666,12 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
         ("C-p" . company-select-previous))
 
   :custom
-     (company-minimum-prefix-length 3)
-     (company-idle-delay 0.1)
-     (company-echo-delay 0.1)
+     (company-minimum-prefix-length 1)
+     (company-idle-delay 0.0)
      (company-selection-wrap-around t)
-     (company-show-numbers t))
+     (company-show-numbers t)
+     (company-tooltip-align-annotations t)
+     (company-tooltip-flip-when-above t))
 
 (use-package company-box
   :after company
