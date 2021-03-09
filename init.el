@@ -174,7 +174,8 @@ installed themes instead."
      (
       ;;     ("o" olivetti-mode "Olivetti" :toggle t)
       ;;     ("t" toggle-window-transparency "Transparency" :toggle t )
-      ("c" cycle-themes-mode "Cycle Themes" )
+      ("c" lps/rotate-through-themes "Cycle Themes" )
+      ("t" lps/restore-initial-themes "Restore Theme")
       ("+" text-scale-increase "Zoom In")
       ("-" text-scale-decrease "Zoom Out")
       ("x" toggle-frame-maximized "Maximize Frame" :toggle t )
@@ -182,12 +183,12 @@ installed themes instead."
      "Highlighting"
      (("d" rainbow-delimiters-mode "Rainbow Delimiters" :toggle t )
       ("r" rainbow-mode "Show Hex Colours" :toggle t )
-      ;;    ("n" highlight-numbers-mode "Highlight Code Numbers" :toggle t )
+      ("n" highlight-numbers-mode "Highlight Code Numbers" :toggle t )
       ("l" display-line-numbers-mode "Show Line Numbers" :toggle t )
       ("_" global-hl-line-mode "Highlight Current Line" :toggle t )
       ;;    ("I" rainbow-identifiers-mode "Rainbow Identifiers" :toggle t )
       ("b" beacon-mode "Show Cursor Trailer" :toggle t )
-      ("w" whitespace-mode "whitespace" :toggle t))
+      ("w" whitespace-mode "Show Whitespaces" :toggle t))
     "Miscellaneous"
     (("j" visual-line-mode "Wrap Line Window"  :toggle t)
      ("m" visual-fill-column-mode "Wrap Line Column"  :toggle t)
@@ -208,6 +209,8 @@ installed themes instead."
   :defer t)
 (use-package visual-fill-column
   :defer t)
+(use-package highlight-numbers
+  :hook (prog-mode . highlight-numbers-mode))
 
 ;; Tab behaviour and whitespaces
 (setq-default indent-tabs-mode nil)
