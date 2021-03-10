@@ -101,6 +101,15 @@ In order to test things more rapidly and to be able to apply configuration chang
     :commands (restart-emacs restart-emacs-start-new-emacs))
 #+end_src
 
+** Custom file
+
+We do not want Emacs to mess with our own =init.el= file, and so we tell it where to store all its precious customizations
+
+#+begin_src emacs-lisp
+(setq custom-file (concat user-emacs-directory "custom.el"))
+(load custom-file 'noerror)
+#+end_src
+
 * UI Configuration
 ** Visual interface changes
 

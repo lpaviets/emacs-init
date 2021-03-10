@@ -45,6 +45,9 @@
 (use-package restart-emacs
   :commands (restart-emacs restart-emacs-start-new-emacs))
 
+(setq custom-file (concat user-emacs-directory "custom.el"))
+(load custom-file 'noerror)
+
 ;; Disable the annoying startup message and Emacs logo
 (setq inhibit-startup-message t)
 
