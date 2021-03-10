@@ -137,7 +137,7 @@ However, we would like to see Emacs in full-screen if we are to use it
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
 #+end_src
 
-Because we tend to use =eshell= for everything that is shell-related (see the Eshell section later in this file), we also start it whenever we start Emacs.
+Because we tend to use ~eshell~ for everything that is shell-related (see the Eshell section later in this file), we also start it whenever we start Emacs.
 #+begin_src emacs-lisp
 (add-hook 'emacs-startup-hook (lambda () (eshell) (previous-buffer)))
 #+end_src
@@ -872,7 +872,7 @@ It can act as a small, local version control system due to how Undos are managed
 * Programming
 ** Projectile
 
-    [[https://projectile.mx/][Projectile]] is an Emacs package that makes project management easier. It allows us /e.g./ to navigate between files of the same project, search/replace within files of the same project, and integrates very well with other tools, such as =lsp-mode= or =counsel=.
+    [[https://projectile.mx/][Projectile]] is an Emacs package that makes project management easier. It allows us /e.g./ to navigate between files of the same project, search/replace within files of the same project, and integrates very well with other tools, such as =lsp-mode= or ~counsel~.
 
 #+begin_src emacs-lisp
 (use-package projectile
@@ -1057,7 +1057,7 @@ To have a cleaner interface and also a bit of documentation added to the suggest
 
 ***** Company backends
 
-A first backend that we want to consider is the one using snippets provided by =yasnippet=
+A first backend that we want to consider is the one using snippets provided by ~yasnippet~
 
 #+begin_src emacs-lisp
 ;; (add-to-list 'company-backends 'company-yasnippet)
@@ -1129,7 +1129,7 @@ Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP 
 
 *** Eglot
 
-There exists another implementation of the Language Server Protocol in Emacs, called [[https://github.com/joaotavora/eglot][eglot]]. It is much more integrated within "core" Emacs, as it only uses built-in packages, such as =project.el= instead of =projectile=, or =flymake= rather than =flycheck=.
+There exists another implementation of the Language Server Protocol in Emacs, called [[https://github.com/joaotavora/eglot][eglot]]. It is much more integrated within "core" Emacs, as it only uses built-in packages, such as =project.el= instead of ~projectile~, or ~flymake~ rather than ~flycheck~.
 
 #+begin_src emacs-lisp
   ;; Might not work, recommended to use package-install instead
@@ -1192,7 +1192,7 @@ Another package doing more or less the same thing but in a different way:
 
      =pip install --user python-language-server[all]=
 
-     The command =pyls= needs to be available on the =PATH= environment variable.
+     The command ~pyls~ needs to be available on the ~PATH~ environment variable.
 
      #+begin_src emacs-lisp
   ;; Python
@@ -1276,7 +1276,7 @@ We define a useful macro to evaluate an expression, and replace it with the resu
 
 We could, of course, use LSP to write Common Lisp code. However, Emacs already provides nice editing functionalities for programming in Lisp-like languages, and CL is no exception. On top of the built-in Emacs functions, we use another minor mode, specifically designed to write Common Lisp: [[https://common-lisp.net/project/slime/][SLIME]]. More precisely, we use a /fork/ of SLIME, known as [[https://github.com/joaotavora/sly][SLY]].
 
-*MANUAL* It is likely that =sbcl= is not already installed. Hence, in order to run the following code, you will need to install it. If you install it manuallyby compiling the source code, make sure that the =sbcl= command is available on the PATH, or modify  =:custom (inferior-lisp-program "<path/to/sbcl>")= accordingly in the following block.
+*MANUAL* It is likely that ~sbcl~ is not already installed. Hence, in order to run the following code, you will need to install it. If you install it manuallyby compiling the source code, make sure that the ~sbcl~ command is available on the PATH, or modify  =:custom (inferior-lisp-program "<path/to/sbcl>")= accordingly in the following block.
 
 #+begin_src emacs-lisp
 ;; Make sure that sbcl is available on PATH
@@ -1479,7 +1479,12 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
 
     ;; Insert math symbols quickly
-    (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode))
+    (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode)
+
+    ;; Add environment for auto. insertion with C-c C-e
+    (add-hook 'LaTeX-mode-hook 'lps/latex-add-environments)
+    (defun lps/latex-add-environments ()
+      (LaTeX-add-environments '("tikzpicture" LaTeX-env-label))))
 
 #+end_src
 
@@ -1523,9 +1528,9 @@ Another useful package to deal with references, bibliography, citations and so o
 ** Eshell
 *** Visual
 
-Contrary to =term= and =shell= (respectively invoked by =M-x <term/shell>=), [[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]] is not /emulating/ anything: it is, on its own, a shell-like command interpreter implemented in Emacs Lisp. As such, it provides (most of) the usual commands such as =grep=, =ls= and so on, as well as an extra binding to Emacs (for example, you can redirect the output of any command to an Emacs buffer). For this reason, you can use =eshell= on any system that is able to run Emacs, as there is no external dependency.
+Contrary to ~term~ and ~shell~ (respectively invoked by =M-x <term/shell>=), [[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]] is not /emulating/ anything: it is, on its own, a shell-like command interpreter implemented in Emacs Lisp. As such, it provides (most of) the usual commands such as ~grep~, ~ls~ and so on, as well as an extra binding to Emacs (for example, you can redirect the output of any command to an Emacs buffer). For this reason, you can use ~eshell~ on any system that is able to run Emacs, as there is no external dependency.
 
-In fact, some of those commands are reimplemented in Emacs Lisp (/e.g./ =cat=), some of them are using the Emacs tools (for example =grep=), and unknown commands are passed to the /real/ commandline.
+In fact, some of those commands are reimplemented in Emacs Lisp (/e.g./ ~cat~), some of them are using the Emacs tools (for example ~grep~), and unknown commands are passed to the /real/ commandline.
 
 A more in-depth guide can be found [[https://www.masteringemacs.org/article/complete-guide-mastering-eshell][here]].
 
@@ -1546,7 +1551,7 @@ We install a few packages which make eshell easier to use.
 #+end_src
 
 *** Binding with .bashrc
-*MANUAL* One thing that we might want to do is to be able to use aliases defined in =.bashrc= in =eshell=. There are [[https://www.emacswiki.org/emacs/EshellAlias][several solutions]] to this problem, and the one I use only allows us to use bash aliases in =eshell= and not the contrary, for example.
+*MANUAL* One thing that we might want to do is to be able to use aliases defined in =.bashrc= in ~eshell~. There are [[https://www.emacswiki.org/emacs/EshellAlias][several solutions]] to this problem, and the one I use only allows us to use bash aliases in ~eshell~ and not the contrary, for example.
 
 We do this by adding the following line at the end of the =.bashrc= file:
 
@@ -1554,7 +1559,7 @@ We do this by adding the following line at the end of the =.bashrc= file:
 alias | sed -E "s/^alias ([^=]+)='(.*)'$/alias \1 \2 \$*/g; s/'\\\''/'/g;" >~/.emacs.d/eshell/alias
 #+end_src
 
-It will simply go through the =.bashrc= file whenever you open a bash terminal, and each time it sees a line starting with =alias=, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where =eshell= reads its aliases.
+It will simply go through the =.bashrc= file whenever you open a bash terminal, and each time it sees a line starting with ~alias~, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where ~eshell~ reads its aliases.
 
 **** TODO Rewrite this, using two different files that are "loaded" by eshell.
 ** Dired

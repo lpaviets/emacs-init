@@ -960,7 +960,12 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
 
   ;; Insert math symbols quickly
-  (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode))
+  (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode)
+
+  ;; Add environment for auto. insertion with C-c C-e
+  (add-hook 'LaTeX-mode-hook 'lps/latex-add-environments)
+  (defun lps/latex-add-environments ()
+    (LaTeX-add-environments '("tikzpicture" LaTeX-env-label))))
 
 (use-package bibtex                     ; BibTeX editing
     :defer t
