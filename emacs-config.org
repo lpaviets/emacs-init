@@ -1020,7 +1020,9 @@ It is even possible to define your own snippets. The following package contains 
 
     :bind (
        :map company-active-map
-          ("<tab>" . company-complete-selection)
+          ("<tab>" . company-complete)
+          ("<return>" . nil)
+          ("C-l" . company-complete-selection)
           ("C-n" . company-select-next)
           ("C-p" . company-select-previous)
           ("M-n" . nil)
