@@ -256,8 +256,7 @@ installed themes instead."
 (global-unset-key (kbd "C-z"))
 
 (use-package command-log-mode
-;; :hook (<your-favourite-mode> . command-log-mode) ; Add here modes in which you want to run the command-log-mode
-  :commands command-log-mode
+  :defer t
 )
 
 ;; Type "y" instead of "yes RET" for confirmation
@@ -372,7 +371,17 @@ installed themes instead."
             (message "File '%s' successfully renamed to '%s'"
                      name (file-name-nondirectory new-name)))))))
 
-(winner-mode 1)
+(use-package winner
+  :ensure nil
+  :commands (winner-undo winner-redo)
+  :hook (after-init . winner-mode)
+  :init (setq winner-boring-buffers '("*Completions*"
+                                      "*Compile-Log*"
+                                      "*Fuzzy Completions*"
+                                      "*Apropos*"
+                                      "*Help*"
+                                      "*Buffer List*"
+                                      "*Ibuffer*")))
 
 ;;* Helpers
 (use-package windmove
@@ -480,17 +489,17 @@ _q_uit
 
 (use-package multiple-cursors
   :bind
-  (("C-c o <SPC>" . mc/vertical-align-with-space)
-   ("C-c o a"     . mc/vertical-align)
-   ("C-c o m"     . mc/mark-more-like-this-extended)
-   ("C-c o h"     . mc/mark-all-like-this-dwim)
-   ("C-c o l"     . mc/edit-lines)
-   ("C-c o n"     . mc/mark-next-like-this)
-   ("C-c o p"     . mc/mark-previous-like-this)
-   ("C-c o C-,"   . mc/mark-all-like-this)
-   ("C-c o C-a"   . mc/edit-beginnings-of-lines)
-   ("C-c o C-e"   . mc/edit-ends-of-lines)
-   ("C-c o r"     . mc/mark-all-in-region)))
+  (("C-c m SPC>" . mc/vertical-align-with-space)
+   ("C-c m a"     . mc/vertical-align)
+   ("C-c m m"     . mc/mark-more-like-this-extended)
+   ("C-c m h"     . mc/mark-all-like-this-dwim)
+   ("C-c m l"     . mc/edit-lines)
+   ("C-c m n"     . mc/mark-next-like-this)
+   ("C-c m p"     . mc/mark-previous-like-this)
+   ("C-c m C-,"   . mc/mark-all-like-this)
+   ("C-c m C-a"   . mc/edit-beginnings-of-lines)
+   ("C-c m C-e"   . mc/edit-ends-of-lines)
+   ("C-c m r"     . mc/mark-all-in-region)))
 
 (global-set-key
  (kbd "C-c h m")
