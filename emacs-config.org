@@ -440,10 +440,9 @@ As of now, you need to enable the mode by using the =command-log-mode= command (
 If you want =command-log-mode= to be activated by default in certain minor (or even major) modes, simply add a hook. You will still need to explicitly open the buffer, but this could also be dealt with by using other, straightforward hooks.
 
 #+begin_src emacs-lisp
-(use-package command-log-mode
-;; :hook (<your-favourite-mode> . command-log-mode) ; Add here modes in which you want to run the command-log-mode
-  :commands command-log-mode
-)
+  (use-package command-log-mode
+    :defer t
+  )
 #+end_src
 
 *** Confirmation
@@ -617,7 +616,17 @@ A cool function to rename both a buffer and the file that it is visiting, while 
 Because window management can be a bit tedious with the basic Emacs functionalities, we improve it a bit. First of all, we enable =winner-mode=, which allows us to "undo" and "redo" changes in the Windows' configuration.
 
 #+begin_src emacs-lisp
-(winner-mode 1)
+  (use-package winner
+    :ensure nil
+    :commands (winner-undo winner-redo)
+    :hook (after-init . winner-mode)
+    :init (setq winner-boring-buffers '("*Completions*"
+                                        "*Compile-Log*"
+                                        "*Fuzzy Completions*"
+                                        "*Apropos*"
+                                        "*Help*"
+                                        "*Buffer List*"
+                                        "*Ibuffer*")))
 
 #+end_src
 
@@ -754,17 +763,17 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
 #+begin_src emacs-lisp
   (use-package multiple-cursors
     :bind
-    (("C-c o <SPC>" . mc/vertical-align-with-space)
-     ("C-c o a"     . mc/vertical-align)
-     ("C-c o m"     . mc/mark-more-like-this-extended)
-     ("C-c o h"     . mc/mark-all-like-this-dwim)
-     ("C-c o l"     . mc/edit-lines)
-     ("C-c o n"     . mc/mark-next-like-this)
-     ("C-c o p"     . mc/mark-previous-like-this)
-     ("C-c o C-,"   . mc/mark-all-like-this)
-     ("C-c o C-a"   . mc/edit-beginnings-of-lines)
-     ("C-c o C-e"   . mc/edit-ends-of-lines)
-     ("C-c o r"     . mc/mark-all-in-region)))
+    (("C-c m SPC>" . mc/vertical-align-with-space)
+     ("C-c m a"     . mc/vertical-align)
+     ("C-c m m"     . mc/mark-more-like-this-extended)
+     ("C-c m h"     . mc/mark-all-like-this-dwim)
+     ("C-c m l"     . mc/edit-lines)
+     ("C-c m n"     . mc/mark-next-like-this)
+     ("C-c m p"     . mc/mark-previous-like-this)
+     ("C-c m C-,"   . mc/mark-all-like-this)
+     ("C-c m C-a"   . mc/edit-beginnings-of-lines)
+     ("C-c m C-e"   . mc/edit-ends-of-lines)
+     ("C-c m r"     . mc/mark-all-in-region)))
 #+end_src
 
 The webpage specifies that the commands provided by this package are best invoked when bound to key sequence rather than by =M-x <mc/command-name>=, although some testing on my part seems to show that it still works relatively well most of the time.
