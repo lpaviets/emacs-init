@@ -376,7 +376,6 @@ All the hydras will now be defined after the package to which they correspond, o
 
 Some hydras will be called less frequently and for other purposes than getting a "quick-and-dirty" access to commonly used functions. Hence, we will make them prettier (the compromise being that they are less minimalistic and take much more space visually)
 
-
 *MANUAL* This is not a MELPA package. It can be found [[https://github.com/Ladicle/hydra-posframe][here]]. Install it and change the loading path according to your configuration.
 
 #+begin_src emacs-lisp
