@@ -602,7 +602,14 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :defer t)
 
 ;; Always highlight matching parenthesis
-(show-paren-mode t)
+(use-package paren
+  :ensure nil
+  :init
+  (show-paren-mode t)
+  :custom
+  ;; (show-paren-style 'mixed) ; Too invasive
+  (show-paren-when-point-inside-paren t)
+  (show-paren-when-point-in-periphery t))
 
 ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
 (use-package rainbow-delimiters
