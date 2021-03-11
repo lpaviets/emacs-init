@@ -101,6 +101,15 @@ In order to test things more rapidly and to be able to apply configuration chang
     :commands (restart-emacs restart-emacs-start-new-emacs))
 #+end_src
 
+** Custom file
+
+We do not want Emacs to mess with our own =init.el= file, and so we tell it where to store all its precious customizations
+
+#+begin_src emacs-lisp
+(setq custom-file (concat user-emacs-directory "custom.el"))
+(load custom-file 'noerror)
+#+end_src
+
 * UI Configuration
 ** Visual interface changes
 
@@ -128,7 +137,7 @@ However, we would like to see Emacs in full-screen if we are to use it
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
 #+end_src
 
-Because we tend to use =eshell= for everything that is shell-related (see the Eshell section later in this file), we also start it whenever we start Emacs.
+Because we tend to use ~eshell~ for everything that is shell-related (see the Eshell section later in this file), we also start it whenever we start Emacs.
 #+begin_src emacs-lisp
 (add-hook 'emacs-startup-hook (lambda () (eshell) (previous-buffer)))
 #+end_src
@@ -370,7 +379,6 @@ All the hydras will now be defined after the package to which they correspond, o
 
 Some hydras will be called less frequently and for other purposes than getting a "quick-and-dirty" access to commonly used functions. Hence, we will make them prettier (the compromise being that they are less minimalistic and take much more space visually)
 
-
 *MANUAL* This is not a MELPA package. It can be found [[https://github.com/Ladicle/hydra-posframe][here]]. Install it and change the loading path according to your configuration.
 
 #+begin_src emacs-lisp
@@ -432,10 +440,9 @@ As of now, you need to enable the mode by using the =command-log-mode= command (
 If you want =command-log-mode= to be activated by default in certain minor (or even major) modes, simply add a hook. You will still need to explicitly open the buffer, but this could also be dealt with by using other, straightforward hooks.
 
 #+begin_src emacs-lisp
-(use-package command-log-mode
-;; :hook (<your-favourite-mode> . command-log-mode) ; Add here modes in which you want to run the command-log-mode
-  :commands command-log-mode
-)
+  (use-package command-log-mode
+    :defer t
+  )
 #+end_src
 
 *** Confirmation
@@ -609,7 +616,17 @@ A cool function to rename both a buffer and the file that it is visiting, while 
 Because window management can be a bit tedious with the basic Emacs functionalities, we improve it a bit. First of all, we enable =winner-mode=, which allows us to "undo" and "redo" changes in the Windows' configuration.
 
 #+begin_src emacs-lisp
-(winner-mode 1)
+  (use-package winner
+    :ensure nil
+    :commands (winner-undo winner-redo)
+    :hook (after-init . winner-mode)
+    :init (setq winner-boring-buffers '("*Completions*"
+                                        "*Compile-Log*"
+                                        "*Fuzzy Completions*"
+                                        "*Apropos*"
+                                        "*Help*"
+                                        "*Buffer List*"
+                                        "*Ibuffer*")))
 
 #+end_src
 
@@ -618,93 +635,101 @@ To facilitate window management, we use an hydra, binding most of the commands t
 First of all, we use a few helper functions, defined in [[https://github.com/abo-abo/hydra/blob/master/hydra-examples.el][hydra-examples.el]]
 
 #+begin_src emacs-lisp
-;;* Helpers
-(use-package windmove
-  :defer t)
+  ;;* Helpers
+  (use-package windmove
+    :defer t)
 
-(defun hydra-move-splitter-left (arg)
-  "Move window splitter left."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'right))
-      (shrink-window-horizontally arg)
-    (enlarge-window-horizontally arg)))
+  (defun hydra-move-splitter-left (arg)
+    "Move window splitter left."
+    (interactive "p")
+    (if (let ((windmove-wrap-around))
+          (windmove-find-other-window 'right))
+        (shrink-window-horizontally arg)
+      (enlarge-window-horizontally arg)))
 
-(defun hydra-move-splitter-right (arg)
-  "Move window splitter right."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'right))
-      (enlarge-window-horizontally arg)
-    (shrink-window-horizontally arg)))
+  (defun hydra-move-splitter-right (arg)
+    "Move window splitter right."
+    (interactive "p")
+    (if (let ((windmove-wrap-around))
+          (windmove-find-other-window 'right))
+        (enlarge-window-horizontally arg)
+      (shrink-window-horizontally arg)))
 
-(defun hydra-move-splitter-up (arg)
-  "Move window splitter up."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'up))
-      (enlarge-window arg)
-    (shrink-window arg)))
+  (defun hydra-move-splitter-up (arg)
+    "Move window splitter up."
+    (interactive "p")
+    (if (let ((windmove-wrap-around))
+          (windmove-find-other-window 'up))
+        (enlarge-window arg)
+      (shrink-window arg)))
 
-(defun hydra-move-splitter-down (arg)
-  "Move window splitter down."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'up))
-      (shrink-window arg)
-    (enlarge-window arg)))
+  (defun hydra-move-splitter-down (arg)
+    "Move window splitter down."
+    (interactive "p")
+    (if (let ((windmove-wrap-around))
+          (windmove-find-other-window 'up))
+        (shrink-window arg)
+      (enlarge-window arg)))
 #+end_src
 
 Now, we wrap everything up into a nice hydra
 
 #+begin_src emacs-lisp
-  (global-set-key (kbd "C-c h w") ; w for window
-                  (defhydra hydra-window (:color red
-                                                 :hint nil)
-                    "
-  ^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
-  ^^^^^^^^^-------------------------------------------------------------------------------
-  _b_move left      _B_left        _V_split-vert-move      _o_del-other      _n_new-frame
-  _n_move down      _N_down        _H_split-horiz-move     _da_ace-del       _u_winner-undo
-  _p_move up        _P_up          _v_split-vert           _dw_del-window    _r_winner-redo
-  _f_move right     _F_right       _h_split-horiz          _df_del-frame
-  _q_uit
-  "
-                    ;; Move the focus around
-                    ("b" windmove-left)
-                    ("n" windmove-down)
-                    ("p" windmove-up)
-                    ("f" windmove-right)
-                    ;;  Changes the size of the current window
-                    ("B" hydra-move-splitter-left)
-                    ("N" hydra-move-splitter-down)
-                    ("P" hydra-move-splitter-up)
-                    ("F" hydra-move-splitter-right)
-                    ;; Split and move (or not)
-                    ("V" (lambda ()
-                           (interactive)
-                           (split-window-right)
-                           (windmove-right)))
-                    ("H" (lambda ()
-                           (interactive)
-                           (split-window-below)
-                           (windmove-down)))
-                    ("v" split-window-right)
-                    ("h" split-window-below)
-                    ;; winner-mode must be enabled
-                    ("u" winner-undo)
-                    ("r" winner-redo) ;;Fixme, not working?
-                    ;; Delete windows
-                    ("o" delete-other-windows :exit t)
-                    ("da" ace-delete-window)
-                    ("dw" delete-window)
-                    ("db" kill-this-buffer)
-                    ("df" delete-frame :exit t)
-                    ;; Other stuff
-                    ("a" ace-window :exit t)
-                    ("n" make-frame :exit t)
-                    ("s" ace-swap-window)
-                    ("q" nil)))
+  (global-set-key
+     (kbd "C-c h w") ; w for window
+     (defhydra hydra-window (:color red
+                                    :hint nil)
+       "
+    ^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
+    ^^^^^^^^^-------------------------------------------------------------------------------
+    _b_move left      _B_left        _V_split-vert-move      _o_del-other      _c_new-frame
+  >>>>>>> 29f828b35164da15bf8bee38b0a45d967656192a
+    _n_move down      _N_down        _H_split-horiz-move     _da_ace-del       _u_winner-undo
+    _p_move up        _P_up          _v_split-vert           _dw_del-window    _r_winner-redo
+    _f_move right     _F_right       _h_split-horiz          _df_del-frame
+    _q_uit
+    "
+       ;; Move the focus around
+       ("b" windmove-left)
+       ("n" windmove-down)
+       ("p" windmove-up)
+       ("f" windmove-right)
+
+       ;; Changes the size of the current window
+       ("B" hydra-move-splitter-left)
+       ("N" hydra-move-splitter-down)
+       ("P" hydra-move-splitter-up)
+       ("F" hydra-move-splitter-right)
+
+       ;; Split and move (or not)
+       ("V" (lambda ()
+              (interactive)
+              (split-window-right)
+              (windmove-right)))
+       ("H" (lambda ()
+              (interactive)
+              (split-window-below)
+              (windmove-down)))
+       ("v" split-window-right)
+       ("h" split-window-below)
+
+       ;; winner-mode must be enabled
+       ("u" winner-undo)
+       ("r" winner-redo) ;;Fixme, not working?
+
+       ;; Delete windows
+       ("o" delete-other-windows :exit t)
+       ("da" ace-delete-window)
+       ("dw" delete-window)
+       ("db" kill-this-buffer)
+       ("df" delete-frame :exit t)
+
+       ;; Other stuff
+       ("a" ace-window :exit t)
+       ("c" new-frame :exit t)
+       ("s" ace-swap-window)
+       ("q" nil)))
+  >>>>>>> 29f828b35164da15bf8bee38b0a45d967656192a
 #+end_src
 ** Help !
 
@@ -739,17 +764,17 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
 #+begin_src emacs-lisp
   (use-package multiple-cursors
     :bind
-    (("C-c o <SPC>" . mc/vertical-align-with-space)
-     ("C-c o a"     . mc/vertical-align)
-     ("C-c o m"     . mc/mark-more-like-this-extended)
-     ("C-c o h"     . mc/mark-all-like-this-dwim)
-     ("C-c o l"     . mc/edit-lines)
-     ("C-c o n"     . mc/mark-next-like-this)
-     ("C-c o p"     . mc/mark-previous-like-this)
-     ("C-c o C-,"   . mc/mark-all-like-this)
-     ("C-c o C-a"   . mc/edit-beginnings-of-lines)
-     ("C-c o C-e"   . mc/edit-ends-of-lines)
-     ("C-c o r"     . mc/mark-all-in-region)))
+    (("C-c m SPC>" . mc/vertical-align-with-space)
+     ("C-c m a"     . mc/vertical-align)
+     ("C-c m m"     . mc/mark-more-like-this-extended)
+     ("C-c m h"     . mc/mark-all-like-this-dwim)
+     ("C-c m l"     . mc/edit-lines)
+     ("C-c m n"     . mc/mark-next-like-this)
+     ("C-c m p"     . mc/mark-previous-like-this)
+     ("C-c m C-,"   . mc/mark-all-like-this)
+     ("C-c m C-a"   . mc/edit-beginnings-of-lines)
+     ("C-c m C-e"   . mc/edit-ends-of-lines)
+     ("C-c m r"     . mc/mark-all-in-region)))
 #+end_src
 
 The webpage specifies that the commands provided by this package are best invoked when bound to key sequence rather than by =M-x <mc/command-name>=, although some testing on my part seems to show that it still works relatively well most of the time.
@@ -759,20 +784,20 @@ The webpage specifies that the commands provided by this package are best invoke
 Because movement keys are the most frequently used ones, it might be useful to create an Hydra helping us navigate around a document.
 
 #+begin_src emacs-lisp
-(global-set-key
- (kbd "C-c h m")
- (defhydra hydra-move ()
-   "Movement" ; m as in movement
-   ("n" next-line)
-   ("p" previous-line)
-   ("f" forward-char)
-   ("b" backward-char)
-   ("a" beginning-of-line)
-   ("e" move-end-of-line)
-   ("v" scroll-up-command)
-   ;; Converting M-v to V here by analogy.
-   ("V" scroll-down-command)
-   ("l" recenter-top-bottom)))
+  (global-set-key
+   (kbd "C-c h m")
+   (defhydra hydra-move ()
+     "Movement" ; m as in movement
+     ("n" next-line)
+     ("p" previous-line)
+     ("f" forward-char)
+     ("b" backward-char)
+     ("a" beginning-of-line)
+     ("e" move-end-of-line)
+     ("v" scroll-up-command)
+     ;; Converting M-v to V here by analogy.
+     ("V" scroll-down-command)
+     ("l" recenter-top-bottom)))
 #+end_src
 
 ** Rectangles
@@ -782,36 +807,36 @@ Manipulating rectangles is a cool Emacs feature. You can select a region with th
 Because the functions operating on rectangles are not always the easier to remember, we simply define a new Hydra referencing the most useful ones.
 
 #+begin_src emacs-lisp
-(global-set-key
-(kbd "C-c h r") ; r as rectangle
-(defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
-                                     :color pink
-                                     :hint nil
-                                     :post (deactivate-mark))
+  (global-set-key
+   (kbd "C-c h r") ; r as rectangle
+   (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
+                                        :color pink
+                                        :hint nil
+                                        :post (deactivate-mark))
+     "
+    ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_
+  _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_
+    ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
+  ^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
   "
-  ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_
-_b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_
-  ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
-^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
-"
-  ("p" rectangle-previous-line)
-  ("n" rectangle-next-line)
-  ("b" rectangle-backward-char)
-  ("f" rectangle-forward-char)
-  ("d" kill-rectangle)                    ;; C-x r k
-  ("y" yank-rectangle)                    ;; C-x r y
-  ("w" copy-rectangle-as-kill)            ;; C-x r M-w
-  ("o" open-rectangle)                    ;; C-x r o
-  ("t" string-rectangle)                  ;; C-x r t
-  ("c" clear-rectangle)                   ;; C-x r c
-  ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
-  ("N" rectangle-number-lines)            ;; C-x r N
-  ("r" (if (region-active-p)
-           (deactivate-mark)
-         (rectangle-mark-mode 1)))        ;; C-x SPC
-  ("i" string-insert-rectangle)
-  ("u" undo nil)
-  ("q" nil)))
+     ("p" rectangle-previous-line)
+     ("n" rectangle-next-line)
+     ("b" rectangle-backward-char)
+     ("f" rectangle-forward-char)
+     ("d" kill-rectangle)                    ;; C-x r k
+     ("y" yank-rectangle)                    ;; C-x r y
+     ("w" copy-rectangle-as-kill)            ;; C-x r M-w
+     ("o" open-rectangle)                    ;; C-x r o
+     ("t" string-rectangle)                  ;; C-x r t
+     ("c" clear-rectangle)                   ;; C-x r c
+     ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
+     ("N" rectangle-number-lines)            ;; C-x r N
+     ("r" (if (region-active-p)
+              (deactivate-mark)
+            (rectangle-mark-mode 1)))        ;; C-x SPC
+     ("i" string-insert-rectangle)
+     ("u" undo nil)
+     ("q" nil)))
 #+end_src
 
 ** Selection
@@ -861,7 +886,7 @@ It can act as a small, local version control system due to how Undos are managed
 * Programming
 ** Projectile
 
-    [[https://projectile.mx/][Projectile]] is an Emacs package that makes project management easier. It allows us /e.g./ to navigate between files of the same project, search/replace within files of the same project, and integrates very well with other tools, such as =lsp-mode= or =counsel=.
+    [[https://projectile.mx/][Projectile]] is an Emacs package that makes project management easier. It allows us /e.g./ to navigate between files of the same project, search/replace within files of the same project, and integrates very well with other tools, such as =lsp-mode= or ~counsel~.
 
 #+begin_src emacs-lisp
 (use-package projectile
@@ -914,7 +939,14 @@ First of all, we want to easily be able to tell with a quick glance which parent
 
 #+begin_src emacs-lisp
   ;; Always highlight matching parenthesis
-  (show-paren-mode t)
+  (use-package paren
+    :ensure nil
+    :init
+    (show-paren-mode t)
+    :custom
+    ;; (show-paren-style 'mixed) ; Too invasive
+    (show-paren-when-point-inside-paren t)
+    (show-paren-when-point-in-periphery t))
 
   ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
   (use-package rainbow-delimiters
@@ -1009,7 +1041,9 @@ It is even possible to define your own snippets. The following package contains 
 
     :bind (
        :map company-active-map
-          ("<tab>" . company-complete-selection)
+          ("<tab>" . company-complete)
+          ("<return>" . nil)
+          ("C-l" . company-complete-selection)
           ("C-n" . company-select-next)
           ("C-p" . company-select-previous)
           ("M-n" . nil)
@@ -1046,7 +1080,7 @@ To have a cleaner interface and also a bit of documentation added to the suggest
 
 ***** Company backends
 
-A first backend that we want to consider is the one using snippets provided by =yasnippet=
+A first backend that we want to consider is the one using snippets provided by ~yasnippet~
 
 #+begin_src emacs-lisp
 ;; (add-to-list 'company-backends 'company-yasnippet)
@@ -1118,7 +1152,7 @@ Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP 
 
 *** Eglot
 
-There exists another implementation of the Language Server Protocol in Emacs, called [[https://github.com/joaotavora/eglot][eglot]]. It is much more integrated within "core" Emacs, as it only uses built-in packages, such as =project.el= instead of =projectile=, or =flymake= rather than =flycheck=.
+There exists another implementation of the Language Server Protocol in Emacs, called [[https://github.com/joaotavora/eglot][eglot]]. It is much more integrated within "core" Emacs, as it only uses built-in packages, such as =project.el= instead of ~projectile~, or ~flymake~ rather than ~flycheck~.
 
 #+begin_src emacs-lisp
   ;; Might not work, recommended to use package-install instead
@@ -1181,7 +1215,7 @@ Another package doing more or less the same thing but in a different way:
 
      =pip install --user python-language-server[all]=
 
-     The command =pyls= needs to be available on the =PATH= environment variable.
+     The command ~pyls~ needs to be available on the ~PATH~ environment variable.
 
      #+begin_src emacs-lisp
   ;; Python
@@ -1265,7 +1299,7 @@ We define a useful macro to evaluate an expression, and replace it with the resu
 
 We could, of course, use LSP to write Common Lisp code. However, Emacs already provides nice editing functionalities for programming in Lisp-like languages, and CL is no exception. On top of the built-in Emacs functions, we use another minor mode, specifically designed to write Common Lisp: [[https://common-lisp.net/project/slime/][SLIME]]. More precisely, we use a /fork/ of SLIME, known as [[https://github.com/joaotavora/sly][SLY]].
 
-*MANUAL* It is likely that =sbcl= is not already installed. Hence, in order to run the following code, you will need to install it. If you install it manuallyby compiling the source code, make sure that the =sbcl= command is available on the PATH, or modify  =:custom (inferior-lisp-program "<path/to/sbcl>")= accordingly in the following block.
+*MANUAL* It is likely that ~sbcl~ is not already installed. Hence, in order to run the following code, you will need to install it. If you install it manuallyby compiling the source code, make sure that the ~sbcl~ command is available on the PATH, or modify  =:custom (inferior-lisp-program "<path/to/sbcl>")= accordingly in the following block.
 
 #+begin_src emacs-lisp
 ;; Make sure that sbcl is available on PATH
@@ -1468,7 +1502,12 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
 
     ;; Insert math symbols quickly
-    (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode))
+    (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode)
+
+    ;; Add environment for auto. insertion with C-c C-e
+    (add-hook 'LaTeX-mode-hook 'lps/latex-add-environments)
+    (defun lps/latex-add-environments ()
+      (LaTeX-add-environments '("tikzpicture" LaTeX-env-label))))
 
 #+end_src
 
@@ -1512,9 +1551,9 @@ Another useful package to deal with references, bibliography, citations and so o
 ** Eshell
 *** Visual
 
-Contrary to =term= and =shell= (respectively invoked by =M-x <term/shell>=), [[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]] is not /emulating/ anything: it is, on its own, a shell-like command interpreter implemented in Emacs Lisp. As such, it provides (most of) the usual commands such as =grep=, =ls= and so on, as well as an extra binding to Emacs (for example, you can redirect the output of any command to an Emacs buffer). For this reason, you can use =eshell= on any system that is able to run Emacs, as there is no external dependency.
+Contrary to ~term~ and ~shell~ (respectively invoked by =M-x <term/shell>=), [[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]] is not /emulating/ anything: it is, on its own, a shell-like command interpreter implemented in Emacs Lisp. As such, it provides (most of) the usual commands such as ~grep~, ~ls~ and so on, as well as an extra binding to Emacs (for example, you can redirect the output of any command to an Emacs buffer). For this reason, you can use ~eshell~ on any system that is able to run Emacs, as there is no external dependency.
 
-In fact, some of those commands are reimplemented in Emacs Lisp (/e.g./ =cat=), some of them are using the Emacs tools (for example =grep=), and unknown commands are passed to the /real/ commandline.
+In fact, some of those commands are reimplemented in Emacs Lisp (/e.g./ ~cat~), some of them are using the Emacs tools (for example ~grep~), and unknown commands are passed to the /real/ commandline.
 
 A more in-depth guide can be found [[https://www.masteringemacs.org/article/complete-guide-mastering-eshell][here]].
 
@@ -1535,7 +1574,7 @@ We install a few packages which make eshell easier to use.
 #+end_src
 
 *** Binding with .bashrc
-*MANUAL* One thing that we might want to do is to be able to use aliases defined in =.bashrc= in =eshell=. There are [[https://www.emacswiki.org/emacs/EshellAlias][several solutions]] to this problem, and the one I use only allows us to use bash aliases in =eshell= and not the contrary, for example.
+*MANUAL* One thing that we might want to do is to be able to use aliases defined in =.bashrc= in ~eshell~. There are [[https://www.emacswiki.org/emacs/EshellAlias][several solutions]] to this problem, and the one I use only allows us to use bash aliases in ~eshell~ and not the contrary, for example.
 
 We do this by adding the following line at the end of the =.bashrc= file:
 
@@ -1543,7 +1582,7 @@ We do this by adding the following line at the end of the =.bashrc= file:
 alias | sed -E "s/^alias ([^=]+)='(.*)'$/alias \1 \2 \$*/g; s/'\\\''/'/g;" >~/.emacs.d/eshell/alias
 #+end_src
 
-It will simply go through the =.bashrc= file whenever you open a bash terminal, and each time it sees a line starting with =alias=, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where =eshell= reads its aliases.
+It will simply go through the =.bashrc= file whenever you open a bash terminal, and each time it sees a line starting with ~alias~, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where ~eshell~ reads its aliases.
 
 **** TODO Rewrite this, using two different files that are "loaded" by eshell.
 ** Dired
