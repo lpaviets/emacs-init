@@ -667,7 +667,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
   :bind (
      :map company-active-map
-        ("<tab>" . company-complete-selection)
+        ("<tab>" . company-complete)
+        ("<return>" . nil)
+        ("C-l" . company-complete-selection)
         ("C-n" . company-select-next)
         ("C-p" . company-select-previous)
         ("M-n" . nil)
