@@ -845,6 +845,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
                (unless (sly-connected-p)
                  (save-excursion (sly))))))
 
+(use-package antlr-mode
+  :mode ("\\.g4\\'" . antlr-mode))
+
 (let ((my-temp-org-font "Cantarell"))
     (if (member my-temp-org-font (font-family-list))
         (setq my-org-mode-font my-temp-org-font)

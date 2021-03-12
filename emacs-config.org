@@ -1309,6 +1309,17 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
                (unless (sly-connected-p)
                  (save-excursion (sly))))))
 #+end_src
+
+** Other tools
+*** ANTLR
+[[https://fr.wikipedia.org/wiki/ANTLR][ANTLR]] is a tool that is used to write compilers and interpreters, by producing a lexer and a parser (and potentially several other things) from a grammar.
+
+#+begin_src emacs-lisp
+  (use-package antlr-mode
+    :mode ("\\.g4\\'" . antlr-mode))
+
+#+end_src
+
 * Org Mode
 
    [[https://orgmode.org/][Org Mode]] is one of the best reasons to use Emacs.
