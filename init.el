@@ -427,15 +427,14 @@ installed themes instead."
  (defhydra hydra-window (:color red
                                 :hint nil)
    "
-  ^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
-  ^^^^^^^^^-------------------------------------------------------------------------------
-  _b_move left      _B_left        _V_split-vert-move      _o_del-other      _c_new-frame
->>>>>>> 06dfa01... Indentation. Fixed a hydra head in the hydra/window.
-  _n_move down      _N_down        _H_split-horiz-move     _da_ace-del       _u_winner-undo
-  _p_move up        _P_up          _v_split-vert           _dw_del-window    _r_winner-redo
-  _f_move right     _F_right       _h_split-horiz          _df_del-frame
-  _q_uit
-  "
+    ^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
+    ^^^^^^^^^-------------------------------------------------------------------------------
+    _b_move left      _B_left        _V_split-vert-move      _o_del-other      _c_new-frame
+    _n_move down      _N_down        _H_split-horiz-move     _da_ace-del       _u_winner-undo
+    _p_move up        _P_up          _v_split-vert           _dw_del-window    _r_winner-redo
+    _f_move right     _F_right       _h_split-horiz          _df_del-frame
+    _q_uit
+    "
    ;; Move the focus around
    ("b" windmove-left)
    ("n" windmove-down)
