@@ -413,53 +413,60 @@ installed themes instead."
       (shrink-window arg)
     (enlarge-window arg)))
 
-(global-set-key (kbd "C-c h w") ; w for window
-                (defhydra hydra-window (:color red
-                                               :hint nil)
-                  "
-^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
-^^^^^^^^^-------------------------------------------------------------------------------
-_b_move left      _B_left        _V_split-vert-move      _o_del-other      _n_new-frame
-_n_move down      _N_down        _H_split-horiz-move     _da_ace-del       _u_winner-undo
-_p_move up        _P_up          _v_split-vert           _dw_del-window    _r_winner-redo
-_f_move right     _F_right       _h_split-horiz          _df_del-frame
-_q_uit
-"
-                  ;; Move the focus around
-                  ("b" windmove-left)
-                  ("n" windmove-down)
-                  ("p" windmove-up)
-                  ("f" windmove-right)
-                  ;;  Changes the size of the current window
-                  ("B" hydra-move-splitter-left)
-                  ("N" hydra-move-splitter-down)
-                  ("P" hydra-move-splitter-up)
-                  ("F" hydra-move-splitter-right)
-                  ;; Split and move (or not)
-                  ("V" (lambda ()
-                         (interactive)
-                         (split-window-right)
-                         (windmove-right)))
-                  ("H" (lambda ()
-                         (interactive)
-                         (split-window-below)
-                         (windmove-down)))
-                  ("v" split-window-right)
-                  ("h" split-window-below)
-                  ;; winner-mode must be enabled
-                  ("u" winner-undo)
-                  ("r" winner-redo) ;;Fixme, not working?
-                  ;; Delete windows
-                  ("o" delete-other-windows :exit t)
-                  ("da" ace-delete-window)
-                  ("dw" delete-window)
-                  ("db" kill-this-buffer)
-                  ("df" delete-frame :exit t)
-                  ;; Other stuff
-                  ("a" ace-window :exit t)
-                  ("n" make-frame :exit t)
-                  ("s" ace-swap-window)
-                  ("q" nil)))
+(global-set-key
+ (kbd "C-c h w") ; w for window
+ (defhydra hydra-window (:color red
+                                :hint nil)
+   "
+  ^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
+  ^^^^^^^^^-------------------------------------------------------------------------------
+  _b_move left      _B_left        _V_split-vert-move      _o_del-other      _c_new-frame
+>>>>>>> 06dfa01... Indentation. Fixed a hydra head in the hydra/window.
+  _n_move down      _N_down        _H_split-horiz-move     _da_ace-del       _u_winner-undo
+  _p_move up        _P_up          _v_split-vert           _dw_del-window    _r_winner-redo
+  _f_move right     _F_right       _h_split-horiz          _df_del-frame
+  _q_uit
+  "
+   ;; Move the focus around
+   ("b" windmove-left)
+   ("n" windmove-down)
+   ("p" windmove-up)
+   ("f" windmove-right)
+
+   ;; Changes the size of the current window
+   ("B" hydra-move-splitter-left)
+   ("N" hydra-move-splitter-down)
+   ("P" hydra-move-splitter-up)
+   ("F" hydra-move-splitter-right)
+
+   ;; Split and move (or not)
+   ("V" (lambda ()
+          (interactive)
+          (split-window-right)
+          (windmove-right)))
+   ("H" (lambda ()
+          (interactive)
+          (split-window-below)
+          (windmove-down)))
+   ("v" split-window-right)
+   ("h" split-window-below)
+
+   ;; winner-mode must be enabled
+   ("u" winner-undo)
+   ("r" winner-redo) ;;Fixme, not working?
+
+   ;; Delete windows
+   ("o" delete-other-windows :exit t)
+   ("da" ace-delete-window)
+   ("dw" delete-window)
+   ("db" kill-this-buffer)
+   ("df" delete-frame :exit t)
+
+   ;; Other stuff
+   ("a" ace-window :exit t)
+   ("c" new-frame :exit t)
+   ("s" ace-swap-window)
+   ("q" nil)))
 
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
@@ -505,35 +512,35 @@ _q_uit
    ("l" recenter-top-bottom)))
 
 (global-set-key
-(kbd "C-c h r") ; r as rectangle
-(defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
-                                     :color pink
-                                     :hint nil
-                                     :post (deactivate-mark))
-  "
+ (kbd "C-c h r") ; r as rectangle
+ (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
+                                      :color pink
+                                      :hint nil
+                                      :post (deactivate-mark))
+   "
   ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_
 _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_
   ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
 ^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
 "
-  ("p" rectangle-previous-line)
-  ("n" rectangle-next-line)
-  ("b" rectangle-backward-char)
-  ("f" rectangle-forward-char)
-  ("d" kill-rectangle)                    ;; C-x r k
-  ("y" yank-rectangle)                    ;; C-x r y
-  ("w" copy-rectangle-as-kill)            ;; C-x r M-w
-  ("o" open-rectangle)                    ;; C-x r o
-  ("t" string-rectangle)                  ;; C-x r t
-  ("c" clear-rectangle)                   ;; C-x r c
-  ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
-  ("N" rectangle-number-lines)            ;; C-x r N
-  ("r" (if (region-active-p)
-           (deactivate-mark)
-         (rectangle-mark-mode 1)))        ;; C-x SPC
-  ("i" string-insert-rectangle)
-  ("u" undo nil)
-  ("q" nil)))
+   ("p" rectangle-previous-line)
+   ("n" rectangle-next-line)
+   ("b" rectangle-backward-char)
+   ("f" rectangle-forward-char)
+   ("d" kill-rectangle)                    ;; C-x r k
+   ("y" yank-rectangle)                    ;; C-x r y
+   ("w" copy-rectangle-as-kill)            ;; C-x r M-w
+   ("o" open-rectangle)                    ;; C-x r o
+   ("t" string-rectangle)                  ;; C-x r t
+   ("c" clear-rectangle)                   ;; C-x r c
+   ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
+   ("N" rectangle-number-lines)            ;; C-x r N
+   ("r" (if (region-active-p)
+            (deactivate-mark)
+          (rectangle-mark-mode 1)))        ;; C-x SPC
+   ("i" string-insert-rectangle)
+   ("u" undo nil)
+   ("q" nil)))
 
 (use-package expand-region
 :bind ("C-=" . er/expand-region))
