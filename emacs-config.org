@@ -1036,18 +1036,10 @@ It is even possible to define your own snippets. The following package contains 
 
     :init (global-company-mode t)
 
-    :bind (
-       :map company-active-map
+    :bind (:map company-active-map
           ("<tab>" . company-complete)
           ("<return>" . nil)
-          ("C-l" . company-complete-selection)
-          ("C-n" . company-select-next)
-          ("C-p" . company-select-previous)
-          ("M-n" . nil)
-          ("M-p" . nil)
-       :map company-search-map
-          ("C-n" . company-select-next)
-          ("C-p" . company-select-previous))
+          ("C-l" . company-complete-selection))
 
     :custom
        (company-minimum-prefix-length 1)
@@ -1309,6 +1301,19 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
                (unless (sly-connected-p)
                  (save-excursion (sly))))))
 #+end_src
+
+** Debug
+*** GUD
+Emacs already provides a large number of debuggers, under the name "Grand Unified Debugger".
+
+#+begin_src emacs-lisp
+  (use-package gdb-mi
+    :ensure nil
+    :defer t
+    :hook (gdb-mode . gdb-many-windows))
+#+end_src
+
+*** TODO Dap-mode
 
 ** Other tools
 *** ANTLR

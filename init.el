@@ -680,18 +680,10 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
   :init (global-company-mode t)
 
-  :bind (
-     :map company-active-map
+  :bind (:map company-active-map
         ("<tab>" . company-complete)
         ("<return>" . nil)
-        ("C-l" . company-complete-selection)
-        ("C-n" . company-select-next)
-        ("C-p" . company-select-previous)
-        ("M-n" . nil)
-        ("M-p" . nil)
-     :map company-search-map
-        ("C-n" . company-select-next)
-        ("C-p" . company-select-previous))
+        ("C-l" . company-complete-selection))
 
   :custom
      (company-minimum-prefix-length 1)
@@ -844,6 +836,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
             (lambda ()
                (unless (sly-connected-p)
                  (save-excursion (sly))))))
+
+(use-package gdb-mi
+  :ensure nil
+  :defer t
+  :hook (gdb-mode . gdb-many-windows))
 
 (use-package antlr-mode
   :mode ("\\.g4\\'" . antlr-mode))
