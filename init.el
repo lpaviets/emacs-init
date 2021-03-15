@@ -663,6 +663,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
           lisp-mode
           lisp-interaction-mode) . paredit-mode))
 
+(use-package elec-pair
+  :hook (prog-mode . electric-pair-mode))
+
 ;;YASnippet
 (use-package yasnippet
   :diminish
@@ -729,6 +732,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (setq lsp-prefer-flymake nil)
   (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
   (setq read-process-output-max (* 2 1024 1024)) ;; 2mb
+  (setq lsp-enable-on-type-formatting nil)
   :hook
   ((python-mode c-mode c++-mode) . lsp))
 
@@ -755,6 +759,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package eglot
   ;;:hook ((python-mode c-mode c++-mode) . eglot-ensure)
+  :ensure nil
   :bind-keymap ("C-c l" . eglot-mode-map)
   :bind (:map eglot-mode-map
               ("r" . eglot-rename)

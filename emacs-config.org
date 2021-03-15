@@ -1001,6 +1001,9 @@ Now, in order to work with structured text, such as source code, we want to be a
             emacs-lisp-mode
             lisp-mode
             lisp-interaction-mode) . paredit-mode))
+
+  (use-package elec-pair
+    :hook (prog-mode . electric-pair-mode))
 #+end_src
 
 ** Auto-completion
@@ -1116,6 +1119,7 @@ Fix Company-Yasnippet in LSP-mode, doesn't seem to work as completions from LSP 
     (setq lsp-prefer-flymake nil)
     (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
     (setq read-process-output-max (* 2 1024 1024)) ;; 2mb
+    (setq lsp-enable-on-type-formatting nil)
     :hook
     ((python-mode c-mode c++-mode) . lsp))
 
@@ -1149,6 +1153,7 @@ There exists another implementation of the Language Server Protocol in Emacs, ca
 
   (use-package eglot
     ;;:hook ((python-mode c-mode c++-mode) . eglot-ensure)
+    :ensure nil
     :bind-keymap ("C-c l" . eglot-mode-map)
     :bind (:map eglot-mode-map
                 ("r" . eglot-rename)
