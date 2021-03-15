@@ -675,7 +675,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :init (yas-global-mode 1)
   :bind (:map yas-minor-mode-map
               ("TAB" . nil)
-              ("C-TAB" . yas-expand)))
+              ("<tab>" . nil)
+              ("<C-tab>" . yas-expand)))
 
 (use-package yasnippet-snippets
   :after yasnippet)
@@ -687,6 +688,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :init (global-company-mode t)
 
   :bind (:map company-active-map
+        ("<tab>" . company-complete)
         ("TAB" . company-complete)
         ("RET" . nil)
         ("<return>" . nil)
