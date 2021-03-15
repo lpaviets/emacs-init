@@ -1043,6 +1043,7 @@ It is even possible to define your own snippets. The following package contains 
     :init (global-company-mode t)
 
     :bind (:map company-active-map
+          ("<tab>" . company-complete)
           ("TAB" . company-complete)
           ("RET" . nil)
           ("<return>" . nil)

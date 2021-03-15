@@ -687,6 +687,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :init (global-company-mode t)
 
   :bind (:map company-active-map
+        ("<tab>" . company-complete)
         ("TAB" . company-complete)
         ("RET" . nil)
         ("<return>" . nil)
