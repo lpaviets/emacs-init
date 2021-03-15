@@ -98,6 +98,8 @@
 ;; Themes
 (use-package solarized-theme)
 (use-package kaolin-themes)
+(use-package modus-themes)
+
 (use-package doom-themes
   :init (load-theme 'doom-Iosvkem t))
 
@@ -106,7 +108,7 @@
 ;; so that you can easily switch back to it with
 ;; (load-theme (car lps/rotate-themes-list) t)
 (setq lps/rotate-themes-list
-      '(doom-Iosvkem kaolin-ocean kaolin-aurora doom-monokai-pro doom-palenight tsdh-dark solarized-dark))
+      '(doom-Iosvkem kaolin-ocean kaolin-aurora doom-monokai-pro doom-palenight tsdh-dark solarized-dark modus-vivendi))
 
 ;; Try to save the current theme
 ;; Be careful ! Some visual changes are NOT stored in
@@ -686,6 +688,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :bind (:map company-active-map
         ("TAB" . company-complete)
         ("RET" . nil)
+        ("<return>" . nil)
         ("C-l" . company-complete-selection))
 
   :custom
