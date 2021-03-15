@@ -1017,8 +1017,8 @@ Now, in order to work with structured text, such as source code, we want to be a
     :diminish
     :init (yas-global-mode 1)
     :bind (:map yas-minor-mode-map
-                ("<tab>" . nil)
-                ("C-<tab>" . yas-expand)))
+                ("TAB" . nil)
+                ("C-TAB" . yas-expand)))
 #+end_src
 
 It is even possible to define your own snippets. The following package contains a lot of useful snippets for various programming languages or tools, such a C++, Clojure, various Makefiles, Emacs' Org-Mode ...
@@ -1040,8 +1040,8 @@ It is even possible to define your own snippets. The following package contains 
     :init (global-company-mode t)
 
     :bind (:map company-active-map
-          ("<tab>" . company-complete)
-          ("<return>" . nil)
+          ("TAB" . company-complete)
+          ("RET" . nil)
           ("C-l" . company-complete-selection))
 
     :custom
