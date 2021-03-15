@@ -244,7 +244,8 @@ There used to be a package called [[https://github.com/toroidal-code/cycle-theme
   (defun lps/restore-initial-themes ()
     (interactive)
     (mapc #'disable-theme custom-enabled-themes)
-    (mapc (lambda (theme) (funcall #'load-theme theme t)) lps/initial-enabled-themes))
+    (mapc (lambda (theme) (funcall #'load-theme theme t)) lps/initial-enabled-themes)
+    (my-org-mode-setup))
 #+end_src
 
 *** Modeline and icons
@@ -1385,7 +1386,7 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
 #+begin_src emacs-lisp
   (defun my-org-mode-setup ()
     (my-org-font-setup)
-    (org-indent-mode)
+    (org-indent-mode 1)
     (variable-pitch-mode 1)
     (visual-line-mode 1))
 

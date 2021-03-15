@@ -137,7 +137,8 @@ installed themes instead."
 (defun lps/restore-initial-themes ()
   (interactive)
   (mapc #'disable-theme custom-enabled-themes)
-  (mapc (lambda (theme) (funcall #'load-theme theme t)) lps/initial-enabled-themes))
+  (mapc (lambda (theme) (funcall #'load-theme theme t)) lps/initial-enabled-themes)
+  (my-org-mode-setup))
 
 ;; First time used: run M-x all-the-icons-install-fonts
 (use-package all-the-icons
@@ -888,7 +889,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (defun my-org-mode-setup ()
   (my-org-font-setup)
-  (org-indent-mode)
+  (org-indent-mode 1)
   (variable-pitch-mode 1)
   (visual-line-mode 1))
 
