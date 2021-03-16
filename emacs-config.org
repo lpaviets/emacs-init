@@ -1015,14 +1015,14 @@ Now, in order to work with structured text, such as source code, we want to be a
      A first useful package is YASnippet, which makes it easy to define and automatically insert snippets of code in various languages.
 
 #+begin_src emacs-lisp
-    ;;YASnippet
-    (use-package yasnippet
-      :diminish
-      :init (yas-global-mode 1)
-      :bind (:map yas-minor-mode-map
-                  ("TAB" . nil)
-                  ("<tab>" . nil)
-                  ("<C-tab>" . yas-expand)))
+  ;;YASnippet
+  (use-package yasnippet
+    :diminish
+    :init (yas-global-mode 1)
+    :bind (:map yas-minor-mode-map
+                ("TAB" . nil)
+                ("<tab>" . nil)
+                ("<C-tab>" . yas-expand)))
 #+end_src
 
 It is even possible to define your own snippets. The following package contains a lot of useful snippets for various programming languages or tools, such a C++, Clojure, various Makefiles, Emacs' Org-Mode ...
