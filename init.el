@@ -396,7 +396,7 @@ installed themes instead."
 
 ;;* Helpers
 (use-package windmove
-  :defer t)
+  :config (windmove-default-keybindings))
 
 (defun hydra-move-splitter-left (arg)
   "Move window splitter left."
@@ -483,6 +483,21 @@ installed themes instead."
    ("c" new-frame :exit t)
    ("s" ace-swap-window)
    ("q" nil)))
+
+;; Taken from https://emacs.stackexchange.com/questions/2189/how-can-i-prevent-a-command-from-using-specific-windows
+
+(defun lps/toggle-window-dedicated ()
+  "Control whether or not Emacs is allowed to display another
+buffer in current window."
+  (interactive)
+  (message
+   (if (let (window (get-buffer-window (current-buffer)))
+         (set-window-dedicated-p window (not (window-dedicated-p window))))
+       "%s: Can't touch this!"
+     "%s is up for grabs.")
+   (current-buffer)))
+
+(global-set-key (kbd "C-c t") 'lps/toggle-window-dedicated)
 
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
