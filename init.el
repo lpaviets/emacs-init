@@ -98,9 +98,12 @@
 (global-visual-line-mode 1)
 
 ;; Themes
-(use-package solarized-theme)
-(use-package kaolin-themes)
-(use-package modus-themes)
+(use-package solarized-theme
+  :commands load-theme)
+(use-package kaolin-themes
+  :commands load-theme)
+(use-package modus-themes
+  :commands load-theme)
 
 (use-package doom-themes
   :init (load-theme 'doom-Iosvkem t))
@@ -393,7 +396,7 @@ installed themes instead."
 
 ;;* Helpers
 (use-package windmove
-  :defer t)
+  :config (windmove-default-keybindings))
 
 (defun hydra-move-splitter-left (arg)
   "Move window splitter left."
@@ -480,6 +483,21 @@ installed themes instead."
    ("c" new-frame :exit t)
    ("s" ace-swap-window)
    ("q" nil)))
+
+;; Taken from https://emacs.stackexchange.com/questions/2189/how-can-i-prevent-a-command-from-using-specific-windows
+
+(defun lps/toggle-window-dedicated ()
+  "Control whether or not Emacs is allowed to display another
+buffer in current window."
+  (interactive)
+  (message
+   (if (let (window (get-buffer-window (current-buffer)))
+         (set-window-dedicated-p window (not (window-dedicated-p window))))
+       "%s: Can't touch this!"
+     "%s is up for grabs.")
+   (current-buffer)))
+
+(global-set-key (kbd "C-c t") 'lps/toggle-window-dedicated)
 
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
@@ -962,10 +980,12 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode))
 
 (use-package tex-site                   ; AUCTeX initialization
-  :ensure auctex)
+  :ensure auctex
+  :defer t)
 
 (use-package tex
   :ensure auctex
+  :defer t
   :custom ;; Automatically insert closing brackets
   (LaTeX-electric-left-right-brace t)
   (TeX-parse-self t)                ; Parse documents to provide completion
@@ -1047,6 +1067,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package dired
   :ensure nil
+  :defer t
   :config
   ;; Delete and copy directories recursively
   (setq dired-recursive-deletes 'always
