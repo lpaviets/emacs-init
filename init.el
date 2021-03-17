@@ -28,11 +28,11 @@
 (package-initialize)
 
 (unless package-archive-contents
- (package-refresh-contents))
+  (package-refresh-contents))
 
 ;; Initialize use-package on non-Linux platforms
 (unless (package-installed-p 'use-package)
-   (package-install 'use-package))
+  (package-install 'use-package))
 
 ;; Other packages
 (add-to-list 'load-path "~/.emacs.d/extra-packages")
@@ -41,6 +41,8 @@
 ;; Comment this line if you don't want to automatically install
 ;; all the packages that you are missing
 (setq use-package-always-ensure t)
+;; Uncomment the folllowing line to have a detailed startup log
+;; (setq use-package-verbose t)
 
 (use-package restart-emacs
   :commands (restart-emacs restart-emacs-start-new-emacs))
@@ -96,9 +98,12 @@
 (global-visual-line-mode 1)
 
 ;; Themes
-(use-package solarized-theme)
-(use-package kaolin-themes)
-(use-package modus-themes)
+(use-package solarized-theme
+  :commands load-theme)
+(use-package kaolin-themes
+  :commands load-theme)
+(use-package modus-themes
+  :commands load-theme)
 
 (use-package doom-themes
   :init (load-theme 'doom-Iosvkem t))
@@ -672,7 +677,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;;YASnippet
 (use-package yasnippet
   :diminish
-  :init (yas-global-mode 1)
+  :init
+  (setq yas-verbosity 1)
+  :hook (prog-mode . yas-minor-mode)
   :bind (:map yas-minor-mode-map
               ("TAB" . nil)
               ("<tab>" . nil)
@@ -804,6 +811,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package python
   :ensure nil
+  :defer t
   :custom
   (tab-width 4)
   (python-indent-offset 4)
@@ -824,10 +832,10 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (setq ccls-executable (executable-find "ccls")))
 
 (use-package highlight-defined
-:hook (emacs-lisp-mode . highlight-defined-mode))
+  :hook (emacs-lisp-mode . highlight-defined-mode))
 
 (use-package elmacro
-:init (elmacro-mode t))
+  :defer t)
 
 (defun lps/eval-and-replace-last-sexp ()
   "Evaluate the last s-expression, and replace it with the result"
@@ -957,10 +965,12 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode))
 
 (use-package tex-site                   ; AUCTeX initialization
-  :ensure auctex)
+  :ensure auctex
+  :defer t)
 
 (use-package tex
   :ensure auctex
+  :defer t
   :custom ;; Automatically insert closing brackets
   (LaTeX-electric-left-right-brace t)
   (TeX-parse-self t)                ; Parse documents to provide completion
@@ -1042,6 +1052,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package dired
   :ensure nil
+  :defer t
   :config
   ;; Delete and copy directories recursively
   (setq dired-recursive-deletes 'always
