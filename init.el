@@ -44,6 +44,12 @@
 ;; Uncomment the folllowing line to have a detailed startup log
 ;; (setq use-package-verbose t)
 
+(use-package benchmark-init
+  :disabled t
+  :config
+  ;; To disable collection of benchmark data after init is done.
+  (add-hook 'after-init-hook 'benchmark-init/deactivate))
+
 (use-package restart-emacs
   :commands (restart-emacs restart-emacs-start-new-emacs))
 
@@ -59,7 +65,8 @@
 ;; Maximize the Emacs frame at startup
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-(add-hook 'emacs-startup-hook (lambda () (eshell) (previous-buffer)))
+;; No need to slow down the startup
+;; (add-hook 'emacs-startup-hook (lambda () (eshell) (previous-buffer)))
 
 (scroll-bar-mode -1)        ; Disable visible scrollbar
 (tool-bar-mode -1)          ; Disable the toolbar
@@ -320,7 +327,7 @@ installed themes instead."
     (interactive)
     (ivy-alt-done t))
 
-  :init (ivy-mode 1))
+  :config (ivy-mode 1))
 
 ;; Adds things to Ivy
 (use-package ivy-rich
@@ -329,8 +336,8 @@ installed themes instead."
 
 ;; Counsel. Adds things to Ivy
 (use-package counsel
-  :init (counsel-mode 1)
   :diminish
+  :hook (ivy-mode . counsel-mode)
   :bind (("M-x" . counsel-M-x)
          ("C-x b" . counsel-ibuffer)
          ("C-x C-f" . counsel-find-file)
@@ -692,7 +699,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;;YASnippet
 (use-package yasnippet
   :diminish
-  :init
+  :config
   (setq yas-verbosity 1)
   :hook (prog-mode . yas-minor-mode)
   :bind (:map yas-minor-mode-map
@@ -881,7 +888,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :mode ("\\.g4\\'" . antlr-mode))
 
 ;; Use the right font according to what is installed on the system
-(let ((my-temp-org-font "Cantarell"))
+
+(use-package org
+  :defer t
+  :config
+  (let ((my-temp-org-font "Cantarell"))
     (if (member my-temp-org-font (font-family-list))
         (setq my-org-mode-font my-temp-org-font)
       (setq my-org-mode-font "Ubuntu Mono")))
@@ -912,21 +923,22 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
-
-(defun my-org-mode-setup ()
-  (my-org-font-setup)
-  (org-indent-mode 1)
-  (variable-pitch-mode 1)
-  (visual-line-mode 1))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
 
 (use-package org
+  :defer t
   :config
-  (setq org-ellipsis " ▾")
+  (defun my-org-mode-setup ()
+    (my-org-font-setup)
+    (org-indent-mode 1)
+    (variable-pitch-mode 1)
+    (visual-line-mode 1))
 
+  (setq org-ellipsis " ▾")
+  :custom
   ;; Coding in blocks
-  (setq org-src-fontify-natively t
-        org-src-tab-acts-natively t)
+  (org-src-fontify-natively t)
+  (org-src-tab-acts-natively t)
 
   :hook (org-mode . my-org-mode-setup))
 
@@ -936,6 +948,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (use-package org
+  :defer t
   :config
   (org-babel-do-load-languages
    'org-babel-load-languages
@@ -947,6 +960,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
                                          ; else code
 
 (use-package org
+  :defer t
   :config
   (if (version<= "9.2" org-version)
       ;; This is needed as of Org 9.2

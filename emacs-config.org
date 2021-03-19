@@ -93,6 +93,16 @@ It makes both installation and customization easier, and the code is also simple
 
 #+end_src
 
+In order to benchmark the package loading, we use [[https://github.com/dholm/benchmark-init-el][benchmark-init.el]]
+
+#+begin_src emacs-lisp
+  (use-package benchmark-init
+    :disabled t
+    :config
+    ;; To disable collection of benchmark data after init is done.
+    (add-hook 'after-init-hook 'benchmark-init/deactivate))
+#+end_src
+
 ** Quick restart
 
 In order to test things more rapidly and to be able to apply configuration changes without ever leaving Emacs, we also install another package to restart Emacs with a simple command.
@@ -140,7 +150,8 @@ However, we would like to see Emacs in full-screen if we are to use it
 
 Because we tend to use ~eshell~ for everything that is shell-related (see the Eshell section later in this file), we also start it whenever we start Emacs.
 #+begin_src emacs-lisp
-(add-hook 'emacs-startup-hook (lambda () (eshell) (previous-buffer)))
+  ;; No need to slow down the startup
+  ;; (add-hook 'emacs-startup-hook (lambda () (eshell) (previous-buffer)))
 #+end_src
 
 *** Menus and toolbars
@@ -530,7 +541,7 @@ Although emacs provides a number of commands to navigate within a file, to find 
       (interactive)
       (ivy-alt-done t))
 
-    :init (ivy-mode 1))
+    :config (ivy-mode 1))
 
   ;; Adds things to Ivy
   (use-package ivy-rich
@@ -539,8 +550,8 @@ Although emacs provides a number of commands to navigate within a file, to find 
 
   ;; Counsel. Adds things to Ivy
   (use-package counsel
-    :init (counsel-mode 1)
     :diminish
+    :hook (ivy-mode . counsel-mode)
     :bind (("M-x" . counsel-M-x)
            ("C-x b" . counsel-ibuffer)
            ("C-x C-f" . counsel-find-file)
@@ -1044,7 +1055,7 @@ Now, in order to work with structured text, such as source code, we want to be a
   ;;YASnippet
   (use-package yasnippet
     :diminish
-    :init
+    :config
     (setq yas-verbosity 1)
     :hook (prog-mode . yas-minor-mode)
     :bind (:map yas-minor-mode-map
@@ -1375,7 +1386,11 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
 
 #+begin_src emacs-lisp
   ;; Use the right font according to what is installed on the system
-  (let ((my-temp-org-font "Cantarell"))
+
+  (use-package org
+    :defer t
+    :config
+    (let ((my-temp-org-font "Cantarell"))
       (if (member my-temp-org-font (font-family-list))
           (setq my-org-mode-font my-temp-org-font)
         (setq my-org-mode-font "Ubuntu Mono")))
@@ -1406,7 +1421,7 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
     (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
     (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
     (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
+    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
 
 #+end_src
 ** Basic configuration
@@ -1414,19 +1429,20 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
      We change the general feel of Org Mode documents by using other indentation rules, by changing the headers appearance, and a few other minor changes.
 
 #+begin_src emacs-lisp
-  (defun my-org-mode-setup ()
-    (my-org-font-setup)
-    (org-indent-mode 1)
-    (variable-pitch-mode 1)
-    (visual-line-mode 1))
-
   (use-package org
+    :defer t
     :config
-    (setq org-ellipsis " ▾")
+    (defun my-org-mode-setup ()
+      (my-org-font-setup)
+      (org-indent-mode 1)
+      (variable-pitch-mode 1)
+      (visual-line-mode 1))
 
+    (setq org-ellipsis " ▾")
+    :custom
     ;; Coding in blocks
-    (setq org-src-fontify-natively t
-          org-src-tab-acts-natively t)
+    (org-src-fontify-natively t)
+    (org-src-tab-acts-natively t)
 
     :hook (org-mode . my-org-mode-setup))
 
@@ -1443,6 +1459,7 @@ Org babel is what allows us to write code and execute it, all within the same do
 
 #+begin_src emacs-lisp
   (use-package org
+    :defer t
     :config
     (org-babel-do-load-languages
      'org-babel-load-languages
@@ -1459,6 +1476,7 @@ We also add templates to insert code blocks with a few key presses
 
 #+begin_src emacs-lisp
   (use-package org
+    :defer t
     :config
     (if (version<= "9.2" org-version)
         ;; This is needed as of Org 9.2
