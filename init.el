@@ -515,7 +515,7 @@ buffer in current window."
 
 (use-package multiple-cursors
   :bind
-  (("C-c m SPC>" . mc/vertical-align-with-space)
+  (("C-c m SPC"   . mc/vertical-align-with-space)
    ("C-c m a"     . mc/vertical-align)
    ("C-c m m"     . mc/mark-more-like-this-extended)
    ("C-c m h"     . mc/mark-all-like-this-dwim)
