@@ -807,6 +807,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 ;; Semantic
 (use-package semantic
+  :disabled t ;; Don't use it atm, may be if I move on to CEDET ...
 ;; (require 'semantic/ia)
 ;; (require 'semantic/bovine/gcc)
 
@@ -879,6 +880,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package antlr-mode
   :mode ("\\.g4\\'" . antlr-mode))
 
+;; Use the right font according to what is installed on the system
 (let ((my-temp-org-font "Cantarell"))
     (if (member my-temp-org-font (font-family-list))
         (setq my-org-mode-font my-temp-org-font)
@@ -933,7 +935,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :custom
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
-(with-eval-after-load 'org
+(use-package org
+  :config
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((emacs-lisp . t)
@@ -943,7 +946,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
                                          ; else code
 
-(with-eval-after-load 'org
+(use-package org
+  :config
   (if (version<= "9.2" org-version)
       ;; This is needed as of Org 9.2
     (progn
