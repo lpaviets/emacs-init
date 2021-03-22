@@ -293,7 +293,8 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
   (use-package doom-modeline
     :after all-the-icons
     :init (doom-modeline-mode 1)
-    :custom ((doom-modeline-height 15)))
+    :custom ((doom-modeline-height 15))
+    :config (display-time-mode 1))
 #+end_src
 
 *** Interactively change the UI
@@ -655,6 +656,13 @@ First of all, we use a few helper functions, defined in [[https://github.com/abo
 #+begin_src emacs-lisp
   ;;* Helpers
   (use-package windmove
+    ;; Make windmove work in Org mode:
+    :hook
+    (org-shiftup-final . windmove-up)
+    (org-shiftleft-final . windmove-left)
+    (org-shiftdown-final . windmove-down)
+    (org-shiftright-final . windmove-right)
+
     :config (windmove-default-keybindings))
 
   (defun hydra-move-splitter-left (arg)
@@ -1554,6 +1562,8 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (TeX-quote-after-quote t)
     ;; But do insert closing $ when inserting the first one
     (TeX-electric-math '("$" . "$"))
+    ;; Also change the key to access LaTeX-math-mode
+    (LaTeX-math-abbrev-prefix "°")
 
     ;; Don't ask for confirmation when cleaning
     (TeX-clean-confirm nil)

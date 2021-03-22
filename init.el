@@ -172,7 +172,8 @@ installed themes instead."
 (use-package doom-modeline
   :after all-the-icons
   :init (doom-modeline-mode 1)
-  :custom ((doom-modeline-height 15)))
+  :custom ((doom-modeline-height 15))
+  :config (display-time-mode 1))
 
 (with-eval-after-load 'hydra
   ;; define a title function
@@ -403,6 +404,13 @@ installed themes instead."
 
 ;;* Helpers
 (use-package windmove
+  ;; Make windmove work in Org mode:
+  :hook
+  (org-shiftup-final . windmove-up)
+  (org-shiftleft-final . windmove-left)
+  (org-shiftdown-final . windmove-down)
+  (org-shiftright-final . windmove-right)
+
   :config (windmove-default-keybindings))
 
 (defun hydra-move-splitter-left (arg)
@@ -1014,6 +1022,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (TeX-quote-after-quote t)
   ;; But do insert closing $ when inserting the first one
   (TeX-electric-math '("$" . "$"))
+  ;; Also change the key to access LaTeX-math-mode
+  (LaTeX-math-abbrev-prefix "°")
 
   ;; Don't ask for confirmation when cleaning
   (TeX-clean-confirm nil)
