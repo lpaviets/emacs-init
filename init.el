@@ -557,6 +557,13 @@ buffer in current window."
    ("V" scroll-down-command)
    ("l" recenter-top-bottom)))
 
+(use-package counsel
+  :bind ("C-c i" . counsel-imenu))
+
+(use-package emacs
+  :ensure nil
+  :custom (sentence-end-double-space nil))
+
 (global-set-key
  (kbd "C-c h r") ; r as rectangle
  (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
@@ -732,12 +739,17 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
         ("C-l" . company-complete-selection))
 
   :custom
+  ;; Generic company settings
      (company-minimum-prefix-length 1)
      (company-idle-delay 0.0)
      (company-selection-wrap-around t)
      (company-show-numbers t)
      (company-tooltip-align-annotations t)
-     (company-tooltip-flip-when-above t))
+     (company-tooltip-flip-when-above t)
+
+     ;; More specific ones
+     ;; company-dabbrev look only for buffers in the same major mode
+     (company-dabbrev-other-buffers t))
 
 (use-package company-box
   :after company

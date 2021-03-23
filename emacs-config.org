@@ -824,7 +824,7 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
 
 The webpage specifies that the commands provided by this package are best invoked when bound to key sequence rather than by =M-x <mc/command-name>=, although some testing on my part seems to show that it still works relatively well most of the time.
 
-** Movement
+** Navigation
 
 Because movement keys are the most frequently used ones, it might be useful to create an Hydra helping us navigate around a document.
 
@@ -844,6 +844,21 @@ Because movement keys are the most frequently used ones, it might be useful to c
      ("V" scroll-down-command)
      ("l" recenter-top-bottom)))
 #+end_src
+
+We also want to be able to move faster in large documents. To do this, we use imenu, or more precisely its counsel-enhanced counterpart
+
+#+begin_src emacs-lisp
+  (use-package counsel
+    :bind ("C-c i" . counsel-imenu))
+#+end_src
+
+Furthermore, we change a variable that makes sense for American writers, but not so much according to French conventions. The Emacs Manual recommends against it, as we are no longer able to distinguish a sentence ending from an abbreviation, but I do not use this type of abbreviation very often anyway (notable counterexamples nonetheless: /i.e./ and /e.g./).
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :custom (sentence-end-double-space nil))
+#+end_src 
 
 ** Rectangles
 
@@ -1098,12 +1113,17 @@ It is even possible to define your own snippets. The following package contains 
           ("C-l" . company-complete-selection))
 
     :custom
+    ;; Generic company settings
        (company-minimum-prefix-length 1)
        (company-idle-delay 0.0)
        (company-selection-wrap-around t)
        (company-show-numbers t)
        (company-tooltip-align-annotations t)
-       (company-tooltip-flip-when-above t))
+       (company-tooltip-flip-when-above t)
+
+       ;; More specific ones
+       ;; company-dabbrev look only for buffers in the same major mode
+       (company-dabbrev-other-buffers t))
 
 #+end_src
 
