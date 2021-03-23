@@ -233,13 +233,16 @@ installed themes instead."
 
 ;; Tab behaviour and whitespaces
 (setq-default indent-tabs-mode nil)
-(setq tab-width 4)
+(setq-default tab-width 4)
 
 (use-package hungry-delete
   :ensure t
   :defer t
   :init
   (global-hungry-delete-mode 1))
+
+(use-package emacs
+  :hook (before-save . delete-trailing-whitespace))
 
 (use-package hydra
   :defer t)
@@ -312,7 +315,7 @@ installed themes instead."
 
 ;; Ivy
 (use-package ivy
-  :diminish 
+  :diminish
   :bind (("C-s" . swiper)
          :map ivy-minibuffer-map
          ("TAB" . ivy-partial-or-done)
@@ -518,7 +521,7 @@ buffer in current window."
 (use-package helpful
   :after counsel
   :custom
-  (counsel-describe-symbol-function   #'helpful-symbol) 
+  (counsel-describe-symbol-function   #'helpful-symbol)
   (counsel-describe-function-function #'helpful-callable)
   (counsel-describe-variable-function #'helpful-variable)
   :bind
@@ -606,7 +609,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 ; Note that this keybinding overrides other functions
 ; By default, M-k is kill-sentence, which I never use
-; I bound it this way to mirror the C-w/M-w symmetry 
+; I bound it this way to mirror the C-w/M-w symmetry
 
 ;; Might want to find a more clever way to use personal
 ;; keybindings, such as defining a minor mode ...
@@ -1115,7 +1118,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
   (setq dired-auto-revert-buffer t))
 
-;; Make things prettier 
+;; Make things prettier
 (use-package all-the-icons-dired
   :diminish
   :hook (dired-mode . all-the-icons-dired-mode))

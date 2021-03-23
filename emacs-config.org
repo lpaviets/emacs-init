@@ -367,15 +367,15 @@ Some packages are used lated in the configuration, and we want to be able to use
 
 ** Whitespaces
 
-First of all, we never want "TAB" to insert actual tab characters.
+First of all, we never want ~TAB~ to insert actual tab characters.
 
 #+begin_src emacs-lisp
   ;; Tab behaviour and whitespaces
   (setq-default indent-tabs-mode nil)
-  (setq tab-width 4)
+  (setq-default tab-width 4)
 #+end_src
 
-Then, we do not want to repeatedly spam the =<DEL>= key in order to delete a long sequence of whitespaces.
+Then, we do not want to repeatedly spam the ~DEL~ key in order to delete a long sequence of whitespaces.
 
 #+begin_src emacs-lisp
 (use-package hungry-delete
@@ -383,6 +383,13 @@ Then, we do not want to repeatedly spam the =<DEL>= key in order to delete a lon
   :defer t
   :init
   (global-hungry-delete-mode 1))
+#+end_src
+
+And we also don't like trailing whitespaces, so we delete them automatically when we save a buffer
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :hook (before-save . delete-trailing-whitespace))
 #+end_src
 
 ** Hydra
@@ -526,7 +533,7 @@ Although emacs provides a number of commands to navigate within a file, to find 
 #+begin_src emacs-lisp
   ;; Ivy
   (use-package ivy
-    :diminish 
+    :diminish
     :bind (("C-s" . swiper)
            :map ivy-minibuffer-map
            ("TAB" . ivy-partial-or-done)
@@ -787,7 +794,7 @@ It will condense all the available information about something within a single H
   (use-package helpful
     :after counsel
     :custom
-    (counsel-describe-symbol-function   #'helpful-symbol) 
+    (counsel-describe-symbol-function   #'helpful-symbol)
     (counsel-describe-function-function #'helpful-callable)
     (counsel-describe-variable-function #'helpful-variable)
     :bind
@@ -858,7 +865,7 @@ Furthermore, we change a variable that makes sense for American writers, but not
   (use-package emacs
     :ensure nil
     :custom (sentence-end-double-space nil))
-#+end_src 
+#+end_src
 
 ** Rectangles
 
@@ -921,7 +928,7 @@ The first one is used to copy without deleting the current line (internally, it 
 
   ; Note that this keybinding overrides other functions
   ; By default, M-k is kill-sentence, which I never use
-  ; I bound it this way to mirror the C-w/M-w symmetry 
+  ; I bound it this way to mirror the C-w/M-w symmetry
 
   ;; Might want to find a more clever way to use personal
   ;; keybindings, such as defining a minor mode ...
@@ -1704,7 +1711,7 @@ Now, we try to add things on top of the built-in file manager, Dired.
 
     (setq dired-auto-revert-buffer t))
 
-  ;; Make things prettier 
+  ;; Make things prettier
   (use-package all-the-icons-dired
     :diminish
     :hook (dired-mode . all-the-icons-dired-mode))
