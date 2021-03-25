@@ -467,8 +467,7 @@ If you want =command-log-mode= to be activated by default in certain minor (or e
 
 #+begin_src emacs-lisp
   (use-package command-log-mode
-    :defer t
-  )
+    :defer t)
 #+end_src
 
 *** Confirmation
@@ -1720,6 +1719,91 @@ Now, we try to add things on top of the built-in file manager, Dired.
     :ensure nil
     :after dired)
 #+end_src
+* Email
+** mbsync
+
+We already configured Emacs to be our main Git client, and to be a PDF Viewer. We can go one step further, and use Emacs as a mail client.
+
+There are already built-in tools to do this, for example [[https://www.gnus.org/][Gnus]]. However, they tend to be slow, and there are better alternatives. The one we use is combines several tools.
+
+First of all, ~mbsync~. It synchronizes a local database to a distant one. It can be configured using the =~/.mbsyncrc= file. It is an alternative to ~offlineimap~, which is apparently slower and tends to crash a bit more.
+
+*MANUAL* ~mbsync~ needs to be installed separately. It might be available in the ~isync~ package.
+
+** mu4e
+
+The actual mail client that we use is a frontend to =mu=, called [[https://github.com/djcb/mu/tree/master/mu4e][mu4e]]. Depending on your Linux distribution, you might encounter some troubles with the following code, as the syntax might have changed between the versions =1.2= and =1.3=.
+
+*MANUAL* You need to install ~mu4e~ separately, either from the standard repositories of your distribution or directly from source. Once installed, you will need to execute a few commands to initialize everything, so please refer to the package documentation.
+
+#+begin_src emacs-lisp
+  (use-package smtpmail
+    :ensure nil
+    :init
+    (setq message-send-mail-function 'smtpmail-send-it)
+    ;; Default SMTP configuration
+    (setq smtpmail-debug-info t)
+    (setq smtpmail-smtp-user "lpaviets")
+    (setq smtpmail-smtp-server "smtp.ens-lyon.fr")
+    (setq smtpmail-smtp-service 587)
+    (setq smtpmail-stream-type 'starttls))
+
+  (use-package mu4e
+    :ensure nil
+    :load-path "/usr/local/share/emacs/site-lisp/mu4e" ;; Might be needed.
+    :commands mu4e
+    :bind ("C-c e" . mu4e)
+    :config
+    (setq mu4e-completing-read-function 'ivy-completing-read)
+
+    ;; Avoid mail syncing issues with mbsync
+    (setq mu4e-change-filenames-when-moving t)
+
+    ;; Refresh mail every 5 minutes
+    (setq mu4e-update-interval (* 5 60))
+    (setq mu4e-get-mail-command "mbsync -a")
+
+    ;; Change: obsolete variable
+    (setq mu4e-maildir "~/Mail")
+
+    (setq mu4e-contexts
+          (list
+           ;; School account
+           (make-mu4e-context
+            :name "ENS_Lyon"
+            :match-func
+            (lambda (msg)
+              (when msg
+                (string-prefix-p "/ENS_Lyon" (mu4e-message-field msg :maildir))))
+            :vars '((user-mail-address  . "leo.paviet-salomon@ens-lyon.fr")
+                    (user-full-name     . "Leo Paviet Salomon")
+                    (mu4e-drafts-folder . "/ENS_Lyon/Drafts")
+                    (mu4e-sent-folder   . "/ENS_Lyon/Sent")
+                    (mu4e-refile-folder . "/ENS_Lyon/Archive")
+                    (mu4e-trash-folder  . "/ENS_Lyon/Trash")
+                    (smtpmail-smtp-user    . "lpaviets")
+                    (smtpmail-smtp-server  . "smtp.ens-lyon.fr")
+                    (smtpmail-smtp-service . 587 )
+                    (smtpmail-stream-type  . starttls)))
+
+           (make-mu4e-context
+            :name "Unicaen"
+            :match-func
+            (lambda (msg)
+              (when msg
+                (string-prefix-p "/Unicaen" (mu4e-message-field msg :maildir))))
+            :vars '((user-mail-address  . "leo.paviet-salomon@unicaen.fr")
+                    (user-full-name     . "Leo Paviet Salomon")
+                    (mu4e-drafts-folder . "/Unicaen/Drafts")
+                    (mu4e-sent-folder   . "/Unicaen/Sent")
+                    (mu4e-refile-folder . "/Unicaen/Archive")
+                    (mu4e-trash-folder  . "/Unicaen/Trash")
+                    (smtpmail-smtp-user    . "paviets201")
+                    (smtpmail-smtp-server  . "smtp.unicaen.fr")
+                    (smtpmail-smtp-service . 465 )
+                    (smtpmail-stream-type  . ssl))))))
+#+end_src
+
 * Fun
 As we tend to spend a lot of time in Emacs, isn't it natural to install fun and distracting packages ?
 ** XKCD

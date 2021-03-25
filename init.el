@@ -278,8 +278,7 @@ installed themes instead."
 (global-unset-key (kbd "C-z"))
 
 (use-package command-log-mode
-  :defer t
-)
+  :defer t)
 
 ;; Type "y" instead of "yes RET" for confirmation
 (defalias 'yes-or-no-p 'y-or-n-p)
@@ -1126,6 +1125,72 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package dired-x
   :ensure nil
   :after dired)
+
+(use-package smtpmail
+  :ensure nil
+  :init
+  (setq message-send-mail-function 'smtpmail-send-it)
+  ;; Default SMTP configuration
+  (setq smtpmail-debug-info t)
+  (setq smtpmail-smtp-user "lpaviets")
+  (setq smtpmail-smtp-server "smtp.ens-lyon.fr")
+  (setq smtpmail-smtp-service 587)
+  (setq smtpmail-stream-type 'starttls))
+
+(use-package mu4e
+  :ensure nil
+  :load-path "/usr/local/share/emacs/site-lisp/mu4e" ;; Might be needed.
+  :commands mu4e
+  :bind ("C-c e" . mu4e)
+  :config
+  (setq mu4e-completing-read-function 'ivy-completing-read)
+
+  ;; Avoid mail syncing issues with mbsync
+  (setq mu4e-change-filenames-when-moving t)
+
+  ;; Refresh mail every 5 minutes
+  (setq mu4e-update-interval (* 5 60))
+  (setq mu4e-get-mail-command "mbsync -a")
+
+  ;; Change: obsolete variable
+  (setq mu4e-maildir "~/Mail")
+
+  (setq mu4e-contexts
+        (list
+         ;; School account
+         (make-mu4e-context
+          :name "ENS_Lyon"
+          :match-func
+          (lambda (msg)
+            (when msg
+              (string-prefix-p "/ENS_Lyon" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address  . "leo.paviet-salomon@ens-lyon.fr")
+                  (user-full-name     . "Leo Paviet Salomon")
+                  (mu4e-drafts-folder . "/ENS_Lyon/Drafts")
+                  (mu4e-sent-folder   . "/ENS_Lyon/Sent")
+                  (mu4e-refile-folder . "/ENS_Lyon/Archive")
+                  (mu4e-trash-folder  . "/ENS_Lyon/Trash")
+                  (smtpmail-smtp-user    . "lpaviets")
+                  (smtpmail-smtp-server  . "smtp.ens-lyon.fr")
+                  (smtpmail-smtp-service . 587 )
+                  (smtpmail-stream-type  . starttls)))
+
+         (make-mu4e-context
+          :name "Unicaen"
+          :match-func
+          (lambda (msg)
+            (when msg
+              (string-prefix-p "/Unicaen" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address  . "leo.paviet-salomon@unicaen.fr")
+                  (user-full-name     . "Leo Paviet Salomon")
+                  (mu4e-drafts-folder . "/Unicaen/Drafts")
+                  (mu4e-sent-folder   . "/Unicaen/Sent")
+                  (mu4e-refile-folder . "/Unicaen/Archive")
+                  (mu4e-trash-folder  . "/Unicaen/Trash")
+                  (smtpmail-smtp-user    . "paviets201")
+                  (smtpmail-smtp-server  . "smtp.unicaen.fr")
+                  (smtpmail-smtp-service . 465 )
+                  (smtpmail-stream-type  . ssl))))))
 
 (use-package xkcd
   :defer t)
