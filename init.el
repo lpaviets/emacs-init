@@ -1121,6 +1121,10 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package dired
   :ensure nil
   :defer t
+  ;; Prevents dired from opening thousands of buffers
+  :bind (:map dired-mode-map
+              ("RET" . dired-find-alternate-file)
+              ("^"   . (lambda () (interactive) (find-alternate-file ".."))))
   :config
   ;; Delete and copy directories recursively
   (setq dired-recursive-deletes 'always

@@ -1728,6 +1728,10 @@ Now, we try to add things on top of the built-in file manager, Dired.
   (use-package dired
     :ensure nil
     :defer t
+    ;; Prevents dired from opening thousands of buffers
+    :bind (:map dired-mode-map
+                ("RET" . dired-find-alternate-file)
+                ("^"   . (lambda () (interactive) (find-alternate-file ".."))))
     :config
     ;; Delete and copy directories recursively
     (setq dired-recursive-deletes 'always
