@@ -1241,7 +1241,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
                   (mu4e-trash-folder  . "/ENS_Lyon/Trash")
                   (smtpmail-smtp-user    . "lpaviets")
                   (smtpmail-smtp-server  . "smtp.ens-lyon.fr")
-                  (smtpmail-smtp-service . 587 )
+                  (smtpmail-smtp-service . 587)
                   (smtpmail-stream-type  . starttls)))
 
          (make-mu4e-context
@@ -1258,7 +1258,24 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
                   (mu4e-trash-folder  . "/Unicaen/Trash")
                   (smtpmail-smtp-user    . "paviets201")
                   (smtpmail-smtp-server  . "smtp.unicaen.fr")
-                  (smtpmail-smtp-service . 465 )
+                  (smtpmail-smtp-service . 465)
+                  (smtpmail-stream-type  . ssl)))
+
+         (make-mu4e-context
+          :name "Orange"
+          :match-func
+          (lambda (msg)
+            (when msg
+              (string-prefix-p "/Orange" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address  . "leo.paviet.salomon@orange.fr")
+                  (user-full-name     . "Leo Paviet Salomon")
+                  (mu4e-drafts-folder . "/Orange/Drafts")
+                  (mu4e-sent-folder   . "/Orange/Sent")
+                  (mu4e-refile-folder . "/Orange/Archive")
+                  (mu4e-trash-folder  . "/Orange/Trash")
+                  (smtpmail-smtp-user    . "leo.paviet.salomon@orange.fr")
+                  (smtpmail-smtp-server  . "smtp.orange.fr")
+                  (smtpmail-smtp-service . 465)
                   (smtpmail-stream-type  . ssl))))))
 
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
