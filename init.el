@@ -50,6 +50,8 @@
   ;; To disable collection of benchmark data after init is done.
   (add-hook 'after-init-hook 'benchmark-init/deactivate))
 
+(add-hook 'kill-emacs-hook #'auth-source-forget-all-cached)
+
 (use-package restart-emacs
   :commands (restart-emacs restart-emacs-start-new-emacs))
 
@@ -1159,23 +1161,47 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (setq mu4e-update-interval (* 5 60))
   (setq mu4e-get-mail-command "mbsync -a")
 
+  ;; Always show full date and time
+  (setq mu4e-headers-date-format "%d-%m-%Y %H:%M")
+
+  ;; Keep one mail per line
+  ;; Todo: fix so that it updates when window is resized
+  (setq mu4e-headers-fields '((:human-date . 20)
+                              (:flags . 6)
+                              (:mailing-list . 10)
+                              (:from . 22)
+                              (:subject . 100)))
+
+  (defun lps/resize-headers-fields ()
+    (if (eq major-mode 'mu4e-headers-mode)
+        (let ((width (window-body-width)))
+          (setq-local mu4e-headers-fields `((:human-date . 20)
+                                            (:flags . 6)
+                                            (:mailing-list . 10)
+                                            (:from . 22)
+                                            (:subject . ,(- width (+ 20 6 10 22 15))))))))
+
+  (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
+
   ;; Change: obsolete variable
   (setq mu4e-maildir "~/Mail")
 
   ;; Adapted from https://jherrlin.github.io/posts/emacs-mu4e/
+  (setq mml-secure-smime-sign-with-sender t)
+
   (defun lps/sign-or-encrypt-message ()
     (let ((answer (read-from-minibuffer (concat "Sign or encrypt?\n"
                                                 "Empty to do nothing.\n[s/e]: "))))
-    (cond
-     ((string-equal answer "s") (progn
-                                  (message "Sign this message.")
-                                  (mml-secure-message-sign-pgpmime)))
-     ((string-equal answer "e") (progn
-                                  (message "Encrypt and sign this message.")
-                                  (mml-secure-message-encrypt-pgpmime)))
-     (t (progn
-          (message "Not signing or encrypting this message.")
-          nil)))))
+      (cond
+       ((string-equal answer "s") (progn
+                                    (message "Sign this message.")
+                                    (mml-secure-message-sign-pgpmime)))
+       ((string-equal answer "e") (progn
+                                    (message "Encrypt and sign this message.")
+                                    (mml-secure-message-encrypt-pgpmime)))
+       (t (progn
+            (message "Not signing or encrypting this message.")
+            nil)))))
 
   (add-hook 'message-send-hook 'lps/sign-or-encrypt-message)
 

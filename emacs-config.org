@@ -103,6 +103,14 @@ In order to benchmark the package loading, we use [[https://github.com/dholm/ben
     (add-hook 'after-init-hook 'benchmark-init/deactivate))
 #+end_src
 
+** Security
+
+Emacs is not very secure as such. We try to fix this as best as we can.
+
+First, we don't want data to be saved across Emacs session.
+#+begin_src emacs-lisp
+  (add-hook 'kill-emacs-hook #'auth-source-forget-all-cached)
+#+end_src
 ** Quick restart
 
 In order to test things more rapidly and to be able to apply configuration changes without ever leaving Emacs, we also install another package to restart Emacs with a simple command.
@@ -1333,7 +1341,7 @@ For C and C++ (and ObjectiveC), as for Python, we need to install a server for L
   (setq ccls-executable (executable-find "ccls")))
 #+end_src
 *** LISP
-***** Emacs Lisp
+**** Emacs Lisp
 
 Although Emacs comes with pretty good built-in functionalities, there is still room for improvement.
 
@@ -1367,7 +1375,7 @@ We define a useful macro to evaluate an expression, and replace it with the resu
   (global-set-key (kbd "C-c C-e") 'lps/eval-and-replace-last-sexp)
 #+end_src
 
-***** Common Lisp
+**** Common Lisp
 
 We could, of course, use LSP to write Common Lisp code. However, Emacs already provides nice editing functionalities for programming in Lisp-like languages, and CL is no exception. On top of the built-in Emacs functions, we use another minor mode, specifically designed to write Common Lisp: [[https://common-lisp.net/project/slime/][SLIME]]. More precisely, we use a /fork/ of SLIME, known as [[https://github.com/joaotavora/sly][SLY]].
 
@@ -1770,23 +1778,47 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     (setq mu4e-update-interval (* 5 60))
     (setq mu4e-get-mail-command "mbsync -a")
 
+    ;; Always show full date and time
+    (setq mu4e-headers-date-format "%d-%m-%Y %H:%M")
+
+    ;; Keep one mail per line
+    ;; Todo: fix so that it updates when window is resized
+    (setq mu4e-headers-fields '((:human-date . 20)
+                                (:flags . 6)
+                                (:mailing-list . 10)
+                                (:from . 22)
+                                (:subject . 100)))
+
+    (defun lps/resize-headers-fields ()
+      (if (eq major-mode 'mu4e-headers-mode)
+          (let ((width (window-body-width)))
+            (setq-local mu4e-headers-fields `((:human-date . 20)
+                                              (:flags . 6)
+                                              (:mailing-list . 10)
+                                              (:from . 22)
+                                              (:subject . ,(- width (+ 20 6 10 22 15))))))))
+
+    (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
+
     ;; Change: obsolete variable
     (setq mu4e-maildir "~/Mail")
 
     ;; Adapted from https://jherrlin.github.io/posts/emacs-mu4e/
+    (setq mml-secure-smime-sign-with-sender t)
+
     (defun lps/sign-or-encrypt-message ()
       (let ((answer (read-from-minibuffer (concat "Sign or encrypt?\n"
                                                   "Empty to do nothing.\n[s/e]: "))))
-      (cond
-       ((string-equal answer "s") (progn
-                                    (message "Sign this message.")
-                                    (mml-secure-message-sign-pgpmime)))
-       ((string-equal answer "e") (progn
-                                    (message "Encrypt and sign this message.")
-                                    (mml-secure-message-encrypt-pgpmime)))
-       (t (progn
-            (message "Not signing or encrypting this message.")
-            nil)))))
+        (cond
+         ((string-equal answer "s") (progn
+                                      (message "Sign this message.")
+                                      (mml-secure-message-sign-pgpmime)))
+         ((string-equal answer "e") (progn
+                                      (message "Encrypt and sign this message.")
+                                      (mml-secure-message-encrypt-pgpmime)))
+         (t (progn
+              (message "Not signing or encrypting this message.")
+              nil)))))
 
     (add-hook 'message-send-hook 'lps/sign-or-encrypt-message)
 
