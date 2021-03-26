@@ -237,9 +237,15 @@ There used to be a package called [[https://github.com/toroidal-code/cycle-theme
   ;; Use this to store your favourite themes
   ;; Save your usual, default theme in first position
   ;; so that you can easily switch back to it with
-  ;; (load-theme (car lps/rotate-themes-list) t)
   (setq lps/rotate-themes-list
-        '(doom-Iosvkem kaolin-ocean kaolin-aurora doom-monokai-pro doom-palenight tsdh-dark solarized-dark modus-vivendi))
+        '(doom-Iosvkem
+          kaolin-ocean
+          kaolin-aurora
+          doom-monokai-pro
+          doom-palenight
+          tsdh-dark
+          solarized-dark
+          modus-vivendi))
 
   ;; Try to save the current theme
   ;; Be careful ! Some visual changes are NOT stored in
@@ -1007,6 +1013,16 @@ Although Magit is more or less able to do the same thing, the interface there is
 #+begin_src emacs-lisp
   (use-package git-timemachine
     :defer t)
+#+end_src
+*** Forge
+We will probably want to work with distant repositories, /e.g./ stored on a distant GitHub or GitLab host.
+
+In order to integrate more tightly with those tools, and have access to more complex features than the basic ones provided by Git itself, we use a package called [[https://magit.vc/manual/forge/][Forge]]. For example, it will allow us to do pull-requests, or edit issues, directly from Emacs, rather than having to connect to the online GitHub website or to use another API provided by some other software.
+
+*MANUAL* In order to use this package, you need to have a personal "token", so that the server knows who you are ! To setup everything, follow the instructions in the Forge manual.
+
+#+begin_src emacs-lisp
+  (use-package forge)
 #+end_src
 ** Parenthesis
 

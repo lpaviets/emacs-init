@@ -87,7 +87,7 @@ Some other interesting ones:
 - [[https://github.com/caisah/emacs.dz][Another list of nice config files]] on github
 - [[https://github.com/farlado/dotemacs][An opinionated]] but complete and very detailed configuration
 - [[https://luca.cambiaghi.me/vanilla-emacs/readme.html][Lucas Cambiaghi's]] configuration.
-* TODO 
+* TODO
 
 List of things that could be added to this configuration file if needed, whether for me, or to share:
 
@@ -95,20 +95,20 @@ List of things that could be added to this configuration file if needed, whether
   - [X] Install
   - [X] Modify hydras from the wiki
   - [X] Define some new hydras
-- [ ] Do things for other popular languages (Java and C# come to mind).
+- [-] Do things for other popular languages (Java and C# come to mind).
   - [ ] Setup C# with LSP-mode
   - [ ] Setup Java with LSP-mode
-  - [ ] Give [[https://github.com/joaotavora/eglot][eglot]] a try ?
-- [X] System stuff: =Tramp=, configure =eshell= or find an even better one, configure =dired= or upgrade it, etc
-  - [X] =eshell= Basic improvements
+  - [X] Give [[https://github.com/joaotavora/eglot][eglot]] a try ?
+- [X] System stuff: ~Tramp~, configure ~eshell~ or find an even better one, configure ~dired~ or upgrade it, etc
+  - [X] ~eshell~ Basic improvements
   - [ ] Tramp explanation and configuration
   - [X] Dired improvement
 - [X] Configure a Emacs-Lisp (and potentially Common Lisp ?) development environment.
   - [X] Install and configure SLIME (Used SLY instead)
 - [ ] Regexp with [[https://github.com/joddie/pcre2el][pcre2el]] and may be other packages.
 - [ ] Setup Forge for Magit
-- [ ] Configure packages to replace other softwares
+- [-] Configure packages to replace other softwares
   - [ ] Configure a web browser
-  - [ ] Configure a mail client
+  - [X] Configure a mail client (~mu4e~ with ~mbsync~)
   - [ ] [[https://code.librehq.com/qhong/crdt.el][crdt]] for collaborative editing
-- [ ] Point to funny/absurd packages (/e.g./ =speed-type=, =key-quiz= ...)
+- [X] Point to funny/absurd packages (/e.g./ ~speed-type~, ~key-quiz~ ...)

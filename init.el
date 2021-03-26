@@ -120,9 +120,15 @@
 ;; Use this to store your favourite themes
 ;; Save your usual, default theme in first position
 ;; so that you can easily switch back to it with
-;; (load-theme (car lps/rotate-themes-list) t)
 (setq lps/rotate-themes-list
-      '(doom-Iosvkem kaolin-ocean kaolin-aurora doom-monokai-pro doom-palenight tsdh-dark solarized-dark modus-vivendi))
+      '(doom-Iosvkem
+        kaolin-ocean
+        kaolin-aurora
+        doom-monokai-pro
+        doom-palenight
+        tsdh-dark
+        solarized-dark
+        modus-vivendi))
 
 ;; Try to save the current theme
 ;; Be careful ! Some visual changes are NOT stored in
@@ -649,6 +655,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package git-timemachine
   :defer t)
+
+(use-package forge)
 
 ;; Always highlight matching parenthesis
 (use-package paren
