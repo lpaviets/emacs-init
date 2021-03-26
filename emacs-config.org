@@ -1756,6 +1756,13 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     :config
     (setq mu4e-completing-read-function 'ivy-completing-read)
 
+    ;; Convenience functions
+    (setq mu4e-compose-context-policy 'ask-if-none)
+    (setq mu4e-context-policy 'ask-if-none)
+
+    ;; Unless we want to send mail to very old clients
+    (setq mu4e-compose-format-flowed t)
+
     ;; Avoid mail syncing issues with mbsync
     (setq mu4e-change-filenames-when-moving t)
 
@@ -1765,6 +1772,23 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
 
     ;; Change: obsolete variable
     (setq mu4e-maildir "~/Mail")
+
+    ;; Adapted from https://jherrlin.github.io/posts/emacs-mu4e/
+    (defun lps/sign-or-encrypt-message ()
+      (let ((answer (read-from-minibuffer (concat "Sign or encrypt?\n"
+                                                  "Empty to do nothing.\n[s/e]: "))))
+      (cond
+       ((string-equal answer "s") (progn
+                                    (message "Sign this message.")
+                                    (mml-secure-message-sign-pgpmime)))
+       ((string-equal answer "e") (progn
+                                    (message "Encrypt and sign this message.")
+                                    (mml-secure-message-encrypt-pgpmime)))
+       (t (progn
+            (message "Not signing or encrypting this message.")
+            nil)))))
+
+    (add-hook 'message-send-hook 'lps/sign-or-encrypt-message)
 
     (setq mu4e-contexts
           (list
@@ -1802,6 +1826,24 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
                     (smtpmail-smtp-server  . "smtp.unicaen.fr")
                     (smtpmail-smtp-service . 465 )
                     (smtpmail-stream-type  . ssl))))))
+#+end_src
+
+** Org MIME
+
+~mu4e~ in itself is not really able to send HTML e-mails. However, it is nowadays a given that people you are sending e-mails too are going to be able to visualize HTML-ized content, and they might even /assume/ that this is the case - meaning that a plain text e-mail will loo strange and/or unprofessional.
+
+To deal with this problem, we use a ~org~ package, called [[https://github.com/org-mime/org-mime][Org MIME]], which uses the MIME protocol to encode the content of our email. Moreover, it allows us to write e-mails with the full power of ~org-mode~'s syntax and editing tools, and directly export them in HTML.
+
+#+begin_src emacs-lisp
+  (use-package org-mime
+    :after mu4e
+    :config
+    (setq org-mime-export-options'(:section-numbers nil
+                                   :with-author nil
+                                   :with-toc nil))
+
+    (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart))
+
 #+end_src
 
 * Fun

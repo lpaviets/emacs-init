@@ -1145,6 +1145,13 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :config
   (setq mu4e-completing-read-function 'ivy-completing-read)
 
+  ;; Convenience functions
+  (setq mu4e-compose-context-policy 'ask-if-none)
+  (setq mu4e-context-policy 'ask-if-none)
+
+  ;; Unless we want to send mail to very old clients
+  (setq mu4e-compose-format-flowed t)
+
   ;; Avoid mail syncing issues with mbsync
   (setq mu4e-change-filenames-when-moving t)
 
@@ -1154,6 +1161,23 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
   ;; Change: obsolete variable
   (setq mu4e-maildir "~/Mail")
+
+  ;; Adapted from https://jherrlin.github.io/posts/emacs-mu4e/
+  (defun lps/sign-or-encrypt-message ()
+    (let ((answer (read-from-minibuffer (concat "Sign or encrypt?\n"
+                                                "Empty to do nothing.\n[s/e]: "))))
+    (cond
+     ((string-equal answer "s") (progn
+                                  (message "Sign this message.")
+                                  (mml-secure-message-sign-pgpmime)))
+     ((string-equal answer "e") (progn
+                                  (message "Encrypt and sign this message.")
+                                  (mml-secure-message-encrypt-pgpmime)))
+     (t (progn
+          (message "Not signing or encrypting this message.")
+          nil)))))
+
+  (add-hook 'message-send-hook 'lps/sign-or-encrypt-message)
 
   (setq mu4e-contexts
         (list
@@ -1191,6 +1215,15 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
                   (smtpmail-smtp-server  . "smtp.unicaen.fr")
                   (smtpmail-smtp-service . 465 )
                   (smtpmail-stream-type  . ssl))))))
+
+(use-package org-mime
+  :after mu4e
+  :config
+  (setq org-mime-export-options'(:section-numbers nil
+                                 :with-author nil
+                                 :with-toc nil))
+
+  (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart))
 
 (use-package xkcd
   :defer t)
