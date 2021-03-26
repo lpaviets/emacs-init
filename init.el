@@ -415,39 +415,40 @@ installed themes instead."
   (org-shiftdown-final . windmove-down)
   (org-shiftright-final . windmove-right)
 
-  :config (windmove-default-keybindings))
+  :init (windmove-default-keybindings)
 
-(defun hydra-move-splitter-left (arg)
-  "Move window splitter left."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'right))
-      (shrink-window-horizontally arg)
-    (enlarge-window-horizontally arg)))
+  :config
+  (defun hydra-move-splitter-left (arg)
+    "Move window splitter left."
+    (interactive "p")
+    (if (let ((windmove-wrap-around))
+          (windmove-find-other-window 'right))
+        (shrink-window-horizontally arg)
+      (enlarge-window-horizontally arg)))
 
-(defun hydra-move-splitter-right (arg)
-  "Move window splitter right."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'right))
-      (enlarge-window-horizontally arg)
-    (shrink-window-horizontally arg)))
+  (defun hydra-move-splitter-right (arg)
+    "Move window splitter right."
+    (interactive "p")
+    (if (let ((windmove-wrap-around))
+          (windmove-find-other-window 'right))
+        (enlarge-window-horizontally arg)
+      (shrink-window-horizontally arg)))
 
-(defun hydra-move-splitter-up (arg)
-  "Move window splitter up."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'up))
-      (enlarge-window arg)
-    (shrink-window arg)))
+  (defun hydra-move-splitter-up (arg)
+    "Move window splitter up."
+    (interactive "p")
+    (if (let ((windmove-wrap-around))
+          (windmove-find-other-window 'up))
+        (enlarge-window arg)
+      (shrink-window arg)))
 
-(defun hydra-move-splitter-down (arg)
-  "Move window splitter down."
-  (interactive "p")
-  (if (let ((windmove-wrap-around))
-        (windmove-find-other-window 'up))
-      (shrink-window arg)
-    (enlarge-window arg)))
+  (defun hydra-move-splitter-down (arg)
+    "Move window splitter down."
+    (interactive "p")
+    (if (let ((windmove-wrap-around))
+          (windmove-find-other-window 'up))
+        (shrink-window arg)
+      (enlarge-window arg))))
 
 (global-set-key
  (kbd "C-c h w") ; w for window
@@ -1150,6 +1151,16 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   ;; Convenience functions
   (setq mu4e-compose-context-policy 'ask-if-none)
   (setq mu4e-context-policy 'ask-if-none)
+  (setq message-kill-buffer-on-exit t)
+  (setq mu4e-confirm-quit nil)
+
+  ;; View images
+  (setq mu4e-view-show-images t)
+  (when (fboundp 'imagemagick-register-types)
+    (imagemagick-register-types))
+
+  ;; ASCII-only time is over
+  (setq mu4e-use-fancy-chars t)
 
   ;; Unless we want to send mail to very old clients
   (setq mu4e-compose-format-flowed t)
@@ -1241,6 +1252,37 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
                   (smtpmail-smtp-server  . "smtp.unicaen.fr")
                   (smtpmail-smtp-service . 465 )
                   (smtpmail-stream-type  . ssl))))))
+
+;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
+(use-package gnus-dired
+  :ensure nil
+  :after mu4e
+  :hook (dired-mode . turn-on-gnus-dired-mode)
+  :config
+  ;; This overrides a function !
+  (defun gnus-dired-mail-buffers ()
+    "Return a list of active message buffers."
+    (let (buffers)
+      (save-current-buffer
+        (dolist (buffer (buffer-list t))
+          (set-buffer buffer)
+          (when (and (derived-mode-p 'message-mode)
+                     (null message-sent-message-via))
+            (push (buffer-name buffer) buffers))))
+      (nreverse buffers)))
+
+  (setq gnus-dired-mail-mode 'mu4e-user-agent))
+
+
+(use-package dired
+  :ensure nil
+  :after gnus-dired
+  :bind (:map dired-mode-map
+              ("E" . lps/mu4e-file-attach-marked-files))
+  :config
+  (defun lps/mu4e-file-attach-marked-files ()
+    (interactive)
+    (gnus-dired-attach (dired-map-over-marks (dired-get-file-for-visit) nil))))
 
 (use-package org-mime
   :after mu4e
