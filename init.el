@@ -727,7 +727,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
           lisp-interaction-mode) . paredit-mode))
 
 (use-package elec-pair
-  :hook (prog-mode . electric-pair-mode))
+  :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
 
 ;;YASnippet
 (use-package yasnippet
@@ -1236,6 +1236,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (setq mu4e-maildir "~/Mail")
 
   ;; Adapted from https://jherrlin.github.io/posts/emacs-mu4e/
+  (setq mml-secure-openpgp-sign-with-sender t)
   (setq mml-secure-smime-sign-with-sender t)
 
   (defun lps/sign-or-encrypt-message ()
@@ -1244,10 +1245,10 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
       (cond
        ((string-equal answer "s") (progn
                                     (message "Sign this message.")
-                                    (mml-secure-message-sign-pgpmime)))
+                                    (mml-secure-message-sign-pgpauto)))
        ((string-equal answer "e") (progn
                                     (message "Encrypt and sign this message.")
-                                    (mml-secure-message-encrypt-pgpmime)))
+                                    (mml-secure-message-encrypt-pgpauto)))
        (t (progn
             (message "Not signing or encrypting this message.")
             nil)))))
