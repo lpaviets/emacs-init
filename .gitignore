@@ -60,8 +60,14 @@ flycheck_*.el
 
 # AMX
 /amx-items
+
+# XKCD
 /xkcd/
-/custom.el
+
+# Our custom file
+/custom-file.el
+
+# Other random stuff
 /network-security.data
 /projects
 /recentf

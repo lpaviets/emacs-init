@@ -125,8 +125,8 @@ In order to test things more rapidly and to be able to apply configuration chang
 We do not want Emacs to mess with our own =init.el= file, and so we tell it where to store all its precious customizations
 
 #+begin_src emacs-lisp
-(setq custom-file (concat user-emacs-directory "custom.el"))
-(load custom-file 'noerror)
+  (setq custom-file (concat user-emacs-directory "custom-file.el"))
+  (load custom-file 'noerror)
 #+end_src
 
 * UI Configuration
@@ -450,6 +450,15 @@ Even if most of the time, you should be working with UTF-8, we still want to mak
   (set-terminal-coding-system 'utf-8)
   (set-keyboard-coding-system 'utf-8)
   (set-selection-coding-system 'utf-8)
+#+end_src
+
+Another thing that is technically more a stylistic choice rather than a real encoding problem is how dates are formatted. I decide to use the European style
+
+#+begin_src emacs-lisp
+  (use-package calendar
+    :ensure nil
+    :config
+    (calendar-set-date-style 'european))
 #+end_src
 
 ** Commands
@@ -1197,10 +1206,10 @@ We add another backend to support completion in shell and terminal-modes
   (use-package company-shell
     :defer t
     :config
-  (defun my-company-shell-modes ()
-    (setq-local company-backends '((company-capf company-shell company-shell-env company-files company-dabbrev)))
+    (defun my-company-shell-modes ()
+      (setq-local company-backends '((company-capf company-shell company-shell-env company-files company-dabbrev)))
 
-    (add-hook 'eshell-mode-hook #'my-company-shell-modes)))
+      (add-hook 'eshell-mode-hook #'my-company-shell-modes)))
 #+end_src
 ** Language Server Protocol
 
@@ -1570,6 +1579,34 @@ We also add templates to insert code blocks with a few key presses
       (org-babel-tangle))))
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
+#+end_src
+
+** Org Agenda
+
+Not only is Org Mode great to write structured documents that can be exported to pretty much anything we want - including tangled to produce source code using literate programming -, it is also a powerful to ... *org*anize things. A built-in functionality is the agenda, where you can schedule tasks, set deadlines, configure reminders, the frequency at which you will need to repeat a given task, and so on.
+
+#+begin_src emacs-lisp
+  (use-package org
+    :defer t
+    :custom
+    (org-agenda-files '("~/Documents/OrgFiles/Tasks.org"))
+    (org-log-into-drawer t)
+    (org-log-done 'time)
+    (org-agenda-start-with-log-mode t)
+
+    :config
+    (setq org-tag-alist
+          '((:startgroup)
+            ;; Put mutually exclusive tags here
+            (:endgroup)
+            ("@home" . ?H)
+            ("@work" . ?W)
+            ("agenda" . ?a)
+            ("plan" . ?p)
+            ("note" . ?n)
+            ("idea" . ?i)
+            ("read" . ?r))))
+
 #+end_src
 
 * LaTeX and PDF

@@ -55,7 +55,7 @@
 (use-package restart-emacs
   :commands (restart-emacs restart-emacs-start-new-emacs))
 
-(setq custom-file (concat user-emacs-directory "custom.el"))
+(setq custom-file (concat user-emacs-directory "custom-file.el"))
 (load custom-file 'noerror)
 
 ;; Disable the annoying startup message and Emacs logo
@@ -277,6 +277,11 @@ installed themes instead."
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
 (set-selection-coding-system 'utf-8)
+
+(use-package calendar
+  :ensure nil
+  :config
+  (calendar-set-date-style 'european))
 
 ;; Don't disable any command
 ;; BE CAREFUL
@@ -786,10 +791,10 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package company-shell
   :defer t
   :config
-(defun my-company-shell-modes ()
-  (setq-local company-backends '((company-capf company-shell company-shell-env company-files company-dabbrev)))
+  (defun my-company-shell-modes ()
+    (setq-local company-backends '((company-capf company-shell company-shell-env company-files company-dabbrev)))
 
-  (add-hook 'eshell-mode-hook #'my-company-shell-modes)))
+    (add-hook 'eshell-mode-hook #'my-company-shell-modes)))
 
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
@@ -1019,6 +1024,27 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
       (org-babel-tangle))))
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
+
+(use-package org
+  :defer t
+  :custom
+  (org-agenda-files '("~/Documents/OrgFiles/Tasks.org"))
+  (org-log-into-drawer t)
+  (org-log-done 'time)
+  (org-agenda-start-with-log-mode t)
+
+  :config
+  (setq org-tag-alist
+        '((:startgroup)
+          ;; Put mutually exclusive tags here
+          (:endgroup)
+          ("@home" . ?H)
+          ("@work" . ?W)
+          ("agenda" . ?a)
+          ("plan" . ?p)
+          ("note" . ?n)
+          ("idea" . ?i)
+          ("read" . ?r))))
 
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
