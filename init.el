@@ -181,7 +181,9 @@ installed themes instead."
   :after all-the-icons
   :init (doom-modeline-mode 1)
   :custom ((doom-modeline-height 15))
-  :config (display-time-mode 1))
+  :config
+  (setq display-time-format "[%d/%m - %H:%M]")
+  (display-time-mode 1))
 
 (with-eval-after-load 'hydra
   ;; define a title function
@@ -331,19 +333,12 @@ installed themes instead."
   :bind (("C-s" . swiper)
          :map ivy-minibuffer-map
          ("TAB" . ivy-partial-or-done)
-         ("C-l" . my-ivy-alt-done-t) ; Small hack
-         :map ivy-switch-buffer-map
-         ("C-l" . ivy-done)
-         ("C-d" . ivy-switch-buffer-kill)
-         :map ivy-reverse-i-search-map
-         ("C-d" . ivy-reverse-i-search-kill))
+         ("C-l" . ivy-immediate-done))
   :config
-  ;; Todo: check if ivy-use-selectable-prompt does the trick
-  (defun my-ivy-alt-done-t ()
-    (interactive)
-    (ivy-alt-done t))
-
-  :config (ivy-mode 1))
+  (ivy-mode 1)
+  (setq ivy-count-format "(%d/%d)")
+  (setq enable-recursive-minibuffers t)
+  (setq ivy-initial-inputs-alist nil))
 
 ;; Adds things to Ivy
 (use-package ivy-rich
@@ -1143,6 +1138,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package eshell-syntax-highlighting
   :hook (eshell-mode . eshell-syntax-highlighting-mode))
+
+;; (use-package eshell-git-prompt
+;;   :config (eshell-git-prompt-use-theme 'powerline)) ;; Visually buggy
 
 (use-package dired
   :ensure nil
