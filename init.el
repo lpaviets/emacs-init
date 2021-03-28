@@ -1182,9 +1182,14 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :ensure nil
   :load-path "/usr/local/share/emacs/site-lisp/mu4e" ;; Might be needed.
   :commands mu4e
-  :bind ("C-c e" . mu4e)
+  :bind (("C-c e" . mu4e)
+         :map mu4e-compose-mode-map
+         ("C-c C-h" . org-mime-htmlize))
   :config
   (setq mu4e-completing-read-function 'ivy-completing-read)
+
+  ;; Might avoid unwanted drafts
+  (add-hook 'mu4e-compose-mode-hook #'(lambda () (auto-save-mode -1)))
 
   ;; Convenience functions
   (setq mu4e-compose-context-policy 'ask-if-none)
@@ -1255,6 +1260,13 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
   (add-hook 'message-send-hook 'lps/sign-or-encrypt-message)
 
+
+  ;; Before making a new context:
+  ;; - Make sure that the [sent/trash/drafts] folders are correctly named, to avoid duplicates
+  ;; - Don't forget to modify .mbsyncrc and .authinfo.gpg to correctly authenticate against
+  ;; the IMAP and SMTP servers
+  ;; - Make sure that your smpt-user ID, the port (smtp-service), etc, are the right ones; different
+  ;; SMTP servers have different expectations, and there is no universal configuration
   (setq mu4e-contexts
         (list
          ;; School account
@@ -1266,10 +1278,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
               (string-prefix-p "/ENS_Lyon" (mu4e-message-field msg :maildir))))
           :vars '((user-mail-address  . "leo.paviet-salomon@ens-lyon.fr")
                   (user-full-name     . "Leo Paviet Salomon")
-                  (mu4e-drafts-folder . "/ENS_Lyon/Drafts")
-                  (mu4e-sent-folder   . "/ENS_Lyon/Sent")
+                  (mu4e-drafts-folder . "/ENS_Lyon/Brouillons")
+                  (mu4e-sent-folder   . "/ENS_Lyon/Elements_envoyes")
+                  ;;(mu4e-sent-messages-behavior . 'delete) ;; Not sure yet, better be safe
                   (mu4e-refile-folder . "/ENS_Lyon/Archive")
-                  (mu4e-trash-folder  . "/ENS_Lyon/Trash")
+                  (mu4e-trash-folder  . "/ENS_Lyon/Corbeille")
                   (smtpmail-smtp-user    . "lpaviets")
                   (smtpmail-smtp-server  . "smtp.ens-lyon.fr")
                   (smtpmail-smtp-service . 587)
@@ -1300,10 +1313,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
               (string-prefix-p "/Orange" (mu4e-message-field msg :maildir))))
           :vars '((user-mail-address  . "leo.paviet.salomon@orange.fr")
                   (user-full-name     . "Leo Paviet Salomon")
-                  (mu4e-drafts-folder . "/Orange/Drafts")
-                  (mu4e-sent-folder   . "/Orange/Sent")
+                  (mu4e-drafts-folder . "/Orange/DRAFT")
+                  (mu4e-sent-folder   . "/Orange/OUTBOX")
+                  ;; (mu4e-sent-messages-behavior . 'delete) ;; Not sure yet, better be safe
                   (mu4e-refile-folder . "/Orange/Archive")
-                  (mu4e-trash-folder  . "/Orange/Trash")
+                  (mu4e-trash-folder  . "/Orange/TRASH")
                   (smtpmail-smtp-user    . "leo.paviet.salomon@orange.fr")
                   (smtpmail-smtp-server  . "smtp.orange.fr")
                   (smtpmail-smtp-service . 465)
