@@ -1239,8 +1239,15 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (setq mu4e-maildir "~/Mail")
 
   ;; Adapted from https://jherrlin.github.io/posts/emacs-mu4e/
+  ;; See also https://etienne.depar.is/emacs.d/mu4e.html
+  (setq mml-secure-cache-passphrase nil)
+  (setq password-cache nil)
   (setq mml-secure-openpgp-sign-with-sender t)
+  (setq mml-secure-openpgp-encrypt-to-self t)
   (setq mml-secure-smime-sign-with-sender t)
+  (setq mml-smime-encrypt-to-self t)
+
+  (setq mm-sign-option 'guided)
 
   (defun lps/sign-or-encrypt-message ()
     (let ((answer (read-from-minibuffer (concat "Sign or encrypt?\n"
@@ -1248,14 +1255,15 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
       (cond
        ((string-equal answer "s") (progn
                                     (message "Sign this message.")
-                                    (mml-secure-message-sign-pgpauto)))
+                                    (mml-secure-message-sign-pgpmime)))
        ((string-equal answer "e") (progn
                                     (message "Encrypt and sign this message.")
-                                    (mml-secure-message-encrypt-pgpauto)))
+                                    (mml-secure-message-encrypt-pgpmime)))
        (t (progn
             (message "Not signing or encrypting this message.")
             nil)))))
 
+  (add-hook 'message-send-hook 'org-mime-htmlize)
   (add-hook 'message-send-hook 'lps/sign-or-encrypt-message)
 
 
@@ -1355,11 +1363,10 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package org-mime
   :after mu4e
   :config
+  ;;(add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
   (setq org-mime-export-options'(:section-numbers nil
-                                 :with-author nil
-                                 :with-toc nil))
-
-  (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart))
+                                                  :with-author nil
+                                                  :with-toc nil)))
 
 (use-package xkcd
   :defer t)
