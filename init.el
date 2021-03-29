@@ -356,7 +356,7 @@ installed themes instead."
          ("C-r" . 'counsel-minibuffer-history)))
 
 (use-package amx
-   :init (setq amx-history-length 10))
+  :init (setq amx-history-length 10))
 
 ;; Automatically reload a file if it has been modified
 (global-auto-revert-mode t)
@@ -1138,6 +1138,60 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package eshell-syntax-highlighting
   :hook (eshell-mode . eshell-syntax-highlighting-mode))
+
+(use-package eshell
+  :ensure nil
+  :config
+
+  ;; From https://blog.liangzan.net/blog/2012/12/12/customizing-your-emacs-eshell-prompt/
+  (defun lps/pwd-repl-home (pwd)
+    (interactive)
+    (let* ((home (expand-file-name (getenv "HOME")))
+           (home-len (length home)))
+      (if (and
+           (>= (length pwd) home-len)
+           (equal home (substring pwd 0 home-len)))
+          (concat "~" (substring pwd home-len))
+        pwd)))
+
+  ;; See the possible colours: M-x list-colors-display
+  (defun lps/curr-dir-git-branch-string (pwd)
+    "Returns current git branch as a string, or the empty string if
+PWD is not in a git repo (or the git command is not found)."
+    (interactive)
+    (when (and (eshell-search-path "git")
+               (locate-dominating-file pwd ".git"))
+      (let ((git-output (shell-command-to-string (concat "cd " pwd " && git branch | grep '\\*' | sed -e 's/^\\* //'"))))
+        (propertize (concat "["
+                            (if (> (length git-output) 0)
+                                (substring git-output 0 -1)
+                              "(no branch)")
+                            "]") 'face `(:foreground "green3")))))
+
+  (defun lps/eshell-prompt-function ()
+    (concat
+     (propertize ((lambda (p-lst)
+                    (if (> (length p-lst) 3)
+                        (concat
+                         (mapconcat (lambda (elm) (if (zerop (length elm)) ""
+                                                    (substring elm 0 1)))
+                                    (butlast p-lst 3)
+                                    "/")
+                         "/"
+                         (mapconcat (lambda (elm) elm)
+                                    (last p-lst 3)
+                                    "/"))
+                      (mapconcat (lambda (elm) elm)
+                                 p-lst
+                                 "/")))
+                  (split-string (lps/pwd-repl-home (eshell/pwd)) "/")) 'face `(:foreground "DeepSkyBlue1") 'read-only t)
+     (or (lps/curr-dir-git-branch-string (eshell/pwd)))
+     (propertize " # " 'face 'default 'read-only t)))
+
+  ;; Change according to eshell-prompt-function
+  (setq eshell-prompt-function 'lps/eshell-prompt-function)
+  (setq eshell-prompt-regexp "^[^#$\n]* [#$] ")
+  (setq eshell-highlight-prompt t))
 
 ;; (use-package eshell-git-prompt
 ;;   :config (eshell-git-prompt-use-theme 'powerline)) ;; Visually buggy
