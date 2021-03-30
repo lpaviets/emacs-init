@@ -575,6 +575,13 @@ buffer in current window."
   :ensure nil
   :custom (sentence-end-double-space nil))
 
+(use-package emacs
+  :ensure nil
+  :bind (:map search-map
+              ("s" . isearch-forward)
+              ("r" . isearch-backward)
+              ("x" . isearch-forward-regexp)))
+
 (global-set-key
  (kbd "C-c h r") ; r as rectangle
  (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
@@ -607,7 +614,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
    ("q" nil)))
 
 (use-package expand-region
-:bind ("C-=" . er/expand-region))
+  :bind ("C-=" . er/expand-region))
 
 (defun lps/copy-line-at-point (arg)
    "Copy ARG lines in the kill ring, starting from the line at point and copying subsequent ones if ARG > 1"
@@ -622,6 +629,21 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; Might want to find a more clever way to use personal
 ;; keybindings, such as defining a minor mode ...
 (global-set-key (kbd "M-k") 'lps/copy-line-at-point)
+
+(defun lps/select-line ()
+"Select the current line. If the region is already active, extends the current selection by line."
+(interactive)
+(if (region-active-p)
+    (progn
+      (forward-line 1)
+      (end-of-line))
+  (progn
+    (end-of-line)
+    (set-mark (line-beginning-position)))))
+
+;; makes sense on Keyboard
+;; Remember that M-@ is bound to mark-word
+(global-set-key (kbd "M-à") 'lps/select-line)
 
 (use-package undo-tree
   :config
