@@ -1931,10 +1931,10 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     ;; See also https://etienne.depar.is/emacs.d/mu4e.html
     (setq mml-secure-cache-passphrase nil)
     (setq password-cache nil)
-    (setq mml-secure-openpgp-sign-with-sender t)
+    ;;(setq mml-secure-openpgp-sign-with-sender t)
     (setq mml-secure-openpgp-encrypt-to-self t)
-    (setq mml-secure-smime-sign-with-sender t)
-    (setq mml-smime-encrypt-to-self t)
+    ;;(setq mml-secure-smime-sign-with-sender t)
+    (setq mml-smime-encrypt-to-self t) ;; encryption is not ready yet
 
     (setq mm-sign-option 'guided)
 
@@ -1944,15 +1944,17 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
         (cond
          ((string-equal answer "s") (progn
                                       (message "Sign this message.")
-                                      (mml-secure-message-sign-pgpmime)))
+                                      ;; Why doesn't mml-secure-message-sign-pgpmime work ... ?
+                                      (mml-secure-message-sign-pgpmime) ;;Works but only signs a part of the message.
+                                      (message "Done trying to sign the message")))
          ((string-equal answer "e") (progn
                                       (message "Encrypt and sign this message.")
-                                      (mml-secure-message-encrypt-pgpmime)))
+                                      (mml-secure-message-encrypt-pgpmime)
+                                      (message "Done trying to encrypt the message")))
          (t (progn
               (message "Not signing or encrypting this message.")
               nil)))))
 
-    (add-hook 'message-send-hook 'org-mime-htmlize)
     (add-hook 'message-send-hook 'lps/sign-or-encrypt-message)
 
 
@@ -2066,7 +2068,10 @@ To deal with this problem, we use a ~org~ package, called [[https://github.com/o
   (use-package org-mime
     :after mu4e
     :config
-    ;;(add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
+    ;; Make sure that this hook is added AFTER lps/sign-or-encrypt-message
+    ;; so that it is executed BEFORE it.
+    ;; We want to htmlize, then sign/encrypt, not the other way around !
+    (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
     (setq org-mime-export-options'(:section-numbers nil
                                                     :with-author nil
                                                     :with-toc nil)))
