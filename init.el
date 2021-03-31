@@ -806,12 +806,12 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (add-to-list 'company-backends 'company-math-symbols-latex))
 
 (use-package company-shell
-  :defer t
+  :after eshell
+  :hook (eshell-mode . my-company-shell-modes)
   :config
   (defun my-company-shell-modes ()
-    (setq-local company-backends '((company-capf company-shell company-shell-env company-files company-dabbrev)))
-
-    (add-hook 'eshell-mode-hook #'my-company-shell-modes)))
+    ;; Not satisfying: duplicates from company-capf and company-shell, so we disable the 2nd one but we lose some documentation ...
+    (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev)))))
 
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
@@ -1217,6 +1217,16 @@ PWD is not in a git repo (or the git command is not found)."
 
 ;; (use-package eshell-git-prompt
 ;;   :config (eshell-git-prompt-use-theme 'powerline)) ;; Visually buggy
+
+(use-package bash-completion
+  :config
+  (bash-completion-setup))
+
+(use-package fish-completion
+  :init
+  (when (executable-find "fish")
+    (fish-completion-mode 1)
+    (setq fish-completion-fallback-on-bash-p t)))
 
 (use-package dired
   :ensure nil

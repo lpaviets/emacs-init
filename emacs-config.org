@@ -1231,12 +1231,12 @@ We install another backend specifically for LaTeX
 We add another backend to support completion in shell and terminal-modes
 #+begin_src emacs-lisp
   (use-package company-shell
-    :defer t
+    :after eshell
+    :hook (eshell-mode . my-company-shell-modes)
     :config
     (defun my-company-shell-modes ()
-      (setq-local company-backends '((company-capf company-shell company-shell-env company-files company-dabbrev)))
-
-      (add-hook 'eshell-mode-hook #'my-company-shell-modes)))
+      ;; Not satisfying: duplicates from company-capf and company-shell, so we disable the 2nd one but we lose some documentation ...
+      (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev)))))
 #+end_src
 ** Language Server Protocol
 *** LSP-mode
@@ -1826,6 +1826,21 @@ We install a few packages which make eshell easier to use.
 
   ;; (use-package eshell-git-prompt
   ;;   :config (eshell-git-prompt-use-theme 'powerline)) ;; Visually buggy
+#+end_src
+*** Bash/Fish completion
+We use two packages to have a more powerful completion system in ~eshell~. The UI is akin to the one used by vanilla Emacs - it opens another buffer whenever you try to complete and there are more than one candidates - but it is still usable.
+
+*MANUAL*  The second package, =fish-completion=, needs ~fish~ to be installed on the system (and that a ~fish~ executable can be found on the path).
+#+begin_src emacs-lisp
+  (use-package bash-completion
+    :config
+    (bash-completion-setup))
+
+  (use-package fish-completion
+    :init
+    (when (executable-find "fish")
+      (fish-completion-mode 1)
+      (setq fish-completion-fallback-on-bash-p t)))
 #+end_src
 
 *** Binding with .bashrc
