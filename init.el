@@ -107,15 +107,13 @@
 (global-visual-line-mode 1)
 
 ;; Themes
-(use-package solarized-theme
-  :commands load-theme)
-(use-package kaolin-themes
-  :commands load-theme)
-(use-package modus-themes
-  :commands load-theme)
+(use-package solarized-theme)
+(use-package kaolin-themes)
+(use-package modus-themes)
+(use-package doom-themes)
 
-(use-package doom-themes
-  :init (load-theme 'doom-Iosvkem t))
+(setq lps/default-theme 'kaolin-ocean)
+(load-theme lps/default-theme t)
 
 ;; Use this to store your favourite themes
 ;; Save your usual, default theme in first position
@@ -124,7 +122,6 @@
       '(doom-Iosvkem
         kaolin-ocean
         kaolin-aurora
-        doom-monokai-pro
         doom-palenight
         tsdh-dark
         solarized-dark
@@ -139,6 +136,7 @@
 
 (setq lps/rotate-theme-index 0)
 
+;; Still a bit buggy: forgets all the customizations done to e.g. Org Mode
 (defun lps/rotate-through-themes ()
   "Cycles through the next theme in the `lps/rotate-themes-list'.
 If this list is empty or does not exist, cycle through all the
@@ -282,6 +280,7 @@ installed themes instead."
 
 (use-package calendar
   :ensure nil
+  :defer t
   :config
   (calendar-set-date-style 'european))
 
@@ -678,6 +677,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :config (counsel-projectile-mode))
 
 (use-package magit
+  :defer t
   ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
   ;; uncomment previous line to have magit open itself within the same buffer
   ;; instead of in another buffer
@@ -686,7 +686,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package git-timemachine
   :defer t)
 
-(use-package forge)
+(use-package forge
+  :after magit)
 
 ;; Always highlight matching parenthesis
 (use-package paren
@@ -1171,6 +1172,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (use-package eshell
   :ensure nil
+  :defer t
   :config
 
   ;; From https://blog.liangzan.net/blog/2012/12/12/customizing-your-emacs-eshell-prompt/
@@ -1227,11 +1229,13 @@ PWD is not in a git repo (or the git command is not found)."
 ;;   :config (eshell-git-prompt-use-theme 'powerline)) ;; Visually buggy
 
 (use-package bash-completion
+  :after eshell
   :config
   (bash-completion-setup))
 
 (use-package fish-completion
-  :init
+  :after eshell
+  :config
   (when (executable-find "fish")
     (fish-completion-mode 1)
     (setq fish-completion-fallback-on-bash-p t)))
@@ -1261,7 +1265,8 @@ PWD is not in a git repo (or the git command is not found)."
 
 (use-package smtpmail
   :ensure nil
-  :init
+  :after mu4e
+  :config
   (setq message-send-mail-function 'smtpmail-send-it)
   ;; Default SMTP configuration
   (setq smtpmail-debug-info t)
@@ -1306,6 +1311,7 @@ PWD is not in a git repo (or the git command is not found)."
   ;; Refresh mail every 5 minutes
   (setq mu4e-update-interval (* 5 60))
   (setq mu4e-get-mail-command "mbsync -a")
+  (setq mu4e-index-update-in-background t)
 
   ;; Always show full date and time
   (setq mu4e-headers-date-format "%d-%m-%Y %H:%M")
