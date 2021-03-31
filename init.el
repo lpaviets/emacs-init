@@ -333,12 +333,20 @@ installed themes instead."
   :bind (("C-s" . swiper)
          :map ivy-minibuffer-map
          ("TAB" . ivy-partial-or-done)
-         ("C-l" . ivy-immediate-done))
+         ("C-l" . ivy-immediate-done)
+         ("C-SPC" . lps/ivy-toggle-current-mark))
   :config
   (ivy-mode 1)
   (setq ivy-count-format "(%d/%d)")
   (setq enable-recursive-minibuffers t)
-  (setq ivy-initial-inputs-alist nil))
+  (setq ivy-initial-inputs-alist nil)
+
+  (defun lps/ivy-toggle-current-mark ()
+    (interactive)
+    "Toggle mark for current candidate and move forwards."
+    (if (ivy--marked-p)
+        (ivy-unmark)
+      (ivy-mark))))
 
 ;; Adds things to Ivy
 (use-package ivy-rich
@@ -350,7 +358,7 @@ installed themes instead."
   :diminish
   :hook (ivy-mode . counsel-mode)
   :bind (("M-x" . counsel-M-x)
-         ("C-x b" . counsel-ibuffer)
+         ("C-x b" . counsel-switch-buffer) ;; counsel-ibuffer is a fancier option
          ("C-x C-f" . counsel-find-file)
          :map minibuffer-local-map
          ("C-r" . 'counsel-minibuffer-history)))
@@ -375,7 +383,7 @@ installed themes instead."
 (setq uniquify-after-kill-buffer-p t)
 
 (use-package all-the-icons-ibuffer
-  :after ibuffer counsel
+  :after ibuffer
   :init (all-the-icons-ibuffer-mode 1))
 
 (use-package ibuffer
@@ -1307,7 +1315,7 @@ PWD is not in a git repo (or the git command is not found)."
   (setq mu4e-headers-fields '((:human-date . 20)
                               (:flags . 6)
                               (:mailing-list . 10)
-                              (:from . 22)
+                              (:from-or-to . 22)
                               (:subject . 100)))
 
   (defun lps/resize-headers-fields ()
@@ -1316,7 +1324,7 @@ PWD is not in a git repo (or the git command is not found)."
           (setq-local mu4e-headers-fields `((:human-date . 20)
                                             (:flags . 6)
                                             (:mailing-list . 10)
-                                            (:from . 22)
+                                            (:from-or-to . 22)
                                             (:subject . ,(- width (+ 20 6 10 22 15))))))))
 
   (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)

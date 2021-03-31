@@ -561,12 +561,20 @@ Although emacs provides a number of commands to navigate within a file, to find 
     :bind (("C-s" . swiper)
            :map ivy-minibuffer-map
            ("TAB" . ivy-partial-or-done)
-           ("C-l" . ivy-immediate-done))
+           ("C-l" . ivy-immediate-done)
+           ("C-SPC" . lps/ivy-toggle-current-mark))
     :config
     (ivy-mode 1)
     (setq ivy-count-format "(%d/%d)")
     (setq enable-recursive-minibuffers t)
-    (setq ivy-initial-inputs-alist nil))
+    (setq ivy-initial-inputs-alist nil)
+
+    (defun lps/ivy-toggle-current-mark ()
+      (interactive)
+      "Toggle mark for current candidate and move forwards."
+      (if (ivy--marked-p)
+          (ivy-unmark)
+        (ivy-mark))))
 
   ;; Adds things to Ivy
   (use-package ivy-rich
@@ -578,7 +586,7 @@ Although emacs provides a number of commands to navigate within a file, to find 
     :diminish
     :hook (ivy-mode . counsel-mode)
     :bind (("M-x" . counsel-M-x)
-           ("C-x b" . counsel-ibuffer)
+           ("C-x b" . counsel-switch-buffer) ;; counsel-ibuffer is a fancier option
            ("C-x C-f" . counsel-find-file)
            :map minibuffer-local-map
            ("C-r" . 'counsel-minibuffer-history)))
@@ -623,7 +631,7 @@ We also improve the appearance (and functionalities) of the buffer that we get w
 
 #+begin_src emacs-lisp
   (use-package all-the-icons-ibuffer
-    :after ibuffer counsel
+    :after ibuffer
     :init (all-the-icons-ibuffer-mode 1))
 
   (use-package ibuffer
@@ -1957,7 +1965,7 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     (setq mu4e-headers-fields '((:human-date . 20)
                                 (:flags . 6)
                                 (:mailing-list . 10)
-                                (:from . 22)
+                                (:from-or-to . 22)
                                 (:subject . 100)))
 
     (defun lps/resize-headers-fields ()
@@ -1966,7 +1974,7 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
             (setq-local mu4e-headers-fields `((:human-date . 20)
                                               (:flags . 6)
                                               (:mailing-list . 10)
-                                              (:from . 22)
+                                              (:from-or-to . 22)
                                               (:subject . ,(- width (+ 20 6 10 22 15))))))))
 
     (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
