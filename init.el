@@ -534,7 +534,6 @@ buffer in current window."
 
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
-  :after counsel
   :custom
   (counsel-describe-symbol-function   #'helpful-symbol)
   (counsel-describe-function-function #'helpful-callable)
@@ -657,6 +656,31 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (setq undo-tree-visualizer-timestamps t)
   (global-undo-tree-mode)
   :diminish (undo-tree-mode))
+
+(defun lps/find-delete-forward-all-regexp (re &optional beg)
+  "Searches for a match of the regexp RE after the point, or after the optional position BEG.
+  Returns a string containing the first match, or nil if none was found.
+  Deletes the match from the buffer"
+  (save-excursion
+    (let (matches)
+      (goto-char (or beg (point)))
+      (while (re-search-forward re nil t)
+        (push (match-string 0) matches)
+        (delete-region (match-beginning 0) (match-end 0)))
+      matches)))
+
+(defun lps/move-all-regexp-pos-buffer (re &optional beg move split)
+  "Moves all the string matching the regexp RE after the point (or after BEG) to the end of the buffer
+(or to the position MOVE if provided)
+  If SPLIT is provided, it will be inserted before each match, including the first one.
+  The initial strings are destroyed, and the kill-ring is not modified"
+  (save-excursion
+    (let ((matches (lps/find-delete-forward-all-regexp re beg)))
+      (prin1 matches)
+      (goto-char (or move (point-max)))
+      (while matches
+        (insert (or split ""))
+        (insert (pop matches))))))
 
 (use-package projectile
   :diminish
@@ -1281,7 +1305,7 @@ PWD is not in a git repo (or the git command is not found)."
   :commands mu4e
   :bind (("C-c e" . mu4e)
          :map mu4e-compose-mode-map
-         ("C-c C-h" . org-mime-htmlize))
+         ("C-c C-h" . lps/org-mime-htmlize-preserve-secure-and-attach))
   :config
   (setq mu4e-completing-read-function 'ivy-completing-read)
 
@@ -1471,7 +1495,26 @@ PWD is not in a git repo (or the git command is not found)."
   (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
   (setq org-mime-export-options'(:section-numbers nil
                                                   :with-author nil
-                                                  :with-toc nil)))
+                                                  :with-toc nil))
+
+  ;; Hacky function to avoid big formatting problems when calling org-mime-htmlize
+  ;; after having linked attachments, or signing/encrypting the message
+  (defun lps/org-mime-htmlize-preserve-secure-and-attach ()
+    (interactive)
+    (let ((re-secure "<#secure method=[a-z]+ mode=[a-z]+>")
+          (re-attachment "<#part type=.* disposition=attachment.*>[[:space:]]?<#/part>"))
+      (let ((secure (lps/find-delete-forward-all-regexp re-secure (point-min)))
+            (attachments (lps/find-delete-forward-all-regexp re-attachment (point-min))))
+        (org-mime-htmlize)
+        (save-excursion
+          (goto-char (point-max))
+          (while attachments
+            (insert "\n")
+            (insert (pop attachments)))
+          (message-goto-body)
+          (while secure
+            (insert (pop secure))
+            (insert "\n")))))))
 
 (use-package xkcd
   :defer t)
