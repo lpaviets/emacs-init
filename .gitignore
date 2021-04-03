@@ -64,6 +64,12 @@ flycheck_*.el
 # XKCD
 /xkcd/
 
+# Cache of (japanese ?) input method
+/kkcrc
+
+# Org latex preview
+/ltximg/
+
 # Our custom file
 /custom-file.el
 

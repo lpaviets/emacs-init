@@ -1,22 +1,22 @@
 (setq gc-cons-threshold 100000000) ; 1e8 = 100 MB (default: 800kB)
 
-(defun my-display-startup-time ()
+(defun lps/display-startup-time ()
   (message "Emacs started in %s seconds"
            (format "%.2f"
                    (float-time
                     (time-subtract after-init-time before-init-time)))))
 
-(defun my-display-garbage-collection ()
+(defun lps/display-garbage-collection ()
   (message "Emacs performed %d garbage collection"
            gcs-done))
 
-(defun my-restore-gc-cons ()
+(defun lps/restore-gc-cons ()
   ;; After startup, we restore gc-cons-threshold to a more reasonable value
   (setq gc-cons-threshold 10000000)) ; 1e7 = 10 MB
 
-(add-hook 'emacs-startup-hook #'my-display-startup-time)
-(add-hook 'emacs-startup-hook #'my-display-garbage-collection)
-(add-hook 'emacs-startup-hook #'my-restore-gc-cons)
+(add-hook 'emacs-startup-hook #'lps/display-startup-time)
+(add-hook 'emacs-startup-hook #'lps/display-garbage-collection)
+(add-hook 'emacs-startup-hook #'lps/restore-gc-cons)
 
 ;; Initialize package sources
 (require 'package)
@@ -658,9 +658,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :diminish (undo-tree-mode))
 
 (defun lps/find-delete-forward-all-regexp (re &optional beg)
-  "Searches for a match of the regexp RE after the point, or after the optional position BEG.
-  Returns a string containing the first match, or nil if none was found.
-  Deletes the match from the buffer"
+  "Searches for all the matches of the regexp RE after the point, or after the optional position BEG.
+  Returns a list of strings containing the matches in order, or nil if none was found.
+  Deletes (rather than kill) those matches from the buffer"
   (save-excursion
     (let (matches)
       (goto-char (or beg (point)))
@@ -768,7 +768,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 
 (use-package paredit
-  :hook ((mrepl-mode
+  :hook ((sly-mrepl-mode
           eshell-mode
           ielm-mode
           eval-expression-minibuffer-setup
@@ -844,7 +844,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :config
   (defun my-company-shell-modes ()
     ;; Not satisfying: duplicates from company-capf and company-shell, so we disable the 2nd one but we lose some documentation ...
-    (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev)))))
+    (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev company-shell)))
+    (push 'elisp-completion-at-point completion-at-point-functions)))
 
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
@@ -1501,20 +1502,18 @@ PWD is not in a git repo (or the git command is not found)."
   ;; after having linked attachments, or signing/encrypting the message
   (defun lps/org-mime-htmlize-preserve-secure-and-attach ()
     (interactive)
-    (let ((re-secure "<#secure method=[a-z]+ mode=[a-z]+>")
-          (re-attachment "<#part type=.* disposition=attachment.*>[[:space:]]?<#/part>"))
+    (let ((re-secure "<#secure method=[a-z]+ mode=[a-z]+>\n?")
+          (re-attachment "<#part type=.* disposition=attachment.*>\n?<#/part>\n?")) ;; make sure that \n needs no escaping/formatting
       (let ((secure (lps/find-delete-forward-all-regexp re-secure (point-min)))
             (attachments (lps/find-delete-forward-all-regexp re-attachment (point-min))))
         (org-mime-htmlize)
         (save-excursion
           (goto-char (point-max))
           (while attachments
-            (insert "\n")
             (insert (pop attachments)))
           (message-goto-body)
           (while secure
-            (insert (pop secure))
-            (insert "\n")))))))
+            (insert (pop secure))))))))
 
 (use-package xkcd
   :defer t)

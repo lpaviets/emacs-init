@@ -35,23 +35,23 @@ First, we set things up so that Emacs starts /fast/.
 Another thing that might be of interest is to know how long it took for Emacs to start. Although there is already a built-in function to do this (try to call =emacs-init-time= in any Emacs session), we want it to be automatically displayed anytime we start Emacs
 
 #+begin_src emacs-lisp
-  (defun my-display-startup-time ()
+  (defun lps/display-startup-time ()
     (message "Emacs started in %s seconds"
              (format "%.2f"
                      (float-time
                       (time-subtract after-init-time before-init-time)))))
 
-  (defun my-display-garbage-collection ()
+  (defun lps/display-garbage-collection ()
     (message "Emacs performed %d garbage collection"
              gcs-done))
 
-  (defun my-restore-gc-cons ()
+  (defun lps/restore-gc-cons ()
     ;; After startup, we restore gc-cons-threshold to a more reasonable value
     (setq gc-cons-threshold 10000000)) ; 1e7 = 10 MB
 
-  (add-hook 'emacs-startup-hook #'my-display-startup-time)
-  (add-hook 'emacs-startup-hook #'my-display-garbage-collection)
-  (add-hook 'emacs-startup-hook #'my-restore-gc-cons)
+  (add-hook 'emacs-startup-hook #'lps/display-startup-time)
+  (add-hook 'emacs-startup-hook #'lps/display-garbage-collection)
+  (add-hook 'emacs-startup-hook #'lps/restore-gc-cons)
 
 #+end_src
 
@@ -1010,9 +1010,9 @@ It can act as a small, local version control system due to how Undos are managed
 
 #+begin_src emacs-lisp
   (defun lps/find-delete-forward-all-regexp (re &optional beg)
-    "Searches for a match of the regexp RE after the point, or after the optional position BEG.
-    Returns a string containing the first match, or nil if none was found.
-    Deletes the match from the buffer"
+    "Searches for all the matches of the regexp RE after the point, or after the optional position BEG.
+    Returns a list of strings containing the matches in order, or nil if none was found.
+    Deletes (rather than kill) those matches from the buffer"
     (save-excursion
       (let (matches)
         (goto-char (or beg (point)))
@@ -1041,23 +1041,23 @@ It can act as a small, local version control system due to how Undos are managed
     [[https://projectile.mx/][Projectile]] is an Emacs package that makes project management easier. It allows us /e.g./ to navigate between files of the same project, search/replace within files of the same project, and integrates very well with other tools, such as =lsp-mode= or ~counsel~.
 
 #+begin_src emacs-lisp
-(use-package projectile
-  :diminish
-  :init
-  ;; NOTE: Set this to the folder where you keep your Git repos!
-  ;; (when (file-directory-p "path/to/project/dir")
-  ;; (setq projectile-project-search-path '("path/to/project/dir")))
-  (setq projectile-switch-project-action #'projectile-dired)
+  (use-package projectile
+    :diminish
+    :init
+    ;; NOTE: Set this to the folder where you keep your Git repos!
+    ;; (when (file-directory-p "path/to/project/dir")
+    ;; (setq projectile-project-search-path '("path/to/project/dir")))
+    (setq projectile-switch-project-action #'projectile-dired)
 
-  :config
-  (projectile-mode)
-  :custom ((projectile-completion-system 'ivy))
-  :bind-keymap
-  ("C-c p" . projectile-command-map))
+    :config
+    (projectile-mode)
+    :custom ((projectile-completion-system 'ivy))
+    :bind-keymap
+    ("C-c p" . projectile-command-map))
 
-(use-package counsel-projectile
-  :after (counsel projectile)
-  :config (counsel-projectile-mode))
+  (use-package counsel-projectile
+    :after (counsel projectile)
+    :config (counsel-projectile-mode))
 
 #+end_src
 
@@ -1161,7 +1161,7 @@ Now, in order to work with structured text, such as source code, we want to be a
 
 
   (use-package paredit
-    :hook ((mrepl-mode
+    :hook ((sly-mrepl-mode
             eshell-mode
             ielm-mode
             eval-expression-minibuffer-setup
@@ -1273,7 +1273,8 @@ We add another backend to support completion in shell and terminal-modes
     :config
     (defun my-company-shell-modes ()
       ;; Not satisfying: duplicates from company-capf and company-shell, so we disable the 2nd one but we lose some documentation ...
-      (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev)))))
+      (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev company-shell)))
+      (push 'elisp-completion-at-point completion-at-point-functions)))
 #+end_src
 ** Language Server Protocol
 *** LSP-mode
@@ -1422,12 +1423,12 @@ For C and C++ (and ObjectiveC), as for Python, we need to install a server for L
 *MANUAL* To use the ccls server, follow the instruction [[https://github.com/MaskRay/ccls/][here]].
 
 #+begin_src emacs-lisp
-;; C/C++
-;; See https://github.com/MaskRay/ccls/wiki/lsp-mode
-(use-package ccls
-  :defer t
-  :config
-  (setq ccls-executable (executable-find "ccls")))
+  ;; C/C++
+  ;; See https://github.com/MaskRay/ccls/wiki/lsp-mode
+  (use-package ccls
+    :defer t
+    :config
+    (setq ccls-executable (executable-find "ccls")))
 #+end_src
 *** LISP
 **** Emacs Lisp
@@ -1442,7 +1443,7 @@ Although Emacs comes with pretty good built-in functionalities, there is still r
 
 #+end_src
 
-[[https://github.com/Silex/elmacro][elmacro]] shows keyboard macros and interactive commands as Emacs Lisp, meaning that you know /how to do/ something using advanced keyboard shortcuts or interactive commands, you can get for free an elisp code snippet that does exactly the same thing that you can reuse /e.g./ in a configuration file or in another function.
+[[https://github.com/Silex/elmacro][elmacro]] shows keyboard macros and interactive commands as Emacs Lisp, meaning that if you know /how/ to do something using advanced keyboard shortcuts or interactive commands, you can get for free an elisp code snippet that does exactly the same thing that you can reuse /e.g./ in a configuration file or in another function.
 
 Because it might be useful everywhere, we do not use it simply in =emacs-lisp-mode= and we activate it everywhere.
 
@@ -1633,15 +1634,15 @@ We also add templates to insert code blocks with a few key presses
      The following code makes it so that each time this file is saved, it generates the corresponding init.el file.
 
 #+begin_src emacs-lisp
-;; Automatically tangles this emacs-config config file when we save it
-(defun my-org-babel-tangle-config ()
-  (when (string-equal (buffer-file-name)
-                      (expand-file-name "~/.emacs.d/emacs-config.org"))
-    ;; Dynamic scoping to the rescue
-    (let ((org-confirm-babel-evaluate nil))
-      (org-babel-tangle))))
+  ;; Automatically tangles this emacs-config config file when we save it
+  (defun my-org-babel-tangle-config ()
+    (when (string-equal (buffer-file-name)
+                        (expand-file-name "~/.emacs.d/emacs-config.org"))
+      ;; Dynamic scoping to the rescue
+      (let ((org-confirm-babel-evaluate nil))
+        (org-babel-tangle))))
 
-(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
+  (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
 #+end_src
 
 ** Org Agenda
@@ -1889,7 +1890,7 @@ We use two packages to have a more powerful completion system in ~eshell~. The U
 We do this by adding the following line at the end of the =.bashrc= file:
 
 #+begin_src sh
-alias | sed -E "s/^alias ([^=]+)='(.*)'$/alias \1 \2 \$*/g; s/'\\\''/'/g;" >~/.emacs.d/eshell/alias
+  alias | sed -E "s/^alias ([^=]+)='(.*)'$/alias \1 \2 \$*/g; s/'\\\''/'/g;" >~/.emacs.d/eshell/alias
 #+end_src
 
 It will simply go through the =.bashrc= file whenever you open a bash terminal, and each time it sees a line starting with ~alias~, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where ~eshell~ reads its aliases.
@@ -2169,20 +2170,18 @@ To deal with this problem, we use a ~org~ package, called [[https://github.com/o
     ;; after having linked attachments, or signing/encrypting the message
     (defun lps/org-mime-htmlize-preserve-secure-and-attach ()
       (interactive)
-      (let ((re-secure "<#secure method=[a-z]+ mode=[a-z]+>")
-            (re-attachment "<#part type=.* disposition=attachment.*>[[:space:]]?<#/part>"))
+      (let ((re-secure "<#secure method=[a-z]+ mode=[a-z]+>\n?")
+            (re-attachment "<#part type=.* disposition=attachment.*>\n?<#/part>\n?")) ;; make sure that \n needs no escaping/formatting
         (let ((secure (lps/find-delete-forward-all-regexp re-secure (point-min)))
               (attachments (lps/find-delete-forward-all-regexp re-attachment (point-min))))
           (org-mime-htmlize)
           (save-excursion
             (goto-char (point-max))
             (while attachments
-              (insert "\n")
               (insert (pop attachments)))
             (message-goto-body)
             (while secure
-              (insert (pop secure))
-              (insert "\n")))))))
+              (insert (pop secure))))))))
 #+end_src
 
 * Fun
