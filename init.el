@@ -1337,6 +1337,7 @@ PWD is not in a git repo (or the git command is not found)."
   (setq mu4e-update-interval (* 5 60))
   (setq mu4e-get-mail-command "mbsync -a")
   (setq mu4e-index-update-in-background t)
+  (setq mu4e-hide-index-messages t)
 
   ;; Always show full date and time
   (setq mu4e-headers-date-format "%d-%m-%Y %H:%M")
@@ -1456,6 +1457,11 @@ PWD is not in a git repo (or the git command is not found)."
                   (smtpmail-smtp-service . 465)
                   (smtpmail-stream-type  . ssl))))))
 
+(use-package mu4e-alert
+  :after mu4e
+  :config
+  (mu4e-alert-enable-mode-line-display))
+
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired
   :ensure nil
@@ -1514,6 +1520,8 @@ PWD is not in a git repo (or the git command is not found)."
           (message-goto-body)
           (while secure
             (insert (pop secure))))))))
+
+(use-package elpher)
 
 (use-package xkcd
   :defer t)
