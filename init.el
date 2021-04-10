@@ -1043,7 +1043,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
    'org-babel-load-languages
    '((emacs-lisp . t)
      (python . t)
-     (shell . t))))
+     (shell . t)
+     (latex . t))))
 
 ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
                                          ; else code
@@ -1060,7 +1061,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
              (mapcar #'car org-structure-template-alist)))
         (dolist (key-template '(("sh" . "src shell")
                                 ("el" . "src emacs-lisp")
-                                ("py" . "src python")))
+                                ("py" . "src python")
+                                ("latex" . "src latex")))
 
           (unless
               (member (car key-template) bound-key-templates)

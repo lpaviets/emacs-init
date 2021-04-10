@@ -1597,7 +1597,8 @@ Org babel is what allows us to write code and execute it, all within the same do
      'org-babel-load-languages
      '((emacs-lisp . t)
        (python . t)
-       (shell . t))))
+       (shell . t)
+       (latex . t))))
 
   ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
                                            ; else code
@@ -1619,7 +1620,8 @@ We also add templates to insert code blocks with a few key presses
                (mapcar #'car org-structure-template-alist)))
           (dolist (key-template '(("sh" . "src shell")
                                   ("el" . "src emacs-lisp")
-                                  ("py" . "src python")))
+                                  ("py" . "src python")
+                                  ("latex" . "src latex")))
 
             (unless
                 (member (car key-template) bound-key-templates)
