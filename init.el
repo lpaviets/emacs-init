@@ -839,6 +839,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (add-to-list 'company-backends 'company-math-symbols-latex))
 
 (use-package company-shell
+  :disabled t
   :after eshell
   :hook (eshell-mode . my-company-shell-modes)
   :config
@@ -1200,7 +1201,16 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package eshell
   :ensure nil
   :defer t
+  :bind ("C-l" . eshell/clear)
   :config
+  ;; From Centaur Emacs:
+  ;; https://github.com/seagle0128/.emacs.d/blob/master/lisp/init-eshell.el
+  (defun eshell/clear ()
+    "Clear the eshell buffer."
+    (interactive)
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (eshell-send-input)))
 
   ;; From https://blog.liangzan.net/blog/2012/12/12/customizing-your-emacs-eshell-prompt/
   (defun lps/pwd-repl-home (pwd)
@@ -1243,9 +1253,9 @@ PWD is not in a git repo (or the git command is not found)."
                       (mapconcat (lambda (elm) elm)
                                  p-lst
                                  "/")))
-                  (split-string (lps/pwd-repl-home (eshell/pwd)) "/")) 'face `(:foreground "DeepSkyBlue1") 'read-only t)
+                  (split-string (lps/pwd-repl-home (eshell/pwd)) "/")) 'face `(:foreground "DeepSkyBlue1"))
      (or (lps/curr-dir-git-branch-string (eshell/pwd)))
-     (propertize " # " 'face 'default 'read-only t)))
+     (propertize " # " 'face 'default)))
 
   ;; Change according to eshell-prompt-function
   (setq eshell-prompt-function 'lps/eshell-prompt-function)
@@ -1256,16 +1266,40 @@ PWD is not in a git repo (or the git command is not found)."
 ;;   :config (eshell-git-prompt-use-theme 'powerline)) ;; Visually buggy
 
 (use-package bash-completion
+  :disabled t
   :after eshell
   :config
   (bash-completion-setup))
 
 (use-package fish-completion
+  :disabled t
   :after eshell
   :config
   (when (executable-find "fish")
     (fish-completion-mode 1)
     (setq fish-completion-fallback-on-bash-p t)))
+
+;; Straight from Centaur Emacs
+(use-package esh-autosuggest
+  :defer t
+  :bind (:map eshell-mode-map
+              ([remap eshell-pcomplete] . completion-at-point))
+  :hook ((eshell-mode . esh-autosuggest-mode)
+         (eshell-mode . eshell-setup-ivy-completion))
+  :config (defun eshell-setup-ivy-completion ()
+            "Setup `ivy' completion in `eshell'."
+            (setq-local ivy-display-functions-alist
+                        (remq (assoc 'ivy-completion-in-region
+                                     ivy-display-functions-alist)
+                              ivy-display-functions-alist))))
+
+(use-package em-alias
+  :ensure nil
+  :after eshell
+  :config
+  (eshell/alias "f" "find-file $1")
+  (eshell/alias "fo" "find-file-other-window $1")
+  (eshell/alias "d" "dired $1"))
 
 (use-package dired
   :ensure nil
@@ -1343,6 +1377,10 @@ PWD is not in a git repo (or the git command is not found)."
 
   ;; Always show full date and time
   (setq mu4e-headers-date-format "%d-%m-%Y %H:%M")
+
+  ;; Less redundant information
+  (setq mu4e-headers-include-related nil)
+  (setq mu4e-headers-show-threads nil)
 
   ;; Keep one mail per line
   ;; Todo: fix so that it updates when window is resized
