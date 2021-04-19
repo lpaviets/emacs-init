@@ -856,10 +856,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (lsp-enable-which-key-integration t)
   (setq lsp-prefer-flymake nil)
   (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
-  (setq read-process-output-max (* 2 1024 1024)) ;; 2mb
+  (setq read-process-output-max (* 8 1024 1024)) ;; 2mb
   (setq lsp-enable-on-type-formatting nil)
-  :hook
-  ((python-mode c-mode c++-mode) . lsp))
+  :hook ((python-mode c-mode c++-mode) . lsp))
 
 (use-package lsp-ui
   :after lsp-mode
@@ -898,24 +897,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :config
   ;(setq flycheck-relevant-error-other-file-show nil) ;might be useful
   (setq flycheck-indication-mode 'left-margin)
-  :diminish
-  ;; :hook (python-mode . flycheck-mode)
-  ) ; Temporary to avoid noise ...
-
-;; Semantic
-(use-package semantic
-  :disabled t ;; Don't use it atm, may be if I move on to CEDET ...
-;; (require 'semantic/ia)
-;; (require 'semantic/bovine/gcc)
-
-;; (defun my-semantic-hook ()
-;;   (imenu-add-to-menubar "TAGS"))
-;; (add-hook 'semantic-init-hooks 'my-semantic-hook)
-  :defer t
-  :config
-  (semantic-mode t)
-  (global-semanticdb-minor-mode t)
-  (global-semantic-idle-scheduler-mode t))
+  :diminish)
 
 ;; Python
 ;; Before using LPS, make sure that the server has been installed !
@@ -926,9 +908,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :ensure nil
   :defer t
   :custom
-  (tab-width 4)
-  (python-indent-offset 4)
-  (python-shell-interpreter "python3"))
+  (python-shell-interpreter "python3")
+  :config (require 'lsp-pyright))
+
+(use-package lsp-pyright
+  :defer t)
 
 ;; Tuareg (for OCaml and ML like languages)
 (use-package tuareg

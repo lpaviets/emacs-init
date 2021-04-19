@@ -1292,10 +1292,9 @@ We add another backend to support completion in shell and terminal-modes
     (lsp-enable-which-key-integration t)
     (setq lsp-prefer-flymake nil)
     (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
-    (setq read-process-output-max (* 2 1024 1024)) ;; 2mb
+    (setq read-process-output-max (* 8 1024 1024)) ;; 2mb
     (setq lsp-enable-on-type-formatting nil)
-    :hook
-    ((python-mode c-mode c++-mode) . lsp))
+    :hook ((python-mode c-mode c++-mode) . lsp))
 
   (use-package lsp-ui
     :after lsp-mode
@@ -1314,7 +1313,6 @@ We add another backend to support completion in shell and terminal-modes
 
   (use-package lsp-ivy
     :after (lsp-mode ivy))
-
 #+end_src
 
 *** Eglot
@@ -1341,35 +1339,13 @@ There exists another implementation of the Language Server Protocol in Emacs, ca
     [[https://www.flycheck.org/en/latest/][Flycheck]] is a modern on-the-fly syntax checking extension to Emacs, working for several languages, showing different level of errors (warnings, errors ...), and which has a natural integration to =lsp-mode=.
 
 #+begin_src emacs-lisp
-;; Flycheck
-(use-package flycheck
-  :defer t
-  :config
-  ;(setq flycheck-relevant-error-other-file-show nil) ;might be useful
-  (setq flycheck-indication-mode 'left-margin)
-  :diminish
-  ;; :hook (python-mode . flycheck-mode)
-  ) ; Temporary to avoid noise ...
-
-#+end_src
-
-Another package doing more or less the same thing but in a different way:
-
-#+begin_src emacs-lisp
-  ;; Semantic
-  (use-package semantic
-    :disabled t ;; Don't use it atm, may be if I move on to CEDET ...
-  ;; (require 'semantic/ia)
-  ;; (require 'semantic/bovine/gcc)
-
-  ;; (defun my-semantic-hook ()
-  ;;   (imenu-add-to-menubar "TAGS"))
-  ;; (add-hook 'semantic-init-hooks 'my-semantic-hook)
+  ;; Flycheck
+  (use-package flycheck
     :defer t
     :config
-    (semantic-mode t)
-    (global-semanticdb-minor-mode t)
-    (global-semantic-idle-scheduler-mode t))
+    ;(setq flycheck-relevant-error-other-file-show nil) ;might be useful
+    (setq flycheck-indication-mode 'left-margin)
+    :diminish)
 
 #+end_src
 
@@ -1397,11 +1373,17 @@ Another package doing more or less the same thing but in a different way:
     :ensure nil
     :defer t
     :custom
-    (tab-width 4)
-    (python-indent-offset 4)
-    (python-shell-interpreter "python3"))
+    (python-shell-interpreter "python3")
+    :config (require 'lsp-pyright))
 
      #+end_src
+
+I will use another server, based on [[https://github.com/microsoft/pyright][Pyright]]
+
+#+begin_src emacs-lisp
+  (use-package lsp-pyright
+    :defer t)
+#+end_src
 
 *** OCaml
 
