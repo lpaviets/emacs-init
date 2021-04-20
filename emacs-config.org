@@ -396,7 +396,8 @@ Then, we do not want to repeatedly spam the ~DEL~ key in order to delete a long 
   :ensure t
   :defer t
   :init
-  (global-hungry-delete-mode 1))
+  (global-hungry-delete-mode 1)
+  (setq hungry-delete-join-reluctantly t))
 #+end_src
 
 And we also don't like trailing whitespaces, so we delete them automatically when we save a buffer
@@ -634,7 +635,10 @@ We also improve the appearance (and functionalities) of the buffer that we get w
     :init (all-the-icons-ibuffer-mode 1))
 
   (use-package ibuffer
-    :bind ("C-x C-b" . ibuffer))
+    :defer t
+    :bind ("C-x C-b" . ibuffer)
+    :config
+    (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode))
 
 #+end_src
 
@@ -1796,7 +1800,8 @@ We install a few packages which make eshell easier to use.
   (use-package eshell
     :ensure nil
     :defer t
-    :bind ("C-l" . eshell/clear)
+    :bind (:map eshell-mode-map
+                ("C-l" . eshell/clear))
     :config
     ;; From Centaur Emacs:
     ;; https://github.com/seagle0128/.emacs.d/blob/master/lisp/init-eshell.el
@@ -1909,9 +1914,6 @@ We do this by adding the following line at the end of the =.bashrc= file:
 #+end_src
 
 It will simply go through the =.bashrc= file whenever you open a bash terminal, and each time it sees a line starting with ~alias~, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where ~eshell~ reads its aliases.
-
-***** TODO Rewrite this, using two different files that are "loaded" by eshell.
-
 **** Specific to Eshell
 Some of our aliases will come from =.bashrc=. However, we still want to add aliases that make sense in ~eshell~.
 #+begin_src emacs-lisp
@@ -2258,3 +2260,10 @@ Another cool thing to do if you want to learn keybindings in a very inefficient 
   (use-package key-quiz
     :defer t)
 #+end_src
+* TODO Small things to do next
+** Eshell and .bashrc
+Use two different files that are "loaded" by eshell. The first one contains the .bashrc aliases, the other one contains the usual eshell aliases, and at startup, we momentarily merge the two.
+** LaTeX
+- Fix the fact the Tikz keywords incorrectly highlighted (they are "unknown") [[https://tex.stackexchange.com/questions/113970/emacs-auctex-customization-of-keyword-highlight-syntax][Syntax highlighting]]
+- Try to fix company. See e.g. [[https://tex.stackexchange.com/questions/58998/does-auctex-autocomplete][this post]] Want to have both math-symbols and capf, because TeX-complete-symbol uses it.
+- Fix the fact that commands defined by \newcommand are not properly highlighted (as TikZ commands)

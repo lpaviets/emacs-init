@@ -247,7 +247,8 @@ installed themes instead."
   :ensure t
   :defer t
   :init
-  (global-hungry-delete-mode 1))
+  (global-hungry-delete-mode 1)
+  (setq hungry-delete-join-reluctantly t))
 
 (use-package emacs
   :hook (before-save . delete-trailing-whitespace))
@@ -386,7 +387,10 @@ installed themes instead."
   :init (all-the-icons-ibuffer-mode 1))
 
 (use-package ibuffer
-  :bind ("C-x C-b" . ibuffer))
+  :defer t
+  :bind ("C-x C-b" . ibuffer)
+  :config
+  (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode))
 
 ;; From Magnars, from emacsrocks.com
 (defun rename-current-buffer-file ()
@@ -1185,7 +1189,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package eshell
   :ensure nil
   :defer t
-  :bind ("C-l" . eshell/clear)
+  :bind (:map eshell-mode-map
+              ("C-l" . eshell/clear))
   :config
   ;; From Centaur Emacs:
   ;; https://github.com/seagle0128/.emacs.d/blob/master/lisp/init-eshell.el
