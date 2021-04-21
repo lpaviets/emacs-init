@@ -1513,6 +1513,39 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
 
    It acts as a markup language, can deal with planning, manage spreadsheets, do project planning, run code blocks to do literate programming ...
 
+** Basic configuration
+
+     We change the general feel of Org Mode documents by using other indentation rules, by changing the headers appearance, and a few other minor changes.
+
+#+begin_src emacs-lisp
+  (use-package org-bullets
+    :hook (org-mode . org-bullets-mode)
+    :custom
+    (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+
+  (use-package org
+    :defer t
+    :hook (org-mode . my-org-mode-setup)
+    :custom
+    ;; Coding in blocks
+    (org-src-fontify-natively t)
+    (org-src-tab-acts-natively t)
+    (org-imenu-depth 4)
+
+    :config
+    (defun my-org-mode-setup ()
+      (my-org-font-setup)
+      (org-indent-mode 1)
+      (variable-pitch-mode 1)
+      (visual-line-mode 1))
+
+    (drag-stuff-mode -1)
+    (setq org-ellipsis " ▾")
+
+#+end_src
+
+Take care when copying this block of code: the ~use-package~ declaration continues.
+
 ** Font faces
 
      In order for Org Mode to feel like a document instead of code, we use a different font.
@@ -1520,13 +1553,10 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
 #+begin_src emacs-lisp
   ;; Use the right font according to what is installed on the system
 
-  (use-package org
-    :defer t
-    :config
-    (let ((my-temp-org-font "Cantarell"))
-      (if (member my-temp-org-font (font-family-list))
-          (setq my-org-mode-font my-temp-org-font)
-        (setq my-org-mode-font "Ubuntu Mono")))
+  (let ((my-temp-org-font "Cantarell"))
+    (if (member my-temp-org-font (font-family-list))
+        (setq my-org-mode-font my-temp-org-font)
+      (setq my-org-mode-font "Ubuntu Mono")))
 
   (defun my-org-font-setup ()
     ;; Replace list hyphen with dot
@@ -1554,52 +1584,20 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
     (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
     (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
     (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
+    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
 #+end_src
-** Basic configuration
-
-     We change the general feel of Org Mode documents by using other indentation rules, by changing the headers appearance, and a few other minor changes.
-
-#+begin_src emacs-lisp
-  (use-package org
-    :defer t
-    :config
-    (defun my-org-mode-setup ()
-      (my-org-font-setup)
-      (org-indent-mode 1)
-      (variable-pitch-mode 1)
-      (visual-line-mode 1))
-
-    (setq org-ellipsis " ▾")
-    :custom
-    ;; Coding in blocks
-    (org-src-fontify-natively t)
-    (org-src-tab-acts-natively t)
-
-    :hook (org-mode . my-org-mode-setup))
-
-  (use-package org-bullets
-    :hook (org-mode . org-bullets-mode)
-    :custom
-    (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
-
-#+end_src
-
 ** Org Babel
 
 Org babel is what allows us to write code and execute it, all within the same document.
 
 #+begin_src emacs-lisp
-  (use-package org
-    :defer t
-    :config
-    (org-babel-do-load-languages
-     'org-babel-load-languages
-     '((emacs-lisp . t)
-       (python . t)
-       (shell . t)
-       (latex . t))))
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)
+     (shell . t)
+     (latex . t)))
 
   ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
                                            ; else code
@@ -1609,11 +1607,9 @@ Org babel is what allows us to write code and execute it, all within the same do
 We also add templates to insert code blocks with a few key presses
 
 #+begin_src emacs-lisp
-  (use-package org
-    :defer t
-    :config
-    (if (version<= "9.2" org-version)
-        ;; This is needed as of Org 9.2
+
+  (if (version<= "9.2" org-version)
+      ;; This is needed as of Org 9.2
       (progn
         (require 'org-tempo)
 
@@ -1626,7 +1622,7 @@ We also add templates to insert code blocks with a few key presses
 
             (unless
                 (member (car key-template) bound-key-templates)
-              (push key-template org-structure-template-alist)))))))
+              (push key-template org-structure-template-alist))))))
 
 #+end_src
 
@@ -1653,26 +1649,22 @@ We also add templates to insert code blocks with a few key presses
 Not only is Org Mode great to write structured documents that can be exported to pretty much anything we want - including tangled to produce source code using literate programming -, it is also a powerful to ... *org*anize things. A built-in functionality is the agenda, where you can schedule tasks, set deadlines, configure reminders, the frequency at which you will need to repeat a given task, and so on.
 
 #+begin_src emacs-lisp
-  (use-package org
-    :defer t
-    :custom
-    (org-agenda-files '("~/Documents/OrgFiles/Tasks.org"))
-    (org-log-into-drawer t)
-    (org-log-done 'time)
-    (org-agenda-start-with-log-mode t)
+  (setq org-agenda-files '("~/Documents/OrgFiles/Tasks.org"))
+  (setq org-log-into-drawer t)
+  (setq org-log-done 'time)
+  (setq org-agenda-start-with-log-mode t)
 
-    :config
-    (setq org-tag-alist
-          '((:startgroup)
-            ;; Put mutually exclusive tags here
-            (:endgroup)
-            ("@home" . ?H)
-            ("@work" . ?W)
-            ("agenda" . ?a)
-            ("plan" . ?p)
-            ("note" . ?n)
-            ("idea" . ?i)
-            ("read" . ?r))))
+  (setq org-tag-alist
+        '((:startgroup)
+          ;; Put mutually exclusive tags here
+          (:endgroup)
+          ("@home" . ?H)
+          ("@work" . ?W)
+          ("agenda" . ?a)
+          ("plan" . ?p)
+          ("note" . ?n)
+          ("idea" . ?i)
+          ("read" . ?r))))
 
 #+end_src
 

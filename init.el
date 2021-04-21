@@ -973,15 +973,36 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package antlr-mode
   :mode ("\\.g4\\'" . antlr-mode))
 
-;; Use the right font according to what is installed on the system
+(use-package org-bullets
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (use-package org
   :defer t
+  :hook (org-mode . my-org-mode-setup)
+  :custom
+  ;; Coding in blocks
+  (org-src-fontify-natively t)
+  (org-src-tab-acts-natively t)
+  (org-imenu-depth 4)
+
   :config
-  (let ((my-temp-org-font "Cantarell"))
-    (if (member my-temp-org-font (font-family-list))
-        (setq my-org-mode-font my-temp-org-font)
-      (setq my-org-mode-font "Ubuntu Mono")))
+  (defun my-org-mode-setup ()
+    (my-org-font-setup)
+    (org-indent-mode 1)
+    (variable-pitch-mode 1)
+    (visual-line-mode 1))
+
+  (drag-stuff-mode -1)
+  (setq org-ellipsis " ▾")
+
+;; Use the right font according to what is installed on the system
+
+(let ((my-temp-org-font "Cantarell"))
+  (if (member my-temp-org-font (font-family-list))
+      (setq my-org-mode-font my-temp-org-font)
+    (setq my-org-mode-font "Ubuntu Mono")))
 
 (defun my-org-font-setup ()
   ;; Replace list hyphen with dot
@@ -1009,48 +1030,20 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)))
+  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
-(use-package org
-  :defer t
-  :config
-  (defun my-org-mode-setup ()
-    (my-org-font-setup)
-    (org-indent-mode 1)
-    (variable-pitch-mode 1)
-    (visual-line-mode 1))
-
-  (setq org-ellipsis " ▾")
-  :custom
-  ;; Coding in blocks
-  (org-src-fontify-natively t)
-  (org-src-tab-acts-natively t)
-
-  :hook (org-mode . my-org-mode-setup))
-
-(use-package org-bullets
-  :hook (org-mode . org-bullets-mode)
-  :custom
-  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
-
-(use-package org
-  :defer t
-  :config
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((emacs-lisp . t)
-     (python . t)
-     (shell . t)
-     (latex . t))))
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((emacs-lisp . t)
+   (python . t)
+   (shell . t)
+   (latex . t)))
 
 ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
                                          ; else code
 
-(use-package org
-  :defer t
-  :config
-  (if (version<= "9.2" org-version)
-      ;; This is needed as of Org 9.2
+(if (version<= "9.2" org-version)
+    ;; This is needed as of Org 9.2
     (progn
       (require 'org-tempo)
 
@@ -1063,7 +1056,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
           (unless
               (member (car key-template) bound-key-templates)
-            (push key-template org-structure-template-alist)))))))
+            (push key-template org-structure-template-alist))))))
 
 ;; Automatically tangles this emacs-config config file when we save it
 (defun my-org-babel-tangle-config ()
@@ -1075,26 +1068,22 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
 (add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
 
-(use-package org
-  :defer t
-  :custom
-  (org-agenda-files '("~/Documents/OrgFiles/Tasks.org"))
-  (org-log-into-drawer t)
-  (org-log-done 'time)
-  (org-agenda-start-with-log-mode t)
+(setq org-agenda-files '("~/Documents/OrgFiles/Tasks.org"))
+(setq org-log-into-drawer t)
+(setq org-log-done 'time)
+(setq org-agenda-start-with-log-mode t)
 
-  :config
-  (setq org-tag-alist
-        '((:startgroup)
-          ;; Put mutually exclusive tags here
-          (:endgroup)
-          ("@home" . ?H)
-          ("@work" . ?W)
-          ("agenda" . ?a)
-          ("plan" . ?p)
-          ("note" . ?n)
-          ("idea" . ?i)
-          ("read" . ?r))))
+(setq org-tag-alist
+      '((:startgroup)
+        ;; Put mutually exclusive tags here
+        (:endgroup)
+        ("@home" . ?H)
+        ("@work" . ?W)
+        ("agenda" . ?a)
+        ("plan" . ?p)
+        ("note" . ?n)
+        ("idea" . ?i)
+        ("read" . ?r))))
 
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
