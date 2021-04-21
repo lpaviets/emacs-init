@@ -562,7 +562,10 @@ Although emacs provides a number of commands to navigate within a file, to find 
            :map ivy-minibuffer-map
            ("TAB" . ivy-partial-or-done)
            ("C-l" . ivy-immediate-done)
-           ("C-SPC" . lps/ivy-toggle-current-mark))
+           ("C-SPC" . lps/ivy-toggle-current-mark)
+           ("<mouse-3>" . nil)
+           ("<mouse-1>" . nil)
+           ("<down-mouse-1>" . nil))
     :config
     (ivy-mode 1)
     (setq ivy-count-format "(%d/%d)")
@@ -995,6 +998,17 @@ The next one is used to select the current line. Once a line is marked, we can m
   (global-set-key (kbd "M-à") 'lps/select-line)
 #+end_src
 
+** Moving stuff around
+
+A big part of editing text consists in moving already written lines, words or paragraphs around. Emacs provides a set of basic functions to do, with ~transpose-<chars/lines/sexps>~ and so on, but they are not very intuitive and a bit clumsy to use. This is why we use another package, which will allow us to move entire blocks of text much more naturally
+
+#+begin_src emacs-lisp
+  (use-package drag-stuff
+    :init
+    (drag-stuff-global-mode 1)
+    (drag-stuff-define-keys))
+#+end_src
+
 ** Undo
 
 Another very useful package is undo-tree, which allows you to visualize the previous "Undos" and navigate them.
@@ -1188,7 +1202,7 @@ Now, in order to work with structured text, such as source code, we want to be a
     :diminish
     :config
     (setq yas-verbosity 1)
-    :hook (prog-mode . yas-minor-mode)
+    :hook ((prog-mode tex-mode) . yas-minor-mode)
     :bind (:map yas-minor-mode-map
                 ("TAB" . nil)
                 ("<tab>" . nil)
@@ -1730,9 +1744,16 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode)
 
     ;; Add environment for auto. insertion with C-c C-e
-    (add-hook 'LaTeX-mode-hook 'lps/latex-add-environments)
     (defun lps/latex-add-environments ()
-      (LaTeX-add-environments '("tikzpicture" LaTeX-env-label))))
+      (LaTeX-add-environments '("tikzpicture" LaTeX-env-label)))
+
+    (add-hook 'LaTeX-mode-hook 'lps/latex-add-environments)
+
+    ;; Better completion functions
+    (defun lps/latex-company-setup () ;; TO FIX !
+      (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-capf))))
+
+    (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup))
 
 #+end_src
 

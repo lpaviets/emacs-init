@@ -334,7 +334,10 @@ installed themes instead."
          :map ivy-minibuffer-map
          ("TAB" . ivy-partial-or-done)
          ("C-l" . ivy-immediate-done)
-         ("C-SPC" . lps/ivy-toggle-current-mark))
+         ("C-SPC" . lps/ivy-toggle-current-mark)
+         ("<mouse-3>" . nil)
+         ("<mouse-1>" . nil)
+         ("<down-mouse-1>" . nil))
   :config
   (ivy-mode 1)
   (setq ivy-count-format "(%d/%d)")
@@ -655,6 +658,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; Remember that M-@ is bound to mark-word
 (global-set-key (kbd "M-à") 'lps/select-line)
 
+(use-package drag-stuff
+  :init
+  (drag-stuff-global-mode 1)
+  (drag-stuff-define-keys))
+
 (use-package undo-tree
   :config
   (setq undo-tree-visualizer-timestamps t)
@@ -788,7 +796,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :diminish
   :config
   (setq yas-verbosity 1)
-  :hook (prog-mode . yas-minor-mode)
+  :hook ((prog-mode tex-mode) . yas-minor-mode)
   :bind (:map yas-minor-mode-map
               ("TAB" . nil)
               ("<tab>" . nil)
@@ -1142,9 +1150,16 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode)
 
   ;; Add environment for auto. insertion with C-c C-e
-  (add-hook 'LaTeX-mode-hook 'lps/latex-add-environments)
   (defun lps/latex-add-environments ()
-    (LaTeX-add-environments '("tikzpicture" LaTeX-env-label))))
+    (LaTeX-add-environments '("tikzpicture" LaTeX-env-label)))
+
+  (add-hook 'LaTeX-mode-hook 'lps/latex-add-environments)
+
+  ;; Better completion functions
+  (defun lps/latex-company-setup () ;; TO FIX !
+    (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-capf))))
+
+  (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup))
 
 (use-package bibtex                     ; BibTeX editing
     :defer t
