@@ -73,6 +73,9 @@ flycheck_*.el
 # Our custom file
 /custom-file.el
 
+# Prescient data
+/var/
+
 # Other random stuff
 /network-security.data
 /projects

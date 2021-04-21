@@ -366,8 +366,15 @@ installed themes instead."
          :map minibuffer-local-map
          ("C-r" . 'counsel-minibuffer-history)))
 
-(use-package amx
-  :init (setq amx-history-length 10))
+(use-package ivy-prescient
+  :after counsel
+  :custom
+  (prescient-history-length 200)
+  (ivy-prescient-retain-classic-highlighting t)
+  (prescient-sort-length-enable nil)
+  :config
+  (ivy-prescient-mode 1)
+  (prescient-persist-mode 1))
 
 ;; Automatically reload a file if it has been modified
 (global-auto-revert-mode t)

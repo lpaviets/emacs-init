@@ -548,7 +548,7 @@ In this section, we define some useful macros to write code in Emacs Lisp.
     (rec-expand-let vars values body))
 #+end_src
 
-** Minibuffer
+** Minibuffer completion
 
 Although emacs provides a number of commands to navigate within a file, to find documentation and so on, the following packages will make the general UI easier to use.
 
@@ -596,11 +596,20 @@ Although emacs provides a number of commands to navigate within a file, to find 
 
 #+end_src
 
-Because we often find ourselves repeating the same command  (or variants of it) in the minibuffer, we might want to have a quick access to the history
+And there is a way to go even faster for completion. Indeed, when in doubt, why not suggest recent or popular completions ? That is exactly what ~prescient~ does, by sorting the suggestions according to their frequency or how recently we used them.
+
+This goes beyond commands, but can also be used for any kind of documentation lookup, with =describe-function= or =describe-variable= for example.
 
 #+begin_src emacs-lisp
-  (use-package amx
-    :init (setq amx-history-length 10))
+  (use-package ivy-prescient
+    :after counsel
+    :custom
+    (prescient-history-length 200)
+    (ivy-prescient-retain-classic-highlighting t)
+    (prescient-sort-length-enable nil)
+    :config
+    (ivy-prescient-mode 1)
+    (prescient-persist-mode 1))
 #+end_src
 
 ** Buffer and windows
