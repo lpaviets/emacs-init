@@ -5,7 +5,6 @@ This repository contains an example of an Emacs configuration file, as well an O
 Its purpose is both to share an example of a working configuration for Emacs from which you can pick up ideas, but that you can also choose to use without any modifications in order to get a modern IDE (and much more). Another interest is to provide an example of how you can use Emacs' Org Mode to write, organize and document manage your configuration files.
 
 * Usage Instructions
-
 ** For everyone:
 
 At several points within the configuration file, /something/ is needed to complete the installation. This can be an Emacs command that you need to run in order to install some package, or even a completely independent tool that you need to install (for example, the configuration uses the Language Server Protocol in order to implement IDE-like features such as syntax highlighting, code completion and so on. This requires the user to install a server for each language. Some of them can be installed directly from Emacs, but other require a more complex installation process).
@@ -37,10 +36,10 @@ I will give a completely subjective view how what I consider to be the most impo
 Here are, in order, the sections and subsections that I think will be the most helpful to understand and copy into your own configuration file if you are a complete beginner.
 
 - *Initialization/Package Management*. It properly setups the access to various package repositories, and will install the =use-package= package, which makes everything not only look nicer but also easier to write.
-- *UI Configuration/Comfort changes*. Here, you will need to take a proper look at which options you want to enable or not. Most of them are self-explanatory or commented, and you should be able to handle it. In particular, it might a good idea to keep the menu-bar and the tool-bar at the beginning.
-- *UI Configuration/General appearance/Theme*. It gives a simple example on how to setup a theme. Of course, you do not have to use the same theme, but using a theme that you like will make everything more comfortable. [[https://emacsthemes.com/][Emacs Themes]], [[https://github.com/hlissner/emacs-doom-themes][Doom Themes]] or [[https://peach-melpa.org/][Peach Melpa]] are amongst the most popular places to find a theme, but feel free to explore the Internet to find something that suits you.
-- *UI Configuration/Easier search and minibuffer use*. This section installs and configures various packages, all of them malking your like easier by giving access to a lot of information on the screen rapidly, whether it is documentation, command names, key sequences ...
-- *Programming/Company*. This section configures =company=, one of the two main package (along with =auto-complete=) used for auto-completion. Whether you are using Emacs to write source code, notes, documentation or even books, having a good auto-completion system and a nice interface for it will really help you.
+- *UI Configuration/Visual interface changes*. Here, you will need to take a proper look at which options you want to enable or not. Most of them are self-explanatory or commented, and you should be able to handle it. In particular, it might a good idea to keep the menu-bar and the tool-bar at the beginning. This section includes:
+  - *UI Configuration/Visual interface changes/Theme*. It gives a simple example on how to setup a theme. Of course, you do not have to use the same theme, but using a theme that you like will make everything more comfortable. [[https://emacsthemes.com/][Emacs Themes]], [[https://github.com/hlissner/emacs-doom-themes][Doom Themes]] or [[https://peach-melpa.org/][Peach Melpa]] are amongst the most popular places to find a theme, but feel free to explore the Web to find something that suits you.
+- *UI Configuration/Minibuffer completion*. This section installs and configures various packages, all of them malking your like easier by giving access to a lot of information on the screen rapidly, whether it is documentation, command names, key sequences ...
+- *Programming/Auto-completion/Company*. This section configures =company=, one of the two main package (along with =auto-complete=) used for auto-completion. Whether you are using Emacs to write source code, notes, documentation or even books, having a good auto-completion system and a nice interface for it will really help you.
 - *LaTeX and PDF* Only if you are using LaTeX. If this is the case, then you definitely want to use those settings, as they will make your life much easier for visualizing the PDF files that you produce, to write LaTeX source code, to compile files that contain bibliography ...
 
 Most of the other things can be ignored for the moment.
@@ -52,9 +51,9 @@ Of course, nothing forces you to stay away from the other features that this con
 While inside the editor, you can already have access to a lot of helpful tools:
 
 - At any point within Emacs, the =C-h t= command (you press the =Ctrl= and =h= keys at the same time, release them both, and then press =t=) will start a tutorial.
-- The command =C-h r= will open a manual, in which you can find a lot of information by navigating around.
+- The command =C-h r= will open the Emacs manual, in which you can find a lot of information by navigating around. If you want to look at other manuals that might be installed (/e.g./ for packages such as ~org-mode~, ~magit~ or ~AUCTeX~), then use =C-h i= instead.
 - Using both the tutorial and the manual, one of the first thing you want to look at is how Emacs denotes (and uses) keys sequences to do things. This way, you will be able to understand the syntax of the various and often quite complex key sequences that you need to perform in order to get a certain result.
-- If you are lost, the =C-h C-h= command (press the =Ctrl= and =h= keys at the same time, release them both, and press them both at the same time once again) will open a buffer giving you a brief overview of all the Help commands available. A practical one is =C-h a=, that you can also run with the command =M-x apropos RET your-keywords RET= (press the Meta key -usually =Alt=- and x at the same time, then type =apropos= in the minibuffer area and then press the =Enter= key (also called =Return=) then type-in what you are looking for, and press =Enter= again), which will return a list of all the commands containing the keywords you asked for.
+- If you are lost, the =C-h C-h= command (press the =Ctrl= and =h= keys at the same time, release them both, and press them both at the same time once again) will open a buffer giving you a brief overview of all the Help commands available. A useful one in the beginning is =C-h a=, that you can also run with the command =M-x apropos RET your-keywords RET= (press the Meta key -usually =Alt=- and x at the same time, then type =apropos= in the minibuffer area and then press the =Enter= key (also called =Return=) then type-in what you are looking for, and press =Enter= again), which will return a list of all the commands containing the keywords you asked for.
 - Some manuals might not be installed by default. In some cases, you might need to change some variables and do relatively complex things, but most of the time, you simply need to install missing packages on your system. On Linux, installing the packages =emacs-common=  and =emacs-common-non-dfsg= (usually available in your standard packages repositories) will give you access to new manuals, that you can use directly from Emacs with the =C-h i= key sequence.
 
 ** External resources
@@ -62,6 +61,7 @@ While inside the editor, you can already have access to a lot of helpful tools:
 - The [[https://github.com/emacs-tw/awesome-emacs][awesome-emacs]] repository gives a detailed list of useful packages, sorted by (subjective) popularity/usefulness and themes. It also contains a brief list of places to learn Emacs at the end, so you can probably find many useful things there.
 - [[https://tuhdo.github.io/emacs-tutor.html][The Emacs Mini Manual]] gives a very detailed tutorial on how to use Emacs, from commands to window management as well as several other features such as =dired= and =ido=.
 - You can also find here [[https://www.gnu.org/software/emacs/tour/][here]] a Guided Tour of Emacs, giving an overview of the basic, built-in capabilities of the editor, from text-editing to writing mails, debugging code and playing Tetris.
+- The  [[https://www.youtube.com/channel/UCAiiOTio8Yu69c3XnR7nQBQ][System Crafters]]'s Youtube channel is also an excellent place to start, as it has a lot of very basic content, and some series where you learn how to create a whole configuration from scratch.
 
 * Additional resources
 
@@ -106,9 +106,9 @@ List of things that could be added to this configuration file if needed, whether
 - [X] Configure a Emacs-Lisp (and potentially Common Lisp ?) development environment.
   - [X] Install and configure SLIME (Used SLY instead)
 - [ ] Regexp with [[https://github.com/joddie/pcre2el][pcre2el]] and may be other packages.
-- [ ] Setup Forge for Magit
+- [X] Setup Forge for Magit
 - [-] Configure packages to replace other softwares
-  - [ ] Configure a web browser
+  - [ ] Configure a web browser, and ~gemini~
   - [X] Configure a mail client (~mu4e~ with ~mbsync~)
   - [ ] [[https://code.librehq.com/qhong/crdt.el][crdt]] for collaborative editing
 - [X] Point to funny/absurd packages (/e.g./ ~speed-type~, ~key-quiz~ ...)

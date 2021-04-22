@@ -1030,7 +1030,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
     (variable-pitch-mode 1)
     (visual-line-mode 1))
 
-  (drag-stuff-mode -1)
+  (add-hook 'org-mode-hook (lambda () (drag-stuff-mode -1)))
   (setq org-ellipsis " ▾")
 
 ;; Use the right font according to what is installed on the system
