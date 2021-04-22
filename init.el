@@ -331,6 +331,8 @@ installed themes instead."
 (use-package ivy
   :diminish
   :bind (("C-s" . swiper)
+         :map swiper-map
+         ("M-g" . swiper-avy)
          :map ivy-minibuffer-map
          ("TAB" . ivy-partial-or-done)
          ("C-l" . ivy-immediate-done)
@@ -399,8 +401,31 @@ installed themes instead."
 (use-package ibuffer
   :defer t
   :bind ("C-x C-b" . ibuffer)
+  :custom
+  (ibuffer-saved-filter-groups
+   '(("default"
+      ("Dired" (mode . dired-mode))
+      ("Emacs" (or
+                (name . "^\\*scratch\\*$")
+                (name . "^\\*Messages\\*$")))
+      ("Help" (or
+               (mode . helpful-mode)
+               (mode . Info-mode)
+               (mode . help-mode)))
+      ("Special" (or
+                  (name . "^\\*.*\\*$")
+                  (mode . special-mode)))
+      ("Images/PDF" (or
+                     (file-extension . "pdf")
+                     (mode . image-mode)))
+      ("Programming" (and
+                      (derived-mode . prog-mode)
+                      (not (mode . fundamental-mode)))))))
   :config
-  (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode))
+  (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode)
+  (add-hook 'ibuffer-mode-hook
+            (lambda ()
+              (ibuffer-switch-to-saved-filter-groups "default"))))
 
 ;; From Magnars, from emacsrocks.com
 (defun rename-current-buffer-file ()
@@ -599,6 +624,7 @@ buffer in current window."
   :ensure nil
   :bind (:map search-map
               ("s" . isearch-forward)
+              ("M-s" . isearch-forward) ;; avoids early/late release of Meta
               ("r" . isearch-backward)
               ("x" . isearch-forward-regexp)))
 
@@ -1308,18 +1334,19 @@ PWD is not in a git repo (or the git command is not found)."
   :bind (:map dired-mode-map
               ("RET" . dired-find-alternate-file)
               ("^"   . (lambda () (interactive) (find-alternate-file ".."))))
-  :config
+  :custom
   ;; Delete and copy directories recursively
-  (setq dired-recursive-deletes 'always
-        dired-recursive-copies 'always)
-
-  (setq dired-auto-revert-buffer t))
+  (dired-recursive-deletes 'always)
+  (dired-recursive-copies 'always)
+  (dired-auto-revert-buffer t)
+  (dired-listing-switches "-alFh"))
 
 ;; Make things prettier
 (use-package all-the-icons-dired
   :diminish
   :hook (dired-mode . all-the-icons-dired-mode))
 
+;; Extra functionalities
 (use-package dired-x
   :ensure nil
   :after dired)
