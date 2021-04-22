@@ -340,11 +340,14 @@ installed themes instead."
          ("<mouse-3>" . nil)
          ("<mouse-1>" . nil)
          ("<down-mouse-1>" . nil))
+  :custom
+  (ivy-count-format "(%d/%d)")
+  (enable-recursive-minibuffers t)
+  (ivy-initial-inputs-alist nil)
+  (ivy-extra-directories nil)
+
   :config
   (ivy-mode 1)
-  (setq ivy-count-format "(%d/%d)")
-  (setq enable-recursive-minibuffers t)
-  (setq ivy-initial-inputs-alist nil)
 
   (defun lps/ivy-toggle-current-mark ()
     (interactive)
@@ -1226,18 +1229,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package eshell
   :ensure nil
   :defer t
-  :bind (:map eshell-mode-map
-              ("C-l" . eshell/clear))
+  :hook (eshell-mode . (lambda ()
+                         (bind-key "C-l" 'eshell/clear eshell-mode-map)))
   :config
-  ;; From Centaur Emacs:
-  ;; https://github.com/seagle0128/.emacs.d/blob/master/lisp/init-eshell.el
-  (defun eshell/clear ()
-    "Clear the eshell buffer."
-    (interactive)
-    (let ((inhibit-read-only t))
-      (erase-buffer)
-      (eshell-send-input)))
-
   ;; From https://blog.liangzan.net/blog/2012/12/12/customizing-your-emacs-eshell-prompt/
   (defun lps/pwd-repl-home (pwd)
     (interactive)
@@ -1307,7 +1301,7 @@ PWD is not in a git repo (or the git command is not found)."
 
 ;; Straight from Centaur Emacs
 (use-package esh-autosuggest
-  :defer t
+  :after eshell
   :bind (:map eshell-mode-map
               ([remap eshell-pcomplete] . completion-at-point))
   :hook ((eshell-mode . esh-autosuggest-mode)
@@ -1318,6 +1312,40 @@ PWD is not in a git repo (or the git command is not found)."
                         (remq (assoc 'ivy-completion-in-region
                                      ivy-display-functions-alist)
                               ivy-display-functions-alist))))
+
+;; From https://www.emacswiki.org/emacs/EshellAlias
+
+  (defun lps/eshell-load-bash-aliases ()
+    "Reads bash aliases from Bash and inserts
+      them into the list of eshell aliases."
+    (interactive)
+    (progn
+      (message "Parsing aliases")
+      (shell-command "alias" "bash-aliases" "bash-errors")
+      (switch-to-buffer "bash-aliases")
+      (replace-string "alias " "")
+      (goto-char 1)
+      (replace-string "='" " ")
+      (goto-char 1)
+      (replace-string "'\n" "\n")
+      (goto-char 1)
+      (let ((alias-name) (command-string) (alias-list))
+        (while (not (eobp))
+          (while (not (char-equal (char-after) 32))
+            (forward-char 1))
+          (setq alias-name
+                (buffer-substring-no-properties (line-beginning-position) (point)))
+          (forward-char 1)
+          (setq command-string
+                (buffer-substring-no-properties (point) (line-end-position)))
+          (setq alias-list (cons (list alias-name command-string) alias-list))
+          (forward-line 1))
+        (setq eshell-command-aliases-list (append alias-list eshell-command-aliases-list)))
+      ;;    (if (get-buffer "bash-aliases")(kill-buffer "bash-aliases"))
+      ;;    (if (get-buffer "bash-errors")(kill-buffer "bash-errors"))
+))
+
+  (add-hook 'eshell-mode-hook 'lps/eshell-load-bash-aliases)
 
 (use-package em-alias
   :ensure nil
