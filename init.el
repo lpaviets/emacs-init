@@ -834,7 +834,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :diminish
   :config
   (setq yas-verbosity 1)
-  :hook ((prog-mode tex-mode) . yas-minor-mode)
+  :hook ((prog-mode LaTeX-mode) . yas-minor-mode)
   :bind (:map yas-minor-mode-map
               ("TAB" . nil)
               ("<tab>" . nil)
@@ -850,29 +850,38 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :init (global-company-mode t)
 
   :bind (:map company-active-map
-        ("<tab>" . company-complete)
-        ("TAB" . company-complete)
-        ("RET" . nil)
-        ("<return>" . nil)
-        ("C-l" . company-complete-selection))
+              ("<tab>" . company-complete)
+              ("TAB" . company-complete)
+              ("RET" . nil)
+              ("<return>" . nil)
+              ("C-l" . company-complete-selection))
 
   :custom
   ;; Generic company settings
-     (company-minimum-prefix-length 1)
-     (company-idle-delay 0.0)
-     (company-selection-wrap-around t)
-     (company-show-numbers t)
-     (company-tooltip-align-annotations t)
-     (company-tooltip-flip-when-above t)
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0)
+  (company-selection-wrap-around t)
+  (company-show-numbers t)
+  (company-tooltip-align-annotations t)
+  (company-tooltip-flip-when-above t)
 
-     ;; More specific ones
-     ;; company-dabbrev look only for buffers in the same major mode
-     (company-dabbrev-other-buffers t))
+  ;; More specific ones
+  ;; company-dabbrev look only for buffers in the same major mode
+  (company-dabbrev-other-buffers t)
+
+  :config
+  (setq-default company-backends '((company-capf company-files company-dabbrev company-yasnippet)
+                                   (company-dabbrev-code company-gtags company-etags company-keywords company-clang)
+                                   company-oddmuse)))
 
 (use-package company-box
   :after company
+  :diminish
   :hook (company-mode . company-box-mode)
-  :diminish)
+  :config
+  (setq company-box-backends-colors '((company-yasnippet :all "dark turquoise"
+                                                         :selected
+                                                         (:background "slate blue" :foreground "white")))))
 
 (use-package company-quickhelp
   :after company
@@ -880,13 +889,12 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :diminish
   :custom (company-quickhelp-delay 0.2))
 
-;; (add-to-list 'company-backends 'company-yasnippet)
+(use-package company-yasnippet
+  :ensure nil
+  :after company)
 
 (use-package company-math
-  :after company
-  :config
-  (add-to-list 'company-backends 'company-math-symbols-unicode)
-  (add-to-list 'company-backends 'company-math-symbols-latex))
+  :after company)
 
 (use-package company-shell
   :disabled t
@@ -1116,14 +1124,21 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
             (push key-template org-structure-template-alist))))))
 
 ;; Automatically tangles this emacs-config config file when we save it
-(defun my-org-babel-tangle-config ()
+(defun lps/org-babel-tangle-config ()
   (when (string-equal (buffer-file-name)
                       (expand-file-name "~/.emacs.d/emacs-config.org"))
     ;; Dynamic scoping to the rescue
     (let ((org-confirm-babel-evaluate nil))
       (org-babel-tangle))))
 
-(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'my-org-babel-tangle-config)))
+(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'lps/org-babel-tangle-config)))
+
+(defun lps/elisp-completion-in-user-init ()
+  (when (string-equal (buffer-file-name)
+                      (expand-file-name "~/.emacs.d/emacs-config.org"))
+    (setq-local completion-at-point-functions '(pcomplete-completions-at-point elisp-completion-at-point t))))
+
+(add-hook 'org-mode-hook #'lps/elisp-completion-in-user-init)
 
 (setq org-agenda-files '("~/Documents/OrgFiles/Tasks.org"))
 (setq org-log-into-drawer t)
@@ -1152,26 +1167,31 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (pdf-tools-install :no-query)
   (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode))
 
-(use-package tex-site                   ; AUCTeX initialization
+;; AUCTeX initialization
+(use-package tex-site
   :ensure auctex
   :defer t)
 
 (use-package tex
   :ensure auctex
   :defer t
-  :custom ;; Automatically insert closing brackets
+  :custom
+  ;; Automatically insert closing brackets
   (LaTeX-electric-left-right-brace t)
-  (TeX-parse-self t)                ; Parse documents to provide completion
-  (TeX-auto-save t)                 ; Automatically save style information
-  (TeX-electric-sub-and-superscript t)  ; Automatically insert braces after
-                                        ; sub- and superscripts in math mode
+  ;; Parse documents to provide completion
+  (TeX-parse-self t)
+  ;; Automatically save style information
+  (TeX-auto-save t)
+  ;; Don't ask permission to save before compiling
+  (TeX-save-query nil)
+  ;; Automatically insert braces after sub- and superscripts in math mode
+  (TeX-electric-sub-and-superscript t)
   ;; Don't insert magic quotes right away.
   (TeX-quote-after-quote t)
   ;; But do insert closing $ when inserting the first one
   (TeX-electric-math '("$" . "$"))
   ;; Also change the key to access LaTeX-math-mode
   (LaTeX-math-abbrev-prefix "°")
-
   ;; Don't ask for confirmation when cleaning
   (TeX-clean-confirm nil)
 
@@ -1203,18 +1223,18 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 
   ;; Better completion functions
   (defun lps/latex-company-setup () ;; TO FIX !
-    (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-capf))))
+    (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-latex-commands company-capf company-dabbrev company-yasnippet))))
 
   (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup))
 
-(use-package bibtex                     ; BibTeX editing
+(use-package bibtex
     :defer t
     :config
     ;; Use a modern BibTeX dialect
     ; (bibtex-set-dialect 'biblatex) ; Useful esp. in social sci.
 )
 
-(use-package reftex                     ; TeX/BibTeX cross-reference management
+(use-package reftex
   :diminish
   :hook (LaTeX-mode . reftex-mode)
   :config
@@ -1362,8 +1382,8 @@ PWD is not in a git repo (or the git command is not found)."
           (setq alias-list (cons (list alias-name command-string) alias-list))
           (forward-line 1))
         (setq eshell-command-aliases-list (append alias-list eshell-command-aliases-list)))
-      ;;    (if (get-buffer "bash-aliases")(kill-buffer "bash-aliases"))
-      ;;    (if (get-buffer "bash-errors")(kill-buffer "bash-errors"))
+      (if (get-buffer "bash-aliases")(kill-buffer "bash-aliases"))
+      (if (get-buffer "bash-errors")(kill-buffer "bash-errors"))
 ))
 
   (add-hook 'eshell-mode-hook 'lps/eshell-load-bash-aliases)
