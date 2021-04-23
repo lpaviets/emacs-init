@@ -14,6 +14,8 @@
   ;; After startup, we restore gc-cons-threshold to a more reasonable value
   (setq gc-cons-threshold 10000000)) ; 1e7 = 10 MB
 
+(setq read-process-output-max (* 8 1024 1024)) ;; 2mb
+
 (add-hook 'emacs-startup-hook #'lps/display-startup-time)
 (add-hook 'emacs-startup-hook #'lps/display-garbage-collection)
 (add-hook 'emacs-startup-hook #'lps/restore-gc-cons)
@@ -899,14 +901,35 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
+  :init
+  ;; Sometimes, we don't want to start a full server just to check a file
+  ;; or make a few edits to it. In my use, this mostly depends on the session:
+  ;; In a quick session, I might not want to start a server for one or two files,
+  ;; however, once I start using LSP, there is no reason not to assume that I
+  ;; also want to use it by default for other files in the same session
+  (defvar lps/--default-lsp-mode 0)
+  (defun lps/lsp-by-default-in-session ()
+    (if (> lps/--default-lsp-mode 0)
+        (lsp)
+      (if (and (= lps/--default-lsp-mode 0) (y-or-n-p "Automatically use lsp-mode in the current session ?"))
+          (progn
+            (setq lps/--default-lsp-mode 1)
+            (lsp))
+        (setq lps/--default-lsp-mode -1))))
+  :custom
+  (lsp-diagnostics-provider :flycheck) ;:none if none wanted
+
   :config
   (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
   (lsp-enable-which-key-integration t)
   (setq lsp-prefer-flymake nil)
-  (setq lsp-diagnostics-provider :flycheck) ;:none if none wanted
-  (setq read-process-output-max (* 8 1024 1024)) ;; 2mb
   (setq lsp-enable-on-type-formatting nil)
-  :hook ((python-mode c-mode c++-mode) . lsp))
+
+  (defun lps/toggle-lsp-by-default-session ()
+    (interactive)
+    (setq lps/--default-lsp-mode (not lps/--default-lsp-mode)))
+
+  :hook ((python-mode c-mode c++-mode) . lps/lsp-by-default-in-session))
 
 (use-package lsp-ui
   :after lsp-mode
@@ -915,9 +938,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (lsp-ui-doc-enable nil)
   (lsp-ui-doc-position 'bottom)
   (lsp-ui-doc-delay 1)
-  (lsp-ui-sideline-show-code-actions nil)
-  ;(lsp-ui-sideline-enable nil)
- )
+  (lsp-ui-sideline-show-code-actions nil))
 
 (use-package lsp-treemacs
   :after lsp-mode
