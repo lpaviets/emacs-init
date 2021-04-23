@@ -373,15 +373,25 @@ installed themes instead."
          :map minibuffer-local-map
          ("C-r" . 'counsel-minibuffer-history)))
 
+;; Generic Prescient configuration
+(use-package prescient
+  :defer t
+  :custom
+  (prescient-history-length 200)
+  (prescient-sort-length-enable nil)
+  :config
+  (prescient-persist-mode 1))
+
 (use-package ivy-prescient
   :after counsel
   :custom
-  (prescient-history-length 200)
   (ivy-prescient-retain-classic-highlighting t)
-  (prescient-sort-length-enable nil)
   :config
   (ivy-prescient-mode 1)
-  (prescient-persist-mode 1))
+  (setq ivy-prescient-sort-commands
+        (append ivy-prescient-sort-commands
+                '(counsel-minibuffer-history
+                  counsel-shell-history))))
 
 ;; Automatically reload a file if it has been modified
 (global-auto-revert-mode t)
@@ -905,6 +915,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
     ;; Not satisfying: duplicates from company-capf and company-shell, so we disable the 2nd one but we lose some documentation ...
     (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev company-shell)))
     (push 'elisp-completion-at-point completion-at-point-functions)))
+
+(use-package company-prescient
+  :after company
+  :config
+  (company-prescient-mode 1))
 
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
