@@ -255,22 +255,6 @@ installed themes instead."
 (use-package emacs
   :hook (before-save . delete-trailing-whitespace))
 
-(use-package hydra
-  :defer t)
-
-(use-package posframe
-  :defer t)
-
-;; Manual load and config of Hydra Posframe
-;; To fix: find a way to override parameters ...
-;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
-;; (setq hydra-posframe-border-width 5)
-
-;Pretty Hydra
-(use-package pretty-hydra
-  :defer t
-  :after hydra)
-
 (prefer-coding-system 'utf-8)
 (setq locale-coding-system 'utf-8)
 (set-language-environment 'utf-8)
@@ -286,48 +270,6 @@ installed themes instead."
   :defer t
   :config
   (calendar-set-date-style 'european))
-
-;; Don't disable any command
-;; BE CAREFUL
-;; If you are a new user, you might to comment out this line
-(setq disabled-command-function nil)
-
-(global-unset-key (kbd "C-z"))
-
-(use-package command-log-mode
-  :defer t)
-
-;; Type "y" instead of "yes RET" for confirmation
-(defalias 'yes-or-no-p 'y-or-n-p)
-
-;; which-key. Shows all the available key sequences after a prefix
-(use-package which-key
-  :init (which-key-mode)
-  :diminish
-  :custom (which-key-idle-delay 1))
-
-;; Macro to use "python-style" affectation in lexical bindings
-(defmacro multi-let (vars values body)
-  "Binds each symbol of VARS to its corresponding expression in VALUES,
-  in order.
-  multi-let (a b) (e1 e2) body is thus equivalent to
-  (let ((a e1)) (let ((b e2)) body))
-  Expressions at position k in VALUES might depend on symbol from
-  VARS at position strictly less than k, as with let*"
-  (defun rec-expand-let (vars values body)
-    (if (= (length vars) (length values))
-        (if (and vars (symbolp (car vars)))
-            `(let ((,(car vars) ,(car values)))
-               ,(rec-expand-let (cdr vars)
-                                (cdr values)
-                                body))
-          body)
-      (message
-       (format "Trying to bind %d symbols to %d values"
-               (length vars)
-               (length values)))))
-
-  (rec-expand-let vars values body))
 
 ;; Ivy
 (use-package ivy
@@ -598,6 +540,68 @@ buffer in current window."
   ([remap describe-symbol]   . counsel-describe-symbol)
   ([remap describe-key]      . helpful-key)
   ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
+
+(use-package hydra
+  :defer t)
+
+(use-package posframe
+  :defer t)
+
+;; Manual load and config of Hydra Posframe
+;; To fix: find a way to override parameters ...
+;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
+;; (setq hydra-posframe-border-width 5)
+
+;Pretty Hydra
+(use-package pretty-hydra
+  :defer t
+  :after hydra)
+
+;; Don't disable any command
+;; BE CAREFUL
+;; If you are a new user, you might to comment out this line
+(setq disabled-command-function nil)
+
+(global-unset-key (kbd "C-z"))
+
+(use-package command-log-mode
+  :defer t)
+
+;; Type "y" instead of "yes RET" for confirmation
+(defalias 'yes-or-no-p 'y-or-n-p)
+
+;; which-key. Shows all the available key sequences after a prefix
+(use-package which-key
+  :init (which-key-mode)
+  :diminish
+  :custom (which-key-idle-delay 1))
+
+;; Macro to use "python-style" affectation in lexical bindings
+(defmacro multi-let (vars values body)
+  "Binds each symbol of VARS to its corresponding expression in VALUES,
+  in order.
+  multi-let (a b) (e1 e2) body is thus equivalent to
+  (let ((a e1)) (let ((b e2)) body))
+  Expressions at position k in VALUES might depend on symbol from
+  VARS at position strictly less than k, as with let*"
+  (defun rec-expand-let (vars values body)
+    (if (= (length vars) (length values))
+        (if (and vars (symbolp (car vars)))
+            `(let ((,(car vars) ,(car values)))
+               ,(rec-expand-let (cdr vars)
+                                (cdr values)
+                                body))
+          body)
+      (message
+       (format "Trying to bind %d symbols to %d values"
+               (length vars)
+               (length values)))))
+
+  (rec-expand-let vars values body))
+
+(use-package ffap
+  :ensure nil
+  :init (ffap-bindings))
 
 (use-package multiple-cursors
   :bind

@@ -409,36 +409,6 @@ And we also don't like trailing whitespaces, so we delete them automatically whe
     :hook (before-save . delete-trailing-whitespace))
 #+end_src
 
-** Hydra
-
-[[https://github.com/abo-abo/hydra][Hydra]] is a package that is used to group several related commands into a family of bindings, all starting with the same prefix (= "hydra"). Whenever this common prefix is entered in a suitable mode, a panel shows up, showing all the user-defined commands that can now be invoked with a single keystroke instead of repeatedly using the same long prefix.
-
-#+begin_src emacs-lisp
-(use-package hydra
-  :defer t)
-#+end_src
-
-All the hydras will now be defined after the package to which they correspond, or in the appropriate section. Most of them are modifications of hydras that can be found on the [[https://github.com/abo-abo/hydra/wiki][hydra wiki]].
-
-Some hydras will be called less frequently and for other purposes than getting a "quick-and-dirty" access to commonly used functions. Hence, we will make them prettier (the compromise being that they are less minimalistic and take much more space visually)
-
-*MANUAL* This is not a MELPA package. It can be found [[https://github.com/Ladicle/hydra-posframe][here]]. Install it and change the loading path according to your configuration.
-
-#+begin_src emacs-lisp
-  (use-package posframe
-    :defer t)
-
-  ;; Manual load and config of Hydra Posframe
-  ;; To fix: find a way to override parameters ...
-  ;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
-  ;; (setq hydra-posframe-border-width 5)
-
-  ;Pretty Hydra
-  (use-package pretty-hydra
-    :defer t
-    :after hydra)
-#+end_src
-
 ** Font and encoding
 
 Even if most of the time, you should be working with UTF-8, we still want to make sure that this is the default and that Emacs assumes that we are using UTF-8
@@ -463,91 +433,6 @@ Another thing that is technically more a stylistic choice rather than a real enc
     :defer t
     :config
     (calendar-set-date-style 'european))
-#+end_src
-
-** Commands
-*** Disable
-
-We want to use the full Emacs power. However, if you find yourself using repeatedly a dangerous command by mistake, you might want to disable it
-
-#+begin_src emacs-lisp
-  ;; Don't disable any command
-  ;; BE CAREFUL
-  ;; If you are a new user, you might to comment out this line
-  (setq disabled-command-function nil)
-
-#+end_src
-
-There is, however, one really annoying binding, especially for new users or people used to ... computers, calling the =suspend-frame= command. For people who are using it, do not worry, it is still available on =C-x C-z= anyway.
-
-#+begin_src emacs-lisp
-(global-unset-key (kbd "C-z"))
-#+end_src
-
-*** Command log mode
-
-This mode allows you to display a small panel on the right of the screen which shows which keys you are pressing, and what commands they are associated to, all of this in real time !
-
-As of now, you need to enable the mode by using the =command-log-mode= command (or =global-command-log-mode= if you want to record everything, in all the buffers of the current session), and to use the =C-c o= keybinding (which calls the =clm/toggle-command-log-buffer= function) to open a new buffer in which you will see both the keybindings you are currently using and the commands to which they are bound.
-
-If you want =command-log-mode= to be activated by default in certain minor (or even major) modes, simply add a hook. You will still need to explicitly open the buffer, but this could also be dealt with by using other, straightforward hooks.
-
-#+begin_src emacs-lisp
-  (use-package command-log-mode
-    :defer t)
-#+end_src
-
-*** Confirmation
-
-Typing "yes" and "no" might be a bit too tiring
-
-#+begin_src emacs-lisp
-  ;; Type "y" instead of "yes RET" for confirmation
-  (defalias 'yes-or-no-p 'y-or-n-p)
-#+end_src
-
-*** Help
-
-Because there are a lot of similar commands, it is quite easy to get lost. [[https://github.com/justbur/emacs-which-key][which-key]] is a package that shows all the available commands after having typed some prefix, meaning that knowing the beginning of a key sequence is enough to get the rest of the information.
-
-For example, if you press =C-c=, then a panel will appear at the bottom of the screen to show how you can currently continue this command, depending on which buffer you are in.
-
-
-#+begin_src emacs-lisp
-  ;; which-key. Shows all the available key sequences after a prefix
-  (use-package which-key
-    :init (which-key-mode)
-    :diminish
-    :custom (which-key-idle-delay 1))
-#+end_src
-
-*** Some macros
-
-In this section, we define some useful macros to write code in Emacs Lisp.
-
-#+begin_src emacs-lisp
-  ;; Macro to use "python-style" affectation in lexical bindings
-  (defmacro multi-let (vars values body)
-    "Binds each symbol of VARS to its corresponding expression in VALUES,
-    in order.
-    multi-let (a b) (e1 e2) body is thus equivalent to
-    (let ((a e1)) (let ((b e2)) body))
-    Expressions at position k in VALUES might depend on symbol from
-    VARS at position strictly less than k, as with let*"
-    (defun rec-expand-let (vars values body)
-      (if (= (length vars) (length values))
-          (if (and vars (symbolp (car vars)))
-              `(let ((,(car vars) ,(car values)))
-                 ,(rec-expand-let (cdr vars)
-                                  (cdr values)
-                                  body))
-            body)
-        (message
-         (format "Trying to bind %d symbols to %d values"
-                 (length vars)
-                 (length values)))))
-
-    (rec-expand-let vars values body))
 #+end_src
 
 ** Minibuffer completion
@@ -885,7 +770,129 @@ It will condense all the available information about something within a single H
     ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
 
 #+end_src
+* Commands
+** Hydra
 
+[[https://github.com/abo-abo/hydra][Hydra]] is a package that is used to group several related commands into a family of bindings, all starting with the same prefix (= "hydra"). Whenever this common prefix is entered in a suitable mode, a panel shows up, showing all the user-defined commands that can now be invoked with a single keystroke instead of repeatedly using the same long prefix.
+
+#+begin_src emacs-lisp
+(use-package hydra
+  :defer t)
+#+end_src
+
+All the hydras will now be defined after the package to which they correspond, or in the appropriate section. Most of them are modifications of hydras that can be found on the [[https://github.com/abo-abo/hydra/wiki][hydra wiki]].
+
+Some hydras will be called less frequently and for other purposes than getting a "quick-and-dirty" access to commonly used functions. Hence, we will make them prettier (the compromise being that they are less minimalistic and take much more space visually)
+
+*MANUAL* This is not a MELPA package. It can be found [[https://github.com/Ladicle/hydra-posframe][here]]. Install it and change the loading path according to your configuration.
+
+#+begin_src emacs-lisp
+  (use-package posframe
+    :defer t)
+
+  ;; Manual load and config of Hydra Posframe
+  ;; To fix: find a way to override parameters ...
+  ;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
+  ;; (setq hydra-posframe-border-width 5)
+
+  ;Pretty Hydra
+  (use-package pretty-hydra
+    :defer t
+    :after hydra)
+#+end_src
+** Disable
+
+We want to use the full Emacs power. However, if you find yourself using repeatedly a dangerous command by mistake, you might want to disable it
+
+#+begin_src emacs-lisp
+  ;; Don't disable any command
+  ;; BE CAREFUL
+  ;; If you are a new user, you might to comment out this line
+  (setq disabled-command-function nil)
+
+#+end_src
+
+There is, however, one really annoying binding, especially for new users or people used to ... computers, calling the =suspend-frame= command. For people who are using it, do not worry, it is still available on =C-x C-z= anyway.
+
+#+begin_src emacs-lisp
+(global-unset-key (kbd "C-z"))
+#+end_src
+
+** Command log mode
+
+This mode allows you to display a small panel on the right of the screen which shows which keys you are pressing, and what commands they are associated to, all of this in real time !
+
+As of now, you need to enable the mode by using the =command-log-mode= command (or =global-command-log-mode= if you want to record everything, in all the buffers of the current session), and to use the =C-c o= keybinding (which calls the =clm/toggle-command-log-buffer= function) to open a new buffer in which you will see both the keybindings you are currently using and the commands to which they are bound.
+
+If you want =command-log-mode= to be activated by default in certain minor (or even major) modes, simply add a hook. You will still need to explicitly open the buffer, but this could also be dealt with by using other, straightforward hooks.
+
+#+begin_src emacs-lisp
+  (use-package command-log-mode
+    :defer t)
+#+end_src
+
+** Confirmation
+
+Typing "yes" and "no" might be a bit too tiring
+
+#+begin_src emacs-lisp
+  ;; Type "y" instead of "yes RET" for confirmation
+  (defalias 'yes-or-no-p 'y-or-n-p)
+#+end_src
+
+** Help
+
+Because there are a lot of similar commands, it is quite easy to get lost. [[https://github.com/justbur/emacs-which-key][which-key]] is a package that shows all the available commands after having typed some prefix, meaning that knowing the beginning of a key sequence is enough to get the rest of the information.
+
+For example, if you press =C-c=, then a panel will appear at the bottom of the screen to show how you can currently continue this command, depending on which buffer you are in.
+
+
+#+begin_src emacs-lisp
+  ;; which-key. Shows all the available key sequences after a prefix
+  (use-package which-key
+    :init (which-key-mode)
+    :diminish
+    :custom (which-key-idle-delay 1))
+#+end_src
+
+** Some macros
+
+In this section, we define some useful macros to write code in Emacs Lisp.
+
+#+begin_src emacs-lisp
+  ;; Macro to use "python-style" affectation in lexical bindings
+  (defmacro multi-let (vars values body)
+    "Binds each symbol of VARS to its corresponding expression in VALUES,
+    in order.
+    multi-let (a b) (e1 e2) body is thus equivalent to
+    (let ((a e1)) (let ((b e2)) body))
+    Expressions at position k in VALUES might depend on symbol from
+    VARS at position strictly less than k, as with let*"
+    (defun rec-expand-let (vars values body)
+      (if (= (length vars) (length values))
+          (if (and vars (symbolp (car vars)))
+              `(let ((,(car vars) ,(car values)))
+                 ,(rec-expand-let (cdr vars)
+                                  (cdr values)
+                                  body))
+            body)
+        (message
+         (format "Trying to bind %d symbols to %d values"
+                 (length vars)
+                 (length values)))))
+
+    (rec-expand-let vars values body))
+#+end_src
+
+** Useful commands
+*** Open file
+We often want to visit links. If the point is on a file path, for example, it is often useful to be able to quicky navigate to this file.
+
+#+begin_src emacs-lisp
+  (use-package ffap
+    :ensure nil
+    :init (ffap-bindings))
+#+end_src
 * Editing
 
    Emacs is fundamentally a text editor. It provides a lot of functions to deal with text, and a way to create macros, to automate things, to repeat something multiple times ... easily. However, because there are /so many/ available functions, we might need some help to navigate around and do fancy things.
