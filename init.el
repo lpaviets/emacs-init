@@ -1245,11 +1245,11 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup))
 
 (use-package bibtex
-    :defer t
-    :config
-    ;; Use a modern BibTeX dialect
-    ; (bibtex-set-dialect 'biblatex) ; Useful esp. in social sci.
-)
+  :defer t
+  :config
+  ;; Use a modern BibTeX dialect
+                                        ; (bibtex-set-dialect 'biblatex) ; Useful esp. in social sci.
+  )
 
 (use-package reftex
   :diminish
@@ -1271,6 +1271,14 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
         ;;                            (?X . "{%l}"))))
         ;;   (setq reftex-cite-format 'biblatex))
         ))
+
+(use-package preview
+  :ensure nil ;; Comes with AUCTeX
+  :defer t
+  :config
+  (setq preview-auto-reveal t)
+  (setq preview-auto-cache-preamble t)
+  (add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t))
 
 ;; eshell
 

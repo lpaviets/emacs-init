@@ -1793,7 +1793,9 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
 
 *** LaTeX
 
-It is also possible to configure Emacs to comfortably write and edit LaTeX documents
+It is also possible to configure Emacs to comfortably write and edit LaTeX documents, using the famous tool AUCTeX.
+
+**** Basic configuration
 
 #+begin_src emacs-lisp
   ;; AUCTeX initialization
@@ -1858,15 +1860,17 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
 
 #+end_src
 
-We also configure BibTeX
+**** References
+
+We also configure BibTeX and other packages that allow us to insert quickly bibliography, labels, and various kinds of references in our documents.
 
 #+begin_src emacs-lisp
   (use-package bibtex
     :defer t
     :config
     ;; Use a modern BibTeX dialect
-    ; (bibtex-set-dialect 'biblatex) ; Useful esp. in social sci.
-)
+                                          ; (bibtex-set-dialect 'biblatex) ; Useful esp. in social sci.
+    )
 #+end_src
 
 Another useful package to deal with references, bibliography, citations and so on, is [[https://www.gnu.org/software/emacs/manual/html_mono/reftex.html][RefTeX]].
@@ -1892,6 +1896,20 @@ Another useful package to deal with references, bibliography, citations and so o
           ;;                            (?X . "{%l}"))))
           ;;   (setq reftex-cite-format 'biblatex))
           ))
+#+end_src
+
+**** Preview
+
+Instead of recompiling the source code to generate a complete PDF to visualize /e..g/ our mathematical formulas, AUCTeX also gives us the possibility to preview them inlines (as well as other - configurables - constructs, such as figures, matrices, and so on).
+
+#+begin_src emacs-lisp
+  (use-package preview
+    :ensure nil ;; Comes with AUCTeX
+    :defer t
+    :config
+    (setq preview-auto-reveal t)
+    (setq preview-auto-cache-preamble t)
+    (add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t))
 #+end_src
 
 * System
