@@ -66,8 +66,8 @@
 ;; Maximize the Emacs frame at startup
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-;; No need to slow down the startup
-;; (add-hook 'emacs-startup-hook (lambda () (eshell) (previous-buffer)))
+(setq ring-bell-function 'ignore)
+(setq visible-bell nil)
 
 (scroll-bar-mode -1)        ; Disable visible scrollbar
 (tool-bar-mode -1)          ; Disable the toolbar
@@ -265,6 +265,8 @@ installed themes instead."
 ;; Ivy
 (use-package ivy
   :diminish
+  :init
+  (setq completing-read-function 'ivy-completing-read)
   :bind (("C-s" . swiper)
          :map swiper-map
          ("M-g" . swiper-avy)
@@ -586,9 +588,10 @@ buffer in current window."
   :init (ffap-bindings))
 
 (use-package multiple-cursors
+  :defer t
   :bind
   ("C-c h M" . hydra-multiple-cursors/body)
-  :init
+  :config
   (pretty-hydra-define hydra-multiple-cursors (:title "Multiple cursors"
                                                       :quit-key "q")
     ("Add to region"

@@ -155,11 +155,13 @@ However, we would like to see Emacs in full-screen if we are to use it
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
 #+end_src
 
-Because we tend to use ~eshell~ for everything that is shell-related (see the Eshell section later in this file), we also start it whenever we start Emacs.
+We also don't want Emacs to be flashing and beeping at us whenver we do something wrong. Be quiet, please, error /messages/ are fine without VFX on top of them !
+
 #+begin_src emacs-lisp
-  ;; No need to slow down the startup
-  ;; (add-hook 'emacs-startup-hook (lambda () (eshell) (previous-buffer)))
+  (setq ring-bell-function 'ignore)
+  (setq visible-bell nil)
 #+end_src
+
 
 *** Menus and toolbars
 
@@ -436,6 +438,8 @@ Although emacs provides a number of commands to navigate within a file, to find 
   ;; Ivy
   (use-package ivy
     :diminish
+    :init
+    (setq completing-read-function 'ivy-completing-read)
     :bind (("C-s" . swiper)
            :map swiper-map
            ("M-g" . swiper-avy)
@@ -884,9 +888,10 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
 
 #+begin_src emacs-lisp
   (use-package multiple-cursors
+    :defer t
     :bind
     ("C-c h M" . hydra-multiple-cursors/body)
-    :init
+    :config
     (pretty-hydra-define hydra-multiple-cursors (:title "Multiple cursors"
                                                         :quit-key "q")
       ("Add to region"
