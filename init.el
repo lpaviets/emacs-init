@@ -36,9 +36,6 @@
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
 
-;; Other packages
-(add-to-list 'load-path "~/.emacs.d/extra-packages")
-
 (require 'use-package)
 ;; Comment this line if you don't want to automatically install
 ;; all the packages that you are missing
@@ -189,16 +186,10 @@ installed themes instead."
   ;; define a title function
   (defvar appearance-title (with-faicon "desktop" "Appearance"))
 
-  ;; Other idea:
-  ;; (defvar appearance-title (with-faicon "toggle-on" "Toggles" 1 -0.05))
-
   ;; generate hydra
 
   (pretty-hydra-define hydra-appearance (:title appearance-title
-                                         :quit-key "q"
-                                        ;:pre (hydra-posframe-mode t)
-                                        ;:post (hydra-posframe-mode 0) ; dirty hack
-                                                )
+                                                :quit-key "q")
     ("Theme"
      (
       ;;     ("o" olivetti-mode "Olivetti" :toggle t)
@@ -544,17 +535,8 @@ buffer in current window."
 (use-package hydra
   :defer t)
 
-(use-package posframe
-  :defer t)
-
-;; Manual load and config of Hydra Posframe
-;; To fix: find a way to override parameters ...
-;; (load-file "~/.emacs.d/extra-packages/hydra-posframe.el")
-;; (setq hydra-posframe-border-width 5)
-
-;Pretty Hydra
+;; Easier hydra definition
 (use-package pretty-hydra
-  :defer t
   :after hydra)
 
 ;; Don't disable any command
@@ -605,17 +587,30 @@ buffer in current window."
 
 (use-package multiple-cursors
   :bind
-  (("C-c m SPC"   . mc/vertical-align-with-space)
-   ("C-c m a"     . mc/vertical-align)
-   ("C-c m m"     . mc/mark-more-like-this-extended)
-   ("C-c m h"     . mc/mark-all-like-this-dwim)
-   ("C-c m l"     . mc/edit-lines)
-   ("C-c m n"     . mc/mark-next-like-this)
-   ("C-c m p"     . mc/mark-previous-like-this)
-   ("C-c m C-,"   . mc/mark-all-like-this)
-   ("C-c m C-a"   . mc/edit-beginnings-of-lines)
-   ("C-c m C-e"   . mc/edit-ends-of-lines)
-   ("C-c m r"     . mc/mark-all-in-region)))
+  ("C-c h M" . hydra-multiple-cursors/body)
+  :init
+  (pretty-hydra-define hydra-multiple-cursors (:title "Multiple cursors"
+                                                      :quit-key "q")
+    ("Add to region"
+     (("l" mc/edit-lines "Edit lines in region" :exit t)
+      ("b" mc/edit-beginnings-of-lines "Edit beginnings of lines in region" :exit t)
+      ("e" mc/edit-ends-of-lines "Edit ends of lines in region" :exit t))
+     "Mark same word (all)"
+     (("a" mc/mark-all-like-this "Mark all like this" :exit t)
+      ("S" mc/mark-all-symbols-like-this "Mark all symbols likes this" :exit t)
+      ("w" mc/mark-all-words-like-this "Mark all words like this" :exit t)
+      ("r" mc/mark-all-in-region "Mark all in region" :exit t)
+      ("R" mc/mark-all-in-region-regexp "Mark all in region (regexp)" :exit t)
+      ("d" mc/mark-all-dwim "Mark all dwim"))
+     "Mark same word (next)"
+     (("n" mc/mark-next-like-this "Mark next like this")
+      ("N" mc/skip-to-next-like-this "Skip to next like this"))
+     "Mark same word (previous)"
+     (("p" mc/mark-previous-like-this "Mark previous like this")
+      ("P" mc/skip-to-previous-like-this "Skip to previous like this"))
+     "Unmark"
+     (("M-n" mc/unmark-next-like-this "Unmark next like this")
+      ("M-p" mc/unmark-previous-like-this "Unmark previous like this")))))
 
 (global-set-key
  (kbd "C-c h m")

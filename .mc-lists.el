@@ -15,4 +15,7 @@
 
 (setq mc/cmds-to-run-once
       '(
+        hydra-multiple-cursors/mc/mark-next-like-this
+        hydra-multiple-cursors/mc/mark-previous-like-this
+        hydra-multiple-cursors/mc/skip-to-next-like-this
         ))
