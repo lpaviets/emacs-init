@@ -222,6 +222,9 @@ installed themes instead."
 ;; Generic UI modes
 
 (use-package beacon
+  :custom
+  (beacon-blink-when-point-moves-vertically 30)
+  (beacon-size 20)
   :init (beacon-mode))
 (use-package rainbow-mode
   :defer t)
@@ -711,6 +714,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package drag-stuff
   :init
   (drag-stuff-global-mode 1)
+  (add-to-list 'drag-stuff-except-modes 'org-mode)
   (drag-stuff-define-keys))
 
 (use-package undo-tree
@@ -1076,7 +1080,6 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
     (variable-pitch-mode 1)
     (visual-line-mode 1))
 
-  (add-hook 'org-mode-hook (lambda () (drag-stuff-mode -1)))
   (setq org-ellipsis " ▾")
 
 ;; Use the right font according to what is installed on the system
@@ -1183,6 +1186,20 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :config
   (pdf-tools-install :no-query)
   (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode))
+
+(use-package pdf-view-restore
+  :after pdf-tools
+  :custom
+  (pdf-view-restore-filename "~/.emacs.d/.pdf-view-restore")
+  (use-file-base-name-flag nil)
+  :config
+  (defun lps/save-restore-pos-in-pdf (&optional pages)
+    "Activates `pdf-view-restore-mode' if the number of pages\nis higher than PAGES (default is 20)"
+    (let ((min-pages (or pages 20)))
+      (if ( > (pdf-cache-number-of-pages) min-pages)
+          (pdf-view-restore-mode))))
+
+  (add-hook 'pdf-view-mode-hook 'lps/save-restore-pos-in-pdf))
 
 ;; AUCTeX initialization
 (use-package tex-site

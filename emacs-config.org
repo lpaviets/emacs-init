@@ -162,7 +162,6 @@ We also don't want Emacs to be flashing and beeping at us whenver we do somethin
   (setq visible-bell nil)
 #+end_src
 
-
 *** Menus and toolbars
 
 Emacs is very much keyboard-oriented. As such, we have little-to-no use of the various menus, toolbars and scrollbars that Emacs provides.
@@ -363,6 +362,9 @@ Some packages are used lated in the configuration, and we want to be able to use
   ;; Generic UI modes
 
   (use-package beacon
+    :custom
+    (beacon-blink-when-point-moves-vertically 30)
+    (beacon-size 20)
     :init (beacon-mode))
   (use-package rainbow-mode
     :defer t)
@@ -1063,6 +1065,7 @@ A big part of editing text consists in moving already written lines, words or pa
   (use-package drag-stuff
     :init
     (drag-stuff-global-mode 1)
+    (add-to-list 'drag-stuff-except-modes 'org-mode)
     (drag-stuff-define-keys))
 #+end_src
 
@@ -1632,7 +1635,6 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
       (variable-pitch-mode 1)
       (visual-line-mode 1))
 
-    (add-hook 'org-mode-hook (lambda () (drag-stuff-mode -1)))
     (setq org-ellipsis " ▾")
 
 #+end_src
@@ -1789,6 +1791,24 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
     :config
     (pdf-tools-install :no-query)
     (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode))
+#+end_src
+
+We also add the (generally useful) feature of remembering where we left a PDF when we last closed it. This is especially useful for longer documents, such as manuals, books, or especially long articles.
+
+#+begin_src emacs-lisp
+  (use-package pdf-view-restore
+    :after pdf-tools
+    :custom
+    (pdf-view-restore-filename "~/.emacs.d/.pdf-view-restore")
+    (use-file-base-name-flag nil)
+    :config
+    (defun lps/save-restore-pos-in-pdf (&optional pages)
+      "Activates `pdf-view-restore-mode' if the number of pages\nis higher than PAGES (default is 20)"
+      (let ((min-pages (or pages 20)))
+        (if ( > (pdf-cache-number-of-pages) min-pages)
+            (pdf-view-restore-mode))))
+
+    (add-hook 'pdf-view-mode-hook 'lps/save-restore-pos-in-pdf))
 #+end_src
 
 *** LaTeX
@@ -2437,5 +2457,4 @@ Another cool thing to do if you want to learn keybindings in a very inefficient 
 Use two different files that are "loaded" by eshell. The first one contains the .bashrc aliases, the other one contains the usual eshell aliases, and at startup, we momentarily merge the two.
 ** LaTeX
 - Fix the fact the Tikz keywords incorrectly highlighted (they are "unknown") [[https://tex.stackexchange.com/questions/113970/emacs-auctex-customization-of-keyword-highlight-syntax][Syntax highlighting]]
-- Try to fix company. See e.g. [[https://tex.stackexchange.com/questions/58998/does-auctex-autocomplete][this post]] Want to have both math-symbols and capf, because TeX-complete-symbol uses it.
 - Fix the fact that commands defined by \newcommand are not properly highlighted (as TikZ commands)
