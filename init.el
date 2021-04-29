@@ -311,6 +311,7 @@ installed themes instead."
 (use-package counsel
   :diminish
   :hook (ivy-mode . counsel-mode)
+  :custom (counsel-find-file-at-point t)
   :bind (("M-x" . counsel-M-x)
          ("C-x b" . counsel-switch-buffer) ;; counsel-ibuffer is a fancier option
          ("C-x C-f" . counsel-find-file)
@@ -335,7 +336,9 @@ installed themes instead."
   (setq ivy-prescient-sort-commands
         (append ivy-prescient-sort-commands
                 '(counsel-minibuffer-history
-                  counsel-shell-history))))
+                  counsel-shell-history
+                  imenu
+                  counsel-imenu))))
 
 ;; Automatically reload a file if it has been modified
 (global-auto-revert-mode t)
@@ -887,14 +890,26 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (company-tooltip-align-annotations t)
   (company-tooltip-flip-when-above t)
 
-  ;; More specific ones
-  ;; company-dabbrev look only for buffers in the same major mode
-  (company-dabbrev-other-buffers t)
-
   :config
   (setq-default company-backends '((company-capf company-files company-dabbrev company-yasnippet)
                                    (company-dabbrev-code company-gtags company-etags company-keywords company-clang)
-                                   company-oddmuse)))
+                                   company-oddmuse))
+
+  ;; AZERTY-friendly company number selection
+  ;; Might lead to company-box being a bit broken ? Long function names are cut-off
+  (let ((map company-active-map))
+    (mapc (lambda (x) (define-key map (read-kbd-macro (format "M-%s" (cdr x)))
+                                              `(lambda () (interactive) (company-complete-number ,(car x)))))
+          '((0 . "à")
+            (1 . "&")
+            (2 . "é")
+            (3 . "\"")
+            (4 . "'")
+            (5 . "(")
+            (6 . "-")
+            (7 . "è")
+            (8 . "_")
+            (9 . "ç")))))
 
 (use-package company-box
   :after company
@@ -915,15 +930,23 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :ensure nil
   :after company)
 
+(use-package company-dabbrev
+  :ensure nil
+  :after company
+  :custom
+  (company-dabbrev-other-buffers t)
+  (company-dabbrev-ignore-case 'keep-prefix)
+  (company-dabbrev-downcase nil))
+
 (use-package company-math
   :after company)
 
 (use-package company-shell
   :disabled t
   :after eshell
-  :hook (eshell-mode . my-company-shell-modes)
+  :hook (eshell-mode . lps/company-shell-modes)
   :config
-  (defun my-company-shell-modes ()
+  (defun lps/company-shell-modes ()
     ;; Not satisfying: duplicates from company-capf and company-shell, so we disable the 2nd one but we lose some documentation ...
     (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev company-shell)))
     (push 'elisp-completion-at-point completion-at-point-functions)))
@@ -1191,21 +1214,20 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
               ("C-s" . isearch-forward))
   :config
   (pdf-tools-install :no-query)
-  (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode))
+  (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
+  (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode))
 
 (use-package pdf-view-restore
-  :after pdf-tools
   :custom
   (pdf-view-restore-filename "~/.emacs.d/.pdf-view-restore")
   (use-file-base-name-flag nil)
+  :hook (pdf-view-mode . lps/save-restore-pos-in-pdf)
   :config
   (defun lps/save-restore-pos-in-pdf (&optional pages)
     "Activates `pdf-view-restore-mode' if the number of pages\nis higher than PAGES (default is 20)"
     (let ((min-pages (or pages 20)))
       (if ( > (pdf-cache-number-of-pages) min-pages)
-          (pdf-view-restore-mode))))
-
-  (add-hook 'pdf-view-mode-hook 'lps/save-restore-pos-in-pdf))
+          (pdf-view-restore-mode)))))
 
 ;; AUCTeX initialization
 (use-package tex-site
@@ -1378,31 +1400,26 @@ PWD is not in a git repo (or the git command is not found)."
 
 (use-package bash-completion
   :disabled t
-  :after eshell
-  :config
-  (bash-completion-setup))
+  :hook (eshell-mode . bash-completion-setup))
 
 (use-package fish-completion
-  :disabled t
-  :after eshell
+  :defer t
+  :hook (eshell-mode . lps/start-fish-completion)
   :config
-  (when (executable-find "fish")
-    (fish-completion-mode 1)
-    (setq fish-completion-fallback-on-bash-p t)))
+  (defun lps/start-fish-completion ()
+    (when (executable-find "fish")
+      (setq-local company-backends '(company-capf))
+      (define-key eshell-mode-map (kbd "TAB") 'company-manual-begin)
+      (fish-completion-mode 1)
+      (setq fish-completion-fallback-on-bash-p t))))
 
 ;; Straight from Centaur Emacs
 (use-package esh-autosuggest
+  :disabled t
   :defer t
-  :bind (:map eshell-mode-map
-              ([remap eshell-pcomplete] . completion-at-point))
-  :hook ((eshell-mode . esh-autosuggest-mode)
-         (eshell-mode . eshell-setup-ivy-completion))
-  :config (defun eshell-setup-ivy-completion ()
-            "Setup `ivy' completion in `eshell'."
-            (setq-local ivy-display-functions-alist
-                        (remq (assoc 'ivy-completion-in-region
-                                     ivy-display-functions-alist)
-                              ivy-display-functions-alist))))
+  :hook (eshell-mode . esh-autosuggest-mode)
+  :custom
+  (esh-autosuggest-use-company-map t))
 
 ;; From https://www.emacswiki.org/emacs/EshellAlias
 
