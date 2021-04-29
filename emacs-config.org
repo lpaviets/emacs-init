@@ -1957,8 +1957,7 @@ We install a few packages which make eshell easier to use.
         eshell-scroll-to-bottom-on-input t)
 
   (use-package eshell-did-you-mean
-    :commands eshell
-    :config (eshell-did-you-mean-setup))
+    :hook (eshell-mode . eshell-did-you-mean-setup))
 
   (use-package eshell-syntax-highlighting
     :hook (eshell-mode . eshell-syntax-highlighting-mode))
@@ -2050,7 +2049,7 @@ Another method, which tries to simulate the completion mechanism of ~fish~ shell
 #+begin_src emacs-lisp
   ;; Straight from Centaur Emacs
   (use-package esh-autosuggest
-    :after eshell
+    :defer t
     :bind (:map eshell-mode-map
                 ([remap eshell-pcomplete] . completion-at-point))
     :hook ((eshell-mode . esh-autosuggest-mode)
@@ -2108,8 +2107,7 @@ For the moment, this solution is kind of broken, as the output of =(shell-comman
             (forward-line 1))
           (setq eshell-command-aliases-list (append alias-list eshell-command-aliases-list)))
         (if (get-buffer "bash-aliases")(kill-buffer "bash-aliases"))
-        (if (get-buffer "bash-errors")(kill-buffer "bash-errors"))
-  ))
+        (if (get-buffer "bash-errors")(kill-buffer "bash-errors"))))
 
   (add-hook 'eshell-mode-hook 'lps/eshell-load-bash-aliases)
 #+end_src
@@ -2119,14 +2117,15 @@ Some of our aliases will come from =.bashrc=. However, we still want to add alia
 #+begin_src emacs-lisp
   (use-package em-alias
     :ensure nil
-    :after eshell
+    :hook (eshell-mode . lps/eshell-add-aliases)
     :config
-    (eshell/alias "f" "find-file $1")
-    (eshell/alias "fo" "find-file-other-window $1")
-    (eshell/alias "d" "dired $1")
-    ;; Used for sudo and some other commands
-    (require 'em-tramp)
-    (eshell/alias "sudo" "eshell/sudo $*"))
+    (defun lps/eshell-add-aliases ()
+      (eshell/alias "f" "find-file $1")
+      (eshell/alias "fo" "find-file-other-window $1")
+      (eshell/alias "d" "dired $1")
+      ;; Used for sudo and some other commands
+      (require 'em-tramp)
+      (eshell/alias "sudo" "eshell/sudo $*")))
 #+end_src
 
 ** Dired
@@ -2467,12 +2466,6 @@ Another cool thing to do if you want to learn keybindings in a very inefficient 
 * TODO Small things to do next
 ** Eshell and .bashrc
 Use two different files that are "loaded" by eshell. The first one contains the .bashrc aliases, the other one contains the usual eshell aliases, and at startup, we momentarily merge the two.
-** Eshell crashes Emacs when opened from a PDF ?
-Reproduce bug:
-- Start an Emacs session
-- Open a PDF file
-- Use =M-x eshell=. Emacs crashes
-- Emacs does not crash if the same buffers are opened, but eshell is invoked from another buffer
 ** LaTeX
 - Fix the fact the Tikz keywords incorrectly highlighted (they are "unknown") [[https://tex.stackexchange.com/questions/113970/emacs-auctex-customization-of-keyword-highlight-syntax][Syntax highlighting]]
 - Fix the fact that commands defined by \newcommand are not properly highlighted (as TikZ commands)

@@ -1309,8 +1309,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
       eshell-scroll-to-bottom-on-input t)
 
 (use-package eshell-did-you-mean
-  :commands eshell
-  :config (eshell-did-you-mean-setup))
+  :hook (eshell-mode . eshell-did-you-mean-setup))
 
 (use-package eshell-syntax-highlighting
   :hook (eshell-mode . eshell-syntax-highlighting-mode))
@@ -1393,7 +1392,7 @@ PWD is not in a git repo (or the git command is not found)."
 
 ;; Straight from Centaur Emacs
 (use-package esh-autosuggest
-  :after eshell
+  :defer t
   :bind (:map eshell-mode-map
               ([remap eshell-pcomplete] . completion-at-point))
   :hook ((eshell-mode . esh-autosuggest-mode)
@@ -1434,21 +1433,21 @@ PWD is not in a git repo (or the git command is not found)."
           (forward-line 1))
         (setq eshell-command-aliases-list (append alias-list eshell-command-aliases-list)))
       (if (get-buffer "bash-aliases")(kill-buffer "bash-aliases"))
-      (if (get-buffer "bash-errors")(kill-buffer "bash-errors"))
-))
+      (if (get-buffer "bash-errors")(kill-buffer "bash-errors"))))
 
 (add-hook 'eshell-mode-hook 'lps/eshell-load-bash-aliases)
 
 (use-package em-alias
   :ensure nil
-  :after eshell
+  :hook (eshell-mode . lps/eshell-add-aliases)
   :config
-  (eshell/alias "f" "find-file $1")
-  (eshell/alias "fo" "find-file-other-window $1")
-  (eshell/alias "d" "dired $1")
-  ;; Used for sudo and some other commands
-  (require 'em-tramp)
-  (eshell/alias "sudo" "eshell/sudo $*"))
+  (defun lps/eshell-add-aliases ()
+    (eshell/alias "f" "find-file $1")
+    (eshell/alias "fo" "find-file-other-window $1")
+    (eshell/alias "d" "dired $1")
+    ;; Used for sudo and some other commands
+    (require 'em-tramp)
+    (eshell/alias "sudo" "eshell/sudo $*")))
 
 (use-package dired
   :ensure nil
