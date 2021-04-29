@@ -1940,7 +1940,7 @@ Instead of recompiling the source code to generate a complete PDF to visualize /
 
 * System
 ** Eshell
-*** Visual
+*** General configuration
 
 Contrary to ~term~ and ~shell~ (respectively invoked by =M-x <term/shell>=), [[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]] is not /emulating/ anything: it is, on its own, a shell-like command interpreter implemented in Emacs Lisp. As such, it provides (most of) the usual commands such as ~grep~, ~ls~ and so on, as well as an extra binding to Emacs (for example, you can redirect the output of any command to an Emacs buffer). For this reason, you can use ~eshell~ on any system that is able to run Emacs, as there is no external dependency.
 
@@ -1966,6 +1966,9 @@ We install a few packages which make eshell easier to use.
   (use-package eshell
     :ensure nil
     :defer t
+    :custom
+    (eshell-prefer-lisp-variables t)
+    (eshell-prefer-lisp-functions t)
     :hook (eshell-mode . (lambda ()
                            (bind-key "C-l" 'eshell/clear eshell-mode-map)))
     :config
@@ -2108,7 +2111,7 @@ For the moment, this solution is kind of broken, as the output of =(shell-comman
         (if (get-buffer "bash-errors")(kill-buffer "bash-errors"))
   ))
 
-    (add-hook 'eshell-mode-hook 'lps/eshell-load-bash-aliases)
+  (add-hook 'eshell-mode-hook 'lps/eshell-load-bash-aliases)
 #+end_src
 
 **** Specific to Eshell
@@ -2120,7 +2123,10 @@ Some of our aliases will come from =.bashrc=. However, we still want to add alia
     :config
     (eshell/alias "f" "find-file $1")
     (eshell/alias "fo" "find-file-other-window $1")
-    (eshell/alias "d" "dired $1"))
+    (eshell/alias "d" "dired $1")
+    ;; Used for sudo and some other commands
+    (require 'em-tramp)
+    (eshell/alias "sudo" "eshell/sudo $*"))
 #+end_src
 
 ** Dired
@@ -2461,6 +2467,12 @@ Another cool thing to do if you want to learn keybindings in a very inefficient 
 * TODO Small things to do next
 ** Eshell and .bashrc
 Use two different files that are "loaded" by eshell. The first one contains the .bashrc aliases, the other one contains the usual eshell aliases, and at startup, we momentarily merge the two.
+** Eshell crashes Emacs when opened from a PDF ?
+Reproduce bug:
+- Start an Emacs session
+- Open a PDF file
+- Use =M-x eshell=. Emacs crashes
+- Emacs does not crash if the same buffers are opened, but eshell is invoked from another buffer
 ** LaTeX
 - Fix the fact the Tikz keywords incorrectly highlighted (they are "unknown") [[https://tex.stackexchange.com/questions/113970/emacs-auctex-customization-of-keyword-highlight-syntax][Syntax highlighting]]
 - Fix the fact that commands defined by \newcommand are not properly highlighted (as TikZ commands)

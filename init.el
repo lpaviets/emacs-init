@@ -1318,6 +1318,9 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
 (use-package eshell
   :ensure nil
   :defer t
+  :custom
+  (eshell-prefer-lisp-variables t)
+  (eshell-prefer-lisp-functions t)
   :hook (eshell-mode . (lambda ()
                          (bind-key "C-l" 'eshell/clear eshell-mode-map)))
   :config
@@ -1434,7 +1437,7 @@ PWD is not in a git repo (or the git command is not found)."
       (if (get-buffer "bash-errors")(kill-buffer "bash-errors"))
 ))
 
-  (add-hook 'eshell-mode-hook 'lps/eshell-load-bash-aliases)
+(add-hook 'eshell-mode-hook 'lps/eshell-load-bash-aliases)
 
 (use-package em-alias
   :ensure nil
@@ -1442,7 +1445,10 @@ PWD is not in a git repo (or the git command is not found)."
   :config
   (eshell/alias "f" "find-file $1")
   (eshell/alias "fo" "find-file-other-window $1")
-  (eshell/alias "d" "dired $1"))
+  (eshell/alias "d" "dired $1")
+  ;; Used for sudo and some other commands
+  (require 'em-tramp)
+  (eshell/alias "sudo" "eshell/sudo $*"))
 
 (use-package dired
   :ensure nil
