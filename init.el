@@ -49,7 +49,9 @@
   ;; To disable collection of benchmark data after init is done.
   (add-hook 'after-init-hook 'benchmark-init/deactivate))
 
-(add-hook 'kill-emacs-hook #'auth-source-forget-all-cached)
+(setq password-cache t) ; enable password caching
+(setq password-cache-expiry 600) ; for one hour (time in secs)
+(setq auth-sources (remove "~/.authinfo" auth-sources)) ;; Only use its .gpg counterpart
 
 (use-package restart-emacs
   :commands (restart-emacs restart-emacs-start-new-emacs))
@@ -82,26 +84,30 @@
 (column-number-mode t)
 (global-display-line-numbers-mode t)
 
-(defun my-disable-line-numbers ()
+(defun lps/disable-line-numbers ()
   (display-line-numbers-mode 0))
 
 (dolist (mode '(org-mode-hook
-               ; Term & Shells
+                ;; Term & Shells
                 eshell-mode-hook
                 comint-mode-hook
-                ; PDF viewers
+                ;; PDF viewers
                 pdf-view-mode-hook
                 doc-view-mode-hook
-                ; Help modes
+                ;; Help modes
                 helpful-mode-hook
                 help-mode-hook
                 apropos-mode-hook
-                ; Extra modes
+                ;; mu4e
+                mu4e-main-mode-hook
+                mu4e-view-mode-hook
+                mu4e-headers-mode-hook
+                ;; Extra modes
                 undo-tree-visualizer-mode-hook
                 treemacs-mode-hook
                 dired-mode-hook))
 
-(add-hook mode #'my-disable-line-numbers))
+  (add-hook mode #'lps/disable-line-numbers))
 
 (global-visual-line-mode 1)
 

@@ -106,9 +106,11 @@ In order to benchmark the package loading, we use [[https://github.com/dholm/ben
 
 Emacs is not very secure as such. We try to fix this as best as we can.
 
-First, we don't want data to be saved across Emacs session.
+We explicitly fix how long passwords should be cached. A clever thing could be to distinguish between different environments, and use different values for /e.g./ the computer you use at work vs other computers. Another idea could be to ask the user if he wants his password to be cached for the current session, and if so, for how long.
 #+begin_src emacs-lisp
-  (add-hook 'kill-emacs-hook #'auth-source-forget-all-cached)
+  (setq password-cache t) ; enable password caching
+  (setq password-cache-expiry 600) ; for one hour (time in secs)
+  (setq auth-sources (remove "~/.authinfo" auth-sources)) ;; Only use its .gpg counterpart
 #+end_src
 ** Quick restart
 
@@ -186,26 +188,30 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
   (column-number-mode t)
   (global-display-line-numbers-mode t)
 
-  (defun my-disable-line-numbers ()
+  (defun lps/disable-line-numbers ()
     (display-line-numbers-mode 0))
 
   (dolist (mode '(org-mode-hook
-                 ; Term & Shells
+                  ;; Term & Shells
                   eshell-mode-hook
                   comint-mode-hook
-                  ; PDF viewers
+                  ;; PDF viewers
                   pdf-view-mode-hook
                   doc-view-mode-hook
-                  ; Help modes
+                  ;; Help modes
                   helpful-mode-hook
                   help-mode-hook
                   apropos-mode-hook
-                  ; Extra modes
+                  ;; mu4e
+                  mu4e-main-mode-hook
+                  mu4e-view-mode-hook
+                  mu4e-headers-mode-hook
+                  ;; Extra modes
                   undo-tree-visualizer-mode-hook
                   treemacs-mode-hook
                   dired-mode-hook))
 
-  (add-hook mode #'my-disable-line-numbers))
+    (add-hook mode #'lps/disable-line-numbers))
 #+end_src
 
 While we are at it, we also want Emacs to wrap our lines, so that we never have to scroll horizontally to see the end of a long line (besides, how would we do it, now that we don't have a scrollbar anymore ?!)
