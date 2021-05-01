@@ -246,7 +246,6 @@ installed themes instead."
 (setq-default tab-width 4)
 
 (use-package hungry-delete
-  :ensure t
   :defer t
   :init
   (global-hungry-delete-mode 1)
@@ -315,6 +314,7 @@ installed themes instead."
   :bind (("M-x" . counsel-M-x)
          ("C-x b" . counsel-switch-buffer) ;; counsel-ibuffer is a fancier option
          ("C-x C-f" . counsel-find-file)
+         ("C-c i" . counsel-imenu)
          :map minibuffer-local-map
          ("C-r" . 'counsel-minibuffer-history)))
 
@@ -641,9 +641,6 @@ buffer in current window."
    ;; Converting M-v to V here by analogy.
    ("V" scroll-down-command)
    ("l" recenter-top-bottom)))
-
-(use-package counsel
-  :bind ("C-c i" . counsel-imenu))
 
 (use-package emacs
   :ensure nil
@@ -1100,14 +1097,14 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   ;; Coding in blocks
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
-  (org-imenu-depth 4)
-
   :config
   (defun my-org-mode-setup ()
     (my-org-font-setup)
     (org-indent-mode 1)
     (variable-pitch-mode 1)
     (visual-line-mode 1))
+
+  (setq org-imenu-depth 4)
 
   (setq org-ellipsis " ▾")
 
@@ -1222,13 +1219,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   :custom
   (pdf-view-restore-filename "~/.emacs.d/.pdf-view-restore")
   (use-file-base-name-flag nil)
-  :hook (pdf-view-mode . lps/save-restore-pos-in-pdf)
-  :config
-  (defun lps/save-restore-pos-in-pdf (&optional pages)
-    "Activates `pdf-view-restore-mode' if the number of pages\nis higher than PAGES (default is 20)"
-    (let ((min-pages (or pages 20)))
-      (if ( > (pdf-cache-number-of-pages) min-pages)
-          (pdf-view-restore-mode)))))
+  :hook (pdf-view-mode . pdf-view-restore-mode))
 
 ;; AUCTeX initialization
 (use-package tex-site

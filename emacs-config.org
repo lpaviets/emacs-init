@@ -396,7 +396,6 @@ Then, we do not want to repeatedly spam the ~DEL~ key in order to delete a long 
 
 #+begin_src emacs-lisp
 (use-package hungry-delete
-  :ensure t
   :defer t
   :init
   (global-hungry-delete-mode 1)
@@ -487,6 +486,7 @@ Although emacs provides a number of commands to navigate within a file, to find 
     :bind (("M-x" . counsel-M-x)
            ("C-x b" . counsel-switch-buffer) ;; counsel-ibuffer is a fancier option
            ("C-x C-f" . counsel-find-file)
+           ("C-c i" . counsel-imenu)
            :map minibuffer-local-map
            ("C-r" . 'counsel-minibuffer-history)))
 
@@ -948,13 +948,6 @@ Because movement keys are the most frequently used ones, it might be useful to c
      ;; Converting M-v to V here by analogy.
      ("V" scroll-down-command)
      ("l" recenter-top-bottom)))
-#+end_src
-
-We also want to be able to move faster in large documents. To do this, we use imenu, or more precisely its counsel-enhanced counterpart
-
-#+begin_src emacs-lisp
-  (use-package counsel
-    :bind ("C-c i" . counsel-imenu))
 #+end_src
 
 Furthermore, we change a variable that makes sense for American writers, but not so much according to French conventions. The Emacs Manual recommends against it, as we are no longer able to distinguish a sentence ending from an abbreviation, but I do not use this type of abbreviation very often anyway (notable counterexamples nonetheless: /i.e./ and /e.g./).
@@ -1659,14 +1652,14 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
     ;; Coding in blocks
     (org-src-fontify-natively t)
     (org-src-tab-acts-natively t)
-    (org-imenu-depth 4)
-
     :config
     (defun my-org-mode-setup ()
       (my-org-font-setup)
       (org-indent-mode 1)
       (variable-pitch-mode 1)
       (visual-line-mode 1))
+
+    (setq org-imenu-depth 4)
 
     (setq org-ellipsis " ▾")
 
@@ -1835,13 +1828,7 @@ We also add the (generally useful) feature of remembering where we left a PDF wh
     :custom
     (pdf-view-restore-filename "~/.emacs.d/.pdf-view-restore")
     (use-file-base-name-flag nil)
-    :hook (pdf-view-mode . lps/save-restore-pos-in-pdf)
-    :config
-    (defun lps/save-restore-pos-in-pdf (&optional pages)
-      "Activates `pdf-view-restore-mode' if the number of pages\nis higher than PAGES (default is 20)"
-      (let ((min-pages (or pages 20)))
-        (if ( > (pdf-cache-number-of-pages) min-pages)
-            (pdf-view-restore-mode)))))
+    :hook (pdf-view-mode . pdf-view-restore-mode))
 #+end_src
 
 *** LaTeX
