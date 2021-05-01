@@ -1138,7 +1138,8 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
     (set-face-attribute (car face) nil :font my-org-mode-font :weight 'regular :height (cdr face)))
 
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch :extend t)
+  (set-face-attribute 'org-block-begin-line nil :slant 'italic :foreground "dark gray" :background "#1d1d2b" :inherit 'variable-pitch :height 1.0)
   (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
