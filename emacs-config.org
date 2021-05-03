@@ -317,49 +317,6 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
     (display-time-mode 1))
 #+end_src
 
-*** Interactively change the UI
-
-This is one moment where a pretty hydra could help us change general UI parameters, such as the text size, some highlighting options and so on.
-
-#+begin_src emacs-lisp
-  (with-eval-after-load 'hydra
-    ;; define a title function
-    (defvar appearance-title (with-faicon "desktop" "Appearance"))
-
-    ;; generate hydra
-
-    (pretty-hydra-define hydra-appearance (:title appearance-title
-                                                  :quit-key "q")
-      ("Theme"
-       (
-        ;;     ("o" olivetti-mode "Olivetti" :toggle t)
-        ;;     ("t" toggle-window-transparency "Transparency" :toggle t )
-        ("c" lps/rotate-through-themes "Cycle Themes" )
-        ("t" lps/restore-initial-themes "Restore Theme")
-        ("+" text-scale-increase "Zoom In")
-        ("-" text-scale-decrease "Zoom Out")
-        ("x" toggle-frame-maximized "Maximize Frame" :toggle t )
-        ("X" toggle-frame-fullscreen "Fullscreen Frame" :toggle t))
-       "Highlighting"
-       (("d" rainbow-delimiters-mode "Rainbow Delimiters" :toggle t )
-        ("r" rainbow-mode "Show Hex Colours" :toggle t )
-        ("n" highlight-numbers-mode "Highlight Code Numbers" :toggle t )
-        ("l" display-line-numbers-mode "Show Line Numbers" :toggle t )
-        ("_" global-hl-line-mode "Highlight Current Line" :toggle t )
-        ;;    ("I" rainbow-identifiers-mode "Rainbow Identifiers" :toggle t )
-        ("b" beacon-mode "Show Cursor Trailer" :toggle t )
-        ("w" whitespace-mode "Show Whitespaces" :toggle t))
-      "Miscellaneous"
-      (("j" visual-line-mode "Wrap Line Window"  :toggle t)
-       ("m" visual-fill-column-mode "Wrap Line Column"  :toggle t)
-       ;;    ("a" adaptive-wrap-prefix-mode "Indent Wrapped Lines" :toggle t )
-       ;;   ("i" highlight-indent-guides-mode  "Show Indent Guides" :toggle t )
-       ("g" fci-mode "Show Fill Column" :toggle t )
-       ("<SPC>" nil "Quit" :color blue )))))
-
-  (global-set-key (kbd "C-c h a") 'hydra-appearance/body)
-
-#+end_src
 *** Extra packages
 
 Some packages are used lated in the configuration, and we want to be able to use those comfortable modes.
@@ -381,7 +338,6 @@ Some packages are used lated in the configuration, and we want to be able to use
   (use-package highlight-numbers
     :hook (prog-mode . highlight-numbers-mode))
 #+end_src
-
 ** Whitespaces
 
 First of all, we never want ~TAB~ to insert actual tab characters.
@@ -409,6 +365,74 @@ And we also don't like trailing whitespaces, so we delete them automatically whe
     :hook (before-save . delete-trailing-whitespace))
 #+end_src
 
+** Hydra
+
+[[https://github.com/abo-abo/hydra][Hydra]] is a package that is used to group several related commands into a family of bindings, all starting with the same prefix (= "hydra"). Whenever this common prefix is entered in a suitable mode, a panel shows up, showing all the user-defined commands that can now be invoked with a single keystroke instead of repeatedly using the same long prefix.
+
+#+begin_src emacs-lisp
+  (use-package hydra
+    :defer t
+    :bind-keymap ("C-c h" . lps/all-hydras-map)
+    :init
+    (defvar lps/all-hydras-map (make-sparse-keymap)))
+#+end_src
+
+All the hydras will now be defined after the package to which they correspond, or in the appropriate section. Most of them are modifications of hydras that can be found on the [[https://github.com/abo-abo/hydra/wiki][hydra wiki]].
+
+Some hydras will be called less frequently and for other purposes than getting a "quick-and-dirty" access to commonly used functions. Hence, we will make them prettier (the compromise being that they are less minimalistic and take much more space visually)
+
+*MANUAL* This is not a MELPA package. It can be found [[https://github.com/Ladicle/hydra-posframe][here]]. Install it and change the loading path according to your configuration.
+
+#+begin_src emacs-lisp
+  ;; Easier hydra definition
+  (use-package pretty-hydra
+    :after hydra)
+#+end_src
+** Interactively change the UI
+
+This is one moment where a pretty hydra could help us change general UI parameters, such as the text size, some highlighting options and so on.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :after pretty-hydra
+    :bind (:map lps/all-hydras-map
+                ("a" . hydra-appearance/body))
+    :config
+    ;; define a title function
+    (defvar appearance-title (with-faicon "desktop" "Appearance"))
+
+    ;; generate hydra
+
+    (pretty-hydra-define hydra-appearance (:title appearance-title
+                                                  :quit-key "q")
+      ("Theme"
+       (
+        ;;     ("o" olivetti-mode "Olivetti" :toggle t)
+        ;;     ("t" toggle-window-transparency "Transparency" :toggle t )
+        ("c" lps/rotate-through-themes "Cycle Themes" )
+        ("t" lps/restore-initial-themes "Restore Theme")
+        ("+" text-scale-increase "Zoom In")
+        ("-" text-scale-decrease "Zoom Out")
+        ("x" toggle-frame-maximized "Maximize Frame" :toggle t )
+        ("X" toggle-frame-fullscreen "Fullscreen Frame" :toggle t))
+       "Highlighting"
+       (("d" rainbow-delimiters-mode "Rainbow Delimiters" :toggle t )
+        ("r" rainbow-mode "Show Hex Colours" :toggle t )
+        ("n" highlight-numbers-mode "Highlight Code Numbers" :toggle t )
+        ("l" display-line-numbers-mode "Show Line Numbers" :toggle t )
+        ("_" global-hl-line-mode "Highlight Current Line" :toggle t )
+        ;;    ("I" rainbow-identifiers-mode "Rainbow Identifiers" :toggle t )
+        ("b" beacon-mode "Show Cursor Trailer" :toggle t )
+        ("w" whitespace-mode "Show Whitespaces" :toggle t))
+       "Miscellaneous"
+       (("j" visual-line-mode "Wrap Line Window"  :toggle t)
+        ("m" visual-fill-column-mode "Wrap Line Column"  :toggle t)
+        ;;    ("a" adaptive-wrap-prefix-mode "Indent Wrapped Lines" :toggle t )
+        ;;   ("i" highlight-indent-guides-mode  "Show Indent Guides" :toggle t )
+        ("g" fci-mode "Show Fill Column" :toggle t )
+        ("<SPC>" nil "Quit" :color blue )))))
+#+end_src
 ** Font and encoding
 
 Even if most of the time, you should be working with UTF-8, we still want to make sure that this is the default and that Emacs assumes that we are using UTF-8
@@ -430,7 +454,6 @@ Another thing that is technically more a stylistic choice rather than a real enc
 #+begin_src emacs-lisp
   (use-package calendar
     :ensure nil
-    :defer t
     :config
     (calendar-set-date-style 'european))
 #+end_src
@@ -680,9 +703,13 @@ First of all, we use a few helper functions, defined in [[https://github.com/abo
 Now, we wrap everything up into a nice hydra
 
 #+begin_src emacs-lisp
-  (global-set-key
-   (kbd "C-c h w") ; w for window
-   (defhydra hydra-window (:color red
+  (use-package emacs
+    :ensure nil
+    :bind (:map lps/all-hydras-map
+                ("w" . hydra-window/body))
+
+    :init
+    (defhydra hydra-window (:color red
                                   :hint nil)
      "
       ^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
@@ -777,26 +804,6 @@ It will condense all the available information about something within a single H
 
 #+end_src
 * Commands
-** Hydra
-
-[[https://github.com/abo-abo/hydra][Hydra]] is a package that is used to group several related commands into a family of bindings, all starting with the same prefix (= "hydra"). Whenever this common prefix is entered in a suitable mode, a panel shows up, showing all the user-defined commands that can now be invoked with a single keystroke instead of repeatedly using the same long prefix.
-
-#+begin_src emacs-lisp
-  (use-package hydra
-    :defer t)
-#+end_src
-
-All the hydras will now be defined after the package to which they correspond, or in the appropriate section. Most of them are modifications of hydras that can be found on the [[https://github.com/abo-abo/hydra/wiki][hydra wiki]].
-
-Some hydras will be called less frequently and for other purposes than getting a "quick-and-dirty" access to commonly used functions. Hence, we will make them prettier (the compromise being that they are less minimalistic and take much more space visually)
-
-*MANUAL* This is not a MELPA package. It can be found [[https://github.com/Ladicle/hydra-posframe][here]]. Install it and change the loading path according to your configuration.
-
-#+begin_src emacs-lisp
-  ;; Easier hydra definition
-  (use-package pretty-hydra
-    :after hydra)
-#+end_src
 ** Disable
 
 We want to use the full Emacs power. However, if you find yourself using repeatedly a dangerous command by mistake, you might want to disable it
@@ -900,8 +907,8 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
 #+begin_src emacs-lisp
   (use-package multiple-cursors
     :defer t
-    :bind
-    ("C-c h M" . hydra-multiple-cursors/body)
+    :bind (:map lps/all-hydras-map
+                ("M" . hydra-multiple-cursors/body))
     :config
     (pretty-hydra-define hydra-multiple-cursors (:title "Multiple cursors"
                                                         :quit-key "q")
@@ -934,20 +941,23 @@ The webpage specifies that the commands provided by this package are best invoke
 Because movement keys are the most frequently used ones, it might be useful to create an Hydra helping us navigate around a document.
 
 #+begin_src emacs-lisp
-  (global-set-key
-   (kbd "C-c h m")
-   (defhydra hydra-move ()
-     "Movement" ; m as in movement
-     ("n" next-line)
-     ("p" previous-line)
-     ("f" forward-char)
-     ("b" backward-char)
-     ("a" beginning-of-line)
-     ("e" move-end-of-line)
-     ("v" scroll-up-command)
-     ;; Converting M-v to V here by analogy.
-     ("V" scroll-down-command)
-     ("l" recenter-top-bottom)))
+  (use-package emacs
+    :ensure nil
+    :bind (:map lps/all-hydras-map
+                ("m" . hydra-move/body))
+    :init
+    (defhydra hydra-move ()
+      "Movement" ; m as in movement
+      ("n" next-line)
+      ("p" previous-line)
+      ("f" forward-char)
+      ("b" backward-char)
+      ("a" beginning-of-line)
+      ("e" move-end-of-line)
+      ("v" scroll-up-command)
+      ;; Converting M-v to V here by analogy.
+      ("V" scroll-down-command)
+      ("l" recenter-top-bottom)))
 #+end_src
 
 Furthermore, we change a variable that makes sense for American writers, but not so much according to French conventions. The Emacs Manual recommends against it, as we are no longer able to distinguish a sentence ending from an abbreviation, but I do not use this type of abbreviation very often anyway (notable counterexamples nonetheless: /i.e./ and /e.g./).
@@ -991,36 +1001,39 @@ Manipulating rectangles is a cool Emacs feature. You can select a region with th
 Because the functions operating on rectangles are not always the easier to remember, we simply define a new Hydra referencing the most useful ones.
 
 #+begin_src emacs-lisp
-  (global-set-key
-   (kbd "C-c h r") ; r as rectangle
-   (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
-                                        :color pink
-                                        :hint nil
-                                        :post (deactivate-mark))
-     "
-    ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_
-  _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_
-    ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
-  ^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
-  "
-     ("p" rectangle-previous-line)
-     ("n" rectangle-next-line)
-     ("b" rectangle-backward-char)
-     ("f" rectangle-forward-char)
-     ("d" kill-rectangle)                    ;; C-x r k
-     ("y" yank-rectangle)                    ;; C-x r y
-     ("w" copy-rectangle-as-kill)            ;; C-x r M-w
-     ("o" open-rectangle)                    ;; C-x r o
-     ("t" string-rectangle)                  ;; C-x r t
-     ("c" clear-rectangle)                   ;; C-x r c
-     ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
-     ("N" rectangle-number-lines)            ;; C-x r N
-     ("r" (if (region-active-p)
-              (deactivate-mark)
-            (rectangle-mark-mode 1)))        ;; C-x SPC
-     ("i" string-insert-rectangle)
-     ("u" undo nil)
-     ("q" nil)))
+  (use-package emacs
+    :ensure nil
+    :bind (:map lps/all-hydras-map
+                ("r" . hydra-rectangle/body))
+    :init
+    (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
+                                         :color pink
+                                         :hint nil
+                                         :post (deactivate-mark))
+      "
+        ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_
+      _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_
+        ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
+      ^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
+      "
+      ("p" rectangle-previous-line)
+      ("n" rectangle-next-line)
+      ("b" rectangle-backward-char)
+      ("f" rectangle-forward-char)
+      ("d" kill-rectangle)                    ;; C-x r k
+      ("y" yank-rectangle)                    ;; C-x r y
+      ("w" copy-rectangle-as-kill)            ;; C-x r M-w
+      ("o" open-rectangle)                    ;; C-x r o
+      ("t" string-rectangle)                  ;; C-x r t
+      ("c" clear-rectangle)                   ;; C-x r c
+      ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
+      ("N" rectangle-number-lines)            ;; C-x r N
+      ("r" (if (region-active-p)
+               (deactivate-mark)
+             (rectangle-mark-mode 1)))        ;; C-x SPC
+      ("i" string-insert-rectangle)
+      ("u" undo nil)
+      ("q" nil)))
 #+end_src
 
 ** Selection

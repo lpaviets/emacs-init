@@ -188,43 +188,6 @@ installed themes instead."
   (setq display-time-format "[%d/%m - %H:%M]")
   (display-time-mode 1))
 
-(with-eval-after-load 'hydra
-  ;; define a title function
-  (defvar appearance-title (with-faicon "desktop" "Appearance"))
-
-  ;; generate hydra
-
-  (pretty-hydra-define hydra-appearance (:title appearance-title
-                                                :quit-key "q")
-    ("Theme"
-     (
-      ;;     ("o" olivetti-mode "Olivetti" :toggle t)
-      ;;     ("t" toggle-window-transparency "Transparency" :toggle t )
-      ("c" lps/rotate-through-themes "Cycle Themes" )
-      ("t" lps/restore-initial-themes "Restore Theme")
-      ("+" text-scale-increase "Zoom In")
-      ("-" text-scale-decrease "Zoom Out")
-      ("x" toggle-frame-maximized "Maximize Frame" :toggle t )
-      ("X" toggle-frame-fullscreen "Fullscreen Frame" :toggle t))
-     "Highlighting"
-     (("d" rainbow-delimiters-mode "Rainbow Delimiters" :toggle t )
-      ("r" rainbow-mode "Show Hex Colours" :toggle t )
-      ("n" highlight-numbers-mode "Highlight Code Numbers" :toggle t )
-      ("l" display-line-numbers-mode "Show Line Numbers" :toggle t )
-      ("_" global-hl-line-mode "Highlight Current Line" :toggle t )
-      ;;    ("I" rainbow-identifiers-mode "Rainbow Identifiers" :toggle t )
-      ("b" beacon-mode "Show Cursor Trailer" :toggle t )
-      ("w" whitespace-mode "Show Whitespaces" :toggle t))
-    "Miscellaneous"
-    (("j" visual-line-mode "Wrap Line Window"  :toggle t)
-     ("m" visual-fill-column-mode "Wrap Line Column"  :toggle t)
-     ;;    ("a" adaptive-wrap-prefix-mode "Indent Wrapped Lines" :toggle t )
-     ;;   ("i" highlight-indent-guides-mode  "Show Indent Guides" :toggle t )
-     ("g" fci-mode "Show Fill Column" :toggle t )
-     ("<SPC>" nil "Quit" :color blue )))))
-
-(global-set-key (kbd "C-c h a") 'hydra-appearance/body)
-
 ;; Generic UI modes
 
 (use-package beacon
@@ -254,6 +217,56 @@ installed themes instead."
 (use-package emacs
   :hook (before-save . delete-trailing-whitespace))
 
+(use-package hydra
+  :defer t
+  :bind-keymap ("C-c h" . lps/all-hydras-map)
+  :init
+  (defvar lps/all-hydras-map (make-sparse-keymap)))
+
+;; Easier hydra definition
+(use-package pretty-hydra
+  :after hydra)
+
+(use-package emacs
+  :ensure nil
+  :after pretty-hydra
+  :bind (:map lps/all-hydras-map
+              ("a" . hydra-appearance/body))
+  :config
+  ;; define a title function
+  (defvar appearance-title (with-faicon "desktop" "Appearance"))
+
+  ;; generate hydra
+
+  (pretty-hydra-define hydra-appearance (:title appearance-title
+                                                :quit-key "q")
+    ("Theme"
+     (
+      ;;     ("o" olivetti-mode "Olivetti" :toggle t)
+      ;;     ("t" toggle-window-transparency "Transparency" :toggle t )
+      ("c" lps/rotate-through-themes "Cycle Themes" )
+      ("t" lps/restore-initial-themes "Restore Theme")
+      ("+" text-scale-increase "Zoom In")
+      ("-" text-scale-decrease "Zoom Out")
+      ("x" toggle-frame-maximized "Maximize Frame" :toggle t )
+      ("X" toggle-frame-fullscreen "Fullscreen Frame" :toggle t))
+     "Highlighting"
+     (("d" rainbow-delimiters-mode "Rainbow Delimiters" :toggle t )
+      ("r" rainbow-mode "Show Hex Colours" :toggle t )
+      ("n" highlight-numbers-mode "Highlight Code Numbers" :toggle t )
+      ("l" display-line-numbers-mode "Show Line Numbers" :toggle t )
+      ("_" global-hl-line-mode "Highlight Current Line" :toggle t )
+      ;;    ("I" rainbow-identifiers-mode "Rainbow Identifiers" :toggle t )
+      ("b" beacon-mode "Show Cursor Trailer" :toggle t )
+      ("w" whitespace-mode "Show Whitespaces" :toggle t))
+     "Miscellaneous"
+     (("j" visual-line-mode "Wrap Line Window"  :toggle t)
+      ("m" visual-fill-column-mode "Wrap Line Column"  :toggle t)
+      ;;    ("a" adaptive-wrap-prefix-mode "Indent Wrapped Lines" :toggle t )
+      ;;   ("i" highlight-indent-guides-mode  "Show Indent Guides" :toggle t )
+      ("g" fci-mode "Show Fill Column" :toggle t )
+      ("<SPC>" nil "Quit" :color blue )))))
+
 (prefer-coding-system 'utf-8)
 (setq locale-coding-system 'utf-8)
 (set-language-environment 'utf-8)
@@ -266,7 +279,6 @@ installed themes instead."
 
 (use-package calendar
   :ensure nil
-  :defer t
   :config
   (calendar-set-date-style 'european))
 
@@ -464,9 +476,13 @@ installed themes instead."
         (shrink-window arg)
       (enlarge-window arg))))
 
-(global-set-key
- (kbd "C-c h w") ; w for window
- (defhydra hydra-window (:color red
+(use-package emacs
+  :ensure nil
+  :bind (:map lps/all-hydras-map
+              ("w" . hydra-window/body))
+
+  :init
+  (defhydra hydra-window (:color red
                                 :hint nil)
    "
     ^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
@@ -546,13 +562,6 @@ buffer in current window."
   ([remap describe-key]      . helpful-key)
   ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
 
-(use-package hydra
-  :defer t)
-
-;; Easier hydra definition
-(use-package pretty-hydra
-  :after hydra)
-
 ;; Don't disable any command
 ;; BE CAREFUL
 ;; If you are a new user, you might to comment out this line
@@ -601,8 +610,8 @@ buffer in current window."
 
 (use-package multiple-cursors
   :defer t
-  :bind
-  ("C-c h M" . hydra-multiple-cursors/body)
+  :bind (:map lps/all-hydras-map
+              ("M" . hydra-multiple-cursors/body))
   :config
   (pretty-hydra-define hydra-multiple-cursors (:title "Multiple cursors"
                                                       :quit-key "q")
@@ -627,20 +636,23 @@ buffer in current window."
      (("M-n" mc/unmark-next-like-this "Unmark next like this")
       ("M-p" mc/unmark-previous-like-this "Unmark previous like this")))))
 
-(global-set-key
- (kbd "C-c h m")
- (defhydra hydra-move ()
-   "Movement" ; m as in movement
-   ("n" next-line)
-   ("p" previous-line)
-   ("f" forward-char)
-   ("b" backward-char)
-   ("a" beginning-of-line)
-   ("e" move-end-of-line)
-   ("v" scroll-up-command)
-   ;; Converting M-v to V here by analogy.
-   ("V" scroll-down-command)
-   ("l" recenter-top-bottom)))
+(use-package emacs
+  :ensure nil
+  :bind (:map lps/all-hydras-map
+              ("m" . hydra-move/body))
+  :init
+  (defhydra hydra-move ()
+    "Movement" ; m as in movement
+    ("n" next-line)
+    ("p" previous-line)
+    ("f" forward-char)
+    ("b" backward-char)
+    ("a" beginning-of-line)
+    ("e" move-end-of-line)
+    ("v" scroll-up-command)
+    ;; Converting M-v to V here by analogy.
+    ("V" scroll-down-command)
+    ("l" recenter-top-bottom)))
 
 (use-package emacs
   :ensure nil
@@ -662,6 +674,39 @@ buffer in current window."
   (avy-keys '(?q ?s ?d ?f ?g ?h ?j ?k ?l ?m))
   (avy-all-windows nil))
 
+(use-package emacs
+  :ensure nil
+  :bind (:map lps/all-hydras-map
+              ("r" . hydra-rectangle/body))
+  :init
+  (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
+                                       :color pink
+                                       :hint nil
+                                       :post (deactivate-mark))
+    "
+      ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_
+    _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_
+      ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
+    ^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
+    "
+    ("p" rectangle-previous-line)
+    ("n" rectangle-next-line)
+    ("b" rectangle-backward-char)
+    ("f" rectangle-forward-char)
+    ("d" kill-rectangle)                    ;; C-x r k
+    ("y" yank-rectangle)                    ;; C-x r y
+    ("w" copy-rectangle-as-kill)            ;; C-x r M-w
+    ("o" open-rectangle)                    ;; C-x r o
+    ("t" string-rectangle)                  ;; C-x r t
+    ("c" clear-rectangle)                   ;; C-x r c
+    ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
+    ("N" rectangle-number-lines)            ;; C-x r N
+    ("r" (if (region-active-p)
+             (deactivate-mark)
+           (rectangle-mark-mode 1)))        ;; C-x SPC
+    ("i" string-insert-rectangle)
+    ("u" undo nil)
+    ("q" nil)))
 
 (use-package expand-region
   :bind ("C-=" . er/expand-region))
