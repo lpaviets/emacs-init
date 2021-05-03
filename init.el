@@ -1302,7 +1302,12 @@ buffer in current window."
   (defun lps/latex-company-setup () ;; TO FIX !
     (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-latex-commands company-capf company-dabbrev company-yasnippet))))
 
-  (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup))
+  (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup)
+
+(defun lps/latex-set-faces ()
+  (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8"))
+
+(add-hook 'LaTeX-mode-hook 'lps/latex-set-faces))
 
 (use-package bibtex
   :defer t
