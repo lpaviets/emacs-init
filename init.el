@@ -654,36 +654,14 @@ buffer in current window."
               ("r" . isearch-backward)
               ("x" . isearch-forward-regexp)))
 
-(global-set-key
- (kbd "C-c h r") ; r as rectangle
- (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
-                                      :color pink
-                                      :hint nil
-                                      :post (deactivate-mark))
-   "
-  ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_
-_b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_
-  ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
-^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
-"
-   ("p" rectangle-previous-line)
-   ("n" rectangle-next-line)
-   ("b" rectangle-backward-char)
-   ("f" rectangle-forward-char)
-   ("d" kill-rectangle)                    ;; C-x r k
-   ("y" yank-rectangle)                    ;; C-x r y
-   ("w" copy-rectangle-as-kill)            ;; C-x r M-w
-   ("o" open-rectangle)                    ;; C-x r o
-   ("t" string-rectangle)                  ;; C-x r t
-   ("c" clear-rectangle)                   ;; C-x r c
-   ("e" rectangle-exchange-point-and-mark) ;; C-x C-x
-   ("N" rectangle-number-lines)            ;; C-x r N
-   ("r" (if (region-active-p)
-            (deactivate-mark)
-          (rectangle-mark-mode 1)))        ;; C-x SPC
-   ("i" string-insert-rectangle)
-   ("u" undo nil)
-   ("q" nil)))
+(use-package avy
+  :defer t
+  :bind ("C-ù" . avy-goto-char-2)
+  :custom
+  ;; Using an AZERTY keyboard home row
+  (avy-keys '(?q ?s ?d ?f ?g ?h ?j ?k ?l ?m))
+  (avy-all-windows nil))
+
 
 (use-package expand-region
   :bind ("C-=" . er/expand-region))
@@ -897,7 +875,7 @@ _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'
   (let ((map company-active-map))
     (mapc (lambda (x) (define-key map (read-kbd-macro (format "M-%s" (cdr x)))
                                               `(lambda () (interactive) (company-complete-number ,(car x)))))
-          '((0 . "à")
+          '((10 . "à")
             (1 . "&")
             (2 . "é")
             (3 . "\"")
@@ -1461,13 +1439,15 @@ PWD is not in a git repo (or the git command is not found)."
 (use-package dired
   :ensure nil
   :defer t
+  :init
+  (setq delete-by-moving-to-trash t)
   ;; Prevents dired from opening thousands of buffers
   :bind (:map dired-mode-map
               ("RET" . dired-find-alternate-file)
               ("^"   . (lambda () (interactive) (find-alternate-file ".."))))
   :custom
   ;; Delete and copy directories recursively
-  (dired-recursive-deletes 'always)
+  (dired-recursive-deletes 'top)
   (dired-recursive-copies 'always)
   (dired-auto-revert-buffer t)
   (dired-listing-switches "-alFh"))
@@ -1481,6 +1461,9 @@ PWD is not in a git repo (or the git command is not found)."
 (use-package dired-x
   :ensure nil
   :after dired)
+
+(use-package disk-usage
+  :defer t)
 
 (use-package smtpmail
   :ensure nil
