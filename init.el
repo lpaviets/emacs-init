@@ -1792,3 +1792,16 @@ PWD is not in a git repo (or the git command is not found)."
 
 (use-package key-quiz
   :defer t)
+
+(use-package elfeed
+  :defer t
+  :bind (("C-c f" . elfeed))
+  :config
+  (setq-default elfeed-search-filter "@1-week-ago +unread "))
+
+(use-package elfeed-org
+  :defer t
+  :after elfeed
+  :config
+  (elfeed-org)
+  (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org")))

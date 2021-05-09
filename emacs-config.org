@@ -2544,6 +2544,28 @@ Another cool thing to do if you want to learn keybindings in a very inefficient 
   (use-package key-quiz
     :defer t)
 #+end_src
+* News and RSS feed
+** Elfeed
+Because it is text-oriented, Emacs is a completely viable option to be a RSS feed reader. Indeed, it can display, search, filter ... all the different information that you can expect when using RSS feeds, but you also have the whole power of Emacs to configure everything according to your need, /e.g./ infinite flexibility for search filters, bookmarks and so on.
+
+#+begin_src emacs-lisp
+  (use-package elfeed
+    :defer t
+    :bind (("C-c f" . elfeed))
+    :config
+    (setq-default elfeed-search-filter "@1-week-ago +unread "))
+#+end_src
+
+As the default syntax to manage and organize the various RSS feeds is a bit tedious, we use another package which this whole process painless.
+
+#+begin_src emacs-lisp
+  (use-package elfeed-org
+    :defer t
+    :after elfeed
+    :config
+    (elfeed-org)
+    (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org")))
+#+end_src
 * TODO Small things to do next
 ** Eshell and .bashrc
 Use two different files that are "loaded" by eshell. The first one contains the .bashrc aliases, the other one contains the usual eshell aliases, and at startup, we momentarily merge the two.
