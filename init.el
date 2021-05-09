@@ -161,7 +161,7 @@ installed themes instead."
   (interactive)
   (mapc #'disable-theme custom-enabled-themes)
   (mapc (lambda (theme) (funcall #'load-theme theme t)) lps/initial-enabled-themes)
-  (my-org-mode-setup))
+  (lps/org-mode-setup))
 
 ;; First time used: run M-x all-the-icons-install-fonts
 (use-package all-the-icons
@@ -432,7 +432,6 @@ installed themes instead."
                                       "*Buffer List*"
                                       "*Ibuffer*")))
 
-;;* Helpers
 (use-package windmove
   ;; Make windmove work in Org mode:
   :hook
@@ -1114,15 +1113,21 @@ buffer in current window."
   (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
 (use-package org
-  :defer t
-  :hook (org-mode . my-org-mode-setup)
+  :commands org-capture
+  ;; :init
+  ;; (global-set-key (kbd "C-c o") #'org-capture)
+  :hook (org-mode . lps/org-mode-setup)
+  :bind (("C-c o" . org-capture)
+         (:map org-mode-map
+               ("<M-S-return>" . org-insert-subheading)))
   :custom
   ;; Coding in blocks
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
+  (org-directory "~/Documents/OrgFiles/")
   :config
-  (defun my-org-mode-setup ()
-    (my-org-font-setup)
+  (defun lps/org-mode-setup ()
+    (lps/org-font-setup)
     (org-indent-mode 1)
     (variable-pitch-mode 1)
     (visual-line-mode 1))
@@ -1138,7 +1143,7 @@ buffer in current window."
       (setq my-org-mode-font my-temp-org-font)
     (setq my-org-mode-font "Ubuntu Mono")))
 
-(defun my-org-font-setup ()
+(defun lps/org-font-setup ()
   ;; Replace list hyphen with dot
   (font-lock-add-keywords 'org-mode
                           '(("^ *\\([-]\\) "
@@ -1210,7 +1215,7 @@ buffer in current window."
 
 (add-hook 'org-mode-hook #'lps/elisp-completion-in-user-init)
 
-(setq org-agenda-files '("~/Documents/OrgFiles/Tasks.org"))
+(setq org-agenda-files (concat org-directory "Tasks.org"))
 (setq org-log-into-drawer t)
 (setq org-log-done 'time)
 (setq org-agenda-start-with-log-mode t)
@@ -1225,7 +1230,31 @@ buffer in current window."
         ("plan" . ?p)
         ("note" . ?n)
         ("idea" . ?i)
-        ("read" . ?r))))
+        ("read" . ?r)))
+
+(setq org-capture-templates
+      '(("t" "Tasks / Projects")
+        ("tt" "Task" entry
+         (file+olp (concat org-directory "Tasks.org") "Inbox")
+         "* TODO %?\n  %U\n  %a\n  %i"
+         :empty-lines 1)
+
+        ("m" "Meeting" entry
+         (file+olp+datetree (concat org-directory "Tasks.org"))
+         "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
+         :empty-lines 1)
+
+        ("w" "Workflows")
+        ("we" "Checking Email" entry
+         (file+olp+datetree (concat org-directory "Tasks.org"))
+         "* Checking Email :email:\n\n%?"
+         :empty-lines 1)
+
+        ("r" "Random" entry
+         (file+headline "~/Documents/OrgFiles/everything.org"
+                        "A trier")
+         "* %?\n %a\n %i"
+         :empty-lines 1))))
 
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 

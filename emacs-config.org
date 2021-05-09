@@ -279,7 +279,7 @@ There used to be a package called [[https://github.com/toroidal-code/cycle-theme
     (interactive)
     (mapc #'disable-theme custom-enabled-themes)
     (mapc (lambda (theme) (funcall #'load-theme theme t)) lps/initial-enabled-themes)
-    (my-org-mode-setup))
+    (lps/org-mode-setup))
 #+end_src
 
 *** Modeline and icons
@@ -655,7 +655,6 @@ To facilitate window management, we use an hydra, binding most of the commands t
 First of all, we use a few helper functions, defined in [[https://github.com/abo-abo/hydra/blob/master/hydra-examples.el][hydra-examples.el]]
 
 #+begin_src emacs-lisp
-  ;;* Helpers
   (use-package windmove
     ;; Make windmove work in Org mode:
     :hook
@@ -1671,15 +1670,21 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
     (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
 
   (use-package org
-    :defer t
-    :hook (org-mode . my-org-mode-setup)
+    :commands org-capture
+    ;; :init
+    ;; (global-set-key (kbd "C-c o") #'org-capture)
+    :hook (org-mode . lps/org-mode-setup)
+    :bind (("C-c o" . org-capture)
+           (:map org-mode-map
+                 ("<M-S-return>" . org-insert-subheading)))
     :custom
     ;; Coding in blocks
     (org-src-fontify-natively t)
     (org-src-tab-acts-natively t)
+    (org-directory "~/Documents/OrgFiles/")
     :config
-    (defun my-org-mode-setup ()
-      (my-org-font-setup)
+    (defun lps/org-mode-setup ()
+      (lps/org-font-setup)
       (org-indent-mode 1)
       (variable-pitch-mode 1)
       (visual-line-mode 1))
@@ -1704,7 +1709,7 @@ Take care when copying this block of code: the ~use-package~ declaration continu
         (setq my-org-mode-font my-temp-org-font)
       (setq my-org-mode-font "Ubuntu Mono")))
 
-  (defun my-org-font-setup ()
+  (defun lps/org-font-setup ()
     ;; Replace list hyphen with dot
     (font-lock-add-keywords 'org-mode
                             '(("^ *\\([-]\\) "
@@ -1807,7 +1812,7 @@ Moreover, while we are configuring how Emacs treats this very file, we also want
 Not only is Org Mode great to write structured documents that can be exported to pretty much anything we want - including tangled to produce source code using literate programming -, it is also a powerful to ... *org*anize things. A built-in functionality is the agenda, where you can schedule tasks, set deadlines, configure reminders, the frequency at which you will need to repeat a given task, and so on.
 
 #+begin_src emacs-lisp
-  (setq org-agenda-files '("~/Documents/OrgFiles/Tasks.org"))
+  (setq org-agenda-files (concat org-directory "Tasks.org"))
   (setq org-log-into-drawer t)
   (setq org-log-done 'time)
   (setq org-agenda-start-with-log-mode t)
@@ -1822,8 +1827,35 @@ Not only is Org Mode great to write structured documents that can be exported to
           ("plan" . ?p)
           ("note" . ?n)
           ("idea" . ?i)
-          ("read" . ?r))))
+          ("read" . ?r)))
 
+#+end_src
+
+** Org Capture
+#+begin_src emacs-lisp
+  (setq org-capture-templates
+        '(("t" "Tasks / Projects")
+          ("tt" "Task" entry
+           (file+olp (concat org-directory "Tasks.org") "Inbox")
+           "* TODO %?\n  %U\n  %a\n  %i"
+           :empty-lines 1)
+
+          ("m" "Meeting" entry
+           (file+olp+datetree (concat org-directory "Tasks.org"))
+           "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
+           :empty-lines 1)
+
+          ("w" "Workflows")
+          ("we" "Checking Email" entry
+           (file+olp+datetree (concat org-directory "Tasks.org"))
+           "* Checking Email :email:\n\n%?"
+           :empty-lines 1)
+
+          ("r" "Random" entry
+           (file+headline "~/Documents/OrgFiles/everything.org"
+                          "A trier")
+           "* %?\n %a\n %i"
+           :empty-lines 1))))
 #+end_src
 
 * LaTeX and PDF
