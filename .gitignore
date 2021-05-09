@@ -76,10 +76,15 @@ flycheck_*.el
 # Prescient data
 /var/
 
+# Elfeed database/index
+/.elfeed/
+
+# pdf-view-restore
+/.pdf-view-restore
+
 # Other random stuff
 /network-security.data
 /projects
 /recentf
 *.sqlite
 /session.105c7771555e10ce7e161703684163112000000021830165
-/.pdf-view-restore

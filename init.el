@@ -667,11 +667,14 @@ buffer in current window."
 
 (use-package avy
   :defer t
-  :bind ("C-ù" . avy-goto-char-2)
+  :bind ("C-ù" . avy-goto-char-timer)
   :custom
   ;; Using an AZERTY keyboard home row
   (avy-keys '(?q ?s ?d ?f ?g ?h ?j ?k ?l ?m))
-  (avy-all-windows nil))
+  (avy-all-windows nil)
+  (avy-single-candidate-jump nil )
+  (avy-timeout-seconds 0.5)
+  (avy-translate-char-function '(lambda (c) (if (= c 32) ?q c))))
 
 (use-package emacs
   :ensure nil
@@ -898,7 +901,9 @@ buffer in current window."
               ("TAB" . company-complete)
               ("RET" . nil)
               ("<return>" . nil)
-              ("C-l" . company-complete-selection))
+              ("C-l" . company-complete-selection)
+              ("C-n" . nil)
+              ("C-p" . nil))
 
   :custom
   ;; Generic company settings
@@ -1796,12 +1801,14 @@ PWD is not in a git repo (or the git command is not found)."
 (use-package elfeed
   :defer t
   :bind (("C-c f" . elfeed))
+  :custom
+  (elfeed-db-directory "~/.emacs.d/.elfeed")
+  (elfeed-search-title-max-width 110)
   :config
   (setq-default elfeed-search-filter "@1-week-ago +unread "))
 
 (use-package elfeed-org
-  :defer t
   :after elfeed
   :config
-  (elfeed-org)
-  (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org")))
+  (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org"))
+  (elfeed-org))
