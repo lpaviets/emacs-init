@@ -561,6 +561,28 @@ buffer in current window."
   ([remap describe-key]      . helpful-key)
   ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
 
+;; Inspired from https://emacs.stackexchange.com/questions/2777/how-to-get-the-function-help-without-typing
+
+(require 'popup)
+
+(defun lps/describe-thing-in-popup ()
+  (interactive)
+  (let* ((thing (symbol-at-point))
+         (help-xref-following t)
+         (description (save-window-excursion
+                        (with-temp-buffer
+                          (help-mode)
+                          (help-xref-interned thing)
+                          (buffer-string)))))
+    (popup-tip description
+               :point (point)
+               :around t
+               :height 20
+               :scroll-bar t
+               :margin t)))
+
+(global-set-key (kbd "C-&") #'lps/describe-thing-in-popup)
+
 ;; Don't disable any command
 ;; BE CAREFUL
 ;; If you are a new user, you might to comment out this line
