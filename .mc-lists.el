@@ -9,21 +9,27 @@
         c-indent-line-or-region
         counsel-M-x
         end-of-visual-line
+        forward-sentence
         hungry-delete-backward
         hungry-delete-forward
         lps/eval-and-replace-last-sexp
         org-beginning-of-line
         org-end-of-line
         org-self-insert-command
+        paredit-forward-delete
+        paredit-forward-kill-word
         reftex-label
         ))
 
 (setq mc/cmds-to-run-once
       '(
+        hydra-multiple-cursors/body
         hydra-multiple-cursors/mc/edit-lines-and-exit
         hydra-multiple-cursors/mc/mark-all-words-like-this-and-exit
         hydra-multiple-cursors/mc/mark-next-like-this
         hydra-multiple-cursors/mc/mark-previous-like-this
         hydra-multiple-cursors/mc/skip-to-next-like-this
         hydra-multiple-cursors/mc/unmark-next-like-this
+        hydra-multiple-cursors/mc/unmark-previous-like-this
+        swiper-mc
         ))

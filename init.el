@@ -871,7 +871,9 @@ buffer in current window."
           eval-expression-minibuffer-setup
           emacs-lisp-mode
           lisp-mode
-          lisp-interaction-mode) . paredit-mode))
+          lisp-interaction-mode) . paredit-mode)
+  :bind (:map paredit-mode-map
+              ("C-M-y" . paredit-copy-as-kill)))
 
 (use-package elec-pair
   :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
@@ -1097,7 +1099,9 @@ buffer in current window."
 ;; Make sure that sbcl is available on PATH
 (use-package sly
   :hook (lisp-mode . sly-editing-mode)
-  :custom (inferior-lisp-program "sbcl") ; Clisp makes SLY crash
+  :custom
+  (inferior-lisp-program "sbcl") ; Clisp makes SLY crash
+  (sly-complete-symbol-function 'sly-simple-completions)
   :config
   (add-hook 'sly-mode-hook
             (lambda ()

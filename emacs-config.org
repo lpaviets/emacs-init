@@ -1274,7 +1274,9 @@ Now, in order to work with structured text, such as source code, we want to be a
             eval-expression-minibuffer-setup
             emacs-lisp-mode
             lisp-mode
-            lisp-interaction-mode) . paredit-mode))
+            lisp-interaction-mode) . paredit-mode)
+    :bind (:map paredit-mode-map
+                ("C-M-y" . paredit-copy-as-kill)))
 
   (use-package elec-pair
     :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
@@ -1624,15 +1626,17 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
 *MANUAL* It is likely that ~sbcl~ is not already installed. Hence, in order to run the following code, you will need to install it. If you install it manuallyby compiling the source code, make sure that the ~sbcl~ command is available on the PATH, or modify  =:custom (inferior-lisp-program "<path/to/sbcl>")= accordingly in the following block.
 
 #+begin_src emacs-lisp
-;; Make sure that sbcl is available on PATH
-(use-package sly
-  :hook (lisp-mode . sly-editing-mode)
-  :custom (inferior-lisp-program "sbcl") ; Clisp makes SLY crash
-  :config
-  (add-hook 'sly-mode-hook
-            (lambda ()
-               (unless (sly-connected-p)
-                 (save-excursion (sly))))))
+  ;; Make sure that sbcl is available on PATH
+  (use-package sly
+    :hook (lisp-mode . sly-editing-mode)
+    :custom
+    (inferior-lisp-program "sbcl") ; Clisp makes SLY crash
+    (sly-complete-symbol-function 'sly-simple-completions)
+    :config
+    (add-hook 'sly-mode-hook
+              (lambda ()
+                 (unless (sly-connected-p)
+                   (save-excursion (sly))))))
 #+end_src
 
 ** Debug
