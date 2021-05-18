@@ -5,6 +5,7 @@
       '(
         LaTeX-environment
         LaTeX-insert-left-brace
+        TeX-font
         beginning-of-visual-line
         c-indent-line-or-region
         counsel-M-x

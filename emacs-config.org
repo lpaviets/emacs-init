@@ -459,6 +459,7 @@ Another thing that is technically more a stylistic choice rather than a real enc
 #+end_src
 
 ** Minibuffer completion
+*** Ivy/Swiper/Counsel
 
 Although emacs provides a number of commands to navigate within a file, to find documentation and so on, the following packages will make the general UI easier to use.
 
@@ -468,6 +469,7 @@ Although emacs provides a number of commands to navigate within a file, to find 
   ;; Ivy
   (use-package ivy
     :diminish
+    :disabled t
     :init
     (setq completing-read-function 'ivy-completing-read)
     :bind (("C-s" . swiper)
@@ -496,6 +498,10 @@ Although emacs provides a number of commands to navigate within a file, to find 
           (ivy-unmark)
         (ivy-mark))))
 
+  (use-package ivy-hydra
+    :after ivy
+    :defer t)
+
   ;; Adds things to Ivy
   (use-package ivy-rich
     :after ivy
@@ -504,6 +510,7 @@ Although emacs provides a number of commands to navigate within a file, to find 
   ;; Counsel. Adds things to Ivy
   (use-package counsel
     :diminish
+    :after ivy
     :hook (ivy-mode . counsel-mode)
     :custom (counsel-find-file-at-point t)
     :bind (("M-x" . counsel-M-x)
@@ -515,32 +522,43 @@ Although emacs provides a number of commands to navigate within a file, to find 
 
 #+end_src
 
-And there is a way to go even faster for completion. Indeed, when in doubt, why not suggest recent or popular completions ? That is exactly what ~prescient~ does, by sorting the suggestions according to their frequency or how recently we used them.
+*** Vertico/Marginalia
+~ivy~ is a fantastic addition to Emacs, and it makes interacting with Emacs much more comfortable, be it for invoking commands or looking for function documentation, or quickly interacting with files without having to use a Dired buffer.
+However, it is /bloated/, and can feel slow at times. Moreover, if you only really use some of its functionalities, it can feel a bit overwhelming, and not worth the trouble of configuring everything.
 
-This goes beyond commands, but can also be used for any kind of documentation lookup, with =describe-function= or =describe-variable= for example.
+For this reason, we might want to take a look at some lightweight alternatives, built on top of the default completion/narrowing tools that Emacs provide, instead of using ~ivy~ or ~helm~ which use their own massive framework.
 
 #+begin_src emacs-lisp
-  ;; Generic Prescient configuration
-  (use-package prescient
-    :defer t
+  (use-package vertico
+    :ensure nil
     :custom
-    (prescient-history-length 200)
-    (prescient-sort-length-enable nil)
-    :config
-    (prescient-persist-mode 1))
+    (vertico-cycle t)
+    :init
+    (vertico-mode))
+#+end_src
 
-  (use-package ivy-prescient
-    :after counsel
-    :custom
-    (ivy-prescient-retain-classic-highlighting t)
+Emacs uses metadata to differentiate between several types of things for completion. For example, when using ~find-file~, Emacs attachs to each suggestion a bit of data to tell that they are actually files.
+
+In order to add more information of this kind to those suggestions, and to interact with it more naturally, we use another package which integrates very well with ~vertico~
+
+#+begin_src emacs-lisp
+  (use-package marginalia
+    :after vertico
     :config
-    (ivy-prescient-mode 1)
-    (setq ivy-prescient-sort-commands
-          (append ivy-prescient-sort-commands
-                  '(counsel-minibuffer-history
-                    counsel-shell-history
-                    imenu
-                    counsel-imenu))))
+    (marginalia-mode))
+#+end_src
+
+Now, Emacs has a lot of built-in completions styles, telling it how to interpret the input: as a regexp, as initials, as a substring ... We add some other ones, and some possibilities to customize them or even change them on the fly.
+
+#+begin_src emacs-lisp
+  (use-package orderless
+    :after vertico
+    :custom
+    (completion-styles '(orderless)))
+    ;; '(orderless-literal
+    ;;   orderless-regexp
+    ;;   orderless-prefixes
+    ;;   orderless-flex)))
 #+end_src
 
 ** Buffer and windows
@@ -795,9 +813,9 @@ It will condense all the available information about something within a single H
     (counsel-describe-function-function #'helpful-callable)
     (counsel-describe-variable-function #'helpful-variable)
     :bind
-    ([remap describe-function] . counsel-describe-function)
-    ([remap describe-variable] . counsel-describe-variable)
-    ([remap describe-symbol]   . counsel-describe-symbol)
+    ([remap describe-function] . helpful-callable)
+    ([remap describe-variable] . helpful-variable)
+    ([remap describe-symbol]   . helpful-symbol)
     ([remap describe-key]      . helpful-key)
     ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
 
@@ -844,7 +862,55 @@ There is, however, one really annoying binding, especially for new users or peop
 #+begin_src emacs-lisp
 (global-unset-key (kbd "C-z"))
 #+end_src
+** History
+*** Prescient
 
+There is a way to go even faster for completion. Indeed, when in doubt, why not suggest recent or popular completions ? That is exactly what ~prescient~ does, by sorting the suggestions according to their frequency or how recently we used them.
+
+This goes beyond commands, but can also be used for any kind of documentation lookup, with =describe-function= or =describe-variable= for example.
+
+#+begin_src emacs-lisp
+  ;; Generic Prescient configuration
+  (use-package prescient
+    :custom
+    (prescient-history-length 200)
+    (prescient-sort-length-enable nil)
+    :config
+    (prescient-persist-mode 1))
+
+  (use-package ivy-prescient
+    :after ivy prescient
+    :custom
+    (ivy-prescient-retain-classic-highlighting t)
+    :config
+    (ivy-prescient-mode 1)
+    (setq ivy-prescient-sort-commands
+          (append ivy-prescient-sort-commands
+                  '(counsel-minibuffer-history
+                    counsel-shell-history
+                    imenu
+                    counsel-imenu))))
+#+end_src
+
+~prescient~ can also be used with completion frameworks such as ~company~
+
+#+begin_src emacs-lisp
+  (use-package company-prescient
+    :after company
+    :config
+    (company-prescient-mode 1))
+#+end_src
+
+*** Other solutions
+
+Another lighter and built-in solution is the simpler package ~savehist~. If you want to use a lighter Emacs version, or if for some reason you want to stay "as close to the original Emacs", this is a perfectly fine solution, and its major drawback is that it does not work for "in-buffer" auto-completions (although it might be possible with a lot of tuning ?)
+
+#+begin_src emacs-lisp
+  (use-package savehist
+    :ensure nil
+    :init
+    (savehist-mode))
+#+end_src
 ** Command log mode
 
 This mode allows you to display a small panel on the right of the screen which shows which keys you are pressing, and what commands they are associated to, all of this in real time !
@@ -1443,17 +1509,6 @@ We add another backend to support completion in shell and terminal-modes
       (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev company-shell)))
       (push 'elisp-completion-at-point completion-at-point-functions)))
 #+end_src
-***** Company prescient
-There is a way to be even faster, and it simply consists in ordering completions so that we can press ~TAB~ as fast as possible to complete of what we are typing.
-
-To do so, we use the same package that we used for Ivy, which is called [[https://github.com/raxod502/prescient.el][Prescient]].
-
-#+begin_src emacs-lisp
-  (use-package company-prescient
-    :after company
-    :config
-    (company-prescient-mode 1))
-#+end_src
 ** Language Server Protocol
 *** LSP-mode
 
@@ -1930,8 +1985,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
 #+begin_src emacs-lisp
   ;; AUCTeX initialization
   (use-package tex-site
-    :ensure auctex
-    :defer t)
+    :ensure auctex) ;; Don't defer, buggy ?
 
   (use-package tex
     :ensure auctex
@@ -1943,6 +1997,8 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (TeX-parse-self t)
     ;; Automatically save style information
     (TeX-auto-save t)
+    ;; Ask for the master file & don't assume anything
+    (TeX-master nil)
     ;; Don't ask permission to save before compiling
     (TeX-save-query nil)
     ;; Automatically insert braces after sub- and superscripts in math mode
@@ -1961,8 +2017,6 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (TeX-view-program-selection '((output-pdf "PDF tools")))
 
     :config
-    (setq TeX-master nil) ; Ask for the master file & don't assume anything
-
     (setq TeX-source-correlate-mode t ; SyncTeX forward and inverse search
           ;; Produce a PDF by default
           TeX-PDF-mode t)
@@ -1978,7 +2032,8 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
 
     ;; Add environment for auto. insertion with C-c C-e
     (defun lps/latex-add-environments ()
-      (LaTeX-add-environments '("tikzpicture" LaTeX-env-label)))
+      ;;(LaTeX-add-environments '("tikzpicture" LaTeX-env-label)) ; Should be done by auctex's tikz.el file
+      )
 
     (add-hook 'LaTeX-mode-hook 'lps/latex-add-environments)
 
@@ -1988,11 +2043,11 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
 
     (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup)
 
-  (defun lps/latex-set-faces ()
-    (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8"))
+    ;; Faces
+    (defun lps/latex-set-faces ()
+      (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8"))
 
-  (add-hook 'LaTeX-mode-hook 'lps/latex-set-faces))
-
+    (add-hook 'LaTeX-mode-hook 'lps/latex-set-faces))
 #+end_src
 
 **** References
@@ -2046,7 +2101,6 @@ Instead of recompiling the source code to generate a complete PDF to visualize /
     (setq preview-auto-cache-preamble t)
     (add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t))
 #+end_src
-
 * System
 ** Eshell
 *** General configuration
@@ -2309,7 +2363,7 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
            :map mu4e-compose-mode-map
            ("C-c C-h" . lps/org-mime-htmlize-preserve-secure-and-attach))
     :config
-    (setq mu4e-completing-read-function 'ivy-completing-read)
+    (setq mu4e-completing-read-function 'completing-read)
 
     ;; Might avoid unwanted drafts
     (add-hook 'mu4e-compose-mode-hook #'(lambda () (auto-save-mode -1)))

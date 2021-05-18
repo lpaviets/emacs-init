@@ -82,6 +82,9 @@ flycheck_*.el
 # pdf-view-restore
 /.pdf-view-restore
 
+#Savehist
+/history
+
 # Other random stuff
 /network-security.data
 /projects

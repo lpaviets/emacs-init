@@ -285,6 +285,7 @@ installed themes instead."
 ;; Ivy
 (use-package ivy
   :diminish
+  :disabled t
   :init
   (setq completing-read-function 'ivy-completing-read)
   :bind (("C-s" . swiper)
@@ -313,6 +314,10 @@ installed themes instead."
         (ivy-unmark)
       (ivy-mark))))
 
+(use-package ivy-hydra
+  :after ivy
+  :defer t)
+
 ;; Adds things to Ivy
 (use-package ivy-rich
   :after ivy
@@ -321,6 +326,7 @@ installed themes instead."
 ;; Counsel. Adds things to Ivy
 (use-package counsel
   :diminish
+  :after ivy
   :hook (ivy-mode . counsel-mode)
   :custom (counsel-find-file-at-point t)
   :bind (("M-x" . counsel-M-x)
@@ -330,27 +336,26 @@ installed themes instead."
          :map minibuffer-local-map
          ("C-r" . 'counsel-minibuffer-history)))
 
-;; Generic Prescient configuration
-(use-package prescient
-  :defer t
+(use-package vertico
+  :ensure nil
   :custom
-  (prescient-history-length 200)
-  (prescient-sort-length-enable nil)
-  :config
-  (prescient-persist-mode 1))
+  (vertico-cycle t)
+  :init
+  (vertico-mode))
 
-(use-package ivy-prescient
-  :after counsel
-  :custom
-  (ivy-prescient-retain-classic-highlighting t)
+(use-package marginalia
+  :after vertico
   :config
-  (ivy-prescient-mode 1)
-  (setq ivy-prescient-sort-commands
-        (append ivy-prescient-sort-commands
-                '(counsel-minibuffer-history
-                  counsel-shell-history
-                  imenu
-                  counsel-imenu))))
+  (marginalia-mode))
+
+(use-package orderless
+  :after vertico
+  :custom
+  (completion-styles '(orderless)))
+  ;; '(orderless-literal
+  ;;   orderless-regexp
+  ;;   orderless-prefixes
+  ;;   orderless-flex)))
 
 ;; Automatically reload a file if it has been modified
 (global-auto-revert-mode t)
@@ -555,9 +560,9 @@ buffer in current window."
   (counsel-describe-function-function #'helpful-callable)
   (counsel-describe-variable-function #'helpful-variable)
   :bind
-  ([remap describe-function] . counsel-describe-function)
-  ([remap describe-variable] . counsel-describe-variable)
-  ([remap describe-symbol]   . counsel-describe-symbol)
+  ([remap describe-function] . helpful-callable)
+  ([remap describe-variable] . helpful-variable)
+  ([remap describe-symbol]   . helpful-symbol)
   ([remap describe-key]      . helpful-key)
   ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
 
@@ -589,6 +594,37 @@ buffer in current window."
 (setq disabled-command-function nil)
 
 (global-unset-key (kbd "C-z"))
+
+;; Generic Prescient configuration
+(use-package prescient
+  :custom
+  (prescient-history-length 200)
+  (prescient-sort-length-enable nil)
+  :config
+  (prescient-persist-mode 1))
+
+(use-package ivy-prescient
+  :after ivy prescient
+  :custom
+  (ivy-prescient-retain-classic-highlighting t)
+  :config
+  (ivy-prescient-mode 1)
+  (setq ivy-prescient-sort-commands
+        (append ivy-prescient-sort-commands
+                '(counsel-minibuffer-history
+                  counsel-shell-history
+                  imenu
+                  counsel-imenu))))
+
+(use-package company-prescient
+  :after company
+  :config
+  (company-prescient-mode 1))
+
+(use-package savehist
+  :ensure nil
+  :init
+  (savehist-mode))
 
 (use-package command-log-mode
   :defer t)
@@ -999,11 +1035,6 @@ buffer in current window."
     (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev company-shell)))
     (push 'elisp-completion-at-point completion-at-point-functions)))
 
-(use-package company-prescient
-  :after company
-  :config
-  (company-prescient-mode 1))
-
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
@@ -1306,8 +1337,7 @@ buffer in current window."
 
 ;; AUCTeX initialization
 (use-package tex-site
-  :ensure auctex
-  :defer t)
+  :ensure auctex) ;; Don't defer, buggy ?
 
 (use-package tex
   :ensure auctex
@@ -1319,6 +1349,8 @@ buffer in current window."
   (TeX-parse-self t)
   ;; Automatically save style information
   (TeX-auto-save t)
+  ;; Ask for the master file & don't assume anything
+  (TeX-master nil)
   ;; Don't ask permission to save before compiling
   (TeX-save-query nil)
   ;; Automatically insert braces after sub- and superscripts in math mode
@@ -1337,8 +1369,6 @@ buffer in current window."
   (TeX-view-program-selection '((output-pdf "PDF tools")))
 
   :config
-  (setq TeX-master nil) ; Ask for the master file & don't assume anything
-
   (setq TeX-source-correlate-mode t ; SyncTeX forward and inverse search
         ;; Produce a PDF by default
         TeX-PDF-mode t)
@@ -1354,7 +1384,8 @@ buffer in current window."
 
   ;; Add environment for auto. insertion with C-c C-e
   (defun lps/latex-add-environments ()
-    (LaTeX-add-environments '("tikzpicture" LaTeX-env-label)))
+    ;;(LaTeX-add-environments '("tikzpicture" LaTeX-env-label)) ; Should be done by auctex's tikz.el file
+    )
 
   (add-hook 'LaTeX-mode-hook 'lps/latex-add-environments)
 
@@ -1364,10 +1395,11 @@ buffer in current window."
 
   (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup)
 
-(defun lps/latex-set-faces ()
-  (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8"))
+  ;; Faces
+  (defun lps/latex-set-faces ()
+    (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8"))
 
-(add-hook 'LaTeX-mode-hook 'lps/latex-set-faces))
+  (add-hook 'LaTeX-mode-hook 'lps/latex-set-faces))
 
 (use-package bibtex
   :defer t
@@ -1595,7 +1627,7 @@ PWD is not in a git repo (or the git command is not found)."
          :map mu4e-compose-mode-map
          ("C-c C-h" . lps/org-mime-htmlize-preserve-secure-and-attach))
   :config
-  (setq mu4e-completing-read-function 'ivy-completing-read)
+  (setq mu4e-completing-read-function 'completing-read)
 
   ;; Might avoid unwanted drafts
   (add-hook 'mu4e-compose-mode-hook #'(lambda () (auto-save-mode -1)))
