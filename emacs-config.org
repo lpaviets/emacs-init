@@ -79,6 +79,8 @@ It makes both installation and customization easier, and the code is also simple
   (unless package-archive-contents
     (package-refresh-contents))
 
+  (setq package-native-compile t)
+
   ;; Initialize use-package on non-Linux platforms
   (unless (package-installed-p 'use-package)
     (package-install 'use-package))
@@ -433,6 +435,7 @@ This is one moment where a pretty hydra could help us change general UI paramete
         ("g" fci-mode "Show Fill Column" :toggle t )
         ("<SPC>" nil "Quit" :color blue )))))
 #+end_src
+
 ** Font and encoding
 
 Even if most of the time, you should be working with UTF-8, we still want to make sure that this is the default and that Emacs assumes that we are using UTF-8
@@ -510,6 +513,7 @@ Although emacs provides a number of commands to navigate within a file, to find 
   ;; Counsel. Adds things to Ivy
   (use-package counsel
     :diminish
+    :disabled t
     :after ivy
     :hook (ivy-mode . counsel-mode)
     :custom (counsel-find-file-at-point t)
@@ -530,7 +534,7 @@ For this reason, we might want to take a look at some lightweight alternatives, 
 
 #+begin_src emacs-lisp
   (use-package vertico
-    :ensure nil
+    :ensure t
     :custom
     (vertico-cycle t)
     :init
@@ -554,11 +558,16 @@ Now, Emacs has a lot of built-in completions styles, telling it how to interpret
   (use-package orderless
     :after vertico
     :custom
-    (completion-styles '(orderless)))
-    ;; '(orderless-literal
-    ;;   orderless-regexp
-    ;;   orderless-prefixes
-    ;;   orderless-flex)))
+    ;; (completion-styles '(orderless-literal
+    ;;                      orderless-regexp
+    ;;                      orderless-prefixes
+    ;;                      orderless-flex))
+    (completion-styles '(basic
+                         partial-completion
+                         initials
+                         orderless))
+    :config
+    (setq completion-auto-help nil))
 #+end_src
 
 ** Buffer and windows
@@ -824,28 +833,27 @@ It will condense all the available information about something within a single H
 #+begin_src emacs-lisp
   ;; Inspired from https://emacs.stackexchange.com/questions/2777/how-to-get-the-function-help-without-typing
 
-  (require 'popup)
+  (use-package popup
+    :init
+    (defun lps/describe-thing-in-popup ()
+      (interactive)
+      (let* ((thing (symbol-at-point))
+             (help-xref-following t)
+             (description (save-window-excursion
+                            (with-temp-buffer
+                              (help-mode)
+                              (help-xref-interned thing)
+                              (buffer-string)))))
+        (popup-tip description
+                   :point (point)
+                   :around t
+                   :margin t
+                   :height 20)))
 
-  (defun lps/describe-thing-in-popup ()
-    (interactive)
-    (let* ((thing (symbol-at-point))
-           (help-xref-following t)
-           (description (save-window-excursion
-                          (with-temp-buffer
-                            (help-mode)
-                            (help-xref-interned thing)
-                            (buffer-string)))))
-      (popup-tip description
-                 :point (point)
-                 :around t
-                 :height 20
-                 :scroll-bar t
-                 :margin t)))
-
-  (global-set-key (kbd "C-&") #'lps/describe-thing-in-popup)
+    (global-set-key (kbd "C-&") #'lps/describe-thing-in-popup))
 #+end_src
 * Commands
-** Disable
+** Disabled commands
 
 We want to use the full Emacs power. However, if you find yourself using repeatedly a dangerous command by mistake, you might want to disable it
 
@@ -930,7 +938,9 @@ Typing "yes" and "no" might be a bit too tiring
 
 #+begin_src emacs-lisp
   ;; Type "y" instead of "yes RET" for confirmation
-  (defalias 'yes-or-no-p 'y-or-n-p)
+  ;; Obsolete in Emacs 28
+  ;; (defalias 'yes-or-no-p 'y-or-n-p)
+  (setq use-short-answers t)
 #+end_src
 
 ** Help
@@ -946,6 +956,23 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
     :init (which-key-mode)
     :diminish
     :custom (which-key-idle-delay 1))
+#+end_src
+
+** Utilities
+~consult~ provides a lot of useful commands that can be used during a minibuffer session to act on the selection. Moreover, it comes with various utilities, such as flavours of ~isearch~ or ~grep~.
+#+begin_src emacs-lisp
+  (use-package consult
+    :defer t
+    :bind ("C-s" . consult-line))
+#+end_src
+
+Another package that tries to give contextual actions to act on "things" (files, buffers ...) is ~embark~. It also integrates very well with the default API, and is easily enhanced by packages such as ~marginalia~
+
+#+begin_src emacs-lisp
+  (use-package embark
+    :bind
+    ("C-," . embark-act)
+    ("C-h b" . embark-bindings))
 #+end_src
 
 ** Some macros
@@ -977,7 +1004,7 @@ In this section, we define some useful macros to write code in Emacs Lisp.
     (rec-expand-let vars values body))
 #+end_src
 
-** Useful commands
+** Some useful commands
 *** Open file
 We often want to visit links. If the point is on a file path, for example, it is often useful to be able to quicky navigate to this file.
 
@@ -1233,24 +1260,24 @@ It can act as a small, local version control system due to how Undos are managed
 #+end_src
 
 * Programming
-** Projectile
-
+** Project management
+*** Projectile
     [[https://projectile.mx/][Projectile]] is an Emacs package that makes project management easier. It allows us /e.g./ to navigate between files of the same project, search/replace within files of the same project, and integrates very well with other tools, such as =lsp-mode= or ~counsel~.
 
 #+begin_src emacs-lisp
   (use-package projectile
     :diminish
-    :init
-    ;; NOTE: Set this to the folder where you keep your Git repos!
-    ;; (when (file-directory-p "path/to/project/dir")
-    ;; (setq projectile-project-search-path '("path/to/project/dir")))
-    (setq projectile-switch-project-action #'projectile-dired)
-
-    :config
-    (projectile-mode)
-    :custom ((projectile-completion-system 'ivy))
+    :disabled t ;; try Project.el instead
     :bind-keymap
-    ("C-c p" . projectile-command-map))
+    ("C-c p" . projectile-command-map)
+    :custom
+    (projectile-switch-project-action #'projectile-dired)
+    (projectile-completion-system 'ivy)
+    :config
+    (let ((path-project "~/Documents/Projects"))
+      (when (file-directory-p path-project)
+        (setq projectile-project-search-path (list path-project))))
+    (projectile-mode))
 
   (use-package counsel-projectile
     :after (counsel projectile)

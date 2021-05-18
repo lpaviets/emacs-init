@@ -32,6 +32,8 @@
 (unless package-archive-contents
   (package-refresh-contents))
 
+(setq package-native-compile t)
+
 ;; Initialize use-package on non-Linux platforms
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
@@ -326,6 +328,7 @@ installed themes instead."
 ;; Counsel. Adds things to Ivy
 (use-package counsel
   :diminish
+  :disabled t
   :after ivy
   :hook (ivy-mode . counsel-mode)
   :custom (counsel-find-file-at-point t)
@@ -337,7 +340,7 @@ installed themes instead."
          ("C-r" . 'counsel-minibuffer-history)))
 
 (use-package vertico
-  :ensure nil
+  :ensure t
   :custom
   (vertico-cycle t)
   :init
@@ -351,11 +354,16 @@ installed themes instead."
 (use-package orderless
   :after vertico
   :custom
-  (completion-styles '(orderless)))
-  ;; '(orderless-literal
-  ;;   orderless-regexp
-  ;;   orderless-prefixes
-  ;;   orderless-flex)))
+  ;; (completion-styles '(orderless-literal
+  ;;                      orderless-regexp
+  ;;                      orderless-prefixes
+  ;;                      orderless-flex))
+  (completion-styles '(basic
+                       partial-completion
+                       initials
+                       orderless))
+  :config
+  (setq completion-auto-help nil))
 
 ;; Automatically reload a file if it has been modified
 (global-auto-revert-mode t)
@@ -568,25 +576,24 @@ buffer in current window."
 
 ;; Inspired from https://emacs.stackexchange.com/questions/2777/how-to-get-the-function-help-without-typing
 
-(require 'popup)
+(use-package popup
+  :init
+  (defun lps/describe-thing-in-popup ()
+    (interactive)
+    (let* ((thing (symbol-at-point))
+           (help-xref-following t)
+           (description (save-window-excursion
+                          (with-temp-buffer
+                            (help-mode)
+                            (help-xref-interned thing)
+                            (buffer-string)))))
+      (popup-tip description
+                 :point (point)
+                 :around t
+                 :margin t
+                 :height 20)))
 
-(defun lps/describe-thing-in-popup ()
-  (interactive)
-  (let* ((thing (symbol-at-point))
-         (help-xref-following t)
-         (description (save-window-excursion
-                        (with-temp-buffer
-                          (help-mode)
-                          (help-xref-interned thing)
-                          (buffer-string)))))
-    (popup-tip description
-               :point (point)
-               :around t
-               :height 20
-               :scroll-bar t
-               :margin t)))
-
-(global-set-key (kbd "C-&") #'lps/describe-thing-in-popup)
+  (global-set-key (kbd "C-&") #'lps/describe-thing-in-popup))
 
 ;; Don't disable any command
 ;; BE CAREFUL
@@ -630,13 +637,24 @@ buffer in current window."
   :defer t)
 
 ;; Type "y" instead of "yes RET" for confirmation
-(defalias 'yes-or-no-p 'y-or-n-p)
+;; Obsolete in Emacs 28
+;; (defalias 'yes-or-no-p 'y-or-n-p)
+(setq use-short-answers t)
 
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
   :init (which-key-mode)
   :diminish
   :custom (which-key-idle-delay 1))
+
+(use-package consult
+  :defer t
+  :bind ("C-s" . consult-line))
+
+(use-package embark
+  :bind
+  ("C-," . embark-act)
+  ("C-h b" . embark-bindings))
 
 ;; Macro to use "python-style" affectation in lexical bindings
 (defmacro multi-let (vars values body)
@@ -839,17 +857,17 @@ buffer in current window."
 
 (use-package projectile
   :diminish
-  :init
-  ;; NOTE: Set this to the folder where you keep your Git repos!
-  ;; (when (file-directory-p "path/to/project/dir")
-  ;; (setq projectile-project-search-path '("path/to/project/dir")))
-  (setq projectile-switch-project-action #'projectile-dired)
-
-  :config
-  (projectile-mode)
-  :custom ((projectile-completion-system 'ivy))
+  :disabled t ;; try Project.el instead
   :bind-keymap
-  ("C-c p" . projectile-command-map))
+  ("C-c p" . projectile-command-map)
+  :custom
+  (projectile-switch-project-action #'projectile-dired)
+  (projectile-completion-system 'ivy)
+  :config
+  (let ((path-project "~/Documents/Projects"))
+    (when (file-directory-p path-project)
+      (setq projectile-project-search-path (list path-project))))
+  (projectile-mode))
 
 (use-package counsel-projectile
   :after (counsel projectile)

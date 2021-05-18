@@ -85,6 +85,9 @@ flycheck_*.el
 #Savehist
 /history
 
+#Package compilation
+/eln-cache/
+
 # Other random stuff
 /network-security.data
 /projects
