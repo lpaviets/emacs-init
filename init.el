@@ -184,10 +184,23 @@ installed themes instead."
 
 (use-package doom-modeline
   :after all-the-icons
-  :init (doom-modeline-mode 1)
-  :custom ((doom-modeline-height 15))
-  :config
-  (setq display-time-format "[%d/%m - %H:%M]")
+  :init
+  (doom-modeline-mode 1)
+  :custom
+  (doom-modeline-height 15)
+  (doom-modeline-project-detection 'project)
+  (doom-modeline-unicode-fallback t))
+
+(use-package battery
+  :ensure nil
+  :init
+  (display-battery-mode 1))
+
+(use-package time
+  :ensure nil
+  :custom
+  (display-time-format "[%d/%m - %H:%M]")
+  :init
   (display-time-mode 1))
 
 ;; Generic UI modes
@@ -284,6 +297,11 @@ installed themes instead."
   :config
   (calendar-set-date-style 'european))
 
+(use-package emacs
+  :ensure nil
+  :custom
+  (enable-recursive-minibuffers t))
+
 ;; Ivy
 (use-package ivy
   :diminish
@@ -302,7 +320,6 @@ installed themes instead."
          ("<down-mouse-1>" . nil))
   :custom
   (ivy-count-format "(%d/%d)")
-  (enable-recursive-minibuffers t)
   (ivy-initial-inputs-alist nil)
   (ivy-extra-directories nil)
 
@@ -495,7 +512,7 @@ installed themes instead."
 
   :init
   (defhydra hydra-window (:color red
-                                :hint nil)
+                                 :hint nil)
    "
     ^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
     ^^^^^^^^^-------------------------------------------------------------------------------
@@ -542,7 +559,7 @@ installed themes instead."
 
    ;; Other stuff
    ("a" ace-window :exit t)
-   ("c" new-frame :exit t)
+   ("c" make-frame :exit t)
    ("s" ace-swap-window)
    ("q" nil)))
 
