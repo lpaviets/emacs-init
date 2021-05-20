@@ -368,20 +368,6 @@ installed themes instead."
   :config
   (marginalia-mode))
 
-(use-package orderless
-  :after vertico
-  :custom
-  ;; (completion-styles '(orderless-literal
-  ;;                      orderless-regexp
-  ;;                      orderless-prefixes
-  ;;                      orderless-flex))
-  (completion-styles '(basic
-                       partial-completion
-                       initials
-                       orderless))
-  :config
-  (setq completion-auto-help nil))
-
 ;; Automatically reload a file if it has been modified
 (global-auto-revert-mode t)
 
@@ -451,7 +437,6 @@ installed themes instead."
                      name (file-name-nondirectory new-name)))))))
 
 (use-package winner
-  :ensure nil
   :commands (winner-undo winner-redo)
   :hook (after-init . winner-mode)
   :init (setq winner-boring-buffers '("*Completions*"
@@ -470,7 +455,9 @@ installed themes instead."
   (org-shiftdown-final . windmove-down)
   (org-shiftright-final . windmove-right)
 
-  :init (windmove-default-keybindings)
+  :init
+  (windmove-default-keybindings 'shift)
+  (windmove-swap-states-default-keybindings '(ctrl shift))
 
   :config
   (defun hydra-move-splitter-left (arg)
@@ -654,9 +641,9 @@ buffer in current window."
   :defer t)
 
 ;; Type "y" instead of "yes RET" for confirmation
-;; Obsolete in Emacs 28
-;; (defalias 'yes-or-no-p 'y-or-n-p)
-(setq use-short-answers t)
+(if (version< emacs-version "28.0")
+    (defalias 'yes-or-no-p 'y-or-n-p)
+  (setq use-short-answers t))
 
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
@@ -666,7 +653,9 @@ buffer in current window."
 
 (use-package consult
   :defer t
-  :bind ("C-s" . consult-line))
+  :bind
+  ("C-s" . consult-line)
+  ("C-c i" . consult-imenu))
 
 (use-package embark
   :bind
@@ -750,13 +739,17 @@ buffer in current window."
   :ensure nil
   :custom (sentence-end-double-space nil))
 
-(use-package emacs
+(use-package isearch
   :ensure nil
   :bind (:map search-map
               ("s" . isearch-forward)
               ("M-s" . isearch-forward) ;; avoids early/late release of Meta
               ("r" . isearch-backward)
-              ("x" . isearch-forward-regexp)))
+              ("x" . isearch-forward-regexp))
+  :custom
+  ;; Interpret whitespaces as "anything but a newline"
+  (search-whitespace-regexp ".*?")
+  (isearch-regexp-lax-whitespace t))
 
 (use-package avy
   :defer t
@@ -834,6 +827,23 @@ buffer in current window."
 ;; makes sense on Keyboard
 ;; Remember that M-@ is bound to mark-word
 (global-set-key (kbd "M-à") 'lps/select-line)
+
+(use-package emacs
+  :ensure nil
+  :bind
+  ([remap exchange-point-and-mark] . lps/exchange-point-and-mark)
+  :init
+  ;;Taken from https://spwhitton.name/blog/entry/transient-mark-mode/
+  (defun lps/exchange-point-and-mark (arg)
+    "Exchange point and mark, but reactivate mark a bit less often.
+
+  Specifically, invert the meaning of ARG in the case where
+  Transient Mark mode is on but the region is inactive."
+    (interactive "P")
+    (exchange-point-and-mark
+     (if (and transient-mark-mode (not mark-active))
+         (not arg)
+       arg))))
 
 (use-package drag-stuff
   :init
@@ -971,6 +981,32 @@ buffer in current window."
 (use-package elec-pair
   :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
 
+(use-package orderless
+  :after vertico
+  :init
+  (setq lps/default-minibuffer-styles '(basic
+                                        substring
+                                        partial-completion
+                                        initials
+                                        flex
+                                        orderless))
+
+  (setq lps/completion-at-point-styles '(basic
+                                         substring
+                                         partial-completion))
+
+  (defun lps/set-completion-styles-completion-at-point (&rest _ignore)
+    (setq completion-styles lps/completion-at-point-styles))
+
+  (defun lps/set-completion-styles-minibuffer (&rest _ignore)
+    (setq completion-styles lps/default-minibuffer-styles))
+
+  :custom
+  (completion-styles lps/default-minibuffer-styles)
+  :config
+  ;; useful in Eval
+  (setq completion-auto-help t))
+
 ;;YASnippet
 (use-package yasnippet
   :diminish
@@ -989,7 +1025,10 @@ buffer in current window."
 (use-package company
   :diminish
 
-  :init (global-company-mode t)
+  :init
+  (global-company-mode t)
+  (add-hook 'company-completion-started-hook #'lps/set-completion-styles-completion-at-point)
+  (add-hook 'company-after-completion-hook #'lps/set-completion-styles-minibuffer)
 
   :bind (:map company-active-map
               ("<tab>" . company-complete)
@@ -997,6 +1036,7 @@ buffer in current window."
               ("RET" . nil)
               ("<return>" . nil)
               ("C-l" . company-complete-selection)
+              ("<C-return>" . company-complete-selection)
               ("C-n" . nil)
               ("C-p" . nil))
 
@@ -1018,7 +1058,7 @@ buffer in current window."
   ;; Might lead to company-box being a bit broken ? Long function names are cut-off
   (let ((map company-active-map))
     (mapc (lambda (x) (define-key map (read-kbd-macro (format "M-%s" (cdr x)))
-                                              `(lambda () (interactive) (company-complete-number ,(car x)))))
+                        `(lambda () (interactive) (company-complete-number ,(car x)))))
           '((10 . "à")
             (1 . "&")
             (2 . "é")
@@ -1216,7 +1256,12 @@ buffer in current window."
   :hook (org-mode . lps/org-mode-setup)
   :bind (("C-c o" . org-capture)
          (:map org-mode-map
-               ("<M-S-return>" . org-insert-subheading)))
+               ("<M-S-return>" . org-insert-subheading)
+               ("<C-S-left>" . nil)
+               ("<C-S-right>" . nil)
+               ("<C-S-up>" . nil)
+               ("<C-S-down>" . nil)
+               ("C-," . nil)))
   :custom
   ;; Coding in blocks
   (org-src-fontify-natively t)
@@ -1361,7 +1406,7 @@ buffer in current window."
               ("C-s" . isearch-forward))
   :config
   (pdf-tools-install :no-query)
-  (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
+  ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
   (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode))
 
 (use-package pdf-view-restore
@@ -1634,10 +1679,11 @@ PWD is not in a git repo (or the git command is not found)."
   :diminish
   :hook (dired-mode . all-the-icons-dired-mode))
 
-;; Extra functionalities
-(use-package dired-x
-  :ensure nil
-  :after dired)
+(if (version< emacs-version "28.0")
+    ;; Extra functionalities
+    (use-package dired-x
+      :ensure nil
+      :after dired))
 
 (use-package disk-usage
   :defer t)

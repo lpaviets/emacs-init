@@ -578,24 +578,6 @@ In order to add more information of this kind to those suggestions, and to inter
     (marginalia-mode))
 #+end_src
 
-Now, Emacs has a lot of built-in completions styles, telling it how to interpret the input: as a regexp, as initials, as a substring ... We add some other ones, and some possibilities to customize them or even change them on the fly.
-
-#+begin_src emacs-lisp
-  (use-package orderless
-    :after vertico
-    :custom
-    ;; (completion-styles '(orderless-literal
-    ;;                      orderless-regexp
-    ;;                      orderless-prefixes
-    ;;                      orderless-flex))
-    (completion-styles '(basic
-                         partial-completion
-                         initials
-                         orderless))
-    :config
-    (setq completion-auto-help nil))
-#+end_src
-
 ** Buffer and windows
 *** Buffer management
 Emacs is sometimes all over the place, opening buffers at seemingly random places, switching your focus only in some circumstances ... We will customize this behaviour so that we have a better control on what Emacs is doing when we open new buffers
@@ -690,7 +672,6 @@ Because window management can be a bit tedious with the basic Emacs functionalit
 
 #+begin_src emacs-lisp
   (use-package winner
-    :ensure nil
     :commands (winner-undo winner-redo)
     :hook (after-init . winner-mode)
     :init (setq winner-boring-buffers '("*Completions*"
@@ -716,7 +697,9 @@ First of all, we use a few helper functions, defined in [[https://github.com/abo
     (org-shiftdown-final . windmove-down)
     (org-shiftright-final . windmove-right)
 
-    :init (windmove-default-keybindings)
+    :init
+    (windmove-default-keybindings 'shift)
+    (windmove-swap-states-default-keybindings '(ctrl shift))
 
     :config
     (defun hydra-move-splitter-left (arg)
@@ -964,9 +947,9 @@ Typing "yes" and "no" might be a bit too tiring
 
 #+begin_src emacs-lisp
   ;; Type "y" instead of "yes RET" for confirmation
-  ;; Obsolete in Emacs 28
-  ;; (defalias 'yes-or-no-p 'y-or-n-p)
-  (setq use-short-answers t)
+  (if (version< emacs-version "28.0")
+      (defalias 'yes-or-no-p 'y-or-n-p)
+    (setq use-short-answers t))
 #+end_src
 
 ** Help
@@ -987,9 +970,11 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
 ** Utilities
 ~consult~ provides a lot of useful commands that can be used during a minibuffer session to act on the selection. Moreover, it comes with various utilities, such as flavours of ~isearch~ or ~grep~.
 #+begin_src emacs-lisp
-  (use-package consult
-    :defer t
-    :bind ("C-s" . consult-line))
+    (use-package consult
+      :defer t
+      :bind
+      ("C-s" . consult-line)
+      ("C-c i" . consult-imenu))
 #+end_src
 
 Another package that tries to give contextual actions to act on "things" (files, buffers ...) is ~embark~. It also integrates very well with the default API, and is easily enhanced by packages such as ~marginalia~
@@ -1079,7 +1064,7 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
 The webpage specifies that the commands provided by this package are best invoked when bound to key sequence rather than by =M-x <mc/command-name>=, although some testing on my part seems to show that it still works relatively well most of the time.
 
 ** Navigation
-
+*** Structure based
 Because movement keys are the most frequently used ones, it might be useful to create an Hydra helping us navigate around a document.
 
 #+begin_src emacs-lisp
@@ -1110,18 +1095,23 @@ Furthermore, we change a variable that makes sense for American writers, but not
     :custom (sentence-end-double-space nil))
 #+end_src
 
+*** Text-search
 Final touch: we often use the "search" functions to move the point around, because it is often easier than mashing the ~C-f~ and ~C-n~ keys. In a previous section we bound ~C-s~ to ~Swiper~, which provides a fancy UI but can be slow for simply moving the point to a nearby location.
 
 Hence, we add a few bindings to an already existing keymap, to make them easily accessible again.
 
 #+begin_src emacs-lisp
-  (use-package emacs
+  (use-package isearch
     :ensure nil
     :bind (:map search-map
                 ("s" . isearch-forward)
                 ("M-s" . isearch-forward) ;; avoids early/late release of Meta
                 ("r" . isearch-backward)
-                ("x" . isearch-forward-regexp)))
+                ("x" . isearch-forward-regexp))
+    :custom
+    ;; Interpret whitespaces as "anything but a newline"
+    (search-whitespace-regexp ".*?")
+    (isearch-regexp-lax-whitespace t))
 #+end_src
 
 The previously defined commands, along with ~Swiper~, are great to navigate in a buffer if you roughly know where you want to end. However, we sometimes want to move the point to a nearby, visible location, and instead of using and ~isearch~ and repeatedly use the forward and backward bindings, we want to be able to quickly jump there without thinking much, regardless of the current point position in the buffer.
@@ -1227,6 +1217,29 @@ The next one is used to select the current line. Once a line is marked, we can m
   ;; makes sense on Keyboard
   ;; Remember that M-@ is bound to mark-word
   (global-set-key (kbd "M-à") 'lps/select-line)
+#+end_src
+
+** Mark management
+
+The mark is a key concept of Emacs. It is used to navigate, make selections, cycle through the jump history ... Because we use ~transient-mark-mode~ (the default, and frankly, the most modern and natural way for a lot of people), one command in particular needs to be improved
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :bind
+    ([remap exchange-point-and-mark] . lps/exchange-point-and-mark)
+    :init
+    ;;Taken from https://spwhitton.name/blog/entry/transient-mark-mode/
+    (defun lps/exchange-point-and-mark (arg)
+      "Exchange point and mark, but reactivate mark a bit less often.
+
+    Specifically, invert the meaning of ARG in the case where
+    Transient Mark mode is on but the region is inactive."
+      (interactive "P")
+      (exchange-point-and-mark
+       (if (and transient-mark-mode (not mark-active))
+           (not arg)
+         arg))))
 #+end_src
 
 ** Moving stuff around
@@ -1426,7 +1439,39 @@ Now, in order to work with structured text, such as source code, we want to be a
 #+end_src
 
 ** Auto-completion
-**** YASnippet
+*** Completion styles
+
+Emacs has a lot of built-in completions styles, telling it how to interpret the input: as a regexp, as initials, as a substring ... We add some other ones, and some possibilities to customize them or even change them on the fly. In order to separate how those styles work for in-buffer completion compared to their behaviour in minibuffer, we add hooks to the completion to change the completion styles on the fly.
+
+#+begin_src emacs-lisp
+  (use-package orderless
+    :after vertico
+    :init
+    (setq lps/default-minibuffer-styles '(basic
+                                          substring
+                                          partial-completion
+                                          initials
+                                          flex
+                                          orderless))
+
+    (setq lps/completion-at-point-styles '(basic
+                                           substring
+                                           partial-completion))
+
+    (defun lps/set-completion-styles-completion-at-point (&rest _ignore)
+      (setq completion-styles lps/completion-at-point-styles))
+
+    (defun lps/set-completion-styles-minibuffer (&rest _ignore)
+      (setq completion-styles lps/default-minibuffer-styles))
+
+    :custom
+    (completion-styles lps/default-minibuffer-styles)
+    :config
+    ;; useful in Eval
+    (setq completion-auto-help t))
+#+end_src
+
+*** YASnippet
 
      A first useful package is YASnippet, which makes it easy to define and automatically insert snippets of code in various languages.
 
@@ -1450,7 +1495,7 @@ It is even possible to define your own snippets. The following package contains 
     :after yasnippet)
 #+end_src
 
-**** Company
+*** Company
 
      Several packages are available to make auto-completion more efficient and intuitive than the built-in =completion-at-point= function. We use [[https://company-mode.github.io/][Company]] (stands for "comp[lete] any[thing]") as it integrates nicely with other packages that we use, is well-maintained and has a more modern interface than most of its counterparts such as =auto-complete=.
 
@@ -1459,7 +1504,10 @@ It is even possible to define your own snippets. The following package contains 
   (use-package company
     :diminish
 
-    :init (global-company-mode t)
+    :init
+    (global-company-mode t)
+    (add-hook 'company-completion-started-hook #'lps/set-completion-styles-completion-at-point)
+    (add-hook 'company-after-completion-hook #'lps/set-completion-styles-minibuffer)
 
     :bind (:map company-active-map
                 ("<tab>" . company-complete)
@@ -1467,6 +1515,7 @@ It is even possible to define your own snippets. The following package contains 
                 ("RET" . nil)
                 ("<return>" . nil)
                 ("C-l" . company-complete-selection)
+                ("<C-return>" . company-complete-selection)
                 ("C-n" . nil)
                 ("C-p" . nil))
 
@@ -1488,7 +1537,7 @@ It is even possible to define your own snippets. The following package contains 
     ;; Might lead to company-box being a bit broken ? Long function names are cut-off
     (let ((map company-active-map))
       (mapc (lambda (x) (define-key map (read-kbd-macro (format "M-%s" (cdr x)))
-                                                `(lambda () (interactive) (company-complete-number ,(car x)))))
+                          `(lambda () (interactive) (company-complete-number ,(car x)))))
             '((10 . "à")
               (1 . "&")
               (2 . "é")
@@ -1817,7 +1866,12 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
     :hook (org-mode . lps/org-mode-setup)
     :bind (("C-c o" . org-capture)
            (:map org-mode-map
-                 ("<M-S-return>" . org-insert-subheading)))
+                 ("<M-S-return>" . org-insert-subheading)
+                 ("<C-S-left>" . nil)
+                 ("<C-S-right>" . nil)
+                 ("<C-S-up>" . nil)
+                 ("<C-S-down>" . nil)
+                 ("C-," . nil)))
     :custom
     ;; Coding in blocks
     (org-src-fontify-natively t)
@@ -2015,7 +2069,7 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
                 ("C-s" . isearch-forward))
     :config
     (pdf-tools-install :no-query)
-    (add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
+    ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
     (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode))
 #+end_src
 
@@ -2365,10 +2419,11 @@ Now, we try to add things on top of the built-in file manager, Dired.
     :diminish
     :hook (dired-mode . all-the-icons-dired-mode))
 
-  ;; Extra functionalities
-  (use-package dired-x
-    :ensure nil
-    :after dired)
+  (if (version< emacs-version "28.0")
+      ;; Extra functionalities
+      (use-package dired-x
+        :ensure nil
+        :after dired))
 #+end_src
 ** Tools
 *** Disk usage
