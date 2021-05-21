@@ -1027,6 +1027,7 @@ We often want to visit links. If the point is on a file path, for example, it is
 * Editing
 
    Emacs is fundamentally a text editor. It provides a lot of functions to deal with text, and a way to create macros, to automate things, to repeat something multiple times ... easily. However, because there are /so many/ available functions, we might need some help to navigate around and do fancy things.
+
 ** Multiple cursors
 
 A first improvement is the addition of multiple cursors. The "rectangle region" already gives a way to insert text simultaneously at several places, and to perform some easy operations on a rectangular area, but the [[https://github.com/magnars/multiple-cursors.el][multiple cursor]] package really increases the possibilities.
@@ -1062,7 +1063,126 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
 #+end_src
 
 The webpage specifies that the commands provided by this package are best invoked when bound to key sequence rather than by =M-x <mc/command-name>=, although some testing on my part seems to show that it still works relatively well most of the time.
+** Auto-completion
 
+We fundamentally use Emacs to write text. What would writing be without some kind of auto-completion ? Hence, we use a few tools to make the general experience of /writing text/ better, whether it is source code, simple sentences or even commands in the minibuffer.
+
+*** Completion styles
+
+Emacs has a lot of built-in completions styles, telling it how to interpret the input: as a regexp, as initials, as a substring ... We add some other ones, and some possibilities to customize them or even change them on the fly. In order to separate how those styles work for in-buffer completion compared to their behaviour in minibuffer, we add hooks to the completion to change the completion styles on the fly.
+
+#+begin_src emacs-lisp
+  (use-package orderless
+    :custom
+    (completion-styles '(basic partial-completion orderless))
+    (completion-auto-help t)
+    (orderless-component-separator #'orderless-escapable-split-on-space)
+    (orderless-matching-styles '(orderless-literal orderless-regexp))
+    (orderless-style-dispatchers '(lps/orderless-initialism-if-semicolon
+                                   lps/orderless-substring-if-equal
+                                   lps/orderless-flex-if-twiddle
+                                   lps/orderless-without-if-bang))
+
+    :config
+    ;; From the Orderless package documentation
+    (defun lps/orderless-flex-if-twiddle (pattern _index _total)
+      "Use `orderless-flex' if the input starts with a ~"
+      (when (string-prefix-p "~" pattern)
+        `(orderless-flex . ,(substring pattern 1))))
+
+    (defun lps/orderless-substring-if-equal (pattern _index _total)
+      "Use `orderless-literal' if the input starts with a ="
+      (when (string-prefix-p "=" pattern)
+        `(orderless-literal . ,(substring pattern 1))))
+
+    (defun lps/orderless-first-initialism (pattern index _total)
+      "Use `orderless-initialism' for the first component"
+      (if (= index 0) 'orderless-initialism))
+
+    (defun lps/orderless-initialism-if-semicolon (pattern _index _total)
+      "Use `orderless-initialism' if the input starts with a ;"
+      (when (string-prefix-p ";" pattern)
+        `(orderless-initialism . ,(substring pattern 1))))
+
+    (defun lps/orderless-without-if-bang (pattern _index _total)
+      (cond
+       ((equal "!" pattern)
+        '(orderless-literal . ""))
+       ((string-prefix-p "!" pattern)
+        `(orderless-without-literal . ,(substring pattern 1))))))
+#+end_src
+*** Company
+
+     Several packages are available to make auto-completion more efficient and intuitive than the built-in =completion-at-point= function. We use [[https://company-mode.github.io/][Company]] (stands for "comp[lete] any[thing]") as it integrates nicely with other packages that we use, is well-maintained and has a more modern interface than most of its counterparts such as =auto-complete=.
+
+#+begin_src emacs-lisp
+  ;; Company. Auto-completion package
+  (use-package company
+    :diminish
+
+    :init
+    (global-company-mode t)
+
+    :bind (:map company-active-map
+                ("<tab>" . company-complete)
+                ("TAB" . company-complete)
+                ("RET" . nil)
+                ("<return>" . nil)
+                ("C-l" . company-complete-selection)
+                ("<C-return>" . company-complete-selection)
+                ("C-n" . nil)
+                ("C-p" . nil))
+
+    :custom
+    ;; Generic company settings
+    (company-minimum-prefix-length 1)
+    (company-idle-delay 0.0)
+    (company-selection-wrap-around t)
+    (company-show-numbers t)
+    (company-tooltip-align-annotations t)
+    (company-tooltip-flip-when-above t)
+
+    :config
+    (setq-default company-backends '((company-capf company-files company-dabbrev company-yasnippet)
+                                     (company-dabbrev-code company-gtags company-etags company-keywords company-clang)
+                                     company-oddmuse))
+
+    ;; AZERTY-friendly company number selection
+    ;; Might lead to company-box being a bit broken ? Long function names are cut-off
+    (let ((map company-active-map))
+      (mapc (lambda (x) (define-key map (read-kbd-macro (format "M-%s" (cdr x)))
+                          `(lambda () (interactive) (company-complete-number ,(car x)))))
+            '((10 . "à")
+              (1 . "&")
+              (2 . "é")
+              (3 . "\"")
+              (4 . "'")
+              (5 . "(")
+              (6 . "-")
+              (7 . "è")
+              (8 . "_")
+              (9 . "ç")))))
+#+end_src
+
+To have a cleaner interface and also a bit of documentation added to the suggested completions, we use two extra packages.
+
+#+begin_src emacs-lisp
+  (use-package company-box
+    :after company
+    :diminish
+    :hook (company-mode . company-box-mode)
+    :config
+    (setq company-box-backends-colors '((company-yasnippet :all "dark turquoise"
+                                                           :selected
+                                                           (:background "slate blue" :foreground "white")))))
+
+  (use-package company-quickhelp
+    :after company
+    :hook (company-mode . company-quickhelp-mode)
+    :diminish
+    :custom (company-quickhelp-delay 0.2))
+
+#+end_src
 ** Navigation
 *** Structure based
 Because movement keys are the most frequently used ones, it might be useful to create an Hydra helping us navigate around a document.
@@ -1438,38 +1558,9 @@ Now, in order to work with structured text, such as source code, we want to be a
     :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
 #+end_src
 
-** Auto-completion
-*** Completion styles
+** Better auto-completion
 
-Emacs has a lot of built-in completions styles, telling it how to interpret the input: as a regexp, as initials, as a substring ... We add some other ones, and some possibilities to customize them or even change them on the fly. In order to separate how those styles work for in-buffer completion compared to their behaviour in minibuffer, we add hooks to the completion to change the completion styles on the fly.
-
-#+begin_src emacs-lisp
-  (use-package orderless
-    :after vertico
-    :init
-    (setq lps/default-minibuffer-styles '(basic
-                                          substring
-                                          partial-completion
-                                          initials
-                                          flex
-                                          orderless))
-
-    (setq lps/completion-at-point-styles '(basic
-                                           substring
-                                           partial-completion))
-
-    (defun lps/set-completion-styles-completion-at-point (&rest _ignore)
-      (setq completion-styles lps/completion-at-point-styles))
-
-    (defun lps/set-completion-styles-minibuffer (&rest _ignore)
-      (setq completion-styles lps/default-minibuffer-styles))
-
-    :custom
-    (completion-styles lps/default-minibuffer-styles)
-    :config
-    ;; useful in Eval
-    (setq completion-auto-help t))
-#+end_src
+The previous Auto-completion section was about the general editing experience. Here, we add extra tools that will be particularly interesting when editing some kind of source code, which is by nature much more repetitive and rigid.
 
 *** YASnippet
 
@@ -1494,83 +1585,7 @@ It is even possible to define your own snippets. The following package contains 
   (use-package yasnippet-snippets
     :after yasnippet)
 #+end_src
-
-*** Company
-
-     Several packages are available to make auto-completion more efficient and intuitive than the built-in =completion-at-point= function. We use [[https://company-mode.github.io/][Company]] (stands for "comp[lete] any[thing]") as it integrates nicely with other packages that we use, is well-maintained and has a more modern interface than most of its counterparts such as =auto-complete=.
-
-#+begin_src emacs-lisp
-  ;; Company. Auto-completion package
-  (use-package company
-    :diminish
-
-    :init
-    (global-company-mode t)
-    (add-hook 'company-completion-started-hook #'lps/set-completion-styles-completion-at-point)
-    (add-hook 'company-after-completion-hook #'lps/set-completion-styles-minibuffer)
-
-    :bind (:map company-active-map
-                ("<tab>" . company-complete)
-                ("TAB" . company-complete)
-                ("RET" . nil)
-                ("<return>" . nil)
-                ("C-l" . company-complete-selection)
-                ("<C-return>" . company-complete-selection)
-                ("C-n" . nil)
-                ("C-p" . nil))
-
-    :custom
-    ;; Generic company settings
-    (company-minimum-prefix-length 1)
-    (company-idle-delay 0.0)
-    (company-selection-wrap-around t)
-    (company-show-numbers t)
-    (company-tooltip-align-annotations t)
-    (company-tooltip-flip-when-above t)
-
-    :config
-    (setq-default company-backends '((company-capf company-files company-dabbrev company-yasnippet)
-                                     (company-dabbrev-code company-gtags company-etags company-keywords company-clang)
-                                     company-oddmuse))
-
-    ;; AZERTY-friendly company number selection
-    ;; Might lead to company-box being a bit broken ? Long function names are cut-off
-    (let ((map company-active-map))
-      (mapc (lambda (x) (define-key map (read-kbd-macro (format "M-%s" (cdr x)))
-                          `(lambda () (interactive) (company-complete-number ,(car x)))))
-            '((10 . "à")
-              (1 . "&")
-              (2 . "é")
-              (3 . "\"")
-              (4 . "'")
-              (5 . "(")
-              (6 . "-")
-              (7 . "è")
-              (8 . "_")
-              (9 . "ç")))))
-#+end_src
-
-To have a cleaner interface and also a bit of documentation added to the suggested completions, we use two extra packages.
-
-#+begin_src emacs-lisp
-  (use-package company-box
-    :after company
-    :diminish
-    :hook (company-mode . company-box-mode)
-    :config
-    (setq company-box-backends-colors '((company-yasnippet :all "dark turquoise"
-                                                           :selected
-                                                           (:background "slate blue" :foreground "white")))))
-
-  (use-package company-quickhelp
-    :after company
-    :hook (company-mode . company-quickhelp-mode)
-    :diminish
-    :custom (company-quickhelp-delay 0.2))
-
-#+end_src
-
-***** Company backends
+*** Company backends
 
 A first backend that we want to consider is the one using snippets provided by ~yasnippet~
 

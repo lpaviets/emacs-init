@@ -717,6 +717,107 @@ buffer in current window."
      (("M-n" mc/unmark-next-like-this "Unmark next like this")
       ("M-p" mc/unmark-previous-like-this "Unmark previous like this")))))
 
+(use-package orderless
+  :custom
+  (completion-styles '(basic partial-completion orderless))
+  (completion-auto-help t)
+  (orderless-component-separator #'orderless-escapable-split-on-space)
+  (orderless-matching-styles '(orderless-literal orderless-regexp))
+  (orderless-style-dispatchers '(lps/orderless-initialism-if-semicolon
+                                 lps/orderless-substring-if-equal
+                                 lps/orderless-flex-if-twiddle
+                                 lps/orderless-without-if-bang))
+
+  :config
+  ;; From the Orderless package documentation
+  (defun lps/orderless-flex-if-twiddle (pattern _index _total)
+    "Use `orderless-flex' if the input starts with a ~"
+    (when (string-prefix-p "~" pattern)
+      `(orderless-flex . ,(substring pattern 1))))
+
+  (defun lps/orderless-substring-if-equal (pattern _index _total)
+    "Use `orderless-literal' if the input starts with a ="
+    (when (string-prefix-p "=" pattern)
+      `(orderless-literal . ,(substring pattern 1))))
+
+  (defun lps/orderless-first-initialism (pattern index _total)
+    "Use `orderless-initialism' for the first component"
+    (if (= index 0) 'orderless-initialism))
+
+  (defun lps/orderless-initialism-if-semicolon (pattern _index _total)
+    "Use `orderless-initialism' if the input starts with a ;"
+    (when (string-prefix-p ";" pattern)
+      `(orderless-initialism . ,(substring pattern 1))))
+
+  (defun lps/orderless-without-if-bang (pattern _index _total)
+    (cond
+     ((equal "!" pattern)
+      '(orderless-literal . ""))
+     ((string-prefix-p "!" pattern)
+      `(orderless-without-literal . ,(substring pattern 1))))))
+
+;; Company. Auto-completion package
+(use-package company
+  :diminish
+
+  :init
+  (global-company-mode t)
+
+  :bind (:map company-active-map
+              ("<tab>" . company-complete)
+              ("TAB" . company-complete)
+              ("RET" . nil)
+              ("<return>" . nil)
+              ("C-l" . company-complete-selection)
+              ("<C-return>" . company-complete-selection)
+              ("C-n" . nil)
+              ("C-p" . nil))
+
+  :custom
+  ;; Generic company settings
+  (company-minimum-prefix-length 1)
+  (company-idle-delay 0.0)
+  (company-selection-wrap-around t)
+  (company-show-numbers t)
+  (company-tooltip-align-annotations t)
+  (company-tooltip-flip-when-above t)
+
+  :config
+  (setq-default company-backends '((company-capf company-files company-dabbrev company-yasnippet)
+                                   (company-dabbrev-code company-gtags company-etags company-keywords company-clang)
+                                   company-oddmuse))
+
+  ;; AZERTY-friendly company number selection
+  ;; Might lead to company-box being a bit broken ? Long function names are cut-off
+  (let ((map company-active-map))
+    (mapc (lambda (x) (define-key map (read-kbd-macro (format "M-%s" (cdr x)))
+                        `(lambda () (interactive) (company-complete-number ,(car x)))))
+          '((10 . "à")
+            (1 . "&")
+            (2 . "é")
+            (3 . "\"")
+            (4 . "'")
+            (5 . "(")
+            (6 . "-")
+            (7 . "è")
+            (8 . "_")
+            (9 . "ç")))))
+
+(use-package company-box
+  :after company
+  :diminish
+  :hook (company-mode . company-box-mode)
+  :config
+  (setq company-box-backends-colors '((company-yasnippet :all "dark turquoise"
+                                                         :selected
+                                                         (:background "slate blue" :foreground "white")))))
+
+(use-package company-quickhelp
+  :after company
+  :hook (company-mode . company-quickhelp-mode)
+  :diminish
+  :custom (company-quickhelp-delay 0.2))
+
 (use-package emacs
   :ensure nil
   :bind (:map lps/all-hydras-map
@@ -981,32 +1082,6 @@ buffer in current window."
 (use-package elec-pair
   :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
 
-(use-package orderless
-  :after vertico
-  :init
-  (setq lps/default-minibuffer-styles '(basic
-                                        substring
-                                        partial-completion
-                                        initials
-                                        flex
-                                        orderless))
-
-  (setq lps/completion-at-point-styles '(basic
-                                         substring
-                                         partial-completion))
-
-  (defun lps/set-completion-styles-completion-at-point (&rest _ignore)
-    (setq completion-styles lps/completion-at-point-styles))
-
-  (defun lps/set-completion-styles-minibuffer (&rest _ignore)
-    (setq completion-styles lps/default-minibuffer-styles))
-
-  :custom
-  (completion-styles lps/default-minibuffer-styles)
-  :config
-  ;; useful in Eval
-  (setq completion-auto-help t))
-
 ;;YASnippet
 (use-package yasnippet
   :diminish
@@ -1020,70 +1095,6 @@ buffer in current window."
 
 (use-package yasnippet-snippets
   :after yasnippet)
-
-;; Company. Auto-completion package
-(use-package company
-  :diminish
-
-  :init
-  (global-company-mode t)
-  (add-hook 'company-completion-started-hook #'lps/set-completion-styles-completion-at-point)
-  (add-hook 'company-after-completion-hook #'lps/set-completion-styles-minibuffer)
-
-  :bind (:map company-active-map
-              ("<tab>" . company-complete)
-              ("TAB" . company-complete)
-              ("RET" . nil)
-              ("<return>" . nil)
-              ("C-l" . company-complete-selection)
-              ("<C-return>" . company-complete-selection)
-              ("C-n" . nil)
-              ("C-p" . nil))
-
-  :custom
-  ;; Generic company settings
-  (company-minimum-prefix-length 1)
-  (company-idle-delay 0.0)
-  (company-selection-wrap-around t)
-  (company-show-numbers t)
-  (company-tooltip-align-annotations t)
-  (company-tooltip-flip-when-above t)
-
-  :config
-  (setq-default company-backends '((company-capf company-files company-dabbrev company-yasnippet)
-                                   (company-dabbrev-code company-gtags company-etags company-keywords company-clang)
-                                   company-oddmuse))
-
-  ;; AZERTY-friendly company number selection
-  ;; Might lead to company-box being a bit broken ? Long function names are cut-off
-  (let ((map company-active-map))
-    (mapc (lambda (x) (define-key map (read-kbd-macro (format "M-%s" (cdr x)))
-                        `(lambda () (interactive) (company-complete-number ,(car x)))))
-          '((10 . "à")
-            (1 . "&")
-            (2 . "é")
-            (3 . "\"")
-            (4 . "'")
-            (5 . "(")
-            (6 . "-")
-            (7 . "è")
-            (8 . "_")
-            (9 . "ç")))))
-
-(use-package company-box
-  :after company
-  :diminish
-  :hook (company-mode . company-box-mode)
-  :config
-  (setq company-box-backends-colors '((company-yasnippet :all "dark turquoise"
-                                                         :selected
-                                                         (:background "slate blue" :foreground "white")))))
-
-(use-package company-quickhelp
-  :after company
-  :hook (company-mode . company-quickhelp-mode)
-  :diminish
-  :custom (company-quickhelp-delay 0.2))
 
 (use-package company-yasnippet
   :ensure nil
