@@ -361,7 +361,24 @@ installed themes instead."
   :custom
   (vertico-cycle t)
   :init
-  (vertico-mode))
+  (vertico-mode)
+  :bind
+  (:map vertico-map
+        ("<C-backspace>" . lps/minibuffer-go-up-directory))
+  :config
+  (defun lps/minibuffer-go-up-directory ()
+    (interactive)
+    (let* ((filename (minibuffer-contents))
+           (directory-maybe (file-name-directory filename))
+           (directory (if (and (string-suffix-p "/" filename)
+                               (equal filename directory-maybe))
+                          (file-name-directory (substring filename 0 -1))
+                        directory-maybe)))
+      (if directory
+          (progn
+            (delete-minibuffer-contents)
+            (insert directory))
+        (backward-kill-word 1)))))
 
 (use-package marginalia
   :after vertico
@@ -660,7 +677,9 @@ buffer in current window."
 (use-package embark
   :bind
   ("C-," . embark-act)
-  ("C-h b" . embark-bindings))
+  ("C-h b" . embark-bindings)
+  (:map embark-file-map
+        ("s" . lps/find-file-as-root)))
 
 ;; Macro to use "python-style" affectation in lexical bindings
 (defmacro multi-let (vars values body)
@@ -687,7 +706,12 @@ buffer in current window."
 
 (use-package ffap
   :ensure nil
-  :init (ffap-bindings))
+  :init (ffap-bindings)
+  :config
+  (defun lps/find-file-as-root (filename)
+    "Switch to a buffer visiting the file FILENAME as root, creating one if none exists."
+    (interactive "P")
+    (find-file (concat "/sudo:root@localhost:" filename))))
 
 (use-package multiple-cursors
   :defer t

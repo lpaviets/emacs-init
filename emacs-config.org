@@ -564,7 +564,24 @@ For this reason, we might want to take a look at some lightweight alternatives, 
     :custom
     (vertico-cycle t)
     :init
-    (vertico-mode))
+    (vertico-mode)
+    :bind
+    (:map vertico-map
+          ("<C-backspace>" . lps/minibuffer-go-up-directory))
+    :config
+    (defun lps/minibuffer-go-up-directory ()
+      (interactive)
+      (let* ((filename (minibuffer-contents))
+             (directory-maybe (file-name-directory filename))
+             (directory (if (and (string-suffix-p "/" filename)
+                                 (equal filename directory-maybe))
+                            (file-name-directory (substring filename 0 -1))
+                          directory-maybe)))
+        (if directory
+            (progn
+              (delete-minibuffer-contents)
+              (insert directory))
+          (backward-kill-word 1)))))
 #+end_src
 
 Emacs uses metadata to differentiate between several types of things for completion. For example, when using ~find-file~, Emacs attachs to each suggestion a bit of data to tell that they are actually files.
@@ -983,7 +1000,9 @@ Another package that tries to give contextual actions to act on "things" (files,
   (use-package embark
     :bind
     ("C-," . embark-act)
-    ("C-h b" . embark-bindings))
+    ("C-h b" . embark-bindings)
+    (:map embark-file-map
+          ("s" . lps/find-file-as-root)))
 #+end_src
 
 ** Some macros
@@ -1022,7 +1041,12 @@ We often want to visit links. If the point is on a file path, for example, it is
 #+begin_src emacs-lisp
   (use-package ffap
     :ensure nil
-    :init (ffap-bindings))
+    :init (ffap-bindings)
+    :config
+    (defun lps/find-file-as-root (filename)
+      "Switch to a buffer visiting the file FILENAME as root, creating one if none exists."
+      (interactive "P")
+      (find-file (concat "/sudo:root@localhost:" filename))))
 #+end_src
 * Editing
 
