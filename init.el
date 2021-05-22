@@ -366,8 +366,8 @@ installed themes instead."
   (:map vertico-map
         ("<C-backspace>" . lps/minibuffer-go-up-directory))
   :config
-  (defun lps/minibuffer-go-up-directory ()
-    (interactive)
+  (defun lps/minibuffer-go-up-directory (arg)
+    (interactive "p")
     (let* ((filename (minibuffer-contents))
            (directory-maybe (file-name-directory filename))
            (directory (if (and (string-suffix-p "/" filename)
@@ -378,7 +378,7 @@ installed themes instead."
           (progn
             (delete-minibuffer-contents)
             (insert directory))
-        (backward-kill-word 1)))))
+        (backward-kill-word arg)))))
 
 (use-package marginalia
   :after vertico
@@ -672,14 +672,32 @@ buffer in current window."
   :defer t
   :bind
   ("C-s" . consult-line)
-  ("C-c i" . consult-imenu))
+  ("C-c i" . lps/consult-imenu-or-org-heading)
+  ("C-x b" . consult-buffer)
+  :custom
+  (consult-narrow-key "<")
+  :config
+  (defun lps/consult-imenu-or-org-heading ()
+    (interactive)
+    (if (equal major-mode 'org-mode)
+        (consult-org-heading)
+      (consult-imenu))))
 
 (use-package embark
   :bind
   ("C-," . embark-act)
   ("C-h b" . embark-bindings)
   (:map embark-file-map
-        ("s" . lps/find-file-as-root)))
+        ("s" . lps/find-file-as-root))
+  :config
+  (setq embark-action-indicator
+        (lambda (map &rest _ignore)
+          (which-key--show-keymap "Embark" map nil nil 'no-paging)
+          #'which-key--hide-popup-ignore-command)
+        embark-become-indicator embark-action-indicator))
+
+(use-package embark-consult
+  :after (consult embark))
 
 ;; Macro to use "python-style" affectation in lexical bindings
 (defmacro multi-let (vars values body)
@@ -1157,7 +1175,7 @@ buffer in current window."
   (defvar lps/--default-lsp-mode 0)
   (defun lps/lsp-by-default-in-session ()
     (if (> lps/--default-lsp-mode 0)
-        (lsp)
+        (lsp-deferred)
       (if (and (= lps/--default-lsp-mode 0) (y-or-n-p "Automatically use lsp-mode in the current session ?"))
           (progn
             (setq lps/--default-lsp-mode 1)

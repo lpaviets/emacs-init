@@ -5,23 +5,23 @@
 
 * Organization of this file
 
-  This file contains a Emacs configuration, written in a Org Mode document. It is largely based on [[https://github.com/daviwil/emacs-from-scratch/][Emacs From Scratch]].
+This file contains a Emacs configuration, written in a Org Mode document. It is largely based on [[https://github.com/daviwil/emacs-from-scratch/][Emacs From Scratch]].
 
-  It is able to automatically generate a init.el file, loaded by Emacs at startup.
+It is able to automatically generate a init.el file, loaded by Emacs at startup.
 
-  If this file is on the path "~/.emacs.d/emacs-config.org" then it will automatically generate an output. To modify this behaviour, see the "Org Mode/Auto-tangle configuration files" subsection and modify it as you need.
+If this file is on the path "~/.emacs.d/emacs-config.org" then it will automatically generate an output. To modify this behaviour, see the "Org Mode/Auto-tangle configuration files" subsection and modify it as you need.
 
-  If this file is named differently on your system, or simply located in another directory, you can still generate an output without changing anything by invoking the =org-babel-tangle= command (=C-c C-v t=).
+If this file is named differently on your system, or simply located in another directory, you can still generate an output without changing anything by invoking the =org-babel-tangle= command (=C-c C-v t=).
 
-  Because I use a version system on those files, I don't mind conflicts with the currently loaded configuration file, and so the the generated file is actually called  =init.el=. By default, Emacs reads (and loads) file such as "~/.emacs" or "~/.emacs.d/init.el" at startup, so the output of =org-babel-tangle= is automatically replacing the previous configuration file. If you want to avoid those conflicts, you might need to rename it.
+Because I use a version system on those files, I don't mind conflicts with the currently loaded configuration file, and so the the generated file is actually called  =init.el=. By default, Emacs reads (and loads) file such as "~/.emacs" or "~/.emacs.d/init.el" at startup, so the output of =org-babel-tangle= is automatically replacing the previous configuration file. If you want to avoid those conflicts, you might need to rename it.
 
-  To modify the name of the output, you can change it in the second line of this document, after the =:tangle= keyword.
+To modify the name of the output, you can change it in the second line of this document, after the =:tangle= keyword.
 
-  Some commands have to be run manually whenever the generated =init.el= file is loaded for the first time.
+Some commands have to be run manually whenever the generated =init.el= file is loaded for the first time.
 
-  Whenever this is the case, it is explicitly signaled by the presence of the *MANUAL* keyword in front of those commands.
+Whenever this is the case, it is explicitly signaled by the presence of the *MANUAL* keyword in front of those commands.
 
-  If the init.el cannot be properly loaded at startup, try to search for such keywords in this file and execute the corresponding commands.
+If the init.el cannot be properly loaded at startup, try to search for such keywords in this file and execute the corresponding commands.
 
 * Initialization
 ** Emacs performance
@@ -569,8 +569,8 @@ For this reason, we might want to take a look at some lightweight alternatives, 
     (:map vertico-map
           ("<C-backspace>" . lps/minibuffer-go-up-directory))
     :config
-    (defun lps/minibuffer-go-up-directory ()
-      (interactive)
+    (defun lps/minibuffer-go-up-directory (arg)
+      (interactive "p")
       (let* ((filename (minibuffer-contents))
              (directory-maybe (file-name-directory filename))
              (directory (if (and (string-suffix-p "/" filename)
@@ -581,7 +581,7 @@ For this reason, we might want to take a look at some lightweight alternatives, 
             (progn
               (delete-minibuffer-contents)
               (insert directory))
-          (backward-kill-word 1)))))
+          (backward-kill-word arg)))))
 #+end_src
 
 Emacs uses metadata to differentiate between several types of things for completion. For example, when using ~find-file~, Emacs attachs to each suggestion a bit of data to tell that they are actually files.
@@ -987,11 +987,20 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
 ** Utilities
 ~consult~ provides a lot of useful commands that can be used during a minibuffer session to act on the selection. Moreover, it comes with various utilities, such as flavours of ~isearch~ or ~grep~.
 #+begin_src emacs-lisp
-    (use-package consult
-      :defer t
-      :bind
-      ("C-s" . consult-line)
-      ("C-c i" . consult-imenu))
+  (use-package consult
+    :defer t
+    :bind
+    ("C-s" . consult-line)
+    ("C-c i" . lps/consult-imenu-or-org-heading)
+    ("C-x b" . consult-buffer)
+    :custom
+    (consult-narrow-key "<")
+    :config
+    (defun lps/consult-imenu-or-org-heading ()
+      (interactive)
+      (if (equal major-mode 'org-mode)
+          (consult-org-heading)
+        (consult-imenu))))
 #+end_src
 
 Another package that tries to give contextual actions to act on "things" (files, buffers ...) is ~embark~. It also integrates very well with the default API, and is easily enhanced by packages such as ~marginalia~
@@ -1002,7 +1011,16 @@ Another package that tries to give contextual actions to act on "things" (files,
     ("C-," . embark-act)
     ("C-h b" . embark-bindings)
     (:map embark-file-map
-          ("s" . lps/find-file-as-root)))
+          ("s" . lps/find-file-as-root))
+    :config
+    (setq embark-action-indicator
+          (lambda (map &rest _ignore)
+            (which-key--show-keymap "Embark" map nil nil 'no-paging)
+            #'which-key--hide-popup-ignore-command)
+          embark-become-indicator embark-action-indicator))
+
+  (use-package embark-consult
+    :after (consult embark))
 #+end_src
 
 ** Some macros
@@ -1669,7 +1687,7 @@ We add another backend to support completion in shell and terminal-modes
     (defvar lps/--default-lsp-mode 0)
     (defun lps/lsp-by-default-in-session ()
       (if (> lps/--default-lsp-mode 0)
-          (lsp)
+          (lsp-deferred)
         (if (and (= lps/--default-lsp-mode 0) (y-or-n-p "Automatically use lsp-mode in the current session ?"))
             (progn
               (setq lps/--default-lsp-mode 1)
