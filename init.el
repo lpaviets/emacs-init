@@ -664,9 +664,13 @@ buffer in current window."
 
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
-  :init (which-key-mode)
+  :init
+  (which-key-mode)
+  (which-key-setup-side-window-bottom) ;; default
   :diminish
-  :custom (which-key-idle-delay 1))
+  :custom
+  (which-key-idle-delay 1)
+  (which-key-idle-secondary-delay 0.05))
 
 (use-package consult
   :defer t
@@ -674,6 +678,7 @@ buffer in current window."
   ("C-s" . consult-line)
   ("C-c i" . lps/consult-imenu-or-org-heading)
   ("C-x b" . consult-buffer)
+  ([remap yank-pop] . consult-yank-from-kill-ring)
   :custom
   (consult-narrow-key "<")
   :config
@@ -730,6 +735,11 @@ buffer in current window."
     "Switch to a buffer visiting the file FILENAME as root, creating one if none exists."
     (interactive "P")
     (find-file (concat "/sudo:root@localhost:" filename))))
+
+(when (version< emacs-version "28.0")
+  (use-package repeat
+    :init
+    (repeat-mode)))
 
 (use-package multiple-cursors
   :defer t
@@ -1119,7 +1129,9 @@ buffer in current window."
           lisp-mode
           lisp-interaction-mode) . paredit-mode)
   :bind (:map paredit-mode-map
-              ("C-M-y" . paredit-copy-as-kill)))
+              ("C-M-y" . paredit-copy-as-kill)
+              ("M-s" . nil) ;; To get isearch-mode-map
+              ("M-s M-s" . paredit-splice-sexp)))
 
 (use-package elec-pair
   :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
@@ -1992,7 +2004,8 @@ PWD is not in a git repo (or the git command is not found)."
 
 (use-package elfeed
   :defer t
-  :bind (("C-c f" . elfeed))
+  :bind
+  ("C-c f" . elfeed)
   :custom
   (elfeed-db-directory "~/.emacs.d/.elfeed")
   (elfeed-search-title-max-width 110)

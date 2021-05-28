@@ -219,7 +219,7 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
 While we are at it, we also want Emacs to wrap our lines, so that we never have to scroll horizontally to see the end of a long line (besides, how would we do it, now that we don't have a scrollbar anymore ?!)
 
 #+begin_src emacs-lisp
-(global-visual-line-mode 1)
+  (global-visual-line-mode 1)
 #+end_src
 
 *** Theme
@@ -979,9 +979,13 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
 #+begin_src emacs-lisp
   ;; which-key. Shows all the available key sequences after a prefix
   (use-package which-key
-    :init (which-key-mode)
+    :init
+    (which-key-mode)
+    (which-key-setup-side-window-bottom) ;; default
     :diminish
-    :custom (which-key-idle-delay 1))
+    :custom
+    (which-key-idle-delay 1)
+    (which-key-idle-secondary-delay 0.05))
 #+end_src
 
 ** Utilities
@@ -993,6 +997,7 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
     ("C-s" . consult-line)
     ("C-c i" . lps/consult-imenu-or-org-heading)
     ("C-x b" . consult-buffer)
+    ([remap yank-pop] . consult-yank-from-kill-ring)
     :custom
     (consult-narrow-key "<")
     :config
@@ -1065,6 +1070,14 @@ We often want to visit links. If the point is on a file path, for example, it is
       "Switch to a buffer visiting the file FILENAME as root, creating one if none exists."
       (interactive "P")
       (find-file (concat "/sudo:root@localhost:" filename))))
+#+end_src
+*** Repeat commands
+Some commands are usually invoked several times in succession. For example, if you wish to resize a window, you might need to invoke =shrink-window= several times.
+#+begin_src emacs-lisp
+  (when (version< emacs-version "28.0")
+    (use-package repeat
+      :init
+      (repeat-mode)))
 #+end_src
 * Editing
 
@@ -1594,7 +1607,9 @@ Now, in order to work with structured text, such as source code, we want to be a
             lisp-mode
             lisp-interaction-mode) . paredit-mode)
     :bind (:map paredit-mode-map
-                ("C-M-y" . paredit-copy-as-kill)))
+                ("C-M-y" . paredit-copy-as-kill)
+                ("M-s" . nil) ;; To get isearch-mode-map
+                ("M-s M-s" . paredit-splice-sexp)))
 
   (use-package elec-pair
     :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
@@ -2803,7 +2818,8 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
 #+begin_src emacs-lisp
   (use-package elfeed
     :defer t
-    :bind (("C-c f" . elfeed))
+    :bind
+    ("C-c f" . elfeed)
     :custom
     (elfeed-db-directory "~/.emacs.d/.elfeed")
     (elfeed-search-title-max-width 110)
