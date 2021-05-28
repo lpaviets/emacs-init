@@ -1142,13 +1142,19 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
     ;; From the Orderless package documentation
     (defun lps/orderless-flex-if-twiddle (pattern _index _total)
       "Use `orderless-flex' if the input starts with a ~"
-      (when (string-prefix-p "~" pattern)
-        `(orderless-flex . ,(substring pattern 1))))
+      (if (string-prefix-p "~" pattern)
+          `(orderless-flex . ,(substring pattern 1))
+
+        (when (string-suffix-p "~" pattern)
+          `(orderless-flex . ,(substring pattern 0 -1)))))
 
     (defun lps/orderless-substring-if-equal (pattern _index _total)
       "Use `orderless-literal' if the input starts with a ="
-      (when (string-prefix-p "=" pattern)
-        `(orderless-literal . ,(substring pattern 1))))
+      (if (string-prefix-p "=" pattern)
+          `(orderless-literal . ,(substring pattern 1))
+
+        (when (string-suffix-p "=" pattern)
+          `(orderless-literal . ,(substring pattern 0 -1)))))
 
     (defun lps/orderless-first-initialism (pattern index _total)
       "Use `orderless-initialism' for the first component"
@@ -1156,8 +1162,11 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
 
     (defun lps/orderless-initialism-if-semicolon (pattern _index _total)
       "Use `orderless-initialism' if the input starts with a ;"
-      (when (string-prefix-p ";" pattern)
-        `(orderless-initialism . ,(substring pattern 1))))
+      (if (string-prefix-p ";" pattern)
+          `(orderless-initialism . ,(substring pattern 1))
+
+        (when (string-suffix-p ";" pattern)
+          `(orderless-initialism . ,(substring pattern 0 -1)))))
 
     (defun lps/orderless-without-if-bang (pattern _index _total)
       (cond
