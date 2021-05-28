@@ -88,12 +88,20 @@ flycheck_*.el
 #Package compilation
 /eln-cache/
 
+# Dired image preview
+/image-dired/
+
+# nov-mode history
+/nov-places
+
+# Bookmarks
+/bookmarks
+
+# Project
+/projects
+
 # Other random stuff
 /network-security.data
-/projects
 /recentf
 *.sqlite
 /session.105c7771555e10ce7e161703684163112000000021830165
-/bookmarks
-/image-dired/
-/nov-places

@@ -51,7 +51,7 @@
   ;; To disable collection of benchmark data after init is done.
   (add-hook 'after-init-hook 'benchmark-init/deactivate))
 
-(setq password-cache t) ; enable password caching
+(setq password-cache nil) ; enable password caching
 (setq password-cache-expiry 600) ; for one hour (time in secs)
 (setq auth-sources (remove "~/.authinfo" auth-sources)) ;; Only use its .gpg counterpart
 
@@ -104,6 +104,9 @@
                 mu4e-main-mode-hook
                 mu4e-view-mode-hook
                 mu4e-headers-mode-hook
+                ;; reading
+                nov-mode-hook
+                olivetti-mode-hook
                 ;; Extra modes
                 undo-tree-visualizer-mode-hook
                 treemacs-mode-hook
@@ -1470,7 +1473,9 @@ buffer in current window."
          (file+headline "~/Documents/OrgFiles/everything.org"
                         "A trier")
          "* %?\n %a\n %i"
-         :empty-lines 1))))
+         :empty-lines 1)))
+
+(setq org-capture-bookmark nil))
 
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
@@ -1845,7 +1850,6 @@ PWD is not in a git repo (or the git command is not found)."
   ;; Adapted from https://jherrlin.github.io/posts/emacs-mu4e/
   ;; See also https://etienne.depar.is/emacs.d/mu4e.html
   (setq mml-secure-cache-passphrase nil)
-  (setq password-cache nil)
   ;;(setq mml-secure-openpgp-sign-with-sender t)
   (setq mml-secure-openpgp-encrypt-to-self t)
   ;;(setq mml-secure-smime-sign-with-sender t)
@@ -2000,6 +2004,26 @@ PWD is not in a git repo (or the git command is not found)."
             (insert (pop secure))))))))
 
 (use-package elpher)
+
+(use-package olivetti
+  :defer t
+  :custom
+  (olivetti-body-width 90))
+
+(use-package nov
+  :defer t
+  :init
+  (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
+  :custom
+  (nov-variable-pitch t)
+  (nov-text-width t)
+  :config
+  (defun lps/nov-mode-comfort-settings ()
+    (setq visual-fill-column-width 90)
+    (setq visual-fill-column-center-text t)
+    (visual-line-mode 1)
+    (visual-fill-column-mode 1))
+  (add-hook 'nov-mode-hook #'lps/nov-mode-comfort-settings))
 
 (use-package xkcd
   :defer t)
