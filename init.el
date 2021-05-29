@@ -87,6 +87,11 @@
 (setq custom-file (concat user-emacs-directory "custom-file.el"))
 (load custom-file 'noerror)
 
+(use-package emacs
+  :ensure nil
+  :init
+  (defvar lps/quick-edit-map (make-sparse-keymap)))
+
 ;; Disable the annoying startup message and Emacs logo
 (setq inhibit-startup-message t)
 
@@ -248,18 +253,23 @@ installed themes instead."
 (use-package highlight-numbers
   :hook (prog-mode . highlight-numbers-mode))
 
-;; Tab behaviour and whitespaces
-(setq-default indent-tabs-mode nil)
-(setq-default tab-width 4)
+(use-package emacs
+  :ensure nil
+  :hook (before-save . delete-trailing-whitespace)
+  :init
+  ;; Tab behaviour and whitespaces
+  (setq-default indent-tabs-mode nil)
+  (setq-default tab-width 4)
+  :bind
+  (:map lps/quick-edit-map
+        ("DEL" . cycle-spacing)
+        ("<C-backspace>" . delete-indentation)))
 
 (use-package hungry-delete
   :defer t
   :init
-  (global-hungry-delete-mode 1)
+  ;; (global-hungry-delete-mode 1)
   (setq hungry-delete-join-reluctantly t))
-
-(use-package emacs
-  :hook (before-save . delete-trailing-whitespace))
 
 (use-package hydra
   :defer t
@@ -426,6 +436,7 @@ installed themes instead."
 
 ;; Can even have further control with
 ;; display-buffer-alist, or using extra-parameters
+(global-set-key (kbd "s-k") #'kill-this-buffer)
 
 (setq uniquify-buffer-name-style 'forward)
 (setq uniquify-after-kill-buffer-p t)
@@ -859,15 +870,18 @@ buffer in current window."
   :init
   (global-company-mode t)
 
-  :bind (:map company-active-map
-              ("<tab>" . company-complete)
-              ("TAB" . company-complete)
-              ("RET" . nil)
-              ("<return>" . nil)
-              ("C-l" . company-complete-selection)
-              ("<C-return>" . company-complete-selection)
-              ("C-n" . nil)
-              ("C-p" . nil))
+  :bind
+  (:map company-active-map
+        ("<tab>" . company-complete)
+        ("TAB" . company-complete)
+        ("RET" . nil)
+        ("<return>" . nil)
+        ("C-l" . company-complete-selection)
+        ("<C-return>" . company-complete-selection)
+        ("C-n" . nil)
+        ("C-p" . nil))
+(:map lps/quick-edit-map
+      ("SPC" . company-manual-begin))
 
   :custom
   ;; Generic company settings
@@ -947,6 +961,16 @@ buffer in current window."
   ;; Interpret whitespaces as "anything but a newline"
   (search-whitespace-regexp ".*?")
   (isearch-regexp-lax-whitespace t))
+
+(use-package replace
+  :ensure nil
+  :bind
+  (:map query-replace-map
+        ("RET" . act)
+        ("<return>" . act))
+  (:map lps/quick-edit-map
+        ("%" . replace-string)
+        ("C-%" . replace-regexp)))
 
 (use-package avy
   :defer t
@@ -1078,6 +1102,71 @@ buffer in current window."
       (while matches
         (insert (or split ""))
         (insert (pop matches))))))
+
+(use-package emacs
+  :ensure nil
+  :bind-keymap
+  ("C-z" . lps/quick-edit-map)
+  :bind
+  (:map lps/quick-edit-map
+        ("u" . lps/underline-or-frame-dwim)
+        ("k" . zap-up-to-char)
+        ("C-e" . lps/eval-and-replace-last-sexp))
+
+  :config
+
+  (defun lps/--fill-width-repeat-string (width str)
+    "Insert STR as many times as necessary to fill WIDTH,
+potentially using only a prefix of STR for the final iteration"
+    (let* ((len (length str))
+           (k (/ width len))
+           (rem (% width len)))
+      (dotimes (i k)
+        (insert str))
+      (insert (substring str 0 rem))))
+
+  (defun lps/underline-or-frame-dwim (str &optional arg)
+    "Underlines the current line with the string STR or with \"-\"
+if none is provided.
+If called interactively, prompt for STR.
+With a prefix argument, frame the line using STR instead.
+Breaks if region or line spans multiple visual lines"
+    (interactive (list (let ((default "-"))
+                         (read-string (concat "Use string (default " default " ): ") nil nil "-"))
+                       current-prefix-arg))
+    (save-excursion
+      (let* ((len (length str))
+             (from (if (region-active-p)
+                       (region-beginning)
+                     (line-beginning-position)))
+             (to (if (region-active-p)
+                     (region-end)
+                   (line-end-position)))
+             (pos-in-line (- from (line-beginning-position)))
+             (width (if arg
+                        (+ (* 2 len) (- to from))
+                      (- to from))))
+        (if arg
+            (progn
+              (goto-char from)
+              (insert str)
+              (goto-char (+ len to))
+              (insert str)
+              (beginning-of-line)
+              (insert "\n")
+              (forward-line -1)
+              (lps/--fill-width-repeat-string pos-in-line " ")
+              (lps/--fill-width-repeat-string width str)
+              (forward-line 1)
+              (end-of-line)
+              (insert "\n")
+              (lps/--fill-width-repeat-string pos-in-line " ")
+              (lps/--fill-width-repeat-string width str))
+          (progn
+            (end-of-line)
+            (insert "\n")
+            (lps/--fill-width-repeat-string pos-in-line " ")
+            (lps/--fill-width-repeat-string width str)))))))
 
 (use-package projectile
   :diminish

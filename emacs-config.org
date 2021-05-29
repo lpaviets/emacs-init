@@ -159,6 +159,17 @@ We do not want Emacs to mess with our own =init.el= file, and so we tell it wher
   (load custom-file 'noerror)
 #+end_src
 
+** Necessary keymaps and variables
+
+Because we will customize bindings, functions and so on, some variables are defined there so they are available in the following sections of this file.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :init
+    (defvar lps/quick-edit-map (make-sparse-keymap)))
+#+end_src
+
 * UI Configuration
 ** Visual interface changes
 
@@ -389,29 +400,30 @@ Some packages are used lated in the configuration, and we want to be able to use
 #+end_src
 ** Whitespaces
 
-First of all, we never want ~TAB~ to insert actual tab characters.
+First of all, we never want ~TAB~ to insert actual tab characters. We also don't like trailing whitespaces, so we delete them automatically when we save a buffer.
 
 #+begin_src emacs-lisp
-  ;; Tab behaviour and whitespaces
-  (setq-default indent-tabs-mode nil)
-  (setq-default tab-width 4)
+    (use-package emacs
+      :ensure nil
+      :hook (before-save . delete-trailing-whitespace)
+      :init
+      ;; Tab behaviour and whitespaces
+      (setq-default indent-tabs-mode nil)
+      (setq-default tab-width 4)
+      :bind
+      (:map lps/quick-edit-map
+            ("DEL" . cycle-spacing)
+            ("<C-backspace>" . delete-indentation)))
 #+end_src
 
 Then, we do not want to repeatedly spam the ~DEL~ key in order to delete a long sequence of whitespaces.
 
 #+begin_src emacs-lisp
-(use-package hungry-delete
-  :defer t
-  :init
-  (global-hungry-delete-mode 1)
-  (setq hungry-delete-join-reluctantly t))
-#+end_src
-
-And we also don't like trailing whitespaces, so we delete them automatically when we save a buffer
-
-#+begin_src emacs-lisp
-  (use-package emacs
-    :hook (before-save . delete-trailing-whitespace))
+  (use-package hungry-delete
+    :defer t
+    :init
+    ;; (global-hungry-delete-mode 1)
+    (setq hungry-delete-join-reluctantly t))
 #+end_src
 
 ** Hydra
@@ -642,7 +654,7 @@ Emacs is sometimes all over the place, opening buffers at seemingly random place
 
   ;; Can even have further control with
   ;; display-buffer-alist, or using extra-parameters
-
+  (global-set-key (kbd "s-k") #'kill-this-buffer)
 #+end_src
 
 Another annoying thing is that we tend to have /a lot/ of open buffers at the same time, and there will invariably be some conflicts in their names. We want to be able to quickly distinguish which file is buffer is visiting.
@@ -1223,15 +1235,18 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
     :init
     (global-company-mode t)
 
-    :bind (:map company-active-map
-                ("<tab>" . company-complete)
-                ("TAB" . company-complete)
-                ("RET" . nil)
-                ("<return>" . nil)
-                ("C-l" . company-complete-selection)
-                ("<C-return>" . company-complete-selection)
-                ("C-n" . nil)
-                ("C-p" . nil))
+    :bind
+    (:map company-active-map
+          ("<tab>" . company-complete)
+          ("TAB" . company-complete)
+          ("RET" . nil)
+          ("<return>" . nil)
+          ("C-l" . company-complete-selection)
+          ("<C-return>" . company-complete-selection)
+          ("C-n" . nil)
+          ("C-p" . nil))
+  (:map lps/quick-edit-map
+        ("SPC" . company-manual-begin))
 
     :custom
     ;; Generic company settings
@@ -1332,6 +1347,16 @@ Hence, we add a few bindings to an already existing keymap, to make them easily 
     ;; Interpret whitespaces as "anything but a newline"
     (search-whitespace-regexp ".*?")
     (isearch-regexp-lax-whitespace t))
+
+  (use-package replace
+    :ensure nil
+    :bind
+    (:map query-replace-map
+          ("RET" . act)
+          ("<return>" . act))
+    (:map lps/quick-edit-map
+          ("%" . replace-string)
+          ("C-%" . replace-regexp)))
 #+end_src
 
 The previously defined commands, along with ~Swiper~, are great to navigate in a buffer if you roughly know where you want to end. However, we sometimes want to move the point to a nearby, visible location, and instead of using and ~isearch~ and repeatedly use the forward and backward bindings, we want to be able to quickly jump there without thinking much, regardless of the current point position in the buffer.
@@ -1518,6 +1543,76 @@ It can act as a small, local version control system due to how Undos are managed
           (insert (pop matches))))))
 #+end_src
 
+** Personal commands
+
+We also define a bunch of functions and commands related to editing text that are not provided in Emacs by default, and would be too specific to find in a package.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :bind-keymap
+    ("C-z" . lps/quick-edit-map)
+    :bind
+    (:map lps/quick-edit-map
+          ("u" . lps/underline-or-frame-dwim)
+          ("k" . zap-up-to-char)
+          ("C-e" . lps/eval-and-replace-last-sexp))
+
+    :config
+
+    (defun lps/--fill-width-repeat-string (width str)
+      "Insert STR as many times as necessary to fill WIDTH,
+  potentially using only a prefix of STR for the final iteration"
+      (let* ((len (length str))
+             (k (/ width len))
+             (rem (% width len)))
+        (dotimes (i k)
+          (insert str))
+        (insert (substring str 0 rem))))
+
+    (defun lps/underline-or-frame-dwim (str &optional arg)
+      "Underlines the current line with the string STR or with \"-\"
+  if none is provided.
+  If called interactively, prompt for STR.
+  With a prefix argument, frame the line using STR instead.
+  Breaks if region or line spans multiple visual lines"
+      (interactive (list (let ((default "-"))
+                           (read-string (concat "Use string (default " default " ): ") nil nil "-"))
+                         current-prefix-arg))
+      (save-excursion
+        (let* ((len (length str))
+               (from (if (region-active-p)
+                         (region-beginning)
+                       (line-beginning-position)))
+               (to (if (region-active-p)
+                       (region-end)
+                     (line-end-position)))
+               (pos-in-line (- from (line-beginning-position)))
+               (width (if arg
+                          (+ (* 2 len) (- to from))
+                        (- to from))))
+          (if arg
+              (progn
+                (goto-char from)
+                (insert str)
+                (goto-char (+ len to))
+                (insert str)
+                (beginning-of-line)
+                (insert "\n")
+                (forward-line -1)
+                (lps/--fill-width-repeat-string pos-in-line " ")
+                (lps/--fill-width-repeat-string width str)
+                (forward-line 1)
+                (end-of-line)
+                (insert "\n")
+                (lps/--fill-width-repeat-string pos-in-line " ")
+                (lps/--fill-width-repeat-string width str))
+            (progn
+              (end-of-line)
+              (insert "\n")
+              (lps/--fill-width-repeat-string pos-in-line " ")
+              (lps/--fill-width-repeat-string width str)))))))
+#+end_src
 * Programming
 ** Project management
 *** Projectile
