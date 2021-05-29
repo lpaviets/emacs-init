@@ -51,9 +51,35 @@
   ;; To disable collection of benchmark data after init is done.
   (add-hook 'after-init-hook 'benchmark-init/deactivate))
 
-(setq password-cache nil) ; enable password caching
-(setq password-cache-expiry 600) ; for one hour (time in secs)
-(setq auth-sources (remove "~/.authinfo" auth-sources)) ;; Only use its .gpg counterpart
+(use-package password-cache
+  :ensure nil
+  :custom
+  (password-cache nil))
+
+(use-package auth-source
+  :ensure nil
+  :custom
+  (auth-sources (remove "~/.authinfo" auth-sources))
+  (auth-source-cache-expiry 86400);; All day
+
+  :config
+  (defvar lps/--auth-cache-expiry-setup-p nil)
+
+  (defun lps/auth-source-define-cache-expiry ()
+    (interactive)
+    (unless lps/--auth-cache-expiry-setup-p
+      (setq lps/--auth-cache-expiry-setup-p t)
+      (when (y-or-n-p (concat "Change default auth-cache-expiry value "
+                              "(default "
+                              (number-to-string auth-source-cache-expiry)
+                              ") ?"))
+        (setq auth-source-cache-expiry (read-number "New cache expiry value in seconds: " auth-source-cache-expiry)))))
+
+  (defun lps/force-forget-all-passwords ()
+    (interactive)
+    (auth-source-forget-all-cached)
+    (shell-command "gpgconf --kill gpg-agent")
+    (setq lps/--auth-cache-expiry-setup-p nil)))
 
 (use-package restart-emacs
   :commands (restart-emacs restart-emacs-start-new-emacs))
@@ -1788,6 +1814,9 @@ PWD is not in a git repo (or the git command is not found)."
          ("C-c C-h" . lps/org-mime-htmlize-preserve-secure-and-attach))
   :config
   (setq mu4e-completing-read-function 'completing-read)
+
+  ;; Security issues
+  (add-hook 'mu4e-main-mode-hook #'lps/auth-source-define-cache-expiry)
 
   ;; Might avoid unwanted drafts
   (add-hook 'mu4e-compose-mode-hook #'(lambda () (auto-save-mode -1)))

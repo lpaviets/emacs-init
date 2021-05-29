@@ -6,6 +6,8 @@
         LaTeX-environment
         LaTeX-insert-left-brace
         TeX-font
+        TeX-insert-dollar
+        TeX-insert-sub-or-superscript
         beginning-of-visual-line
         c-indent-line-or-region
         counsel-M-x
