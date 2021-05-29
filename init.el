@@ -463,13 +463,16 @@ installed themes instead."
             (lambda ()
               (ibuffer-switch-to-saved-filter-groups "default"))))
 
-;; From Magnars, from emacsrocks.com
-(defun rename-current-buffer-file ()
+(use-package emacs
+  :ensure nil
+  :init
+  ;; From Magnars, from emacsrocks.com
+  (defun lps/rename-current-buffer-file ()
     "Renames current buffer and file it is visiting."
     (interactive)
     (let* ((name (buffer-name))
-          (filename (buffer-file-name))
-          (basename (file-name-nondirectory filename)))
+           (filename (buffer-file-name))
+           (basename (file-name-nondirectory filename)))
       (if (not (and filename (file-exists-p filename)))
           (error "Buffer '%s' is not visiting a file!" name)
         (let ((new-name (read-file-name "New name: " (file-name-directory filename) basename nil basename)))
@@ -481,6 +484,9 @@ installed themes instead."
             (set-buffer-modified-p nil)
             (message "File '%s' successfully renamed to '%s'"
                      name (file-name-nondirectory new-name)))))))
+  :bind
+  (:map ctl-x-x-map
+        ("R" . lps/rename-current-buffer-file)))
 
 (use-package winner
   :commands (winner-undo winner-redo)
@@ -1322,7 +1328,7 @@ buffer in current window."
   "Evaluate the last s-expression, and replace it with the result"
   (interactive)
   (let ((value (eval (preceding-sexp))))
-      (kill-sexp -1)
+    (kill-sexp -1)
       (insert (format "%S" value))))
 
 (global-set-key (kbd "C-c C-e") 'lps/eval-and-replace-last-sexp)
