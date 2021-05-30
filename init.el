@@ -876,12 +876,20 @@ buffer in current window."
         ("TAB" . company-complete)
         ("RET" . nil)
         ("<return>" . nil)
-        ("C-l" . company-complete-selection)
         ("<C-return>" . company-complete-selection)
         ("C-n" . nil)
-        ("C-p" . nil))
-(:map lps/quick-edit-map
-      ("SPC" . company-manual-begin))
+        ("C-p" . nil)
+        ("M-n" . company-select-next)
+        ("M-p" . company-select-previous)
+        ("C-s" . company-filter-candidates)
+        ("M-s" . company-search-candidates))
+  (:map company-search-map
+        ("C-n" . nil)
+        ("C-p" . nil)
+        ("M-n" . company-select-next)
+        ("M-p" . company-select-previous))
+  (:map lps/quick-edit-map
+        ("SPC" . company-manual-begin))
 
   :custom
   ;; Generic company settings
@@ -891,15 +899,25 @@ buffer in current window."
   (company-show-numbers t)
   (company-tooltip-align-annotations t)
   (company-tooltip-flip-when-above t)
+  (company-search-regexp-function 'company-search-words-regexp)
 
   :config
+  ;; Don't use orderless for company
+  (defun lps/company-set-completion-styles (fun &rest args)
+    (let ((completion-styles '(basic partial-completion emacs22)))
+      (apply fun args)))
+
+  (advice-add 'company--perform :around #'lps/company-set-completion-styles)
+
+  ;; Use our personal default backends
   (setq-default company-backends '((company-capf company-files company-dabbrev company-yasnippet)
                                    (company-dabbrev-code company-gtags company-etags company-keywords company-clang)
                                    company-oddmuse))
 
   ;; AZERTY-friendly company number selection
   ;; Might lead to company-box being a bit broken ? Long function names are cut-off
-  (let ((map company-active-map))
+
+  (dolist (map (list company-active-map company-search-map))
     (mapc (lambda (x) (define-key map (read-kbd-macro (format "M-%s" (cdr x)))
                         `(lambda () (interactive) (company-complete-number ,(car x)))))
           '((10 . "à")
@@ -1073,10 +1091,13 @@ buffer in current window."
   (drag-stuff-define-keys))
 
 (use-package undo-tree
+  :diminish
+  :custom
+  (undo-tree-visualizer-timestamps t)
+  (undo-tree-enable-undo-in-region t)
+  (undo-tree-visualizer-diff t)
   :config
-  (setq undo-tree-visualizer-timestamps t)
-  (global-undo-tree-mode)
-  :diminish (undo-tree-mode))
+  (global-undo-tree-mode))
 
 (defun lps/find-delete-forward-all-regexp (re &optional beg)
   "Searches for all the matches of the regexp RE after the point, or after the optional position BEG.
