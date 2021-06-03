@@ -101,7 +101,11 @@
   (add-hook 'kill-emacs-hook #'lps/force-forget-all-passwords))
 
 (use-package restart-emacs
-  :commands (restart-emacs restart-emacs-start-new-emacs))
+  :commands
+  (restart-emacs restart-emacs-start-new-emacs)
+  :bind
+  (:map lps/system-tools-map
+        ("r" . restart-emacs)))
 
 (setq custom-file (concat user-emacs-directory "custom-file.el"))
 (load custom-file 'noerror)
@@ -796,10 +800,13 @@ buffer in current window."
     (interactive "P")
     (find-file (concat "/sudo:root@localhost:" filename))))
 
-(when (version< emacs-version "28.0")
+(when (version< "28.0" emacs-version)
   (use-package repeat
     :init
-    (repeat-mode)))
+    (repeat-mode 1)
+    :bind
+    (:map lps/quick-edit-map
+          ("z" . repeat))))
 
 (use-package multiple-cursors
   :defer t
@@ -1293,13 +1300,12 @@ Breaks if region or line spans multiple visual lines"
           eshell-mode
           ielm-mode
           eval-expression-minibuffer-setup
-          emacs-lisp-mode
-          lisp-mode
-          lisp-interaction-mode) . paredit-mode)
+          lisp-data-mode) . paredit-mode)
   :bind (:map paredit-mode-map
               ("C-M-y" . paredit-copy-as-kill)
               ("M-s" . nil) ;; To get isearch-mode-map
-              ("M-s M-s" . paredit-splice-sexp)))
+              ("M-s M-s" . paredit-splice-sexp)
+              ("M-j" . eval-print-last-sexp)))
 
 (use-package elec-pair
   :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
@@ -1453,7 +1459,7 @@ Breaks if region or line spans multiple visual lines"
   (interactive)
   (let ((value (eval (preceding-sexp))))
     (kill-sexp -1)
-      (insert (format "%S" value))))
+    (insert (format "%S" value))))
 
 (global-set-key (kbd "C-c C-e") 'lps/eval-and-replace-last-sexp)
 
@@ -1487,14 +1493,18 @@ Breaks if region or line spans multiple visual lines"
   ;; :init
   ;; (global-set-key (kbd "C-c o") #'org-capture)
   :hook (org-mode . lps/org-mode-setup)
-  :bind (("C-c o" . org-capture)
-         (:map org-mode-map
-               ("<M-S-return>" . org-insert-subheading)
-               ("<C-S-left>" . nil)
-               ("<C-S-right>" . nil)
-               ("<C-S-up>" . nil)
-               ("<C-S-down>" . nil)
-               ("C-," . nil)))
+  :bind
+  ("C-c o" . org-capture)
+  (:map org-mode-map
+        ("<M-S-return>" . org-insert-subheading)
+        ("<C-S-left>" . nil)
+        ("<C-S-right>" . nil)
+        ("<C-S-up>" . nil)
+        ("<C-S-down>" . nil)
+        ("C-," . nil))
+  (:map org-src-mode-map
+        ("C-c C-c" . org-edit-src-exit))
+
   :custom
   ;; Coding in blocks
   (org-src-fontify-natively t)
@@ -1753,10 +1763,6 @@ Breaks if region or line spans multiple visual lines"
   (add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t))
 
 ;; eshell
-
-(setq eshell-hist-ignoredups t
-      eshell-scroll-to-bottom-on-input t)
-
 (use-package eshell-did-you-mean
   :hook (eshell-mode . eshell-did-you-mean-setup))
 
@@ -1769,8 +1775,19 @@ Breaks if region or line spans multiple visual lines"
   :custom
   (eshell-prefer-lisp-variables t)
   (eshell-prefer-lisp-functions t)
+  (eshell-hist-ignoredups t)
+  (eshell-scroll-to-bottom-on-input t)
+  (eshell-highlight-prompt t)
+  (eshell-prompt-function #'lps/eshell-prompt-function)
+  (eshell-prompt-regexp "^[^#$\n]* [#$] ")
+
   :hook (eshell-mode . (lambda ()
                          (bind-key "C-l" 'eshell/clear eshell-mode-map)))
+
+  :bind
+  (:map lps/system-tools-map
+        ("e" . eshell))
+
   :config
   ;; From https://blog.liangzan.net/blog/2012/12/12/customizing-your-emacs-eshell-prompt/
   (defun lps/pwd-repl-home (pwd)
@@ -1815,12 +1832,7 @@ PWD is not in a git repo (or the git command is not found)."
                                  "/")))
                   (split-string (lps/pwd-repl-home (eshell/pwd)) "/")) 'face `(:foreground "DeepSkyBlue1"))
      (or (lps/curr-dir-git-branch-string (eshell/pwd)))
-     (propertize " # " 'face 'default)))
-
-  ;; Change according to eshell-prompt-function
-  (setq eshell-prompt-function 'lps/eshell-prompt-function)
-  (setq eshell-prompt-regexp "^[^#$\n]* [#$] ")
-  (setq eshell-highlight-prompt t))
+     (propertize " # " 'face 'default))))
 
 ;; (use-package eshell-git-prompt
 ;;   :config (eshell-git-prompt-use-theme 'powerline)) ;; Visually buggy
@@ -1921,7 +1933,24 @@ PWD is not in a git repo (or the git command is not found)."
       :after dired))
 
 (use-package disk-usage
-  :defer t)
+  :defer t
+  :bind
+  (:map lps/system-tools-map
+        ("d" . disk-usage)))
+
+(use-package proced
+  :ensure nil
+  :bind
+  (:map lps/system-tools-map
+        ("p p" . proced))
+  (:map proced-mode-map
+        ("a" . proced-toggle-auto-update)))
+
+(use-package emacs
+  :ensure nil
+  :bind
+  (:map lps/system-tools-map
+        ("p l" . list-processes)))
 
 (use-package smtpmail
   :ensure nil
