@@ -1688,13 +1688,32 @@ Breaks if region or line spans multiple visual lines"
   (LaTeX-math-abbrev-prefix "°")
   ;; Don't ask for confirmation when cleaning
   (TeX-clean-confirm nil)
+  ;; AucTeX doesn't search subdirectories for input/include ...
+  (TeX-arg-input-file-search 'ask)
 
   (TeX-source-correlate-method 'synctex)
   (TeX-source-correlate-start-server t)
   (TeX-view-program-selection '((output-pdf "PDF tools")))
 
   :config
-  (setq TeX-source-correlate-mode t ; SyncTeX forward and inverse search
+  ;; Improve fontification
+
+  (defun lps/latex-fontification ()
+    (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8")
+    (font-latex-add-keywords '(("newenvironment" "*{[[")
+                               ("renewenvironment" "*{[[")
+                               ("newcommand" "*|{\\[[")
+                               ("renewcommand" "*|{\\[[")
+                               ("providecommand" "*|{\\[[")
+                               ("fbox" "")
+                               ("mbox" "")
+                               ("sbox" ""))
+                             'function))
+
+  (add-hook 'LaTeX-mode-hook #'lps/latex-fontification)
+
+  ;; SyncTeX forward and inverse search
+  (setq TeX-source-correlate-mode t
         ;; Produce a PDF by default
         TeX-PDF-mode t)
 
@@ -1718,13 +1737,7 @@ Breaks if region or line spans multiple visual lines"
   (defun lps/latex-company-setup () ;; TO FIX !
     (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-latex-commands company-capf company-dabbrev company-yasnippet))))
 
-  (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup)
-
-  ;; Faces
-  (defun lps/latex-set-faces ()
-    (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8"))
-
-  (add-hook 'LaTeX-mode-hook 'lps/latex-set-faces))
+  (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup))
 
 (use-package bibtex
   :defer t
