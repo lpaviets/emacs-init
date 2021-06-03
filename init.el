@@ -1941,7 +1941,10 @@ PWD is not in a git repo (or the git command is not found)."
   :commands mu4e
   :bind (("C-c e" . mu4e)
          :map mu4e-compose-mode-map
-         ("C-c C-h" . lps/org-mime-htmlize-preserve-secure-and-attach))
+         ("C-c h" . lps/org-mime-htmlize-preserve-secure-and-attach)
+         (:map mu4e-main-mode-map
+               ("q" . lps/mu4e-kill-buffers)
+               ("Q" . mu4e-quit)))
   :config
   (setq mu4e-completing-read-function 'completing-read)
 
@@ -2096,7 +2099,27 @@ PWD is not in a git repo (or the git command is not found)."
                   (smtpmail-smtp-user    . "leo.paviet.salomon@orange.fr")
                   (smtpmail-smtp-server  . "smtp.orange.fr")
                   (smtpmail-smtp-service . 465)
-                  (smtpmail-stream-type  . ssl))))))
+                  (smtpmail-stream-type  . ssl)))))
+
+  ;; Taken from mu4e~stop in mu4e-utils.el
+  ;; Do not kill mu process
+  (defun lps/mu4e-kill-buffers ()
+    "Kill all mu4e buffers"
+    (interactive)
+    ;; kill all mu4e buffers
+    (mapc
+     (lambda (buf)
+       ;; When using the Gnus-based viewer, the view buffer has the
+       ;; kill-buffer-hook function mu4e~view-kill-buffer-hook-fn which kills the
+       ;; mm-* buffers created by Gnus' article mode.  Those have been returned by
+       ;; `buffer-list' but might already be deleted in case the view buffer has
+       ;; been killed first.  So we need a `buffer-live-p' check here.
+       (when (buffer-live-p buf)
+         (with-current-buffer buf
+           (when (member major-mode
+                         '(mu4e-headers-mode mu4e-view-mode mu4e-main-mode))
+             (kill-buffer)))))
+     (buffer-list))))
 
 (use-package mu4e-alert
   :after mu4e
@@ -2105,34 +2128,34 @@ PWD is not in a git repo (or the git command is not found)."
 
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired
-  :ensure nil
-  :after mu4e
-  :hook (dired-mode . turn-on-gnus-dired-mode)
-  :config
-  ;; This overrides a function !
-  (defun gnus-dired-mail-buffers ()
-    "Return a list of active message buffers."
-    (let (buffers)
-      (save-current-buffer
-        (dolist (buffer (buffer-list t))
-          (set-buffer buffer)
-          (when (and (derived-mode-p 'message-mode)
-                     (null message-sent-message-via))
-            (push (buffer-name buffer) buffers))))
-      (nreverse buffers)))
+    :ensure nil
+    :after mu4e
+    :hook (dired-mode . turn-on-gnus-dired-mode)
+    :config
+    ;; This overrides a function !
+    (defun gnus-dired-mail-buffers ()
+      "Return a list of active message buffers."
+      (let (buffers)
+        (save-current-buffer
+          (dolist (buffer (buffer-list t))
+            (set-buffer buffer)
+            (when (and (derived-mode-p 'message-mode)
+                       (null message-sent-message-via))
+              (push (buffer-name buffer) buffers))))
+        (nreverse buffers)))
 
-  (setq gnus-dired-mail-mode 'mu4e-user-agent))
+    (setq gnus-dired-mail-mode 'mu4e-user-agent))
 
 
-(use-package dired
-  :ensure nil
-  :after gnus-dired
-  :bind (:map dired-mode-map
-              ("E" . lps/mu4e-file-attach-marked-files))
-  :config
-  (defun lps/mu4e-file-attach-marked-files ()
-    (interactive)
-    (gnus-dired-attach (dired-map-over-marks (dired-get-file-for-visit) nil))))
+  (use-package dired
+    :ensure nil
+    :after gnus-dired
+    :bind (:map dired-mode-map
+                ("E" . lps/mu4e-file-attach-marked-files))
+    :config
+    (defun lps/mu4e-file-attach-marked-files ()
+      (interactive)
+      (gnus-dired-attach (dired-map-over-marks (dired-get-file-for-visit) nil))))
 
 (use-package org-mime
   :after mu4e

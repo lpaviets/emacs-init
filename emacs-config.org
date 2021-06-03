@@ -2720,7 +2720,10 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     :commands mu4e
     :bind (("C-c e" . mu4e)
            :map mu4e-compose-mode-map
-           ("C-c C-h" . lps/org-mime-htmlize-preserve-secure-and-attach))
+           ("C-c h" . lps/org-mime-htmlize-preserve-secure-and-attach)
+           (:map mu4e-main-mode-map
+                 ("q" . lps/mu4e-kill-buffers)
+                 ("Q" . mu4e-quit)))
     :config
     (setq mu4e-completing-read-function 'completing-read)
 
@@ -2875,7 +2878,27 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
                     (smtpmail-smtp-user    . "leo.paviet.salomon@orange.fr")
                     (smtpmail-smtp-server  . "smtp.orange.fr")
                     (smtpmail-smtp-service . 465)
-                    (smtpmail-stream-type  . ssl))))))
+                    (smtpmail-stream-type  . ssl)))))
+
+    ;; Taken from mu4e~stop in mu4e-utils.el
+    ;; Do not kill mu process
+    (defun lps/mu4e-kill-buffers ()
+      "Kill all mu4e buffers"
+      (interactive)
+      ;; kill all mu4e buffers
+      (mapc
+       (lambda (buf)
+         ;; When using the Gnus-based viewer, the view buffer has the
+         ;; kill-buffer-hook function mu4e~view-kill-buffer-hook-fn which kills the
+         ;; mm-* buffers created by Gnus' article mode.  Those have been returned by
+         ;; `buffer-list' but might already be deleted in case the view buffer has
+         ;; been killed first.  So we need a `buffer-live-p' check here.
+         (when (buffer-live-p buf)
+           (with-current-buffer buf
+             (when (member major-mode
+                           '(mu4e-headers-mode mu4e-view-mode mu4e-main-mode))
+               (kill-buffer)))))
+       (buffer-list))))
 #+end_src
 
 Because it might be a bit tedious to constantly open and quit the ~mu4e~ buffers to check for incoming messages, we use another package to get notifications informing us when we receive a new message.
@@ -2892,9 +2915,9 @@ This package might also be used to generate desktop notifications, although I do
 
   To patch this, we use a few tricks, with ~ivy~ and ~gnus-dired~
 
-  #+begin_src emacs-lisp
-    ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
-    (use-package gnus-dired
+#+begin_src emacs-lisp
+  ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
+  (use-package gnus-dired
       :ensure nil
       :after mu4e
       :hook (dired-mode . turn-on-gnus-dired-mode)
