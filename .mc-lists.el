@@ -3,6 +3,7 @@
 
 (setq mc/cmds-to-run-for-all
       '(
+        LaTeX-babel-insert-hyphen
         LaTeX-environment
         LaTeX-insert-left-brace
         TeX-font
@@ -23,6 +24,7 @@
         paredit-forward-delete
         paredit-forward-kill-word
         reftex-label
+        reindent-then-newline-and-indent
         ))
 
 (setq mc/cmds-to-run-once

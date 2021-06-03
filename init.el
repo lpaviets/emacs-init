@@ -41,7 +41,7 @@
 (require 'use-package)
 ;; Comment this line if you don't want to automatically install
 ;; all the packages that you are missing
-(setq use-package-always-ensure t)
+;; (setq use-package-always-ensure t)
 ;; Uncomment the folllowing line to have a detailed startup log
 ;; (setq use-package-verbose t)
 
@@ -51,10 +51,26 @@
   ;; To disable collection of benchmark data after init is done.
   (add-hook 'after-init-hook 'benchmark-init/deactivate))
 
+(use-package emacs
+  :ensure nil
+  :init
+  (defvar lps/quick-edit-map (make-sparse-keymap))
+  (defvar lps/system-tools-map (make-sparse-keymap)))
+
+(use-package package
+  :ensure nil
+  :bind-keymap
+  ("C-c s" . lps/system-tools-map)
+  :bind
+  (:map lps/system-tools-map
+        ("P i" . package-install)
+        ("P l" . package-list-packages)))
+
 (use-package password-cache
   :ensure nil
   :custom
-  (password-cache nil))
+  (password-cache t)
+  (password-cache-expiry 300))
 
 (use-package auth-source
   :ensure nil
@@ -79,18 +95,16 @@
     (interactive)
     (auth-source-forget-all-cached)
     (shell-command "gpgconf --kill gpg-agent")
-    (setq lps/--auth-cache-expiry-setup-p nil)))
+    ;; (shell-command "gpgconf -- reload gpg-agent")
+    (setq lps/--auth-cache-expiry-setup-p nil))
+
+  (add-hook 'kill-emacs-hook #'lps/force-forget-all-passwords))
 
 (use-package restart-emacs
   :commands (restart-emacs restart-emacs-start-new-emacs))
 
 (setq custom-file (concat user-emacs-directory "custom-file.el"))
 (load custom-file 'noerror)
-
-(use-package emacs
-  :ensure nil
-  :init
-  (defvar lps/quick-edit-map (make-sparse-keymap)))
 
 ;; Disable the annoying startup message and Emacs logo
 (setq inhibit-startup-message t)
