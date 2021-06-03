@@ -159,7 +159,8 @@
                 ;; Extra modes
                 undo-tree-visualizer-mode-hook
                 treemacs-mode-hook
-                dired-mode-hook))
+                dired-mode-hook
+                occur-mode-hook))
 
   (add-hook mode #'lps/disable-line-numbers))
 
@@ -1184,7 +1185,7 @@ Breaks if region or line spans multiple visual lines"
              (to (if (region-active-p)
                      (region-end)
                    (line-end-position)))
-             (pos-in-line (- from (line-beginning-position)))
+             (col (- from (line-beginning-position)))
              (width (if arg
                         (+ (* 2 len) (- to from))
                       (- to from))))
@@ -1197,17 +1198,17 @@ Breaks if region or line spans multiple visual lines"
               (beginning-of-line)
               (insert "\n")
               (forward-line -1)
-              (lps/--fill-width-repeat-string pos-in-line " ")
+              (indent-to col)
               (lps/--fill-width-repeat-string width str)
               (forward-line 1)
               (end-of-line)
               (insert "\n")
-              (lps/--fill-width-repeat-string pos-in-line " ")
+              (indent-to col)
               (lps/--fill-width-repeat-string width str))
           (progn
             (end-of-line)
             (insert "\n")
-            (lps/--fill-width-repeat-string pos-in-line " ")
+            (indent-to col)
             (lps/--fill-width-repeat-string width str)))))))
 
 (use-package projectile
