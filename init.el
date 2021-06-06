@@ -252,7 +252,8 @@ installed themes instead."
 (use-package time
   :ensure nil
   :custom
-  (display-time-format "[%d/%m - %H:%M]")
+  (display-time-24hr-format t)
+  (display-time-format "[%H:%M]")
   :init
   (display-time-mode 1))
 
@@ -1153,8 +1154,7 @@ buffer in current window."
   :bind
   (:map lps/quick-edit-map
         ("u" . lps/underline-or-frame-dwim)
-        ("k" . zap-up-to-char)
-        ("C-e" . lps/eval-and-replace-last-sexp))
+        ("k" . zap-up-to-char))
 
   :config
 
@@ -1306,7 +1306,8 @@ Breaks if region or line spans multiple visual lines"
               ("C-M-y" . paredit-copy-as-kill)
               ("M-s" . nil) ;; To get isearch-mode-map
               ("M-s M-s" . paredit-splice-sexp)
-              ("M-j" . eval-print-last-sexp)))
+              ("M-j" . eval-print-last-sexp)
+              ([remap newline] . paredit-newline)))
 
 (use-package elec-pair
   :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
@@ -1455,26 +1456,46 @@ Breaks if region or line spans multiple visual lines"
 (use-package elmacro
   :defer t)
 
-(defun lps/eval-and-replace-last-sexp ()
-  "Evaluate the last s-expression, and replace it with the result"
-  (interactive)
-  (let ((value (eval (preceding-sexp))))
-    (kill-sexp -1)
-    (insert (format "%S" value))))
+(use-package emacs
+  :ensure nil
+  :bind
+  ("C-c C-e" . lps/eval-and-replace-last-sexp)
+  (:map lps/quick-edit-map
+        ("x" . emacs-lisp-macroexpand)
+        ("C-r" . lps/print-eval-region)
+        ("C-e" . lps/eval-and-replace-last-sexp))
 
-(global-set-key (kbd "C-c C-e") 'lps/eval-and-replace-last-sexp)
+  :config
+  (defun lps/eval-and-replace-last-sexp ()
+    "Evaluate the last s-expression, and replace it with the result"
+    (interactive)
+    (let ((value (eval (preceding-sexp))))
+      (kill-sexp -1)
+      (insert (format "%S" value))))
+
+  (defun lps/print-eval-region (start end)
+    (interactive "r")
+    (eval-region start end t)))
 
 ;; Make sure that sbcl is available on PATH
 (use-package sly
   :hook (lisp-mode . sly-editing-mode)
   :custom
-  (inferior-lisp-program "sbcl") ; Clisp makes SLY crash
+  ;; Clisp makes SLY crash ?!
+  (inferior-lisp-program "sbcl")
   (sly-complete-symbol-function 'sly-simple-completions)
   :config
   (add-hook 'sly-mode-hook
             (lambda ()
-               (unless (sly-connected-p)
-                 (save-excursion (sly))))))
+              (unless (sly-connected-p)
+                (save-excursion (sly)))))
+
+  ;; Don't use Ido, just use our default
+  (defalias 'sly-completing-read completing-read-function))
+
+(use-package sly-quicklisp
+  :after sly
+  :hook (sly . sly-quicklisp-mode))
 
 (use-package gdb-mi
   :ensure nil
@@ -1636,11 +1657,11 @@ Breaks if region or line spans multiple visual lines"
          "* Checking Email :email:\n\n%?"
          :empty-lines 1)
 
-        ("r" "Random" entry
+        ("r" "Random" plain
          (file+headline "~/Documents/OrgFiles/everything.org"
                         "A trier")
-         "* %?\n %a\n %i"
-         :empty-lines 1)))
+         "%x%?\n%i"
+         :empty-lines-after 1)))
 
 (setq org-capture-bookmark nil))
 
@@ -2162,7 +2183,12 @@ PWD is not in a git repo (or the git command is not found)."
            (when (member major-mode
                          '(mu4e-headers-mode mu4e-view-mode mu4e-main-mode))
              (kill-buffer)))))
-     (buffer-list))))
+     (buffer-list))
+
+    ;; Update mail and index when leaving
+    (unless (and (buffer-live-p mu4e~update-buffer)
+                 (process-live-p (get-buffer-process mu4e~update-buffer)))
+      (mu4e-update-mail-and-index t))))
 
 (use-package mu4e-alert
   :after mu4e
@@ -2190,7 +2216,7 @@ PWD is not in a git repo (or the git command is not found)."
     (setq gnus-dired-mail-mode 'mu4e-user-agent))
 
 
-  (use-package dired
+(use-package dired
     :ensure nil
     :after gnus-dired
     :bind (:map dired-mode-map

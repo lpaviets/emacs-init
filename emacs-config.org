@@ -393,7 +393,8 @@ We also want to add some extra information on the modeline, of the kind that we 
   (use-package time
     :ensure nil
     :custom
-    (display-time-format "[%d/%m - %H:%M]")
+    (display-time-24hr-format t)
+    (display-time-format "[%H:%M]")
     :init
     (display-time-mode 1))
 #+end_src
@@ -1600,8 +1601,7 @@ We also define a bunch of functions and commands related to editing text that ar
     :bind
     (:map lps/quick-edit-map
           ("u" . lps/underline-or-frame-dwim)
-          ("k" . zap-up-to-char)
-          ("C-e" . lps/eval-and-replace-last-sexp))
+          ("k" . zap-up-to-char))
 
     :config
 
@@ -1793,7 +1793,8 @@ Now, in order to work with structured text, such as source code, we want to be a
                 ("C-M-y" . paredit-copy-as-kill)
                 ("M-s" . nil) ;; To get isearch-mode-map
                 ("M-s M-s" . paredit-splice-sexp)
-                ("M-j" . eval-print-last-sexp)))
+                ("M-j" . eval-print-last-sexp)
+                ([remap newline] . paredit-newline)))
 
   (use-package elec-pair
     :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
@@ -2046,14 +2047,26 @@ Because it might be useful everywhere, we do not use it simply in =emacs-lisp-mo
 We define a useful function to evaluate an expression, and replace it with the result. This, in conjunction with macros and multiple cursors, is a great tool to automate otherwise boring tasks.
 
 #+begin_src emacs-lisp
-  (defun lps/eval-and-replace-last-sexp ()
-    "Evaluate the last s-expression, and replace it with the result"
-    (interactive)
-    (let ((value (eval (preceding-sexp))))
-      (kill-sexp -1)
-      (insert (format "%S" value))))
+  (use-package emacs
+    :ensure nil
+    :bind
+    ("C-c C-e" . lps/eval-and-replace-last-sexp)
+    (:map lps/quick-edit-map
+          ("x" . emacs-lisp-macroexpand)
+          ("C-r" . lps/print-eval-region)
+          ("C-e" . lps/eval-and-replace-last-sexp))
 
-  (global-set-key (kbd "C-c C-e") 'lps/eval-and-replace-last-sexp)
+    :config
+    (defun lps/eval-and-replace-last-sexp ()
+      "Evaluate the last s-expression, and replace it with the result"
+      (interactive)
+      (let ((value (eval (preceding-sexp))))
+        (kill-sexp -1)
+        (insert (format "%S" value))))
+
+    (defun lps/print-eval-region (start end)
+      (interactive "r")
+      (eval-region start end t)))
 #+end_src
 
 **** Common Lisp
@@ -2067,15 +2080,26 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
   (use-package sly
     :hook (lisp-mode . sly-editing-mode)
     :custom
-    (inferior-lisp-program "sbcl") ; Clisp makes SLY crash
+    ;; Clisp makes SLY crash ?!
+    (inferior-lisp-program "sbcl")
     (sly-complete-symbol-function 'sly-simple-completions)
     :config
     (add-hook 'sly-mode-hook
               (lambda ()
-                 (unless (sly-connected-p)
-                   (save-excursion (sly))))))
+                (unless (sly-connected-p)
+                  (save-excursion (sly)))))
+
+    ;; Don't use Ido, just use our default
+    (defalias 'sly-completing-read completing-read-function))
 #+end_src
 
+On top of this environment and compiler, we also need an access to external libraries and packages. A popular option is to use Quicklisp, for which there is a SLY integration.
+
+#+begin_src emacs-lisp
+  (use-package sly-quicklisp
+    :after sly
+    :hook (sly . sly-quicklisp-mode))
+#+end_src
 ** Debug
 *** GUD
 Emacs already provides a large number of debuggers, under the name "Grand Unified Debugger".
@@ -2306,11 +2330,11 @@ Not only is Org Mode great to write structured documents that can be exported to
            "* Checking Email :email:\n\n%?"
            :empty-lines 1)
 
-          ("r" "Random" entry
+          ("r" "Random" plain
            (file+headline "~/Documents/OrgFiles/everything.org"
                           "A trier")
-           "* %?\n %a\n %i"
-           :empty-lines 1)))
+           "%x%?\n%i"
+           :empty-lines-after 1)))
 
   (setq org-capture-bookmark nil))
 #+end_src
@@ -2947,7 +2971,12 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
              (when (member major-mode
                            '(mu4e-headers-mode mu4e-view-mode mu4e-main-mode))
                (kill-buffer)))))
-       (buffer-list))))
+       (buffer-list))
+
+      ;; Update mail and index when leaving
+      (unless (and (buffer-live-p mu4e~update-buffer)
+                   (process-live-p (get-buffer-process mu4e~update-buffer)))
+        (mu4e-update-mail-and-index t))))
 #+end_src
 
 Because it might be a bit tedious to constantly open and quit the ~mu4e~ buffers to check for incoming messages, we use another package to get notifications informing us when we receive a new message.
@@ -2986,7 +3015,7 @@ This package might also be used to generate desktop notifications, although I do
       (setq gnus-dired-mail-mode 'mu4e-user-agent))
 
 
-    (use-package dired
+  (use-package dired
       :ensure nil
       :after gnus-dired
       :bind (:map dired-mode-map
