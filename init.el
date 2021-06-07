@@ -444,19 +444,50 @@ installed themes instead."
   :config
   (marginalia-mode))
 
-;; Automatically reload a file if it has been modified
-(global-auto-revert-mode t)
+(use-package emacs
+  :ensure nil
+  :bind
+  ("s-k" . kill-this-buffer)
+  :init
+  ;; Automatically reload a file if it has been modified
+  (global-auto-revert-mode t)
 
-;;Buffer management
-(setq display-buffer-base-action
-      '((display-buffer-reuse-window)
-        (display-buffer-reuse-mode-window)
-        (display-buffer-same-window)
-        (display-buffer-in-previous-window)))
+  :custom
+  (display-buffer-base-action
+   '((display-buffer-reuse-window)
+     (display-buffer-reuse-mode-window)
+     (display-buffer-same-window)
+     (display-buffer-in-previous-window)))
 
-;; Can even have further control with
-;; display-buffer-alist, or using extra-parameters
-(global-set-key (kbd "s-k") #'kill-this-buffer)
+  :config
+
+  ;; Display all the "help" buffers in the same window
+  (defvar lps/help-modes '(helpful-mode
+                           help-mode
+                           Man-mode
+                           apropos-mode
+                           Info-mode))
+
+  ;; Help buffers with special name
+  (defvar lps/help-buffers nil)
+
+  (defun lps/buffer-help-p (buffer action)
+    "Return t if BUFFER is an help buffer, nil otherwise"
+    (or (member (buffer-local-value 'major-mode (get-buffer buffer))
+                lps/help-modes)
+        (member (if (stringp buffer)
+                    buffer
+                  (buffer-name buffer))
+                lps/help-buffers)))
+
+  (add-to-list 'display-buffer-alist
+               `(lps/buffer-help-p
+                 (display-buffer--maybe-same-window
+                  display-buffer-reuse-window
+                  display-buffer-reuse-mode-window)
+                 (mode . ,lps/help-modes)
+                 (inhibit-same-window . nil)
+                 (quit-restore ('window 'window nil nil)))))
 
 (setq uniquify-buffer-name-style 'forward)
 (setq uniquify-after-kill-buffer-p t)
@@ -1094,6 +1125,8 @@ buffer in current window."
   :ensure nil
   :bind
   ([remap exchange-point-and-mark] . lps/exchange-point-and-mark)
+  :custom
+  (set-mark-command-repeat-pop t)
   :init
   ;;Taken from https://spwhitton.name/blog/entry/transient-mark-mode/
   (defun lps/exchange-point-and-mark (arg)
