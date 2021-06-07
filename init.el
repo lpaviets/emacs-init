@@ -216,7 +216,9 @@ installed themes instead."
   (interactive)
   (mapc #'disable-theme custom-enabled-themes)
   (mapc (lambda (theme) (funcall #'load-theme theme t)) lps/initial-enabled-themes)
-  (lps/org-mode-setup))
+  (when (eq major-mode 'org-mode)
+    (lps/org-mode-setup)
+    (font-lock-update)))
 
 ;; First time used: run M-x all-the-icons-install-fonts
 (use-package all-the-icons
@@ -359,7 +361,11 @@ installed themes instead."
 (use-package emacs
   :ensure nil
   :custom
-  (enable-recursive-minibuffers t))
+  (enable-recursive-minibuffers t)
+  :bind
+  ("s-g" . exit-recursive-edit)
+  :config
+  (minibuffer-depth-indicate-mode 1))
 
 ;; Ivy
 (use-package ivy
@@ -521,9 +527,11 @@ installed themes instead."
                       (not (mode . fundamental-mode)))))))
   :config
   (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode)
-  (add-hook 'ibuffer-mode-hook
-            (lambda ()
-              (ibuffer-switch-to-saved-filter-groups "default"))))
+
+  (defun lps/ibuffer-switch-to-default-filter ()
+    (ibuffer-switch-to-saved-filter-groups "default"))
+
+  (add-hook 'ibuffer-mode-hook #'lps/ibuffer-switch-to-default-filter))
 
 (use-package emacs
   :ensure nil
@@ -755,7 +763,7 @@ buffer in current window."
   :defer t)
 
 ;; Type "y" instead of "yes RET" for confirmation
-(if (version< emacs-version "28.0")
+(if (version< emacs-version "28.0") ; ) parsing bug
     (defalias 'yes-or-no-p 'y-or-n-p)
   (setq use-short-answers t))
 
@@ -791,12 +799,13 @@ buffer in current window."
   ("C-h b" . embark-bindings)
   (:map embark-file-map
         ("s" . lps/find-file-as-root))
+  :custom
+  (embark-action-indicator #'lps/embark-indicator-which-key)
+  (embark-become-indicator embark-action-indicator)
   :config
-  (setq embark-action-indicator
-        (lambda (map &rest _ignore)
-          (which-key--show-keymap "Embark" map nil nil 'no-paging)
-          #'which-key--hide-popup-ignore-command)
-        embark-become-indicator embark-action-indicator))
+  (defun lps/embark-indicator-which-key (map &rest _ignore)
+    (which-key--show-keymap "Embark" map nil nil 'no-paging)
+    #'which-key--hide-popup-ignore-command))
 
 (use-package embark-consult
   :after (consult embark))
@@ -1092,34 +1101,35 @@ buffer in current window."
 (use-package expand-region
   :bind ("C-=" . er/expand-region))
 
-(defun lps/copy-line-at-point (arg)
-   "Copy ARG lines in the kill ring, starting from the line at point and copying subsequent ones if ARG > 1"
-   (interactive "p")
-   (kill-ring-save (line-beginning-position)
-                   (line-end-position arg)))
+(use-package emacs
+  :ensure nil
+  :bind
+  ("M-k" . lps/copy-line-at-point)
+  ("M-à" . lps/select-line)
+  :config
+  (defun lps/copy-line-at-point (arg)
+    "Copy lines in the kill ring, starting from the line at point.
+If ARG is not specified or equalt to 1, do not copy the indentation.
+If ARG > 1, copy subsequent lines and indentation."
+    (interactive "p")
+    (let ((beg (if (equal 1 arg)
+                   (save-excursion
+                     (back-to-indentation)
+                     (point))
+                 (line-beginning-position)))
+          (end (line-end-position arg)))
+      (copy-region-as-kill beg end)))
 
-; Note that this keybinding overrides other functions
-; By default, M-k is kill-sentence, which I never use
-; I bound it this way to mirror the C-w/M-w symmetry
-
-;; Might want to find a more clever way to use personal
-;; keybindings, such as defining a minor mode ...
-(global-set-key (kbd "M-k") 'lps/copy-line-at-point)
-
-(defun lps/select-line ()
-"Select the current line. If the region is already active, extends the current selection by line."
-(interactive)
-(if (region-active-p)
-    (progn
-      (forward-line 1)
-      (end-of-line))
-  (progn
-    (end-of-line)
-    (set-mark (line-beginning-position)))))
-
-;; makes sense on Keyboard
-;; Remember that M-@ is bound to mark-word
-(global-set-key (kbd "M-à") 'lps/select-line)
+  (defun lps/select-line ()
+    "Select the current line. If the region is already active, extends the current selection by line."
+    (interactive)
+    (if (region-active-p)
+        (progn
+          (forward-line 1)
+          (end-of-line))
+      (progn
+        (end-of-line)
+        (set-mark (line-beginning-position))))))
 
 (use-package emacs
   :ensure nil
@@ -1622,7 +1632,7 @@ Breaks if region or line spans multiple visual lines"
 ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
                                          ; else code
 
-(if (version<= "9.2" org-version)
+(if (version<= "9.2" org-version) ; ) parsing bug
     ;; This is needed as of Org 9.2
     (progn
       (require 'org-tempo)
@@ -1981,20 +1991,25 @@ PWD is not in a git repo (or the git command is not found)."
   ;; Prevents dired from opening thousands of buffers
   :bind (:map dired-mode-map
               ("RET" . dired-find-alternate-file)
-              ("^"   . (lambda () (interactive) (find-alternate-file ".."))))
+              ("^"   . lps/dired-up-directory-same-buffer))
   :custom
   ;; Delete and copy directories recursively
   (dired-recursive-deletes 'top)
   (dired-recursive-copies 'always)
   (dired-auto-revert-buffer t)
-  (dired-listing-switches "-alFh"))
+  (dired-listing-switches "-alFh")
+
+  :config
+  (defun lps/dired-up-directory-same-buffer ()
+    (interactive)
+    (find-alternate-file "..")))
 
 ;; Make things prettier
 (use-package all-the-icons-dired
   :diminish
   :hook (dired-mode . all-the-icons-dired-mode))
 
-(if (version< emacs-version "28.0")
+(when (version< emacs-version "28.0") ; ) parsing bug
     ;; Extra functionalities
     (use-package dired-x
       :ensure nil
@@ -2190,7 +2205,6 @@ PWD is not in a git repo (or the git command is not found)."
                   (user-full-name     . "Leo Paviet Salomon")
                   (mu4e-drafts-folder . "/Orange/DRAFT")
                   (mu4e-sent-folder   . "/Orange/OUTBOX")
-                  ;; (mu4e-sent-messages-behavior . 'delete) ;; Not sure yet, better be safe
                   (mu4e-refile-folder . "/Orange/Archive")
                   (mu4e-trash-folder  . "/Orange/TRASH")
                   (smtpmail-smtp-user    . "leo.paviet.salomon@orange.fr")
