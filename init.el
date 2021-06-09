@@ -1029,19 +1029,41 @@ buffer in current window."
 
 (use-package emacs
   :ensure nil
-  :custom (sentence-end-double-space nil))
+  :bind
+  ("M-n" . forward-paragraph)
+  ("M-p" . backward-paragraph)
+  :custom
+  (sentence-end-double-space nil))
 
 (use-package isearch
   :ensure nil
-  :bind (:map search-map
-              ("s" . isearch-forward)
-              ("M-s" . isearch-forward) ;; avoids early/late release of Meta
-              ("r" . isearch-backward)
-              ("x" . isearch-forward-regexp))
+  :bind
+  (:map search-map
+        ("s" . isearch-forward)
+        ("M-s" . isearch-forward) ;; avoids early/late release of Meta
+        ("r" . isearch-backward)
+        ("x" . isearch-forward-regexp))
+  (:map isearch-mode-map
+        ("C-h" . lps/isearch-show-help-or-which-key))
   :custom
   ;; Interpret whitespaces as "anything but a newline"
   (search-whitespace-regexp ".*?")
-  (isearch-regexp-lax-whitespace t))
+  (isearch-regexp-lax-whitespace t)
+  (isearch-allow-scroll t)
+
+  :config
+  ;; To fix, which-key popup breaks things ...
+  (defun lps/isearch-show-help-or-which-key (&optional arg)
+    "Show help in isearch-mode in a which-key popup.
+With prefix ARG, call isearch-mode-help."
+    (interactive "P")
+    (save-excursion
+      (if (fboundp 'which-key-show-keymap)
+          (if arg
+              (isearch-mode-help)
+            (let ((which-key-side-window-location 'right))
+              (which-key-show-keymap 'isearch-mode-map)))
+        (isearch-mode-help)))))
 
 (use-package replace
   :ensure nil
@@ -1155,6 +1177,47 @@ If ARG > 1, copy subsequent lines and indentation."
   (drag-stuff-global-mode 1)
   (add-to-list 'drag-stuff-except-modes 'org-mode)
   (drag-stuff-define-keys))
+
+(use-package emacs
+  :ensure nil
+  :bind
+  ("<C-down>" . lps/duplicate-line-or-region-down)
+  ("<C-up>" . lps/collapse-line-up)
+  :config
+  (defun lps/duplicate-line-or-region-down (arg)
+    "Duplicate current line or region if active.
+Move point in the last duplicated string (line or region)."
+    (interactive "*p")
+    (if (region-active-p)
+        (progn
+          (save-excursion
+            (let* ((bor (region-beginning))
+                  (eor (region-end))
+                  (content (buffer-substring bor eor)))
+              (goto-char eor)
+              (dotimes (i arg)
+                (newline)
+                (insert content))))
+          (next-line (* arg (count-lines-region (region-beginning) (region-end)))))
+
+      (save-excursion
+        ;; local variables for start and end of line
+        (let* ((bol (progn (beginning-of-line) (point)))
+               (eol (progn (end-of-line) (point)))
+               (line (buffer-substring bol eol)))
+          (dotimes (i arg)
+            (newline)
+            (insert line))))
+      (next-line arg)))
+
+  (defun lps/collapse-line-up (arg)
+    "Delete the current line and move point on the previous line"
+    (interactive "*p")
+    (save-excursion
+      (previous-line arg)
+      (setq final (point)))
+    (kill-whole-line (- arg))
+    (goto-char final)))
 
 (use-package undo-tree
   :diminish
