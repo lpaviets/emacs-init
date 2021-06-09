@@ -100,8 +100,10 @@ flycheck_*.el
 # Project
 /projects
 
+# Recentf-mode
+/recentf
+
 # Other random stuff
 /network-security.data
-/recentf
 *.sqlite
 /session.105c7771555e10ce7e161703684163112000000021830165
