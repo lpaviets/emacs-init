@@ -26,10 +26,11 @@ If the init.el cannot be properly loaded at startup, try to search for such keyw
 * Initialization
 ** Emacs performance
 
-First, we set things up so that Emacs starts /fast/.
+First, we set things up so that Emacs starts /fast/ (and also with the frame maximized)
 
 #+begin_src emacs-lisp
-(setq gc-cons-threshold 100000000) ; 1e8 = 100 MB (default: 800kB)
+  (toggle-frame-maximized)
+  (setq gc-cons-threshold 100000000) ; 1e8 = 100 MB (default: 800kB)
 #+end_src
 
 Another thing that might be of interest is to know how long it took for Emacs to start. Although there is already a built-in function to do this (try to call =emacs-init-time= in any Emacs session), we want it to be automatically displayed anytime we start Emacs
@@ -381,7 +382,15 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
     :custom
     (doom-modeline-height 15)
     (doom-modeline-project-detection 'project)
-    (doom-modeline-unicode-fallback t))
+    (doom-modeline-unicode-fallback t)
+    :config
+    ;; Hide encoding in modeline when UTF-8(-unix)
+    (defun lps/hide-utf-8-encoding ()
+      (setq-local doom-modeline-buffer-encoding
+                  (not (or (eq buffer-file-coding-system 'utf-8-unix)
+                           (eq buffer-file-coding-system 'utf-8)))))
+
+    (add-hook 'after-change-major-mode-hook #'lps/hide-utf-8-encoding))
 #+end_src
 
 We also want to add some extra information on the modeline, of the kind that we could get in a status bar from a typical window manager
@@ -1121,6 +1130,7 @@ Another package that tries to give contextual actions to act on "things" (files,
 
 #+begin_src emacs-lisp
   (use-package embark
+    :defer t
     :bind
     ("C-," . embark-act)
     ("C-h b" . embark-bindings)
@@ -1369,16 +1379,19 @@ To have a cleaner interface and also a bit of documentation added to the suggest
     :after company
     :diminish
     :hook (company-mode . company-box-mode)
+    :custom
+    (company-box-show-single-candidate 'never)
     :config
     (setq company-box-backends-colors '((company-yasnippet :all "dark turquoise"
-                                                           :selected
-                                                           (:background "slate blue" :foreground "white")))))
+                                                           :selected (:background "slate blue"
+                                                                                  :foreground "white")))))
 
   (use-package company-quickhelp
     :after company
     :hook (company-mode . company-quickhelp-mode)
     :diminish
-    :custom (company-quickhelp-delay 0.2))
+    :custom
+    (company-quickhelp-delay 0.2))
 
 #+end_src
 ** Navigation
@@ -1627,6 +1640,7 @@ Because we added other, more "Emacs-y" bindings to move by paragraphs, we are fr
                     (eor (region-end))
                     (content (buffer-substring bor eor)))
                 (goto-char eor)
+                (end-of-line) ; necessary if region is inside longer line
                 (dotimes (i arg)
                   (newline)
                   (insert content))))
@@ -1640,13 +1654,13 @@ Because we added other, more "Emacs-y" bindings to move by paragraphs, we are fr
             (dotimes (i arg)
               (newline)
               (insert line))))
-        (next-line arg)))
+        (next-logical-line arg)))
 
     (defun lps/collapse-line-up (arg)
       "Delete the current line and move point on the previous line"
       (interactive "*p")
       (save-excursion
-        (previous-line arg)
+        (previous-logical-line arg)
         (setq final (point)))
       (kill-whole-line (- arg))
       (goto-char final)))
@@ -1710,7 +1724,7 @@ We also define a bunch of functions and commands related to editing text that ar
     ("C-z" . lps/quick-edit-map)
     :bind
     (:map lps/quick-edit-map
-          ("u" . lps/underline-or-frame-dwim)
+          ("C-u" . lps/underline-or-frame-dwim)
           ("k" . zap-up-to-char))
 
     :config

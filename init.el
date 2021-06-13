@@ -1,3 +1,4 @@
+(toggle-frame-maximized)
 (setq gc-cons-threshold 100000000) ; 1e8 = 100 MB (default: 800kB)
 
 (defun lps/display-startup-time ()
@@ -244,7 +245,15 @@ installed themes instead."
   :custom
   (doom-modeline-height 15)
   (doom-modeline-project-detection 'project)
-  (doom-modeline-unicode-fallback t))
+  (doom-modeline-unicode-fallback t)
+  :config
+  ;; Hide encoding in modeline when UTF-8(-unix)
+  (defun lps/hide-utf-8-encoding ()
+    (setq-local doom-modeline-buffer-encoding
+                (not (or (eq buffer-file-coding-system 'utf-8-unix)
+                         (eq buffer-file-coding-system 'utf-8)))))
+
+  (add-hook 'after-change-major-mode-hook #'lps/hide-utf-8-encoding))
 
 (use-package battery
   :ensure nil
@@ -794,6 +803,7 @@ buffer in current window."
       (consult-imenu))))
 
 (use-package embark
+  :defer t
   :bind
   ("C-," . embark-act)
   ("C-h b" . embark-bindings)
@@ -998,16 +1008,19 @@ buffer in current window."
   :after company
   :diminish
   :hook (company-mode . company-box-mode)
+  :custom
+  (company-box-show-single-candidate 'never)
   :config
   (setq company-box-backends-colors '((company-yasnippet :all "dark turquoise"
-                                                         :selected
-                                                         (:background "slate blue" :foreground "white")))))
+                                                         :selected (:background "slate blue"
+                                                                                :foreground "white")))))
 
 (use-package company-quickhelp
   :after company
   :hook (company-mode . company-quickhelp-mode)
   :diminish
-  :custom (company-quickhelp-delay 0.2))
+  :custom
+  (company-quickhelp-delay 0.2))
 
 (use-package emacs
   :ensure nil
@@ -1195,6 +1208,7 @@ Move point in the last duplicated string (line or region)."
                   (eor (region-end))
                   (content (buffer-substring bor eor)))
               (goto-char eor)
+              (end-of-line) ; necessary if region is inside longer line
               (dotimes (i arg)
                 (newline)
                 (insert content))))
@@ -1208,13 +1222,13 @@ Move point in the last duplicated string (line or region)."
           (dotimes (i arg)
             (newline)
             (insert line))))
-      (next-line arg)))
+      (next-logical-line arg)))
 
   (defun lps/collapse-line-up (arg)
     "Delete the current line and move point on the previous line"
     (interactive "*p")
     (save-excursion
-      (previous-line arg)
+      (previous-logical-line arg)
       (setq final (point)))
     (kill-whole-line (- arg))
     (goto-char final)))
@@ -1259,7 +1273,7 @@ Move point in the last duplicated string (line or region)."
   ("C-z" . lps/quick-edit-map)
   :bind
   (:map lps/quick-edit-map
-        ("u" . lps/underline-or-frame-dwim)
+        ("C-u" . lps/underline-or-frame-dwim)
         ("k" . zap-up-to-char))
 
   :config
