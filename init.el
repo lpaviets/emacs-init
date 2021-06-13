@@ -1776,11 +1776,28 @@ Breaks if region or line spans multiple visual lines"
 (use-package pdf-tools
   :magic ("%PDF" . pdf-view-mode)
   :bind (:map pdf-view-mode-map
-              ("C-s" . isearch-forward))
+              ("C-s" . isearch-forward)
+              ("C-c ?" . lps/pdf-maybe-goto-index))
   :config
   (pdf-tools-install :no-query)
   ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
-  (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode))
+  (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode)
+
+  (defun lps/pdf-maybe-goto-index ()
+    "Tries to guess where the index of the document is,
+and ask for a keyword to find from there. If no Index is found,
+move to the end of the document, and search backward instead."
+    (interactive)
+    (if (ignore-errors (pdf-outline (current-buffer)))
+        (progn
+          (goto-char (point-max))
+          (let ((case-fold-search t))
+            (if (search-backward "Index" nil t)
+                (pdf-outline-follow-link-and-quit)
+              (pdf-outline-quit)))
+          (isearch-forward))
+      (pdf-view-goto-page (pdf-cache-number-of-pages))
+      (isearch-backward))))
 
 (use-package pdf-view-restore
   :custom
