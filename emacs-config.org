@@ -1112,7 +1112,7 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
   (use-package consult
     :defer t
     :bind
-    ("C-s" . consult-line)
+    ("C-s" . lps/consult-line-strict-match)
     ("C-c i" . lps/consult-imenu-or-org-heading)
     ("C-x b" . consult-buffer)
     ([remap yank-pop] . consult-yank-from-kill-ring)
@@ -1123,7 +1123,12 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
       (interactive)
       (if (equal major-mode 'org-mode)
           (consult-org-heading)
-        (consult-imenu))))
+        (consult-imenu)))
+
+    (defun lps/consult-line-strict-match (&optional initial start)
+      (interactive (list nil (not (not current-prefix-arg))))
+      (let ((orderless-matching-styles '(orderless-literal)))
+        (consult-line initial start))))
 #+end_src
 
 Another package that tries to give contextual actions to act on "things" (files, buffers ...) is ~embark~. It also integrates very well with the default API, and is easily enhanced by packages such as ~marginalia~
@@ -1861,7 +1866,7 @@ First of all, we want to easily be able to tell with a quick glance which parent
 
   ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
   (use-package rainbow-delimiters
-    :hook (prog-mode . rainbow-delimiters-mode))
+    :hook ((prog-mode comint-mode) . rainbow-delimiters-mode))
 #+end_src
 
 Now, in order to work with structured text, such as source code, we want to be able to directly manipulate "expressions" rather than lines or words. This is why we use the following packages, as they provide a lot of functionalities to navigate and edit those expressions.
@@ -1908,11 +1913,15 @@ Now, in order to work with structured text, such as source code, we want to be a
 
 
   (use-package paredit
+    :init
+    (defun lps/paredit-enable-electric-pair-disable ()
+      (paredit-mode 1)
+      (electric-pair-local-mode -1))
     :hook ((sly-mrepl-mode
             eshell-mode
             ielm-mode
             eval-expression-minibuffer-setup
-            lisp-data-mode) . paredit-mode)
+            lisp-data-mode) . lps/paredit-enable-electric-pair-disable)
     :bind (:map paredit-mode-map
                 ("C-M-y" . paredit-copy-as-kill)
                 ("M-s" . nil) ;; To get isearch-mode-map
@@ -2198,15 +2207,21 @@ We define a useful function to evaluate an expression, and replace it with the r
 We could, of course, use LSP to write Common Lisp code. However, Emacs already provides nice editing functionalities for programming in Lisp-like languages, and CL is no exception. On top of the built-in Emacs functions, we use another minor mode, specifically designed to write Common Lisp: [[https://common-lisp.net/project/slime/][SLIME]]. More precisely, we use a /fork/ of SLIME, known as [[https://github.com/joaotavora/sly][SLY]].
 
 *MANUAL* It is likely that ~sbcl~ is not already installed. Hence, in order to run the following code, you will need to install it. If you install it manuallyby compiling the source code, make sure that the ~sbcl~ command is available on the PATH, or modify  =:custom (inferior-lisp-program "<path/to/sbcl>")= accordingly in the following block.
+Moreover, if  you want to access the CL HyperSpec offline, you need to download it, and have ~common-lisp-hyperspec-root~ point towards it.
 
 #+begin_src emacs-lisp
   ;; Make sure that sbcl is available on PATH
   (use-package sly
     :hook (lisp-mode . sly-editing-mode)
+    :bind
+    (:map sly-mode-map
+          ("M-_" . nil))
     :custom
     ;; Clisp makes SLY crash ?!
     (inferior-lisp-program "sbcl")
+    (sly-net-coding-system 'utf-8-unix)
     (sly-complete-symbol-function 'sly-simple-completions)
+    (common-lisp-hyperspec-root (concat "file://" (expand-file-name "~/Documents/Other/HyperSpec/")))
     :config
     (add-hook 'sly-mode-hook
               (lambda ()
@@ -2215,6 +2230,14 @@ We could, of course, use LSP to write Common Lisp code. However, Emacs already p
 
     ;; Don't use Ido, just use our default
     (defalias 'sly-completing-read completing-read-function))
+
+  (use-package sly-mrepl
+    :after sly
+    :bind
+    (:map sly-mrepl-mode-map
+          ("C-c C-n" . sly-mrepl-next-prompt)
+          ("C-c C-p" . sly-mrepl-previous-prompt)
+          ("C-c C-k" . sly-quit-lisp)))
 #+end_src
 
 On top of this environment and compiler, we also need an access to external libraries and packages. A popular option is to use Quicklisp, for which there is a SLY integration.

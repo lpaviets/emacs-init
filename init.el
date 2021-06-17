@@ -789,7 +789,7 @@ buffer in current window."
 (use-package consult
   :defer t
   :bind
-  ("C-s" . consult-line)
+  ("C-s" . lps/consult-line-strict-match)
   ("C-c i" . lps/consult-imenu-or-org-heading)
   ("C-x b" . consult-buffer)
   ([remap yank-pop] . consult-yank-from-kill-ring)
@@ -800,7 +800,12 @@ buffer in current window."
     (interactive)
     (if (equal major-mode 'org-mode)
         (consult-org-heading)
-      (consult-imenu))))
+      (consult-imenu)))
+
+  (defun lps/consult-line-strict-match (&optional initial start)
+    (interactive (list nil (not (not current-prefix-arg))))
+    (let ((orderless-matching-styles '(orderless-literal)))
+      (consult-line initial start))))
 
 (use-package embark
   :defer t
@@ -1374,7 +1379,7 @@ Breaks if region or line spans multiple visual lines"
 
 ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
 (use-package rainbow-delimiters
-  :hook (prog-mode . rainbow-delimiters-mode))
+  :hook ((prog-mode comint-mode) . rainbow-delimiters-mode))
 
 ;; Smartparens is currently bugged
 (use-package smartparens
@@ -1417,11 +1422,15 @@ Breaks if region or line spans multiple visual lines"
 
 
 (use-package paredit
+  :init
+  (defun lps/paredit-enable-electric-pair-disable ()
+    (paredit-mode 1)
+    (electric-pair-local-mode -1))
   :hook ((sly-mrepl-mode
           eshell-mode
           ielm-mode
           eval-expression-minibuffer-setup
-          lisp-data-mode) . paredit-mode)
+          lisp-data-mode) . lps/paredit-enable-electric-pair-disable)
   :bind (:map paredit-mode-map
               ("C-M-y" . paredit-copy-as-kill)
               ("M-s" . nil) ;; To get isearch-mode-map
@@ -1600,10 +1609,15 @@ Breaks if region or line spans multiple visual lines"
 ;; Make sure that sbcl is available on PATH
 (use-package sly
   :hook (lisp-mode . sly-editing-mode)
+  :bind
+  (:map sly-mode-map
+        ("M-_" . nil))
   :custom
   ;; Clisp makes SLY crash ?!
   (inferior-lisp-program "sbcl")
+  (sly-net-coding-system 'utf-8-unix)
   (sly-complete-symbol-function 'sly-simple-completions)
+  (common-lisp-hyperspec-root (concat "file://" (expand-file-name "~/Documents/Other/HyperSpec/")))
   :config
   (add-hook 'sly-mode-hook
             (lambda ()
@@ -1612,6 +1626,14 @@ Breaks if region or line spans multiple visual lines"
 
   ;; Don't use Ido, just use our default
   (defalias 'sly-completing-read completing-read-function))
+
+(use-package sly-mrepl
+  :after sly
+  :bind
+  (:map sly-mrepl-mode-map
+        ("C-c C-n" . sly-mrepl-next-prompt)
+        ("C-c C-p" . sly-mrepl-previous-prompt)
+        ("C-c C-k" . sly-quit-lisp)))
 
 (use-package sly-quicklisp
   :after sly
