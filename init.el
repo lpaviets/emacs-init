@@ -246,6 +246,7 @@ installed themes instead."
   (doom-modeline-height 15)
   (doom-modeline-project-detection 'project)
   (doom-modeline-unicode-fallback t)
+  (doom-modeline-buffer-file-name-style 'buffer-name)
   :config
   ;; Hide encoding in modeline when UTF-8(-unix)
   (defun lps/hide-utf-8-encoding ()
@@ -1146,6 +1147,8 @@ With prefix ARG, call isearch-mode-help."
   :bind
   ("M-k" . lps/copy-line-at-point)
   ("M-à" . lps/select-line)
+  :custom
+  (kill-read-only-ok t)
   :config
   (defun lps/copy-line-at-point (arg)
     "Copy lines in the kill ring, starting from the line at point.
@@ -1764,7 +1767,7 @@ Breaks if region or line spans multiple visual lines"
 
 (add-hook 'org-mode-hook #'lps/elisp-completion-in-user-init)
 
-(setq org-agenda-files (concat org-directory "Tasks.org"))
+(setq org-agenda-files (list (concat org-directory "agenda/")))
 (setq org-log-into-drawer t)
 (setq org-log-done 'time)
 (setq org-agenda-start-with-log-mode t)
@@ -1782,21 +1785,26 @@ Breaks if region or line spans multiple visual lines"
         ("read" . ?r)))
 
 (setq org-capture-templates
-      '(("t" "Tasks / Projects")
+      `(("t" "Tasks / Projects")
         ("tt" "Task" entry
-         (file+olp (concat org-directory "Tasks.org") "Inbox")
+         (file+olp ,(concat org-directory "agenda/Tasks.org") "Inbox")
          "* TODO %?\n  %U\n  %a\n  %i"
          :empty-lines 1)
 
         ("m" "Meeting" entry
-         (file+olp+datetree (concat org-directory "Tasks.org"))
+         (file+olp+datetree ,(concat org-directory "agenda/Meetings.org"))
          "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
          :empty-lines 1)
 
         ("w" "Workflows")
         ("we" "Checking Email" entry
-         (file+olp+datetree (concat org-directory "Tasks.org"))
+         (file+olp+datetree ,(concat org-directory "agenda/Tasks.org"))
          "* Checking Email :email:\n\n%?"
+         :empty-lines 1)
+
+        ("a" "Agenda (others)" entry
+         (file ,(concat org-directory "agenda/Others.org"))
+         "* %(call-interactively #'org-time-stamp) %? :agenda:\n"
          :empty-lines 1)
 
         ("r" "Random" plain
