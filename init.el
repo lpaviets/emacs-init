@@ -1614,14 +1614,22 @@ Breaks if region or line spans multiple visual lines"
   :hook (lisp-mode . sly-editing-mode)
   :bind
   (:map sly-mode-map
-        ("M-_" . nil))
+        ("M-_" . nil)
+        ("C-c i" . nil)
+        ("C-c C-i" . sly-import-symbol-at-point))
+  (:map sly-doc-map
+        ("C-g" . nil)
+        ("C-h" . nil)
+        ("g" . common-lisp-hyperspec-glossary-term)
+        ("h" . sly-documentation-lookup))
   :custom
   ;; Clisp makes SLY crash ?!
   (inferior-lisp-program "sbcl")
   (sly-net-coding-system 'utf-8-unix)
   (sly-complete-symbol-function 'sly-simple-completions)
-  (common-lisp-hyperspec-root (concat "file://" (expand-file-name "~/Documents/Other/HyperSpec/")))
   :config
+  (setq common-lisp-hyperspec-root (concat "file://" (expand-file-name "~/Documents/Other/HyperSpec/")))
+
   (add-hook 'sly-mode-hook
             (lambda ()
               (unless (sly-connected-p)
@@ -1636,11 +1644,18 @@ Breaks if region or line spans multiple visual lines"
   (:map sly-mrepl-mode-map
         ("C-c C-n" . sly-mrepl-next-prompt)
         ("C-c C-p" . sly-mrepl-previous-prompt)
-        ("C-c C-k" . sly-quit-lisp)))
+        ("C-c C-k" . sly-quit-lisp)
+        ("<C-return>" . end-of-buffer)))
 
 (use-package sly-quicklisp
   :after sly
   :hook (sly . sly-quicklisp-mode))
+
+(use-package sly-macrostep
+  :after sly)
+
+(use-package sly-asdf
+  :after sly)
 
 (use-package gdb-mi
   :ensure nil

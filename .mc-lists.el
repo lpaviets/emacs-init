@@ -16,6 +16,7 @@
         forward-sentence
         hungry-delete-backward
         hungry-delete-forward
+        kill-sexp
         lps/eval-and-replace-last-sexp
         lps/exchange-point-and-mark
         org-beginning-of-line
@@ -23,6 +24,8 @@
         org-self-insert-command
         paredit-forward-delete
         paredit-forward-kill-word
+        paredit-open-round
+        paredit-splice-sexp
         reftex-label
         reindent-then-newline-and-indent
         ))
