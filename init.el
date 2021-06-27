@@ -1275,6 +1275,15 @@ Move point in the last duplicated string (line or region)."
         (insert (or split ""))
         (insert (pop matches))))))
 
+(use-package align
+  :ensure nil
+  :bind
+  (:map lps/quick-edit-map
+        ("C-a a" . align)
+        ("C-a e" . align-entire)
+        ("C-a x" . align-regexp)
+        ("C-a c" . align-current)))
+
 (use-package emacs
   :ensure nil
   :bind-keymap
@@ -1456,6 +1465,9 @@ Breaks if region or line spans multiple visual lines"
               ("<C-tab>" . yas-expand)))
 
 (use-package yasnippet-snippets
+  :after yasnippet)
+
+(use-package common-lisp-snippets
   :after yasnippet)
 
 (use-package company-yasnippet
@@ -1683,7 +1695,9 @@ Breaks if region or line spans multiple visual lines"
         ("<C-S-right>" . nil)
         ("<C-S-up>" . nil)
         ("<C-S-down>" . nil)
-        ("C-," . nil))
+        ("C-," . nil)
+        ("C-a" . org-beginning-of-line)
+        ("C-e" . org-end-of-line))
   (:map org-src-mode-map
         ("C-c C-c" . org-edit-src-exit))
 
@@ -1692,6 +1706,7 @@ Breaks if region or line spans multiple visual lines"
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
   (org-directory "~/Documents/OrgFiles/")
+  (org-special-ctrl-a/e t) ;; Not enough with visual-line-mode, need to bind C-a/C-e too
   :config
   (defun lps/org-mode-setup ()
     (lps/org-font-setup)

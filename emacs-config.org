@@ -1721,6 +1721,19 @@ It can act as a small, local version control system due to how Undos are managed
           (insert (pop matches))))))
 #+end_src
 
+** Align
+A very useful and yet relatively unknown Emacs built-in package is ~align~, which provides a few functions to align things according to several criteria, and acting on various parts of the buffer (region, section ...)
+
+#+begin_src emacs-lisp
+  (use-package align
+    :ensure nil
+    :bind
+    (:map lps/quick-edit-map
+          ("C-a a" . align)
+          ("C-a e" . align-entire)
+          ("C-a x" . align-regexp)
+          ("C-a c" . align-current)))
+#+end_src
 ** Personal commands
 
 We also define a bunch of functions and commands related to editing text that are not provided in Emacs by default, and would be too specific to find in a package.
@@ -1963,6 +1976,13 @@ It is even possible to define your own snippets. The following package contains 
   (use-package yasnippet-snippets
     :after yasnippet)
 #+end_src
+
+**** Extra snippets
+#+begin_src emacs-lisp
+  (use-package common-lisp-snippets
+    :after yasnippet)
+#+end_src
+
 *** Company backends
 
 A first backend that we want to consider is the one using snippets provided by ~yasnippet~
@@ -2319,7 +2339,9 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
           ("<C-S-right>" . nil)
           ("<C-S-up>" . nil)
           ("<C-S-down>" . nil)
-          ("C-," . nil))
+          ("C-," . nil)
+          ("C-a" . org-beginning-of-line)
+          ("C-e" . org-end-of-line))
     (:map org-src-mode-map
           ("C-c C-c" . org-edit-src-exit))
 
@@ -2328,6 +2350,7 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
     (org-src-fontify-natively t)
     (org-src-tab-acts-natively t)
     (org-directory "~/Documents/OrgFiles/")
+    (org-special-ctrl-a/e t) ;; Not enough with visual-line-mode, need to bind C-a/C-e too
     :config
     (defun lps/org-mode-setup ()
       (lps/org-font-setup)
