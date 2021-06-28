@@ -277,7 +277,7 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
                                                   occur-mode-hook))
 
   (dolist (mode-hook lps/disabled-line-numbers-modes-hooks)
-    (add-hook mode #'lps/disable-line-numbers))
+    (add-hook mode-hook #'lps/disable-line-numbers))
 #+end_src
 
 While we are at it, we also want Emacs to wrap our lines, so that we never have to scroll horizontally to see the end of a long line (besides, how would we do it, now that we don't have a scrollbar anymore ?!)

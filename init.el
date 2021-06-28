@@ -164,7 +164,7 @@
                                                 occur-mode-hook))
 
 (dolist (mode-hook lps/disabled-line-numbers-modes-hooks)
-  (add-hook mode #'lps/disable-line-numbers))
+  (add-hook mode-hook #'lps/disable-line-numbers))
 
 (global-visual-line-mode 1)
 
