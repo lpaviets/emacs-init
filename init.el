@@ -139,42 +139,72 @@
 (defun lps/disable-line-numbers ()
   (display-line-numbers-mode 0))
 
-(dolist (mode '(org-mode-hook
-                ;; Term & Shells
-                eshell-mode-hook
-                comint-mode-hook
-                ;; PDF viewers
-                pdf-view-mode-hook
-                doc-view-mode-hook
-                ;; Help modes
-                helpful-mode-hook
-                help-mode-hook
-                apropos-mode-hook
-                ;; mu4e
-                mu4e-main-mode-hook
-                mu4e-view-mode-hook
-                mu4e-headers-mode-hook
-                ;; reading
-                nov-mode-hook
-                olivetti-mode-hook
-                ;; Extra modes
-                undo-tree-visualizer-mode-hook
-                treemacs-mode-hook
-                dired-mode-hook
-                occur-mode-hook))
+(defvar lps/disabled-line-numbers-modes-hooks '(org-mode-hook
+                                                ;; Term & Shells
+                                                eshell-mode-hook
+                                                comint-mode-hook
+                                                ;; PDF viewers
+                                                pdf-view-mode-hook
+                                                doc-view-mode-hook
+                                                ;; Help modes
+                                                helpful-mode-hook
+                                                help-mode-hook
+                                                apropos-mode-hook
+                                                ;; mu4e
+                                                mu4e-main-mode-hook
+                                                mu4e-view-mode-hook
+                                                mu4e-headers-mode-hook
+                                                ;; reading
+                                                nov-mode-hook
+                                                olivetti-mode-hook
+                                                ;; Extra modes
+                                                undo-tree-visualizer-mode-hook
+                                                treemacs-mode-hook
+                                                dired-mode-hook
+                                                occur-mode-hook))
 
+(dolist (mode-hook lps/disabled-line-numbers-modes-hooks)
   (add-hook mode #'lps/disable-line-numbers))
 
 (global-visual-line-mode 1)
 
 ;; Themes
 (use-package solarized-theme)
-(use-package kaolin-themes)
+(use-package kaolin-themes
+  :custom
+  (kaolin-themes-comments-style 'alt)
+  (kaolin-themes-distinct-parentheses t)
+  (kaolin-themes-italic-comments t))
 (use-package modus-themes)
 (use-package doom-themes)
 
-(setq lps/default-theme 'kaolin-ocean)
+(defvar lps/default-theme 'kaolin-ocean)
+(defvar lps/default-light-theme 'modus-operandi)
+(defvar lps/live-presentation-p nil)
+
 (load-theme lps/default-theme t)
+
+(defun lps/toggle-live-code-presentation-settings ()
+  "Various useful settings for live coding sessions"
+  (interactive)
+  (if lps/live-presentation-p
+      (progn
+        (unless (equal custom-enabled-themes (list lps/default-theme))
+          (disable-theme custom-enabled-themes)
+          (load-theme lps/default-theme))
+        (global-hl-line-mode -1)
+        (text-scale-set 0)
+        (setq-default cursor-type 'box))
+
+    (progn
+      (unless (y-or-n-p "Keep current theme ?")
+        (disable-theme custom-enabled-themes)
+        (load-theme lps/default-light-theme))
+      (global-display-line-numbers-mode 1)
+      (text-scale-increase 1)
+      (setq-default cursor-type 'box)))
+
+  (setq lps/live-presentation-p (not lps/live-presentation-p)))
 
 ;; Use this to store your favourite themes
 ;; Save your usual, default theme in first position

@@ -22,6 +22,7 @@
         org-beginning-of-line
         org-end-of-line
         org-self-insert-command
+        paredit-close-round
         paredit-forward-delete
         paredit-forward-kill-word
         paredit-open-round
