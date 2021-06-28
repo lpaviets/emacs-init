@@ -1421,7 +1421,7 @@ Breaks if region or line spans multiple visual lines"
 
 ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
 (use-package rainbow-delimiters
-  :hook ((prog-mode comint-mode) . rainbow-delimiters-mode))
+  :hook ((prog-mode comint-mode fundamental-mode) . rainbow-delimiters-mode))
 
 ;; Smartparens is currently bugged
 (use-package smartparens
@@ -1468,11 +1468,14 @@ Breaks if region or line spans multiple visual lines"
   (defun lps/paredit-enable-electric-pair-disable ()
     (paredit-mode 1)
     (electric-pair-local-mode -1))
+
   :hook ((sly-mrepl-mode
           eshell-mode
           ielm-mode
           eval-expression-minibuffer-setup
-          lisp-data-mode) . lps/paredit-enable-electric-pair-disable)
+          lisp-data-mode)
+         . lps/paredit-enable-electric-pair-disable)
+
   :bind (:map paredit-mode-map
               ("C-M-y" . paredit-copy-as-kill)
               ("M-s" . nil) ;; To get isearch-mode-map
@@ -1676,6 +1679,8 @@ Breaks if region or line spans multiple visual lines"
             (lambda ()
               (unless (sly-connected-p)
                 (save-excursion (sly)))))
+
+  (add-hook 'sly-minibuffer-setup-hook #'paredit-mode)
 
   ;; Don't use Ido, just use our default
   (defalias 'sly-completing-read completing-read-function))
