@@ -150,6 +150,7 @@
                                                 helpful-mode-hook
                                                 help-mode-hook
                                                 apropos-mode-hook
+                                                Info-mode-hook
                                                 ;; mu4e
                                                 mu4e-main-mode-hook
                                                 mu4e-view-mode-hook
@@ -171,10 +172,13 @@
 ;; Themes
 (use-package solarized-theme)
 (use-package kaolin-themes
+  :after hl-line
   :custom
   (kaolin-themes-comments-style 'alt)
   (kaolin-themes-distinct-parentheses t)
-  (kaolin-themes-italic-comments t))
+  (kaolin-themes-italic-comments t)
+  :config
+  (set-face-attribute 'hl-line nil :background "#39424D"))
 (use-package modus-themes)
 (use-package doom-themes)
 
@@ -1658,10 +1662,11 @@ Breaks if region or line spans multiple visual lines"
 (use-package sly
   :hook (lisp-mode . sly-editing-mode)
   :bind
+  (:map sly-prefix-map
+        ("i" . nil)
+        ("C-i" . sly-import-symbol-at-point))
   (:map sly-mode-map
-        ("M-_" . nil)
-        ("C-c i" . nil)
-        ("C-c C-i" . sly-import-symbol-at-point))
+        ("M-_" . nil))
   (:map sly-doc-map
         ("C-g" . nil)
         ("C-h" . nil)
@@ -1683,7 +1688,15 @@ Breaks if region or line spans multiple visual lines"
   (add-hook 'sly-minibuffer-setup-hook #'paredit-mode)
 
   ;; Don't use Ido, just use our default
-  (defalias 'sly-completing-read completing-read-function))
+  (defalias 'sly-completing-read completing-read-function)
+
+  ;; View HyperSpec within Emacs using EWW
+  (defun lps/use-eww-wrapper (fun &rest args)
+    (let ((browse-url-browser-function #'eww-browse-url))
+      (apply fun args)))
+
+  (advice-add 'common-lisp-hyperspec-lookup-reader-macro :around #'lps/use-eww-wrapper)
+  (advice-add 'common-lisp-hyperspec :around #'lps/use-eww-wrapper))
 
 (use-package sly-mrepl
   :after sly

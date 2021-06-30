@@ -45,4 +45,5 @@
         hydra-multiple-cursors/mc/unmark-previous-like-this
         hydra-multiple-cursors/nil
         swiper-mc
+        wdired-finish-edit
         ))
