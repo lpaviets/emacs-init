@@ -1336,6 +1336,7 @@ Move point in the last duplicated string (line or region)."
   :bind-keymap
   ("C-z" . lps/quick-edit-map)
   :bind
+  ("<M-dead-circumflex>" . delete-indentation)
   (:map lps/quick-edit-map
         ("C-u" . lps/underline-or-frame-dwim)
         ("k" . zap-up-to-char))
@@ -1675,9 +1676,6 @@ Breaks if region or line spans multiple visual lines"
 (use-package sly
   :hook (lisp-mode . sly-editing-mode)
   :bind
-  (:map sly-prefix-map
-        ("i" . nil)
-        ("C-i" . sly-import-symbol-at-point))
   (:map sly-mode-map
         ("M-_" . nil))
   (:map sly-doc-map
@@ -1689,14 +1687,22 @@ Breaks if region or line spans multiple visual lines"
   ;; Clisp makes SLY crash ?!
   (inferior-lisp-program "sbcl")
   (sly-net-coding-system 'utf-8-unix)
-  (sly-complete-symbol-function 'sly-simple-completions)
+  (sly-complete-symbol-function 'sly-flex-completions)
   :config
   (setq common-lisp-hyperspec-root (concat "file://" (expand-file-name "~/Documents/Other/HyperSpec/")))
 
-  (add-hook 'sly-mode-hook
-            (lambda ()
-              (unless (sly-connected-p)
-                (save-excursion (sly)))))
+  (define-key sly-prefix-map (kbd "C-v") sly-selector-map)
+
+  (defun lps/sly-company-setup ()
+    (setq-local company-prescient-sort-length-enable nil)
+    (setq-local company-backends '(company-capf)))
+
+  (defun lps/sly-start-repl ()
+    (unless (sly-connected-p)
+      (save-excursion (sly))))
+
+  (add-hook 'sly-mode-hook #'lps/sly-start-repl)
+  (add-hook 'sly-mode-hook #'lps/sly-company-setup)
 
   (add-hook 'sly-minibuffer-setup-hook #'paredit-mode)
 
@@ -1712,13 +1718,29 @@ Breaks if region or line spans multiple visual lines"
   (advice-add 'common-lisp-hyperspec :around #'lps/use-eww-wrapper))
 
 (use-package sly-mrepl
+  :ensure nil
   :after sly
   :bind
   (:map sly-mrepl-mode-map
         ("C-c C-n" . sly-mrepl-next-prompt)
         ("C-c C-p" . sly-mrepl-previous-prompt)
         ("C-c C-k" . sly-quit-lisp)
-        ("<C-return>" . end-of-buffer)))
+        ("<C-return>" . end-of-buffer))
+  (:map sly-selector-map
+        ("C-v" . lps/sly-mrepl-other-window))
+  :config
+  (defun lps/sly-mrepl-other-window ()
+    (interactive)
+    (sly-mrepl #'pop-to-buffer))
+
+  (add-hook 'sly-mrepl-mode-hook #'lps/sly-company-setup))
+
+(use-package sly-stickers
+  :ensure nil
+  :after sly
+  :bind
+  (:map sly-stickers-mode-map
+        ("C-c C-s C-t" . sly-stickers-toggle-break-on-stickers)))
 
 (use-package sly-quicklisp
   :after sly
