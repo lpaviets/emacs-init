@@ -73,6 +73,12 @@
   (password-cache t)
   (password-cache-expiry 300))
 
+(use-package pinentry
+  :custom
+  (epg-pinentry-mode 'loopback)
+  :config
+  (pinentry-start))
+
 (use-package auth-source
   :ensure nil
   :custom
@@ -743,6 +749,12 @@ buffer in current window."
   ([remap describe-symbol]   . helpful-symbol)
   ([remap describe-key]      . helpful-key)
   ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
+
+(use-package help-at-pt
+  :ensure nil
+  :custom
+  (help-at-pt-display-when-idle t)
+  (help-at-pt-timer-delay 0.5))
 
 ;; Inspired from https://emacs.stackexchange.com/questions/2777/how-to-get-the-function-help-without-typing
 

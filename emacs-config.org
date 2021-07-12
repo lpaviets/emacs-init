@@ -133,12 +133,21 @@ We finally add a few bindings to manage our packages more efficiently.
 Emacs is not very secure as such. We try to fix this as best as we can.
 
 We explicitly fix how long passwords should be cached. A clever thing could be to distinguish between different environments, and use different values for /e.g./ the computer you use at work vs other computers. Another idea could be to ask the user if he wants his password to be cached for the current session, and if so, for how long.
+
+*MANUAL* In order to allow GPG passwords to be asked in the minibuffer, you need to add the line =allow-emacs-pinentry= to your =gpg-agent.conf= file, usually located in the =~/.gnupg/= directory on Linux.
+
 #+begin_src emacs-lisp
   (use-package password-cache
     :ensure nil
     :custom
     (password-cache t)
     (password-cache-expiry 300))
+
+  (use-package pinentry
+    :custom
+    (epg-pinentry-mode 'loopback)
+    :config
+    (pinentry-start))
 
   (use-package auth-source
     :ensure nil
@@ -1008,6 +1017,19 @@ It will condense all the available information about something within a single H
     ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
 
 #+end_src
+
+By default, whenever you place your /mouse/ cursor over something - say, a hyperlink -, Emacs will display a help message in the echo area.
+However, we tend not to use the mouse at all, and in particular having to use the mouse for help would feel a little bit "backwards" compared to Emacs' general philosophy.
+
+#+begin_src emacs-lisp
+  (use-package help-at-pt
+    :ensure nil
+    :custom
+    (help-at-pt-display-when-idle t)
+    (help-at-pt-timer-delay 0.5))
+#+end_src
+
+Finally, we use a custom function to look at the documentation of pretty much anything in a popup, rather than in a separate buffer.
 
 #+begin_src emacs-lisp
   ;; Inspired from https://emacs.stackexchange.com/questions/2777/how-to-get-the-function-help-without-typing
