@@ -787,7 +787,7 @@ buffer in current window."
 ;; Generic Prescient configuration
 (use-package prescient
   :custom
-  (prescient-history-length 200)
+  (prescient-history-length 50)
   (prescient-sort-length-enable nil)
   :config
   (prescient-persist-mode 1))
@@ -839,7 +839,6 @@ buffer in current window."
   ("C-s" . lps/consult-line-strict-match)
   ("C-c i" . lps/consult-imenu-or-org-heading)
   ("C-x b" . consult-buffer)
-  ([remap yank-pop] . consult-yank-from-kill-ring)
   :custom
   (consult-narrow-key "<")
   :config
@@ -1024,6 +1023,8 @@ buffer in current window."
   (company-show-numbers t)
   (company-tooltip-align-annotations t)
   (company-tooltip-flip-when-above t)
+  (company-tooltip-limit 20)
+  (company-require-match nil)
   (company-search-regexp-function 'company-search-words-regexp)
 
   :config
