@@ -1738,7 +1738,7 @@ Breaks if region or line spans multiple visual lines"
   :bind
   ("C-c o" . org-capture)
   (:map org-mode-map
-        ("<M-S-return>" . org-insert-subheading)
+        ("<C-S-return>" . org-insert-subheading)
         ("<C-S-left>" . nil)
         ("<C-S-right>" . nil)
         ("<C-S-up>" . nil)
@@ -1782,14 +1782,14 @@ Breaks if region or line spans multiple visual lines"
   ;; Set faces for heading levels
   ;; For non-headers: org-default
 
-  (dolist (face '((org-level-1 . 1.2)
-                  (org-level-2 . 1.1)
-                  (org-level-3 . 1.05)
-                  (org-level-4 . 1.0)
-                  (org-level-5 . 1.1)
-                  (org-level-6 . 1.1)
-                  (org-level-7 . 1.1)
-                  (org-level-8 . 1.1)))
+  (dolist (face '((org-level-1 . 1.3)
+                  (org-level-2 . 1.2)
+                  (org-level-3 . 1.15)
+                  (org-level-4 . 1.1)
+                  (org-level-5 . 1.05)
+                  (org-level-6 . 1.0)
+                  (org-level-7 . 1.0)
+                  (org-level-8 . 1.0)))
     (set-face-attribute (car face) nil :font my-org-mode-font :weight 'regular :height (cdr face)))
 
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way

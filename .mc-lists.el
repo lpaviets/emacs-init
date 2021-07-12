@@ -20,13 +20,19 @@
         lps/eval-and-replace-last-sexp
         lps/exchange-point-and-mark
         org-beginning-of-line
+        org-delete-char
         org-end-of-line
         org-self-insert-command
+        paredit-backward
         paredit-close-round
+        paredit-forward
         paredit-forward-delete
         paredit-forward-kill-word
+        paredit-forward-slurp-sexp
         paredit-open-round
+        paredit-raise-sexp
         paredit-splice-sexp
+        paredit-wrap-round
         reftex-label
         reindent-then-newline-and-indent
         ))
