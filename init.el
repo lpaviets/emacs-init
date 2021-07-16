@@ -1419,7 +1419,10 @@ Breaks if region or line spans multiple visual lines"
   ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
   ;; uncomment previous line to have magit open itself within the same buffer
   ;; instead of in another buffer
-  :bind ("C-x g" . magit-status))
+  :bind
+  ("C-x g" . magit-status)
+  (:map magit-section-mode-map
+        ("<M-dead-circumflex>" . magit-section-up)))
 
 (use-package git-timemachine
   :defer t)
@@ -2309,6 +2312,15 @@ PWD is not in a git repo (or the git command is not found)."
     (use-package dired-x
       :ensure nil
       :after dired))
+
+(use-package find-dired
+  :ensure nil
+  :bind
+  (:map lps/system-tools-map
+        ("f f" . find-name-dired)
+        ("f g" . find-grep-dired)
+        ("f l" . locate)
+        ("f L" . locate-with-filter)))
 
 (use-package disk-usage
   :defer t
