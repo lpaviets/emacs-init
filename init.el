@@ -1,4 +1,4 @@
-(toggle-frame-maximized)
+(set-frame-parameter nil 'fullscreen 'maximized)
 (setq gc-cons-threshold 100000000) ; 1e8 = 100 MB (default: 800kB)
 
 (defun lps/display-startup-time ()
@@ -610,14 +610,15 @@ installed themes instead."
 
 (use-package winner
   :commands (winner-undo winner-redo)
-  :hook (after-init . winner-mode)
-  :init (setq winner-boring-buffers '("*Completions*"
-                                      "*Compile-Log*"
-                                      "*Fuzzy Completions*"
-                                      "*Apropos*"
-                                      "*Help*"
-                                      "*Buffer List*"
-                                      "*Ibuffer*")))
+  :init
+  (setq winner-boring-buffers '("*Completions*"
+                                "*Compile-Log*"
+                                "*Fuzzy Completions*"
+                                "*Apropos*"
+                                "*Help*"
+                                "*Buffer List*"
+                                "*Ibuffer*"))
+  (winner-mode 1))
 
 (use-package windmove
   ;; Make windmove work in Org mode:
@@ -1619,11 +1620,6 @@ Breaks if region or line spans multiple visual lines"
   (setq flycheck-indication-mode 'left-margin)
   :diminish)
 
-;; Python
-;; Before using LPS, make sure that the server has been installed !
-;; pip install --user python-language-server[all]
-;; Should be able to use the pyls command
-
 (use-package python
   :ensure nil
   :defer t
@@ -1686,6 +1682,9 @@ Breaks if region or line spans multiple visual lines"
         ("C-h" . nil)
         ("g" . common-lisp-hyperspec-glossary-term)
         ("h" . sly-documentation-lookup))
+  (:map sly-prefix-map
+        ("C-p" . nil)
+        ("M-p" . sly-pprint-eval-last-expression))
   :custom
   ;; Clisp makes SLY crash ?!
   (inferior-lisp-program "sbcl")
