@@ -24,11 +24,15 @@
         org-end-of-line
         org-self-insert-command
         paredit-backward
+        paredit-backward-up
         paredit-close-round
         paredit-forward
         paredit-forward-delete
         paredit-forward-kill-word
         paredit-forward-slurp-sexp
+        paredit-forward-up
+        paredit-kill
+        paredit-meta-doublequote
         paredit-open-round
         paredit-raise-sexp
         paredit-splice-sexp

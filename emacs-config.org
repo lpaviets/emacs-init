@@ -73,7 +73,8 @@ It makes both installation and customization easier, and the code is also simple
 
   (setq package-archives '(("melpa" . "https://melpa.org/packages/")
                            ("org" . "https://orgmode.org/elpa/")
-                           ("elpa" . "https://elpa.gnu.org/packages/")))
+                           ("elpa" . "https://elpa.gnu.org/packages/")
+                           ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
 
   (package-initialize)
 
@@ -1156,7 +1157,7 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
   ;; which-key. Shows all the available key sequences after a prefix
   (use-package which-key
     :init
-    (which-key-mode)
+    (which-key-mode 1)
     (which-key-setup-side-window-bottom) ;; default
     :diminish
     :custom
@@ -2003,12 +2004,15 @@ Now, in order to work with structured text, such as source code, we want to be a
             lisp-data-mode)
            . lps/paredit-enable-electric-pair-disable)
 
-    :bind (:map paredit-mode-map
-                ("C-M-y" . paredit-copy-as-kill)
-                ("M-s" . nil) ;; To get isearch-mode-map
-                ("M-s M-s" . paredit-splice-sexp)
-                ("M-j" . eval-print-last-sexp)
-                ([remap newline] . paredit-newline)))
+    :bind
+    (:map paredit-mode-map
+          ("C-M-y" . paredit-copy-as-kill)
+          ("M-s" . nil) ;; To get isearch-mode-map
+          ("M-s M-s" . paredit-splice-sexp)
+          ("C-M-," . paredit-convolute-sexp)
+          ("C-S-t" . transpose-sexps)
+          ("M-j" . eval-print-last-sexp)
+          ([remap newline] . paredit-newline)))
 
   (use-package elec-pair
     :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
@@ -2236,7 +2240,7 @@ For C and C++ (and ObjectiveC), as for Python, we need to install a server for L
     :config
     (setq ccls-executable (executable-find "ccls")))
 #+end_src
-*** LISP
+*** Lisp
 **** Emacs Lisp
 
 Although Emacs comes with pretty good built-in functionalities, there is still room for improvement.
@@ -2304,7 +2308,8 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
           ("h" . sly-documentation-lookup))
     (:map sly-prefix-map
           ("C-p" . nil)
-          ("M-p" . sly-pprint-eval-last-expression))
+          ("M-p" . sly-pprint-eval-last-expression)
+          ("C-i" . consult-imenu))
     :custom
     ;; Clisp makes SLY crash ?!
     (inferior-lisp-program "sbcl")
@@ -2332,12 +2337,9 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
     (defalias 'sly-completing-read completing-read-function)
 
     ;; View HyperSpec within Emacs using EWW
-    (defun lps/use-eww-wrapper (fun &rest args)
-      (let ((browse-url-browser-function #'eww-browse-url))
-        (apply fun args)))
-
-    (advice-add 'common-lisp-hyperspec-lookup-reader-macro :around #'lps/use-eww-wrapper)
-    (advice-add 'common-lisp-hyperspec :around #'lps/use-eww-wrapper))
+    (setq browse-url-handlers
+      '(("hyperspec" . eww-browse-url)
+        ("." . browse-url-default-browser))))
 
   (use-package sly-mrepl
     :ensure nil
@@ -3068,9 +3070,11 @@ Now, we try to add things on top of the built-in file manager, Dired.
     :init
     (setq delete-by-moving-to-trash t)
     ;; Prevents dired from opening thousands of buffers
-    :bind (:map dired-mode-map
-                ("RET" . dired-find-alternate-file)
-                ("^"   . lps/dired-up-directory-same-buffer))
+    :bind
+    (:map dired-mode-map
+          ("RET" . dired-find-alternate-file)
+          ("^" . lps/dired-up-directory-same-buffer)
+          ("F" . find-name-dired))
     :custom
     ;; Delete and copy directories recursively
     (dired-recursive-deletes 'top)

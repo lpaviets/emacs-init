@@ -26,7 +26,8 @@
 
 (setq package-archives '(("melpa" . "https://melpa.org/packages/")
                          ("org" . "https://orgmode.org/elpa/")
-                         ("elpa" . "https://elpa.gnu.org/packages/")))
+                         ("elpa" . "https://elpa.gnu.org/packages/")
+                         ("nongnu" . "https://elpa.nongnu.org/nongnu/")))
 
 (package-initialize)
 
@@ -827,7 +828,7 @@ buffer in current window."
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
   :init
-  (which-key-mode)
+  (which-key-mode 1)
   (which-key-setup-side-window-bottom) ;; default
   :diminish
   :custom
@@ -1498,12 +1499,15 @@ Breaks if region or line spans multiple visual lines"
           lisp-data-mode)
          . lps/paredit-enable-electric-pair-disable)
 
-  :bind (:map paredit-mode-map
-              ("C-M-y" . paredit-copy-as-kill)
-              ("M-s" . nil) ;; To get isearch-mode-map
-              ("M-s M-s" . paredit-splice-sexp)
-              ("M-j" . eval-print-last-sexp)
-              ([remap newline] . paredit-newline)))
+  :bind
+  (:map paredit-mode-map
+        ("C-M-y" . paredit-copy-as-kill)
+        ("M-s" . nil) ;; To get isearch-mode-map
+        ("M-s M-s" . paredit-splice-sexp)
+        ("C-M-," . paredit-convolute-sexp)
+        ("C-S-t" . transpose-sexps)
+        ("M-j" . eval-print-last-sexp)
+        ([remap newline] . paredit-newline)))
 
 (use-package elec-pair
   :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
@@ -1684,7 +1688,8 @@ Breaks if region or line spans multiple visual lines"
         ("h" . sly-documentation-lookup))
   (:map sly-prefix-map
         ("C-p" . nil)
-        ("M-p" . sly-pprint-eval-last-expression))
+        ("M-p" . sly-pprint-eval-last-expression)
+        ("C-i" . consult-imenu))
   :custom
   ;; Clisp makes SLY crash ?!
   (inferior-lisp-program "sbcl")
@@ -1712,12 +1717,9 @@ Breaks if region or line spans multiple visual lines"
   (defalias 'sly-completing-read completing-read-function)
 
   ;; View HyperSpec within Emacs using EWW
-  (defun lps/use-eww-wrapper (fun &rest args)
-    (let ((browse-url-browser-function #'eww-browse-url))
-      (apply fun args)))
-
-  (advice-add 'common-lisp-hyperspec-lookup-reader-macro :around #'lps/use-eww-wrapper)
-  (advice-add 'common-lisp-hyperspec :around #'lps/use-eww-wrapper))
+  (setq browse-url-handlers
+    '(("hyperspec" . eww-browse-url)
+      ("." . browse-url-default-browser))))
 
 (use-package sly-mrepl
   :ensure nil
@@ -2286,9 +2288,11 @@ PWD is not in a git repo (or the git command is not found)."
   :init
   (setq delete-by-moving-to-trash t)
   ;; Prevents dired from opening thousands of buffers
-  :bind (:map dired-mode-map
-              ("RET" . dired-find-alternate-file)
-              ("^"   . lps/dired-up-directory-same-buffer))
+  :bind
+  (:map dired-mode-map
+        ("RET" . dired-find-alternate-file)
+        ("^" . lps/dired-up-directory-same-buffer)
+        ("F" . find-name-dired))
   :custom
   ;; Delete and copy directories recursively
   (dired-recursive-deletes 'top)
