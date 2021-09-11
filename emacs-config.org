@@ -1,7 +1,7 @@
 #+title: Emacs Configuration
 #+author: Léo Paviet Salomon
 #+STARTUP: content
-#+PROPERTY: header-args:emacs-lisp :tangle ~/.emacs.d/init.el
+#+PROPERTY: header-args:emacs-lisp :tangle (concat user-emacs-directory "init.el")
 
 * Organization of this file
 
@@ -15,7 +15,7 @@ If this file is named differently on your system, or simply located in another d
 
 Because I use a version system on those files, I don't mind conflicts with the currently loaded configuration file, and so the the generated file is actually called  =init.el=. By default, Emacs reads (and loads) file such as "~/.emacs" or "~/.emacs.d/init.el" at startup, so the output of =org-babel-tangle= is automatically replacing the previous configuration file. If you want to avoid those conflicts, you might need to rename it.
 
-To modify the name of the output, you can change it in the second line of this document, after the =:tangle= keyword.
+To modify the name of the output, you can change it in the second line of this document, after the =:tangle= keyword. In this case, I do not hardcode it in this file, and let Emacs decide what the /actual/ emacs-directory is. Indeed, you might want to have your configuration in a different location than =~/.emacs.d=, and as such, nothing is broken !
 
 Some commands have to be run manually whenever the generated =init.el= file is loaded for the first time.
 
@@ -2569,7 +2569,7 @@ We also add templates to insert code blocks with a few key presses
   ;; Automatically tangles this emacs-config config file when we save it
   (defun lps/org-babel-tangle-config ()
     (when (string-equal (buffer-file-name)
-                        (expand-file-name "~/.emacs.d/emacs-config.org"))
+                        (expand-file-name (concat user-emacs-directory "emacs-config.org")))
       ;; Dynamic scoping to the rescue
       (let ((org-confirm-babel-evaluate nil))
         (org-babel-tangle))))
@@ -2582,7 +2582,7 @@ Moreover, while we are configuring how Emacs treats this very file, we also want
 #+begin_src emacs-lisp
   (defun lps/elisp-completion-in-user-init ()
     (when (string-equal (buffer-file-name)
-                        (expand-file-name "~/.emacs.d/emacs-config.org"))
+                        (expand-file-name (concat user-emacs-directory "emacs-config.org")))
       (setq-local completion-at-point-functions '(pcomplete-completions-at-point elisp-completion-at-point t))))
 
   (add-hook 'org-mode-hook #'lps/elisp-completion-in-user-init)
@@ -2688,7 +2688,7 @@ We also add the (generally useful) feature of remembering where we left a PDF wh
 #+begin_src emacs-lisp
   (use-package pdf-view-restore
     :custom
-    (pdf-view-restore-filename "~/.emacs.d/.pdf-view-restore")
+    (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
     (use-file-base-name-flag nil)
     :hook (pdf-view-mode . pdf-view-restore-mode))
 #+end_src
@@ -3544,7 +3544,7 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
     :bind
     ("C-c f" . elfeed)
     :custom
-    (elfeed-db-directory "~/.emacs.d/.elfeed")
+    (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
     (elfeed-search-title-max-width 110)
     :config
     (setq-default elfeed-search-filter "@1-week-ago +unread "))

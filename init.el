@@ -1882,7 +1882,7 @@ Breaks if region or line spans multiple visual lines"
 ;; Automatically tangles this emacs-config config file when we save it
 (defun lps/org-babel-tangle-config ()
   (when (string-equal (buffer-file-name)
-                      (expand-file-name "~/.emacs.d/emacs-config.org"))
+                      (expand-file-name (concat user-emacs-directory "emacs-config.org")))
     ;; Dynamic scoping to the rescue
     (let ((org-confirm-babel-evaluate nil))
       (org-babel-tangle))))
@@ -1891,7 +1891,7 @@ Breaks if region or line spans multiple visual lines"
 
 (defun lps/elisp-completion-in-user-init ()
   (when (string-equal (buffer-file-name)
-                      (expand-file-name "~/.emacs.d/emacs-config.org"))
+                      (expand-file-name (concat user-emacs-directory "emacs-config.org")))
     (setq-local completion-at-point-functions '(pcomplete-completions-at-point elisp-completion-at-point t))))
 
 (add-hook 'org-mode-hook #'lps/elisp-completion-in-user-init)
@@ -1974,7 +1974,7 @@ move to the end of the document, and search backward instead."
 
 (use-package pdf-view-restore
   :custom
-  (pdf-view-restore-filename "~/.emacs.d/.pdf-view-restore")
+  (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
   (use-file-base-name-flag nil)
   :hook (pdf-view-mode . pdf-view-restore-mode))
 
@@ -2667,7 +2667,7 @@ PWD is not in a git repo (or the git command is not found)."
   :bind
   ("C-c f" . elfeed)
   :custom
-  (elfeed-db-directory "~/.emacs.d/.elfeed")
+  (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
   (elfeed-search-title-max-width 110)
   :config
   (setq-default elfeed-search-filter "@1-week-ago +unread "))
