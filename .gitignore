@@ -103,7 +103,10 @@ flycheck_*.el
 # Recentf-mode
 /recentf
 
+#Cider
+/.nrepl-port
+
 # Other random stuff
 /network-security.data
 *.sqlite
-/session.105c7771555e10ce7e161703684163112000000021830165
+/session.*

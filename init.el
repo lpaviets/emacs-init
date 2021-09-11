@@ -150,6 +150,7 @@
                                                 ;; Term & Shells
                                                 eshell-mode-hook
                                                 comint-mode-hook
+                                                cider-repl-mode-hook ; does not derive from comint-mode ...
                                                 ;; PDF viewers
                                                 pdf-view-mode-hook
                                                 doc-view-mode-hook
@@ -1496,7 +1497,9 @@ Breaks if region or line spans multiple visual lines"
           eshell-mode
           ielm-mode
           eval-expression-minibuffer-setup
-          lisp-data-mode)
+          lisp-data-mode
+          cider-mode
+          cider-repl-mode)
          . lps/paredit-enable-electric-pair-disable)
 
   :bind
@@ -1581,7 +1584,7 @@ Breaks if region or line spans multiple visual lines"
   (setq lsp-prefer-flymake nil)
   (setq lsp-enable-on-type-formatting nil)
 
-  (defun lps/toggle-lsp-by-default-session ()
+  (defun lps/toggle-lsp-by-default-in-session ()
     (interactive)
     (setq lps/--default-lsp-mode (not lps/--default-lsp-mode)))
 
@@ -1755,6 +1758,9 @@ Breaks if region or line spans multiple visual lines"
 
 (use-package sly-asdf
   :after sly)
+
+(use-package cider
+  :defer t)
 
 (use-package gdb-mi
   :ensure nil
@@ -2547,10 +2553,11 @@ PWD is not in a git repo (or the git command is not found)."
                  (process-live-p (get-buffer-process mu4e~update-buffer)))
       (mu4e-update-mail-and-index t))))
 
-(use-package mu4e-alert
-  :after mu4e
-  :config
-  (mu4e-alert-enable-mode-line-display))
+;; (use-package mu4e-alert
+;;   :ensure nil ;;bugged atm
+;;   :after mu4e
+;;   :config
+;;   (mu4e-alert-enable-mode-line-display))
 
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired

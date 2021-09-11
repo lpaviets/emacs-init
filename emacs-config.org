@@ -266,6 +266,7 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
                                                   ;; Term & Shells
                                                   eshell-mode-hook
                                                   comint-mode-hook
+                                                  cider-repl-mode-hook ; does not derive from comint-mode ...
                                                   ;; PDF viewers
                                                   pdf-view-mode-hook
                                                   doc-view-mode-hook
@@ -2001,7 +2002,9 @@ Now, in order to work with structured text, such as source code, we want to be a
             eshell-mode
             ielm-mode
             eval-expression-minibuffer-setup
-            lisp-data-mode)
+            lisp-data-mode
+            cider-mode
+            cider-repl-mode)
            . lps/paredit-enable-electric-pair-disable)
 
     :bind
@@ -2127,7 +2130,7 @@ We add another backend to support completion in shell and terminal-modes
     (setq lsp-prefer-flymake nil)
     (setq lsp-enable-on-type-formatting nil)
 
-    (defun lps/toggle-lsp-by-default-session ()
+    (defun lps/toggle-lsp-by-default-in-session ()
       (interactive)
       (setq lps/--default-lsp-mode (not lps/--default-lsp-mode)))
 
@@ -2230,7 +2233,7 @@ For OCaml, we do not use LSP mode, and we instead choose to work with a specific
 
 For C and C++ (and ObjectiveC), as for Python, we need to install a server for LSP to use. We use the one called [[https://github.com/MaskRay/ccls/wiki/lsp-mode][ccls]].
 
-*MANUAL* To use the ccls server, follow the instruction [[https://github.com/MaskRay/ccls/][here]].
+*MANUAL* To use the ccls server, follow the instruction [[https://github.com/MaskRay/ccls/][here]], or simply install the available version from your distribution standard repositories.
 
 #+begin_src emacs-lisp
   ;; C/C++
@@ -2382,6 +2385,14 @@ We also add extra-packages to facilitate some usual operations.
   (use-package sly-asdf
     :after sly)
 #+end_src
+****  Clojure
+Finally, another recent and promising Lisp, which is much more opinionated than Common Lisp and runs on the JVM. It is a functional language, with a strong emphasis on immutable data structure, and has various tools that make concurrent programming easy.
+
+#+begin_src emacs-lisp
+  (use-package cider
+    :defer t)
+#+end_src
+
 ** Debug
 *** GUD
 Emacs already provides a large number of debuggers, under the name "Grand Unified Debugger".
@@ -3369,10 +3380,11 @@ Because it might be a bit tedious to constantly open and quit the ~mu4e~ buffers
 This package might also be used to generate desktop notifications, although I do not use this functionality.
 
 #+begin_src emacs-lisp
-  (use-package mu4e-alert
-    :after mu4e
-    :config
-    (mu4e-alert-enable-mode-line-display))
+  ;; (use-package mu4e-alert
+  ;;   :ensure nil ;;bugged atm
+  ;;   :after mu4e
+  ;;   :config
+  ;;   (mu4e-alert-enable-mode-line-display))
 #+end_src
 
   One point that is a bit infuriating with the current state of ~mu4e~ is how you are supposed to manage attachments. In particular, you have to navigate in a whole filetree, everytime you want to attach a file. To my knowledge, there is no "easy and immediate" way to /e.g./ attach several files at once.
@@ -3453,7 +3465,7 @@ An alternative to the traditional HTTP-world wide web, using a simpler protocol.
 #+begin_src emacs-lisp
   (use-package elpher)
 #+end_src
-* Reading
+* Reading and writing
 
 Emacs is, obviously, quite good at dealing with text. Hence, it is natural to wonder whether there are packages conceived to make reading (or writing !) books or long articles more pleasant. Indeed, there are !
 
