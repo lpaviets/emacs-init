@@ -993,10 +993,11 @@ buffer in current window."
 ;; Company. Auto-completion package
 (use-package company
   :diminish
-
   :init
   (global-company-mode t)
-
+  :hook
+  (prog-mode . lps/company-default-backends-prog)
+  (text-mode . lps/company-default-backends-text)
   :bind
   (:map company-active-map
         ("<tab>" . company-complete)
@@ -1039,9 +1040,14 @@ buffer in current window."
   (advice-add 'company--perform :around #'lps/company-set-completion-styles)
 
   ;; Use our personal default backends
-  (setq-default company-backends '((company-capf company-files company-dabbrev company-yasnippet)
+  (defun lps/company-default-backends-prog ()
+    (setq-local company-backends '((company-capf company-files company-dabbrev company-yasnippet)
                                    (company-dabbrev-code company-gtags company-etags company-keywords company-clang)
-                                   company-oddmuse))
+                                   company-oddmuse)))
+
+  (defun lps/company-default-backends-text ()
+    (setq-local company-backends '((company-capf company-files company-dabbrev company-ispell company-yasnippet)
+                                   company-oddmuse)))
 
   ;; AZERTY-friendly company number selection
   ;; Might lead to company-box being a bit broken ? Long function names are cut-off
@@ -2105,7 +2111,7 @@ the number of the file to view, anything else to skip: ") "1") list)))
 
   ;; Better completion functions
   (defun lps/latex-company-setup () ;; TO FIX !
-    (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-latex-commands company-capf company-dabbrev company-yasnippet))))
+    (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-latex-commands company-capf company-dabbrev company-ispell company-yasnippet))))
 
   (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup))
 
@@ -2639,6 +2645,12 @@ PWD is not in a git repo (or the git command is not found)."
     (visual-line-mode 1)
     (visual-fill-column-mode 1))
   (add-hook 'nov-mode-hook #'lps/nov-mode-comfort-settings))
+
+(use-package guess-language
+  :hook (text-mode . guess-language-mode)
+  :custom
+  (guess-language-languages '(en fr))
+  (guess-language-after-detection-functions '(guess-language-switch-flyspell-function)))
 
 (use-package xkcd
   :defer t)

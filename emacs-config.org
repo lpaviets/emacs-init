@@ -1370,10 +1370,11 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
   ;; Company. Auto-completion package
   (use-package company
     :diminish
-
     :init
     (global-company-mode t)
-
+    :hook
+    (prog-mode . lps/company-default-backends-prog)
+    (text-mode . lps/company-default-backends-text)
     :bind
     (:map company-active-map
           ("<tab>" . company-complete)
@@ -1416,9 +1417,14 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
     (advice-add 'company--perform :around #'lps/company-set-completion-styles)
 
     ;; Use our personal default backends
-    (setq-default company-backends '((company-capf company-files company-dabbrev company-yasnippet)
+    (defun lps/company-default-backends-prog ()
+      (setq-local company-backends '((company-capf company-files company-dabbrev company-yasnippet)
                                      (company-dabbrev-code company-gtags company-etags company-keywords company-clang)
-                                     company-oddmuse))
+                                     company-oddmuse)))
+
+    (defun lps/company-default-backends-text ()
+      (setq-local company-backends '((company-capf company-files company-dabbrev company-ispell company-yasnippet)
+                                     company-oddmuse)))
 
     ;; AZERTY-friendly company number selection
     ;; Might lead to company-box being a bit broken ? Long function names are cut-off
@@ -2827,7 +2833,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
 
     ;; Better completion functions
     (defun lps/latex-company-setup () ;; TO FIX !
-      (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-latex-commands company-capf company-dabbrev company-yasnippet))))
+      (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-latex-commands company-capf company-dabbrev company-ispell company-yasnippet))))
 
     (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup))
 #+end_src
@@ -3493,6 +3499,14 @@ In fact, we can even read EPUB files with Emacs.
       (visual-line-mode 1)
       (visual-fill-column-mode 1))
     (add-hook 'nov-mode-hook #'lps/nov-mode-comfort-settings))
+#+end_src
+
+#+begin_src emacs-lisp
+  (use-package guess-language
+    :hook (text-mode . guess-language-mode)
+    :custom
+    (guess-language-languages '(en fr))
+    (guess-language-after-detection-functions '(guess-language-switch-flyspell-function)))
 #+end_src
 * Fun
 As we tend to spend a lot of time in Emacs, isn't it natural to install fun and distracting packages ?
