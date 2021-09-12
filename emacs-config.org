@@ -2845,6 +2845,9 @@ We also configure BibTeX and other packages that allow us to insert quickly bibl
 #+begin_src emacs-lisp
   (use-package bibtex
     :defer t
+    :bind
+    (:map bibtex-mode-map
+          ("C-c C-?" . bibtex-print-help-message))
     :config
     ;; Use a modern BibTeX dialect
                                           ; (bibtex-set-dialect 'biblatex) ; Useful esp. in social sci.
@@ -2874,6 +2877,25 @@ Another useful package to deal with references, bibliography, citations and so o
           ;;                            (?X . "{%l}"))))
           ;;   (setq reftex-cite-format 'biblatex))
           ))
+#+end_src
+
+Finally, we also want a way to do everything from Emacs, and it starts with /finding/ the BibTeX entry that we want to put in our =.bib= file. Hence, we use a package that will look on the Internet for us, and automatically insert the BibTex entries where we need them.
+
+#+begin_src emacs-lisp
+  (use-package biblio
+    :defer t
+    :bind
+    (:map bibtex-mode-map
+          ("C-c ?" . biblio-lookup))
+    :custom
+    (biblio-arxiv-bibtex-header "article")
+    (biblio-download-directory "~/Documents/Other/articles/")
+    :config
+    ;; We just override this function, to use our own completion
+    ;; system.
+    ;; We don't want packages to mess up our config !
+    (defun biblio--completing-read-function ()
+      completing-read-function))
 #+end_src
 
 **** Preview

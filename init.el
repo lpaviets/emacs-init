@@ -2117,6 +2117,9 @@ the number of the file to view, anything else to skip: ") "1") list)))
 
 (use-package bibtex
   :defer t
+  :bind
+  (:map bibtex-mode-map
+        ("C-c C-?" . bibtex-print-help-message))
   :config
   ;; Use a modern BibTeX dialect
                                         ; (bibtex-set-dialect 'biblatex) ; Useful esp. in social sci.
@@ -2142,6 +2145,21 @@ the number of the file to view, anything else to skip: ") "1") list)))
         ;;                            (?X . "{%l}"))))
         ;;   (setq reftex-cite-format 'biblatex))
         ))
+
+(use-package biblio
+  :defer t
+  :bind
+  (:map bibtex-mode-map
+        ("C-c ?" . biblio-lookup))
+  :custom
+  (biblio-arxiv-bibtex-header "article")
+  (biblio-download-directory "~/Documents/Other/articles/")
+  :config
+  ;; We just override this function, to use our own completion
+  ;; system.
+  ;; We don't want packages to mess up our config !
+  (defun biblio--completing-read-function ()
+    completing-read-function))
 
 (use-package preview
   :ensure nil ;; Comes with AUCTeX
