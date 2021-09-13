@@ -2209,10 +2209,14 @@ There exists another implementation of the Language Server Protocol in Emacs, ca
   (use-package python
     :ensure nil
     :defer t
+    :hook (python-mode . lps/run-python)
     :custom
     (python-shell-interpreter "python3")
-    :config (require 'lsp-pyright))
-
+    :config
+    (require 'lsp-pyright)
+    (defun lps/run-python ()
+      (save-excursion
+        (call-interactively 'run-python))))
 #+end_src
 
 I will use another server, based on [[https://github.com/microsoft/pyright][Pyright]]
