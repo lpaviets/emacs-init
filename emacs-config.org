@@ -3403,8 +3403,8 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
        (buffer-list))
 
       ;; Update mail and index when leaving
-      (unless (and (buffer-live-p mu4e~update-buffer)
-                   (process-live-p (get-buffer-process mu4e~update-buffer)))
+      (unless (and (buffer-live-p mu4e--update-buffer)
+                   (process-live-p (get-buffer-process mu4e--update-buffer)))
         (mu4e-update-mail-and-index t))))
 #+end_src
 
@@ -3412,11 +3412,21 @@ Because it might be a bit tedious to constantly open and quit the ~mu4e~ buffers
 This package might also be used to generate desktop notifications, although I do not use this functionality.
 
 #+begin_src emacs-lisp
-  ;; (use-package mu4e-alert
-  ;;   :ensure nil ;;bugged atm
-  ;;   :after mu4e
-  ;;   :config
-  ;;   (mu4e-alert-enable-mode-line-display))
+  (use-package mu4e-alert
+    :after mu4e
+    :config
+    ;; Temporary fix: mu4e and mu4e-alert are out of sync
+    ;; while mu4e changes its naming conventions from the
+    ;; old mu4e~<stuff> to mu4e--<stuff>
+
+    (defadvice mu4e-context-switch (around mu4e-alert-update-mail-count-modeline disable)
+      "Advice `mu4e-context-switch' to update mode-line after changing the context."
+      (let ((context mu4e--context-current))
+        ad-do-it
+        (unless (equal context mu4e--context-current)
+          (mu4e-alert-update-mail-count-modeline))))
+
+    (mu4e-alert-enable-mode-line-display))
 #+end_src
 
   One point that is a bit infuriating with the current state of ~mu4e~ is how you are supposed to manage attachments. In particular, you have to navigate in a whole filetree, everytime you want to attach a file. To my knowledge, there is no "easy and immediate" way to /e.g./ attach several files at once.
