@@ -477,6 +477,7 @@ Some packages are used lated in the configuration, and we want to be able to use
   (use-package highlight-numbers
     :hook (prog-mode . highlight-numbers-mode))
 #+end_src
+
 ** Whitespaces
 
 First of all, we never want ~TAB~ to insert actual tab characters. We also don't like trailing whitespaces, so we delete them automatically when we save a buffer.
@@ -1123,6 +1124,7 @@ Another lighter and built-in solution is the simpler package ~savehist~. If you 
     :init
     (savehist-mode))
 #+end_src
+
 ** Command log mode
 
 This mode allows you to display a small panel on the right of the screen which shows which keys you are pressing, and what commands they are associated to, all of this in real time !
@@ -1255,6 +1257,7 @@ We often want to visit links. If the point is on a file path, for example, it is
       (interactive "P")
       (find-file (concat "/sudo:root@localhost:" filename))))
 #+end_src
+
 *** Repeat commands
 Some commands are usually invoked several times in succession. For example, if you wish to resize a window, you might need to invoke =shrink-window= several times.
 #+begin_src emacs-lisp
@@ -1266,6 +1269,7 @@ Some commands are usually invoked several times in succession. For example, if y
       (:map lps/quick-edit-map
             ("z" . repeat))))
 #+end_src
+
 * Editing
 
    Emacs is fundamentally a text editor. It provides a lot of functions to deal with text, and a way to create macros, to automate things, to repeat something multiple times ... easily. However, because there are /so many/ available functions, we might need some help to navigate around and do fancy things.
@@ -1800,6 +1804,7 @@ A very useful and yet relatively unknown Emacs built-in package is ~align~, whic
           ("C-a x" . align-regexp)
           ("C-a c" . align-current)))
 #+end_src
+
 ** Personal commands
 
 We also define a bunch of functions and commands related to editing text that are not provided in Emacs by default, and would be too specific to find in a package.
@@ -1870,6 +1875,7 @@ We also define a bunch of functions and commands related to editing text that ar
               (indent-to col)
               (lps/--fill-width-repeat-string width str)))))))
 #+end_src
+
 * Programming
 ** Project management
 *** Projectile
@@ -1924,6 +1930,7 @@ Although Magit is more or less able to do the same thing, the interface there is
   (use-package git-timemachine
     :defer t)
 #+end_src
+
 *** Forge
 We will probably want to work with distant repositories, /e.g./ stored on a distant GitHub or GitLab host.
 
@@ -2520,6 +2527,7 @@ Take care when copying this block of code: the ~use-package~ declaration continu
     (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
 #+end_src
+
 ** Org Babel
 
 Org babel is what allows us to write code and execute it, all within the same document.
@@ -2911,6 +2919,7 @@ Instead of recompiling the source code to generate a complete PDF to visualize /
     (setq preview-auto-cache-preamble t)
     (add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t))
 #+end_src
+
 * System
 ** Eshell
 *** General configuration
@@ -3183,6 +3192,7 @@ There are two usual ways to interact with processes via Emacs. The first one is 
       (:map lps/system-tools-map
             ("p l" . list-processes)))
 #+end_src
+
 * Email
 ** mbsync
 
@@ -3493,6 +3503,7 @@ An alternative to the traditional HTTP-world wide web, using a simpler protocol.
 #+begin_src emacs-lisp
   (use-package elpher)
 #+end_src
+
 * Reading and writing
 
 Emacs is, obviously, quite good at dealing with text. Hence, it is natural to wonder whether there are packages conceived to make reading (or writing !) books or long articles more pleasant. Indeed, there are !
@@ -3539,6 +3550,7 @@ We /love/ [[https://xkcd.com][XKCD]], and so do most of Emacs users. Hence, some
   (use-package xkcd
     :defer t)
 #+end_src
+
 ** Keyboard games
 *** Speed-typing
 This package can help you benchmark how fast you are able to write text within Emacs, by using random text samples that you have to copy. It is even possible to add some other books from which to generate those samples.
@@ -3548,6 +3560,7 @@ This package can help you benchmark how fast you are able to write text within E
     :defer t
     :custom (speed-type-default-lang 'French)) ; Todo: fix bad behaviour !
 #+end_src
+
 *** Key Quiz
 
 Another cool thing to do if you want to learn keybindings in a very inefficient way is to simply pick a command at random and try to remember the associated keybinding ! This is exactly what the following package tries to do
@@ -3556,6 +3569,7 @@ Another cool thing to do if you want to learn keybindings in a very inefficient 
   (use-package key-quiz
     :defer t)
 #+end_src
+
 * News and RSS feed
 ** Elfeed
 Because it is text-oriented, Emacs is a completely viable option to be a RSS feed reader. Indeed, it can display, search, filter ... all the different information that you can expect when using RSS feeds, but you also have the whole power of Emacs to configure everything according to your need, /e.g./ infinite flexibility for search filters, bookmarks and so on.
