@@ -1636,9 +1636,14 @@ Breaks if region or line spans multiple visual lines"
 (use-package python
   :ensure nil
   :defer t
+  :hook (python-mode . lps/run-python)
   :custom
   (python-shell-interpreter "python3")
-  :config (require 'lsp-pyright))
+  :config
+  (require 'lsp-pyright)
+  (defun lps/run-python ()
+    (save-excursion
+      (call-interactively 'run-python))))
 
 (use-package lsp-pyright
   :defer t)
@@ -2573,15 +2578,25 @@ PWD is not in a git repo (or the git command is not found)."
      (buffer-list))
 
     ;; Update mail and index when leaving
-    (unless (and (buffer-live-p mu4e~update-buffer)
-                 (process-live-p (get-buffer-process mu4e~update-buffer)))
+    (unless (and (buffer-live-p mu4e--update-buffer)
+                 (process-live-p (get-buffer-process mu4e--update-buffer)))
       (mu4e-update-mail-and-index t))))
 
-;; (use-package mu4e-alert
-;;   :ensure nil ;;bugged atm
-;;   :after mu4e
-;;   :config
-;;   (mu4e-alert-enable-mode-line-display))
+(use-package mu4e-alert
+  :after mu4e
+  :config
+  ;; Temporary fix: mu4e and mu4e-alert are out of sync
+  ;; while mu4e changes its naming conventions from the
+  ;; old mu4e~<stuff> to mu4e--<stuff>
+
+  (defadvice mu4e-context-switch (around mu4e-alert-update-mail-count-modeline disable)
+    "Advice `mu4e-context-switch' to update mode-line after changing the context."
+    (let ((context mu4e--context-current))
+      ad-do-it
+      (unless (equal context mu4e--context-current)
+        (mu4e-alert-update-mail-count-modeline))))
+
+  (mu4e-alert-enable-mode-line-display))
 
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired
