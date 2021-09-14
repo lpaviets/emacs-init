@@ -2272,36 +2272,40 @@ PWD is not in a git repo (or the git command is not found)."
   :custom
   (esh-autosuggest-use-company-map t))
 
-;; From https://www.emacswiki.org/emacs/EshellAlias
-
-  (defun lps/eshell-load-bash-aliases ()
-    "Reads bash aliases from Bash and inserts
+;; Inspired from https://github.com/daviderestivo/load-bash-alias/blob/master/load-bash-alias.el
+;; WARNING: it is not very robust, and might mess up if bash aliases involve
+;; complex nested single or double quotes !
+(defun lps/eshell-load-bash-aliases ()
+  "Reads bash aliases from ~/.bashrc and inserts
       them into the list of eshell aliases."
-    (interactive)
-    (progn
-      (message "Parsing aliases")
-      (shell-command "alias" "bash-aliases" "bash-errors")
-      (switch-to-buffer "bash-aliases")
-      (replace-string "alias " "")
-      (goto-char 1)
-      (replace-string "='" " ")
-      (goto-char 1)
-      (replace-string "'\n" "\n")
-      (goto-char 1)
-      (let ((alias-name) (command-string) (alias-list))
-        (while (not (eobp))
-          (while (not (char-equal (char-after) 32))
-            (forward-char 1))
-          (setq alias-name
-                (buffer-substring-no-properties (line-beginning-position) (point)))
-          (forward-char 1)
-          (setq command-string
-                (buffer-substring-no-properties (point) (line-end-position)))
-          (setq alias-list (cons (list alias-name command-string) alias-list))
-          (forward-line 1))
-        (setq eshell-command-aliases-list (append alias-list eshell-command-aliases-list)))
-      (if (get-buffer "bash-aliases")(kill-buffer "bash-aliases"))
-      (if (get-buffer "bash-errors")(kill-buffer "bash-errors"))))
+  (interactive)
+  (let ((bashfile "~/.bashrc"))
+    (if (file-exists-p bashfile)
+        (with-temp-buffer
+          (progn
+            (insert-file-contents bashfile)
+            ;; Merge continuation lines into single line. The below regexp
+            ;; matches a '\' at the end of a line followed by one or
+            ;; multiple TAB or spaces.
+            (while (re-search-forward "\\\\[ \t]*\n" nil t)
+              (replace-match ""))
+            ;; Return a list of lines
+            (let* ((bashfile-lines (split-string (buffer-string) "\n" t))
+                   (bashfile-aliases (cl-remove-if-not (lambda (str)
+                                                         (string-match-p "^alias" str))
+                                                       bashfile-lines)))
+              (dolist (line bashfile-aliases)
+                (let* ((trimmed (replace-regexp-in-string "=\\|[ \t]+" " " line))
+                       (alias-def (string-trim-left trimmed "^alias "))
+                       (first-split (string-search " " alias-def))
+                       (alias-name (substring alias-def 0 first-split))
+                       (alias-definition-1 (substring alias-def (1+ first-split)))
+                       (rem-quotes-regexp "['\"]")
+                       (alias-definition-trimmed (string-trim alias-definition-1
+                                                              rem-quotes-regexp
+                                                              rem-quotes-regexp)))
+                  (eshell/alias alias-name (eshell-flatten-and-stringify alias-definition-trimmed)))))))
+      (message "File ~/.bashrc not found, no aliases were loaded"))))
 
 (add-hook 'eshell-mode-hook 'lps/eshell-load-bash-aliases)
 
