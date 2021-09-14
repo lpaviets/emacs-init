@@ -179,15 +179,15 @@
 
 ;; Themes
 (use-package solarized-theme)
+
 (use-package kaolin-themes
-  :after hl-line
   :custom
   (kaolin-themes-comments-style 'alt)
   (kaolin-themes-distinct-parentheses t)
-  (kaolin-themes-italic-comments t)
-  :config
-  (set-face-attribute 'hl-line nil :background "#39424D"))
+  (kaolin-themes-italic-comments t))
+
 (use-package modus-themes)
+
 (use-package doom-themes)
 
 (defvar lps/default-theme 'kaolin-ocean)
@@ -196,14 +196,22 @@
 
 (load-theme lps/default-theme t)
 
+(let ((custom--inhibit-theme-enable nil))
+  (custom-theme-set-faces
+   lps/default-theme
+   '(hl-line ((t (:background "#39424D"))) t)))
+
 (defun lps/toggle-live-code-presentation-settings ()
-  "Various useful settings for live coding sessions"
+  "Various useful settings for live coding sessions
+Still very buggy, but this should not matter in a live presentation
+setting.
+Avoid toggling several times, just use it once if possible"
   (interactive)
   (if lps/live-presentation-p
       (progn
         (unless (equal custom-enabled-themes (list lps/default-theme))
-          (disable-theme custom-enabled-themes)
-          (load-theme lps/default-theme))
+          (disable-theme (car custom-enabled-themes))
+          (load-theme lps/default-theme t))
         (global-hl-line-mode -1)
         (text-scale-set 0)
         (setq-default cursor-type 'box))
@@ -211,10 +219,14 @@
     (progn
       (unless (y-or-n-p "Keep current theme ?")
         (disable-theme custom-enabled-themes)
-        (load-theme lps/default-light-theme))
+        (load-theme lps/default-light-theme t)
+        (custom-theme-set-faces
+         lps/default-light-theme
+         '(hl-line ((t (:background "#DFD8EE"))) t)))
       (global-display-line-numbers-mode 1)
-      (text-scale-increase 1)
-      (setq-default cursor-type 'box)))
+      (global-hl-line-mode 1)
+      (text-scale-increase 2)
+      (setq-default cursor-type 'bar)))
 
   (setq lps/live-presentation-p (not lps/live-presentation-p)))
 
@@ -1633,6 +1645,12 @@ Breaks if region or line spans multiple visual lines"
   (setq flycheck-indication-mode 'left-margin)
   :diminish)
 
+(use-package emacs
+  :ensure nil
+  :bind
+  (:map prog-mode-map
+        ("<f5>" . compile)))
+
 (use-package python
   :ensure nil
   :defer t
@@ -1661,6 +1679,19 @@ Breaks if region or line spans multiple visual lines"
   :defer t
   :config
   (setq ccls-executable (executable-find "ccls")))
+
+(use-package emacs
+  :ensure nil
+  :hook (c-mode . lps/c-mode-basic-compile-command)
+  :config
+  (defun lps/c-mode-basic-compile-command ()
+    (let* ((buf (buffer-file-name))
+           (buf-no-ext (file-name-sans-extension buf)))
+      (setq-local compile-command (concat "gcc "
+                                          buf-no-ext
+                                          ".c"
+                                          " -o "
+                                          buf-no-ext)))))
 
 (use-package highlight-defined
   :hook (emacs-lisp-mode . highlight-defined-mode))
