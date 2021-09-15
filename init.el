@@ -1064,7 +1064,41 @@ buffer in current window."
             (6 . "-")
             (7 . "è")
             (8 . "_")
-            (9 . "ç")))))
+            (9 . "ç"))))
+
+  ;; Experimental support for multi-backend 'keep-prefix behaviour
+  ;; I simply deleted a test from the original function, which
+  ;; used to set to t a value when I wanted it to be keep-prefix
+  ;; If something breaks, just delete this from the config
+  (defun company--multi-backend-adapter (backends command &rest args)
+    (let ((backends (cl-loop for b in backends
+                             when (or (keywordp b)
+                                      (company--maybe-init-backend b))
+                             collect b))
+          (separate (memq :separate backends)))
+
+      (when (eq command 'prefix)
+        (setq backends (butlast backends (length (member :with backends)))))
+
+      (setq backends (cl-delete-if #'keywordp backends))
+
+      (pcase command
+        (`candidates
+         (company--multi-backend-adapter-candidates backends (car args) separate))
+        (`sorted separate)
+        (`duplicates (not separate))
+        ((or `prefix `ignore-case `no-cache `require-match)
+         (let (value)
+           (cl-dolist (backend backends)
+             (when (setq value (company--force-sync
+                                backend (cons command args) backend))
+               (cl-return value)))))
+        (_
+         (let ((arg (car args)))
+           (when (> (length arg) 0)
+             (let ((backend (or (get-text-property 0 'company-backend arg)
+                                (car backends))))
+               (apply backend command args)))))))))
 
 (use-package company-box
   :after company
@@ -1548,7 +1582,7 @@ Breaks if region or line spans multiple visual lines"
   :custom
   (company-dabbrev-other-buffers t)
   (company-dabbrev-ignore-case 'keep-prefix)
-  (company-dabbrev-downcase nil))
+  (company-dabbrev-downcase 'case-replace))
 
 (use-package company-math
   :after company)
@@ -2345,11 +2379,9 @@ PWD is not in a git repo (or the git command is not found)."
   :diminish
   :hook (dired-mode . all-the-icons-dired-mode))
 
-(when (version< emacs-version "28.0") ; ) parsing bug
-    ;; Extra functionalities
-    (use-package dired-x
-      :ensure nil
-      :after dired))
+(use-package dired-x
+  :ensure nil
+  :after dired)
 
 (use-package find-dired
   :ensure nil
