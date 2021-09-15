@@ -305,15 +305,15 @@ This is simply a way to change how Emacs looks. Some themes are more complete th
 #+begin_src emacs-lisp
   ;; Themes
   (use-package solarized-theme)
+
   (use-package kaolin-themes
-    :after hl-line
     :custom
     (kaolin-themes-comments-style 'alt)
     (kaolin-themes-distinct-parentheses t)
-    (kaolin-themes-italic-comments t)
-    :config
-    (set-face-attribute 'hl-line nil :background "#39424D"))
+    (kaolin-themes-italic-comments t))
+
   (use-package modus-themes)
+
   (use-package doom-themes)
 
   (defvar lps/default-theme 'kaolin-ocean)
@@ -322,14 +322,22 @@ This is simply a way to change how Emacs looks. Some themes are more complete th
 
   (load-theme lps/default-theme t)
 
+  (let ((custom--inhibit-theme-enable nil))
+    (custom-theme-set-faces
+     lps/default-theme
+     '(hl-line ((t (:background "#39424D"))) t)))
+
   (defun lps/toggle-live-code-presentation-settings ()
-    "Various useful settings for live coding sessions"
+    "Various useful settings for live coding sessions
+  Still very buggy, but this should not matter in a live presentation
+  setting.
+  Avoid toggling several times, just use it once if possible"
     (interactive)
     (if lps/live-presentation-p
         (progn
           (unless (equal custom-enabled-themes (list lps/default-theme))
-            (disable-theme custom-enabled-themes)
-            (load-theme lps/default-theme))
+            (disable-theme (car custom-enabled-themes))
+            (load-theme lps/default-theme t))
           (global-hl-line-mode -1)
           (text-scale-set 0)
           (setq-default cursor-type 'box))
@@ -337,10 +345,14 @@ This is simply a way to change how Emacs looks. Some themes are more complete th
       (progn
         (unless (y-or-n-p "Keep current theme ?")
           (disable-theme custom-enabled-themes)
-          (load-theme lps/default-light-theme))
+          (load-theme lps/default-light-theme t)
+          (custom-theme-set-faces
+           lps/default-light-theme
+           '(hl-line ((t (:background "#DFD8EE"))) t)))
         (global-display-line-numbers-mode 1)
-        (text-scale-increase 1)
-        (setq-default cursor-type 'box)))
+        (global-hl-line-mode 1)
+        (text-scale-increase 2)
+        (setq-default cursor-type 'bar)))
 
     (setq lps/live-presentation-p (not lps/live-presentation-p)))
 #+end_src
@@ -477,6 +489,7 @@ Some packages are used lated in the configuration, and we want to be able to use
   (use-package highlight-numbers
     :hook (prog-mode . highlight-numbers-mode))
 #+end_src
+
 ** Whitespaces
 
 First of all, we never want ~TAB~ to insert actual tab characters. We also don't like trailing whitespaces, so we delete them automatically when we save a buffer.
@@ -1123,6 +1136,7 @@ Another lighter and built-in solution is the simpler package ~savehist~. If you 
     :init
     (savehist-mode))
 #+end_src
+
 ** Command log mode
 
 This mode allows you to display a small panel on the right of the screen which shows which keys you are pressing, and what commands they are associated to, all of this in real time !
@@ -1255,6 +1269,7 @@ We often want to visit links. If the point is on a file path, for example, it is
       (interactive "P")
       (find-file (concat "/sudo:root@localhost:" filename))))
 #+end_src
+
 *** Repeat commands
 Some commands are usually invoked several times in succession. For example, if you wish to resize a window, you might need to invoke =shrink-window= several times.
 #+begin_src emacs-lisp
@@ -1266,6 +1281,7 @@ Some commands are usually invoked several times in succession. For example, if y
       (:map lps/quick-edit-map
             ("z" . repeat))))
 #+end_src
+
 * Editing
 
    Emacs is fundamentally a text editor. It provides a lot of functions to deal with text, and a way to create macros, to automate things, to repeat something multiple times ... easily. However, because there are /so many/ available functions, we might need some help to navigate around and do fancy things.
@@ -1834,6 +1850,7 @@ A very useful and yet relatively unknown Emacs built-in package is ~align~, whic
           ("C-a x" . align-regexp)
           ("C-a c" . align-current)))
 #+end_src
+
 ** Personal commands
 
 We also define a bunch of functions and commands related to editing text that are not provided in Emacs by default, and would be too specific to find in a package.
@@ -1904,6 +1921,7 @@ We also define a bunch of functions and commands related to editing text that ar
               (indent-to col)
               (lps/--fill-width-repeat-string width str)))))))
 #+end_src
+
 * Programming
 ** Project management
 *** Projectile
@@ -1958,6 +1976,7 @@ Although Magit is more or less able to do the same thing, the interface there is
   (use-package git-timemachine
     :defer t)
 #+end_src
+
 *** Forge
 We will probably want to work with distant repositories, /e.g./ stored on a distant GitHub or GitLab host.
 
@@ -2227,6 +2246,18 @@ There exists another implementation of the Language Server Protocol in Emacs, ca
 
 #+end_src
 
+** Compilation
+In several programming languages, it is useful to have a way to compile the current program easily.
+We will use the built-in ~compile~ command for this, and tune it as we need.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :bind
+    (:map prog-mode-map
+          ("<f5>" . compile)))
+#+end_src
+
 ** Programming languages
     In this section, we fine-tune our editing tools for various programming languages.
 *** Python
@@ -2287,6 +2318,24 @@ For C and C++ (and ObjectiveC), as for Python, we need to install a server for L
     :config
     (setq ccls-executable (executable-find "ccls")))
 #+end_src
+
+We also use custom compilation commands.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :hook (c-mode . lps/c-mode-basic-compile-command)
+    :config
+    (defun lps/c-mode-basic-compile-command ()
+      (let* ((buf (buffer-file-name))
+             (buf-no-ext (file-name-sans-extension buf)))
+        (setq-local compile-command (concat "gcc "
+                                            buf-no-ext
+                                            ".c"
+                                            " -o "
+                                            buf-no-ext)))))
+#+end_src
+
 *** Lisp
 **** Emacs Lisp
 
@@ -2558,6 +2607,7 @@ Take care when copying this block of code: the ~use-package~ declaration continu
     (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch))
 
 #+end_src
+
 ** Org Babel
 
 Org babel is what allows us to write code and execute it, all within the same document.
@@ -2949,6 +2999,7 @@ Instead of recompiling the source code to generate a complete PDF to visualize /
     (setq preview-auto-cache-preamble t)
     (add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t))
 #+end_src
+
 * System
 ** Eshell
 *** General configuration
@@ -3074,48 +3125,51 @@ Another method, which tries to simulate the completion mechanism of ~fish~ shell
 **** Aliases from .bashrc
 *MANUAL* One thing that we might want to do is to be able to use aliases defined in =.bashrc= in ~eshell~. There are [[https://www.emacswiki.org/emacs/EshellAlias][several solutions]] to this problem, and the one I use only allows us to use bash aliases in ~eshell~ and not the contrary, for example.
 
-We do this by adding the following line at the end of the =.bashrc= file:
+We can do this by adding the following line at the end of the =.bashrc= file:
 
 #+begin_src sh
   alias | sed -E "s/^alias ([^=]+)='(.*)'$/alias \1 \2 \$*/g; s/'\\\''/'/g;" >~/.emacs.d/eshell/alias
 #+end_src
 
-It will simply go through the =.bashrc= file whenever you open a bash terminal, and each time it sees a line starting with ~alias~, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where ~eshell~ reads its aliases.
+It will simply go through the =.bashrc= file whenever you open a bash terminal, and each time it sees a line starting with ~alias~, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where ~eshell~ reads its aliases. This is not a very convincing solution for a few reasons, the main ones being that this process is executed "from the bash side" (and so requires us to start a bash shell or to at least execute the =.bashrc= file), and that it overrides the =eshell/alias= file each time.
 
-Another solution is to parse the aliases each time we start ~eshell~. We do this by running the shell command =alias=, and we modify its ouput using temporary buffers.
-For the moment, this solution is kind of broken, as the output of =(shell-command "alias")= is empty, because no aliases are "loaded" by Emacs unless we run the command in an actual shell (as run with =M-x shell=, for example).
+Another solution is to parse the aliases each time we start ~eshell~. We do this by reading the =.bashrc= file and extracting the aliases.
 
 #+begin_src emacs-lisp
-    ;; From https://www.emacswiki.org/emacs/EshellAlias
-
-    (defun lps/eshell-load-bash-aliases ()
-      "Reads bash aliases from Bash and inserts
+  ;; Inspired from https://github.com/daviderestivo/load-bash-alias/blob/master/load-bash-alias.el
+  ;; WARNING: it is not very robust, and might mess up if bash aliases involve
+  ;; complex nested single or double quotes !
+  (defun lps/eshell-load-bash-aliases ()
+    "Reads bash aliases from ~/.bashrc and inserts
         them into the list of eshell aliases."
-      (interactive)
-      (progn
-        (message "Parsing aliases")
-        (shell-command "alias" "bash-aliases" "bash-errors")
-        (switch-to-buffer "bash-aliases")
-        (replace-string "alias " "")
-        (goto-char 1)
-        (replace-string "='" " ")
-        (goto-char 1)
-        (replace-string "'\n" "\n")
-        (goto-char 1)
-        (let ((alias-name) (command-string) (alias-list))
-          (while (not (eobp))
-            (while (not (char-equal (char-after) 32))
-              (forward-char 1))
-            (setq alias-name
-                  (buffer-substring-no-properties (line-beginning-position) (point)))
-            (forward-char 1)
-            (setq command-string
-                  (buffer-substring-no-properties (point) (line-end-position)))
-            (setq alias-list (cons (list alias-name command-string) alias-list))
-            (forward-line 1))
-          (setq eshell-command-aliases-list (append alias-list eshell-command-aliases-list)))
-        (if (get-buffer "bash-aliases")(kill-buffer "bash-aliases"))
-        (if (get-buffer "bash-errors")(kill-buffer "bash-errors"))))
+    (interactive)
+    (let ((bashfile "~/.bashrc"))
+      (if (file-exists-p bashfile)
+          (with-temp-buffer
+            (progn
+              (insert-file-contents bashfile)
+              ;; Merge continuation lines into single line. The below regexp
+              ;; matches a '\' at the end of a line followed by one or
+              ;; multiple TAB or spaces.
+              (while (re-search-forward "\\\\[ \t]*\n" nil t)
+                (replace-match ""))
+              ;; Return a list of lines
+              (let* ((bashfile-lines (split-string (buffer-string) "\n" t))
+                     (bashfile-aliases (cl-remove-if-not (lambda (str)
+                                                           (string-match-p "^alias" str))
+                                                         bashfile-lines)))
+                (dolist (line bashfile-aliases)
+                  (let* ((trimmed (replace-regexp-in-string "=\\|[ \t]+" " " line))
+                         (alias-def (string-trim-left trimmed "^alias "))
+                         (first-split (string-search " " alias-def))
+                         (alias-name (substring alias-def 0 first-split))
+                         (alias-definition-1 (substring alias-def (1+ first-split)))
+                         (rem-quotes-regexp "['\"]")
+                         (alias-definition-trimmed (string-trim alias-definition-1
+                                                                rem-quotes-regexp
+                                                                rem-quotes-regexp)))
+                    (eshell/alias alias-name (eshell-flatten-and-stringify alias-definition-trimmed)))))))
+        (message "File ~/.bashrc not found, no aliases were loaded"))))
 
   (add-hook 'eshell-mode-hook 'lps/eshell-load-bash-aliases)
 #+end_src
@@ -3219,6 +3273,7 @@ There are two usual ways to interact with processes via Emacs. The first one is 
       (:map lps/system-tools-map
             ("p l" . list-processes)))
 #+end_src
+
 * Email
 ** mbsync
 
@@ -3539,6 +3594,7 @@ An alternative to the traditional HTTP-world wide web, using a simpler protocol.
 #+begin_src emacs-lisp
   (use-package elpher)
 #+end_src
+
 * Reading and writing
 
 Emacs is, obviously, quite good at dealing with text. Hence, it is natural to wonder whether there are packages conceived to make reading (or writing !) books or long articles more pleasant. Indeed, there are !
@@ -3585,6 +3641,7 @@ We /love/ [[https://xkcd.com][XKCD]], and so do most of Emacs users. Hence, some
   (use-package xkcd
     :defer t)
 #+end_src
+
 ** Keyboard games
 *** Speed-typing
 This package can help you benchmark how fast you are able to write text within Emacs, by using random text samples that you have to copy. It is even possible to add some other books from which to generate those samples.
@@ -3594,6 +3651,7 @@ This package can help you benchmark how fast you are able to write text within E
     :defer t
     :custom (speed-type-default-lang 'French)) ; Todo: fix bad behaviour !
 #+end_src
+
 *** Key Quiz
 
 Another cool thing to do if you want to learn keybindings in a very inefficient way is to simply pick a command at random and try to remember the associated keybinding ! This is exactly what the following package tries to do
@@ -3602,6 +3660,7 @@ Another cool thing to do if you want to learn keybindings in a very inefficient 
   (use-package key-quiz
     :defer t)
 #+end_src
+
 * News and RSS feed
 ** Elfeed
 Because it is text-oriented, Emacs is a completely viable option to be a RSS feed reader. Indeed, it can display, search, filter ... all the different information that you can expect when using RSS feeds, but you also have the whole power of Emacs to configure everything according to your need, /e.g./ infinite flexibility for search filters, bookmarks and so on.
