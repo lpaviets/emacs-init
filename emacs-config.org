@@ -1012,6 +1012,18 @@ Sometimes, we also want some very specific buffer to be associated to a certain 
 
 #+end_src
 
+** Outline and folding
+Sometimes, when documents get bigger and bigger, it is useful to be able to temporarily hide stuff. The built-in ~narrow-to-\*~ commands can be useful to really focus on a part of the document, but we might want to be able to get a rough outline of the /whole/ document at any time, but in a less cluttered way.
+
+#+begin_src emacs-lisp
+  (use-package outline
+    :ensure nil
+    :defer t
+    :custom
+    (outline-minor-mode-prefix "\C-o")
+    (outline-minor-mode-cycle t))
+#+end_src
+
 ** Help !
 
 Emacs already has a /great/ documentation system, but it is still possible to improve it ! [[https://github.com/Wilfred/helpful][helpful]] makes things easier to remember and to use without having to search for documentation in multiple places.
@@ -1069,6 +1081,7 @@ Finally, we use a custom function to look at the documentation of pretty much an
 
     (global-set-key (kbd "C-&") #'lps/describe-thing-in-popup))
 #+end_src
+
 * Commands
 ** Disabled commands
 
@@ -1087,6 +1100,7 @@ There is, however, one really annoying binding, especially for new users or peop
 #+begin_src emacs-lisp
 (global-unset-key (kbd "C-z"))
 #+end_src
+
 ** History
 *** Prescient
 
@@ -1378,6 +1392,7 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
        ((string-prefix-p "!" pattern)
         `(orderless-without-literal . ,(substring pattern 1))))))
 #+end_src
+
 *** Company
 
      Several packages are available to make auto-completion more efficient and intuitive than the built-in =completion-at-point= function. We use [[https://company-mode.github.io/][Company]] (stands for "comp[lete] any[thing]") as it integrates nicely with other packages that we use, is well-maintained and has a more modern interface than most of its counterparts such as =auto-complete=.
@@ -1516,6 +1531,7 @@ To have a cleaner interface and also a bit of documentation added to the suggest
     (company-quickhelp-delay 0.2))
 
 #+end_src
+
 ** Navigation
 *** Structure based
 Because movement keys are the most frequently used ones, it might be useful to create an Hydra helping us navigate around a document.
@@ -1851,6 +1867,35 @@ A very useful and yet relatively unknown Emacs built-in package is ~align~, whic
           ("C-a c" . align-current)))
 #+end_src
 
+** Blank lines
+We often want to insert, delete, in a word, /manipulate/ blank lines.
+Hence, we will define and rebind a few commands for that.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :init
+    (defvar lps/blank-lines-map (make-sparse-keymap))
+    :bind-keymap ("C-o" . lps/blank-lines-map)
+    :bind
+    (:map lps/blank-lines-map
+          ("o" . open-line)
+          ("p" . lps/insert-line-above)
+          ("n" . lps/insert-line-below))
+    :config
+    (defun lps/insert-line-above (N)
+      (interactive "P")
+      (save-excursion
+        (beginning-of-line)
+        (newline-and-indent N)))
+
+    (defun lps/insert-line-below (N)
+      (interactive "P")
+      (save-excursion
+        (end-of-line)
+        (newline-and-indent N))))
+#+end_src
+
 ** Personal commands
 
 We also define a bunch of functions and commands related to editing text that are not provided in Emacs by default, and would be too specific to find in a package.
@@ -1988,6 +2033,7 @@ In order to integrate more tightly with those tools, and have access to more com
   (use-package forge
     :after magit)
 #+end_src
+
 ** Parenthesis
 
 First of all, we want to easily be able to tell with a quick glance which parenthesis are matching
@@ -2155,6 +2201,7 @@ We add another backend to support completion in shell and terminal-modes
       (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev company-shell)))
       (push 'elisp-completion-at-point completion-at-point-functions)))
 #+end_src
+
 ** Language Server Protocol
 *** LSP-mode
 
@@ -2478,6 +2525,7 @@ We also add extra-packages to facilitate some usual operations.
   (use-package sly-asdf
     :after sly)
 #+end_src
+
 ****  Clojure
 Finally, another recent and promising Lisp, which is much more opinionated than Common Lisp and runs on the JVM. It is a functional language, with a strong emphasis on immutable data structure, and has various tools that make concurrent programming easy.
 
@@ -2795,6 +2843,17 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
   (use-package tex
     :ensure auctex
     :defer t
+    :bind
+    (:map TeX-mode-map
+          ("C-c '" . TeX-error-overview))
+    :hook
+    (LaTeX-mode . outline-minor-mode)
+    (LaTeX-mode . lps/latex-fontification)
+    (LaTeX-mode . lps/latex-add-environments)
+    (LaTeX-mode . lps/latex-company-setup)
+    (LaTeX-mode . LaTeX-math-mode)
+    (LaTeX-mode . TeX-fold-mode)
+
     :custom
     ;; Automatically insert closing brackets
     (LaTeX-electric-left-right-brace t)
@@ -2823,6 +2882,9 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (TeX-source-correlate-start-server t)
     (TeX-view-program-selection '((output-pdf "PDF tools")))
 
+    ;; Compilation
+    (TeX-debug-bad-boxes t)
+
     :config
     ;; Improve fontification
 
@@ -2838,8 +2900,6 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
                                  ("sbox" ""))
                                'function))
 
-    (add-hook 'LaTeX-mode-hook #'lps/latex-fontification)
-
     ;; SyncTeX forward and inverse search
     (setq TeX-source-correlate-mode t
           ;; Produce a PDF by default
@@ -2850,9 +2910,6 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
 
     ;; Update PDF buffers after successful LaTeX runs
     (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
-
-    ;; Insert math symbols quickly
-    (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode)
 
     ;; Redefine TeX-documentation-texdoc to open the doc in Emacs
     (defun TeX-documentation-texdoc (&optional arg)
@@ -2917,13 +2974,9 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
       ;;(LaTeX-add-environments '("tikzpicture" LaTeX-env-label)) ; Should be done by auctex's tikz.el file
       )
 
-    (add-hook 'LaTeX-mode-hook 'lps/latex-add-environments)
-
     ;; Better completion functions
     (defun lps/latex-company-setup () ;; TO FIX !
-      (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-latex-commands company-capf company-dabbrev company-ispell company-yasnippet))))
-
-    (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup))
+      (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-latex-commands company-capf company-dabbrev company-ispell company-yasnippet)))))
 #+end_src
 
 **** References
@@ -3088,6 +3141,7 @@ We install a few packages which make eshell easier to use.
   ;; (use-package eshell-git-prompt
   ;;   :config (eshell-git-prompt-use-theme 'powerline)) ;; Visually buggy
 #+end_src
+
 *** Bash/Fish completion
 We use two packages to have a more powerful completion system in ~eshell~. The UI is akin to the one used by vanilla Emacs - it opens another buffer whenever you try to complete and there are more than one candidates - but it is still usable.
 
@@ -3588,6 +3642,7 @@ To deal with this problem, we use a ~org~ package, called [[https://github.com/o
             (while secure
               (insert (pop secure))))))))
 #+end_src
+
 * Web
 ** Gemini
 An alternative to the traditional HTTP-world wide web, using a simpler protocol. See what [[https://drewdevault.com/][Drew DeVault]] has to say about it on his blog !
@@ -3632,6 +3687,7 @@ In fact, we can even read EPUB files with Emacs.
     (guess-language-languages '(en fr))
     (guess-language-after-detection-functions '(guess-language-switch-flyspell-function)))
 #+end_src
+
 * Fun
 As we tend to spend a lot of time in Emacs, isn't it natural to install fun and distracting packages ?
 ** XKCD
@@ -3686,6 +3742,7 @@ As the default syntax to manage and organize the various RSS feeds is a bit tedi
     (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org"))
     (elfeed-org))
 #+end_src
+
 * TODO Small things to do or to fix
 ** Eshell and .bashrc
 - Use two different files that are "loaded" by eshell. The first one contains the .bashrc aliases, the other one contains the usual eshell aliases, and at startup, we momentarily merge the two.

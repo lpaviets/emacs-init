@@ -752,6 +752,13 @@ buffer in current window."
 
 (global-set-key (kbd "C-c t") 'lps/toggle-window-dedicated)
 
+(use-package outline
+  :ensure nil
+  :defer t
+  :custom
+  (outline-minor-mode-prefix "\C-o")
+  (outline-minor-mode-cycle t))
+
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
   :custom
@@ -1385,6 +1392,29 @@ Move point in the last duplicated string (line or region)."
         ("C-a e" . align-entire)
         ("C-a x" . align-regexp)
         ("C-a c" . align-current)))
+
+(use-package emacs
+  :ensure nil
+  :init
+  (defvar lps/blank-lines-map (make-sparse-keymap))
+  :bind-keymap ("C-o" . lps/blank-lines-map)
+  :bind
+  (:map lps/blank-lines-map
+        ("o" . open-line)
+        ("p" . lps/insert-line-above)
+        ("n" . lps/insert-line-below))
+  :config
+  (defun lps/insert-line-above (N)
+    (interactive "P")
+    (save-excursion
+      (beginning-of-line)
+      (newline-and-indent N)))
+
+  (defun lps/insert-line-below (N)
+    (interactive "P")
+    (save-excursion
+      (end-of-line)
+      (newline-and-indent N))))
 
 (use-package emacs
   :ensure nil
@@ -2055,6 +2085,17 @@ move to the end of the document, and search backward instead."
 (use-package tex
   :ensure auctex
   :defer t
+  :bind
+  (:map TeX-mode-map
+        ("C-c '" . TeX-error-overview))
+  :hook
+  (LaTeX-mode . outline-minor-mode)
+  (LaTeX-mode . lps/latex-fontification)
+  (LaTeX-mode . lps/latex-add-environments)
+  (LaTeX-mode . lps/latex-company-setup)
+  (LaTeX-mode . LaTeX-math-mode)
+  (LaTeX-mode . TeX-fold-mode)
+
   :custom
   ;; Automatically insert closing brackets
   (LaTeX-electric-left-right-brace t)
@@ -2083,6 +2124,9 @@ move to the end of the document, and search backward instead."
   (TeX-source-correlate-start-server t)
   (TeX-view-program-selection '((output-pdf "PDF tools")))
 
+  ;; Compilation
+  (TeX-debug-bad-boxes t)
+
   :config
   ;; Improve fontification
 
@@ -2098,8 +2142,6 @@ move to the end of the document, and search backward instead."
                                ("sbox" ""))
                              'function))
 
-  (add-hook 'LaTeX-mode-hook #'lps/latex-fontification)
-
   ;; SyncTeX forward and inverse search
   (setq TeX-source-correlate-mode t
         ;; Produce a PDF by default
@@ -2110,9 +2152,6 @@ move to the end of the document, and search backward instead."
 
   ;; Update PDF buffers after successful LaTeX runs
   (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
-
-  ;; Insert math symbols quickly
-  (add-hook 'LaTeX-mode-hook #'LaTeX-math-mode)
 
   ;; Redefine TeX-documentation-texdoc to open the doc in Emacs
   (defun TeX-documentation-texdoc (&optional arg)
@@ -2177,13 +2216,9 @@ the number of the file to view, anything else to skip: ") "1") list)))
     ;;(LaTeX-add-environments '("tikzpicture" LaTeX-env-label)) ; Should be done by auctex's tikz.el file
     )
 
-  (add-hook 'LaTeX-mode-hook 'lps/latex-add-environments)
-
   ;; Better completion functions
   (defun lps/latex-company-setup () ;; TO FIX !
-    (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-latex-commands company-capf company-dabbrev company-ispell company-yasnippet))))
-
-  (add-hook 'LaTeX-mode-hook 'lps/latex-company-setup))
+    (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-latex-commands company-capf company-dabbrev company-ispell company-yasnippet)))))
 
 (use-package bibtex
   :defer t
