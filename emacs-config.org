@@ -505,7 +505,15 @@ First of all, we never want ~TAB~ to insert actual tab characters. We also don't
     :bind
     (:map lps/quick-edit-map
           ("DEL" . cycle-spacing)
-          ("<C-backspace>" . delete-indentation)))
+          ("<C-backspace>" . join-line)
+          ("<C-S-backspace>" . join-next-line))
+    :config
+    (defun join-next-line (&optional beg end)
+      (interactive
+       (progn (barf-if-buffer-read-only)
+              (and (use-region-p)
+                   (list (region-beginning) (region-end)))))
+      (join-line t beg end)))
 #+end_src
 
 Then, we do not want to repeatedly spam the ~DEL~ key in order to delete a long sequence of whitespaces.
@@ -1867,7 +1875,7 @@ A very useful and yet relatively unknown Emacs built-in package is ~align~, whic
           ("C-a c" . align-current)))
 #+end_src
 
-** Blank lines
+** Blank lines and lines manipulation
 We often want to insert, delete, in a word, /manipulate/ blank lines.
 Hence, we will define and rebind a few commands for that.
 
@@ -1875,13 +1883,18 @@ Hence, we will define and rebind a few commands for that.
   (use-package emacs
     :ensure nil
     :init
-    (defvar lps/blank-lines-map (make-sparse-keymap))
-    :bind-keymap ("C-o" . lps/blank-lines-map)
+    (defvar lps/manipulate-lines-map (make-sparse-keymap))
+    :bind-keymap ("C-o" . lps/manipulate-lines-map)
     :bind
-    (:map lps/blank-lines-map
+    (:map lps/manipulate-lines-map
           ("o" . open-line)
           ("p" . lps/insert-line-above)
-          ("n" . lps/insert-line-below))
+          ("n" . lps/insert-line-below)
+          ("l" . list-matching-lines)
+          ("s" . sort-lines)
+          ("r b" . delete-blank-lines)
+          ("r d" . delete-matching-lines)
+          ("r k" . keep-lines))
     :config
     (defun lps/insert-line-above (N)
       (interactive "P")

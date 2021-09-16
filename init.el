@@ -349,7 +349,15 @@ installed themes instead."
   :bind
   (:map lps/quick-edit-map
         ("DEL" . cycle-spacing)
-        ("<C-backspace>" . delete-indentation)))
+        ("<C-backspace>" . join-line)
+        ("<C-S-backspace>" . join-next-line))
+  :config
+  (defun join-next-line (&optional beg end)
+    (interactive
+     (progn (barf-if-buffer-read-only)
+            (and (use-region-p)
+                 (list (region-beginning) (region-end)))))
+    (join-line t beg end)))
 
 (use-package hungry-delete
   :defer t
@@ -1396,13 +1404,18 @@ Move point in the last duplicated string (line or region)."
 (use-package emacs
   :ensure nil
   :init
-  (defvar lps/blank-lines-map (make-sparse-keymap))
-  :bind-keymap ("C-o" . lps/blank-lines-map)
+  (defvar lps/manipulate-lines-map (make-sparse-keymap))
+  :bind-keymap ("C-o" . lps/manipulate-lines-map)
   :bind
-  (:map lps/blank-lines-map
+  (:map lps/manipulate-lines-map
         ("o" . open-line)
         ("p" . lps/insert-line-above)
-        ("n" . lps/insert-line-below))
+        ("n" . lps/insert-line-below)
+        ("l" . list-matching-lines)
+        ("s" . sort-lines)
+        ("r b" . delete-blank-lines)
+        ("r d" . delete-matching-lines)
+        ("r k" . keep-lines))
   :config
   (defun lps/insert-line-above (N)
     (interactive "P")
