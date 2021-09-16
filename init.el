@@ -2447,8 +2447,8 @@ PWD is not in a git repo (or the git command is not found)."
   (add-hook 'mu4e-compose-mode-hook #'(lambda () (auto-save-mode -1)))
 
   ;; Convenience functions
-  (setq mu4e-compose-context-policy 'ask-if-none)
-  (setq mu4e-context-policy 'ask-if-none)
+  (setq mu4e-compose-context-policy 'always-ask)
+  (setq mu4e-context-policy 'pick-first)
   (setq message-kill-buffer-on-exit t)
   (setq mu4e-confirm-quit nil)
 
@@ -2541,24 +2541,6 @@ PWD is not in a git repo (or the git command is not found)."
         (list
          ;; School account
          (make-mu4e-context
-          :name "ENS_Lyon"
-          :match-func
-          (lambda (msg)
-            (when msg
-              (string-prefix-p "/ENS_Lyon" (mu4e-message-field msg :maildir))))
-          :vars '((user-mail-address  . "leo.paviet-salomon@ens-lyon.fr")
-                  (user-full-name     . "Leo Paviet Salomon")
-                  (mu4e-drafts-folder . "/ENS_Lyon/Brouillons")
-                  (mu4e-sent-folder   . "/ENS_Lyon/Elements_envoyes")
-                  ;;(mu4e-sent-messages-behavior . 'delete) ;; Not sure yet, better be safe
-                  (mu4e-refile-folder . "/ENS_Lyon/Archive")
-                  (mu4e-trash-folder  . "/ENS_Lyon/Corbeille")
-                  (smtpmail-smtp-user    . "lpaviets")
-                  (smtpmail-smtp-server  . "smtp.ens-lyon.fr")
-                  (smtpmail-smtp-service . 587)
-                  (smtpmail-stream-type  . starttls)))
-
-         (make-mu4e-context
           :name "Unicaen"
           :match-func
           (lambda (msg)
@@ -2590,7 +2572,25 @@ PWD is not in a git repo (or the git command is not found)."
                   (smtpmail-smtp-user    . "leo.paviet.salomon@orange.fr")
                   (smtpmail-smtp-server  . "smtp.orange.fr")
                   (smtpmail-smtp-service . 465)
-                  (smtpmail-stream-type  . ssl)))))
+                  (smtpmail-stream-type  . ssl)))
+
+         (make-mu4e-context
+          :name "ENS_Lyon"
+          :match-func
+          (lambda (msg)
+            (when msg
+              (string-prefix-p "/ENS_Lyon" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address  . "leo.paviet-salomon@ens-lyon.fr")
+                  (user-full-name     . "Leo Paviet Salomon")
+                  (mu4e-drafts-folder . "/ENS_Lyon/Brouillons")
+                  (mu4e-sent-folder   . "/ENS_Lyon/Elements_envoyes")
+                  ;;(mu4e-sent-messages-behavior . 'delete) ;; Not sure yet, better be safe
+                  (mu4e-refile-folder . "/ENS_Lyon/Archive")
+                  (mu4e-trash-folder  . "/ENS_Lyon/Corbeille")
+                  (smtpmail-smtp-user    . "lpaviets")
+                  (smtpmail-smtp-server  . "smtp.ens-lyon.fr")
+                  (smtpmail-smtp-service . 587)
+                  (smtpmail-stream-type  . starttls)))))
 
   ;; Taken from mu4e~stop in mu4e-utils.el
   ;; Do not kill mu process
