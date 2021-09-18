@@ -184,7 +184,8 @@
   :custom
   (kaolin-themes-comments-style 'alt)
   (kaolin-themes-distinct-parentheses t)
-  (kaolin-themes-italic-comments t))
+  (kaolin-themes-italic-comments t)
+  (kaolin-themes-hl-line-colored t))
 
 (use-package modus-themes)
 
@@ -2264,6 +2265,15 @@ the number of the file to view, anything else to skip: ") "1") list)))
         ;;   (setq reftex-cite-format 'biblatex))
         ))
 
+(use-package biblio-core
+  :defer t
+  :config
+  ;; We just override this function, to use our own completion
+  ;; system.
+  ;; We don't want packages to mess up our config !
+  (defun biblio--completing-read-function ()
+    completing-read-function))
+
 (use-package biblio
   :defer t
   :bind
@@ -2271,13 +2281,7 @@ the number of the file to view, anything else to skip: ") "1") list)))
         ("C-c ?" . biblio-lookup))
   :custom
   (biblio-arxiv-bibtex-header "article")
-  (biblio-download-directory "~/Documents/Other/articles/")
-  :config
-  ;; We just override this function, to use our own completion
-  ;; system.
-  ;; We don't want packages to mess up our config !
-  (defun biblio--completing-read-function ()
-    completing-read-function))
+  (biblio-download-directory "~/Documents/Other/articles/"))
 
 (use-package preview
   :ensure nil ;; Comes with AUCTeX
