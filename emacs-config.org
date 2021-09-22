@@ -2137,7 +2137,10 @@ Now, in order to work with structured text, such as source code, we want to be a
           ([remap newline] . paredit-newline)))
 
   (use-package elec-pair
-    :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
+    :hook ((prog-mode
+            org-mode
+            inferior-python-mode)
+           . electric-pair-local-mode)) ;; needed for org-babel
 #+end_src
 
 ** Better auto-completion
@@ -3584,7 +3587,10 @@ This package might also be used to generate desktop notifications, although I do
         (unless (equal context mu4e--context-current)
           (mu4e-alert-update-mail-count-modeline))))
 
-    (mu4e-alert-enable-mode-line-display))
+    (mu4e-alert-enable-mode-line-display)
+
+    (when (bound-and-true-p doom-modeline-mode)
+      (setq doom-modeline-override-mu4e-alert-modeline t)))
 #+end_src
 
   One point that is a bit infuriating with the current state of ~mu4e~ is how you are supposed to manage attachments. In particular, you have to navigate in a whole filetree, everytime you want to attach a file. To my knowledge, there is no "easy and immediate" way to /e.g./ attach several files at once.

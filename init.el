@@ -1609,7 +1609,10 @@ Breaks if region or line spans multiple visual lines"
         ([remap newline] . paredit-newline)))
 
 (use-package elec-pair
-  :hook ((prog-mode org-mode) . electric-pair-local-mode)) ;; needed for org-babel
+  :hook ((prog-mode
+          org-mode
+          inferior-python-mode)
+         . electric-pair-local-mode)) ;; needed for org-babel
 
 ;;YASnippet
 (use-package yasnippet
@@ -2715,7 +2718,10 @@ PWD is not in a git repo (or the git command is not found)."
       (unless (equal context mu4e--context-current)
         (mu4e-alert-update-mail-count-modeline))))
 
-  (mu4e-alert-enable-mode-line-display))
+  (mu4e-alert-enable-mode-line-display)
+
+  (when (bound-and-true-p doom-modeline-mode)
+    (setq doom-modeline-override-mu4e-alert-modeline t)))
 
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired
