@@ -442,6 +442,7 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
     (doom-modeline-project-detection 'project)
     (doom-modeline-unicode-fallback t)
     (doom-modeline-buffer-file-name-style 'buffer-name)
+    (doom-modeline-mu4e t)
     :config
     ;; Hide encoding in modeline when UTF-8(-unix)
     (defun lps/hide-utf-8-encoding ()
@@ -449,7 +450,18 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
                   (not (or (eq buffer-file-coding-system 'utf-8-unix)
                            (eq buffer-file-coding-system 'utf-8)))))
 
-    (add-hook 'after-change-major-mode-hook #'lps/hide-utf-8-encoding))
+    (add-hook 'after-change-major-mode-hook #'lps/hide-utf-8-encoding)
+
+    ;; Add recursive-depth info to the mode line
+    ;; Useful for e.g. Isearch sessions
+    (setq global-mode-string (list
+                              '(:eval
+                                (let ((rec-depth (recursion-depth)))
+                                  (unless (zerop rec-depth)
+                                    (propertize (format "[%d] " rec-depth)
+                                                'face
+                                                '(:foreground "orange red")))))
+                              global-mode-string)))
 #+end_src
 
 We also want to add some extra information on the modeline, of the kind that we could get in a status bar from a typical window manager
@@ -3587,10 +3599,7 @@ This package might also be used to generate desktop notifications, although I do
         (unless (equal context mu4e--context-current)
           (mu4e-alert-update-mail-count-modeline))))
 
-    (mu4e-alert-enable-mode-line-display)
-
-    (when (bound-and-true-p doom-modeline-mode)
-      (setq doom-modeline-override-mu4e-alert-modeline t)))
+    (mu4e-alert-enable-mode-line-display))
 #+end_src
 
   One point that is a bit infuriating with the current state of ~mu4e~ is how you are supposed to manage attachments. In particular, you have to navigate in a whole filetree, everytime you want to attach a file. To my knowledge, there is no "easy and immediate" way to /e.g./ attach several files at once.

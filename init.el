@@ -302,6 +302,7 @@ installed themes instead."
   (doom-modeline-project-detection 'project)
   (doom-modeline-unicode-fallback t)
   (doom-modeline-buffer-file-name-style 'buffer-name)
+  (doom-modeline-mu4e t)
   :config
   ;; Hide encoding in modeline when UTF-8(-unix)
   (defun lps/hide-utf-8-encoding ()
@@ -309,7 +310,18 @@ installed themes instead."
                 (not (or (eq buffer-file-coding-system 'utf-8-unix)
                          (eq buffer-file-coding-system 'utf-8)))))
 
-  (add-hook 'after-change-major-mode-hook #'lps/hide-utf-8-encoding))
+  (add-hook 'after-change-major-mode-hook #'lps/hide-utf-8-encoding)
+
+  ;; Add recursive-depth info to the mode line
+  ;; Useful for e.g. Isearch sessions
+  (setq global-mode-string (list
+                            '(:eval
+                              (let ((rec-depth (recursion-depth)))
+                                (unless (zerop rec-depth)
+                                  (propertize (format "[%d] " rec-depth)
+                                              'face
+                                              '(:foreground "orange red")))))
+                            global-mode-string)))
 
 (use-package battery
   :ensure nil
@@ -2718,10 +2730,7 @@ PWD is not in a git repo (or the git command is not found)."
       (unless (equal context mu4e--context-current)
         (mu4e-alert-update-mail-count-modeline))))
 
-  (mu4e-alert-enable-mode-line-display)
-
-  (when (bound-and-true-p doom-modeline-mode)
-    (setq doom-modeline-override-mu4e-alert-modeline t)))
+  (mu4e-alert-enable-mode-line-display))
 
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired
