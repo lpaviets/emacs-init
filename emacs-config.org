@@ -2060,6 +2060,64 @@ In order to integrate more tightly with those tools, and have access to more com
     (forge-bug-reference-hooks nil))
 #+end_src
 
+*** Diff and merge conflicts
+Whenever we use version control, merge conflicts will unavoidably arise. Hence, we need to be able to solve them as efficiently and clearly as possible, and Emacs provides a few tools for this.
+
+#+begin_src emacs-lisp
+  (use-package smerge-mode
+    :defer t
+    :hook
+    (find-file . lps/smerge-maybe-start)
+    :bind
+    (:map lps/all-hydras-map
+          ("s" . hydra-smerge/body))
+    :bind-keymap
+    ("C-c m" . smerge-basic-map)
+    :init
+    (defun lps/smerge-maybe-start ()
+      (when (and buffer-file-name (vc-backend buffer-file-name))
+        (save-excursion
+          (goto-char (point-min))
+          (when (re-search-forward "^<<<<<< " nil t)
+            (message "Smerge-mode automatically enabled: there seem to be conflicts !")
+            (smerge-mode 1)))))
+
+    :config
+    (pretty-hydra-define hydra-smerge (:title "Smerge Hydra"
+                                              :post (smerge-auto-leave)
+                                              :color pink
+                                              :hint nil
+                                              :quit-key "q")
+      ("Move"
+       (("n" smerge-next "Next")
+        ("p" smerge-prev "Prev"))
+       "Keep"
+       (("b" smerge-keep-base "Base")
+        ("u" smerge-keep-upper "Upper")
+        ("m" smerge-keep-upper "Upper")
+        ("l" smerge-keep-lower "Lower")
+        ("o" smerge-keep-lower "Lower")
+        ("a" smerge-keep-all "All")
+        ("RET" smerge-keep-current "Current")
+        ("\C-m" smerge-keep-current "Current"))
+       "Diff"
+       (("<" smerge-diff-base-upper "Upper/Base")
+        ("=" smerge-diff-upper-lower "Upper/Lower")
+        (">" smerge-diff-base-lower "Lower/Base")
+        ("R" smerge-refine "Refine")
+        ("E" smerge-ediff "Ediff"))
+       "Other"
+       (("C" smerge-combine-with-next "Combine")
+        ("r" smerge-resolve "Resolve")
+        ("k" smerge-kill-current "Kill current")
+        ("ZZ" (lambda ()
+                (interactive)
+                (save-buffer)
+                (bury-buffer))
+         "Save and bury buffer" :color blue)
+        ("q" nil "Cancel" :color blue)))))
+#+end_src
+
 ** Parenthesis
 
 First of all, we want to easily be able to tell with a quick glance which parenthesis are matching

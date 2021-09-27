@@ -1541,6 +1541,59 @@ Breaks if region or line spans multiple visual lines"
   :custom
   (forge-bug-reference-hooks nil))
 
+(use-package smerge-mode
+  :defer t
+  :hook
+  (find-file . lps/smerge-maybe-start)
+  :bind
+  (:map lps/all-hydras-map
+        ("s" . hydra-smerge/body))
+  :bind-keymap
+  ("C-c m" . smerge-basic-map)
+  :init
+  (defun lps/smerge-maybe-start ()
+    (when (and buffer-file-name (vc-backend buffer-file-name))
+      (save-excursion
+        (goto-char (point-min))
+        (when (re-search-forward "^<<<<<< " nil t)
+          (message "Smerge-mode automatically enabled: there seem to be conflicts !")
+          (smerge-mode 1)))))
+
+  :config
+  (pretty-hydra-define hydra-smerge (:title "Smerge Hydra"
+                                            :post (smerge-auto-leave)
+                                            :color pink
+                                            :hint nil
+                                            :quit-key "q")
+    ("Move"
+     (("n" smerge-next "Next")
+      ("p" smerge-prev "Prev"))
+     "Keep"
+     (("b" smerge-keep-base "Base")
+      ("u" smerge-keep-upper "Upper")
+      ("m" smerge-keep-upper "Upper")
+      ("l" smerge-keep-lower "Lower")
+      ("o" smerge-keep-lower "Lower")
+      ("a" smerge-keep-all "All")
+      ("RET" smerge-keep-current "Current")
+      ("\C-m" smerge-keep-current "Current"))
+     "Diff"
+     (("<" smerge-diff-base-upper "Upper/Base")
+      ("=" smerge-diff-upper-lower "Upper/Lower")
+      (">" smerge-diff-base-lower "Lower/Base")
+      ("R" smerge-refine "Refine")
+      ("E" smerge-ediff "Ediff"))
+     "Other"
+     (("C" smerge-combine-with-next "Combine")
+      ("r" smerge-resolve "Resolve")
+      ("k" smerge-kill-current "Kill current")
+      ("ZZ" (lambda ()
+              (interactive)
+              (save-buffer)
+              (bury-buffer))
+       "Save and bury buffer" :color blue)
+      ("q" nil "Cancel" :color blue)))))
+
 ;; Always highlight matching parenthesis
 (use-package paren
   :ensure nil
