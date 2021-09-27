@@ -57,7 +57,9 @@
   :ensure nil
   :init
   (defvar lps/quick-edit-map (make-sparse-keymap))
-  (defvar lps/system-tools-map (make-sparse-keymap)))
+  (defvar lps/system-tools-map (make-sparse-keymap))
+  (defvar lps/all-hydras-map (make-sparse-keymap))
+  (defvar lps/manipulate-lines-map (make-sparse-keymap)))
 
 (use-package package
   :ensure nil
@@ -380,9 +382,7 @@ installed themes instead."
 
 (use-package hydra
   :defer t
-  :bind-keymap ("C-c h" . lps/all-hydras-map)
-  :init
-  (defvar lps/all-hydras-map (make-sparse-keymap)))
+  :bind-keymap ("C-c h" . lps/all-hydras-map))
 
 ;; Easier hydra definition
 (use-package pretty-hydra
@@ -1416,8 +1416,6 @@ Move point in the last duplicated string (line or region)."
 
 (use-package emacs
   :ensure nil
-  :init
-  (defvar lps/manipulate-lines-map (make-sparse-keymap))
   :bind-keymap ("C-o" . lps/manipulate-lines-map)
   :bind
   (:map lps/manipulate-lines-map

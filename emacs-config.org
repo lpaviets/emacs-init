@@ -113,7 +113,9 @@ Because we will customize bindings, functions and so on, some variables are defi
     :ensure nil
     :init
     (defvar lps/quick-edit-map (make-sparse-keymap))
-    (defvar lps/system-tools-map (make-sparse-keymap)))
+    (defvar lps/system-tools-map (make-sparse-keymap))
+    (defvar lps/all-hydras-map (make-sparse-keymap))
+    (defvar lps/manipulate-lines-map (make-sparse-keymap)))
 #+end_src
 
 We finally add a few bindings to manage our packages more efficiently.
@@ -546,9 +548,7 @@ Then, we do not want to repeatedly spam the ~DEL~ key in order to delete a long 
 #+begin_src emacs-lisp
   (use-package hydra
     :defer t
-    :bind-keymap ("C-c h" . lps/all-hydras-map)
-    :init
-    (defvar lps/all-hydras-map (make-sparse-keymap)))
+    :bind-keymap ("C-c h" . lps/all-hydras-map))
 #+end_src
 
 All the hydras will now be defined after the package to which they correspond, or in the appropriate section. Most of them are modifications of hydras that can be found on the [[https://github.com/abo-abo/hydra/wiki][hydra wiki]].
@@ -1895,8 +1895,6 @@ Hence, we will define and rebind a few commands for that.
 #+begin_src emacs-lisp
   (use-package emacs
     :ensure nil
-    :init
-    (defvar lps/manipulate-lines-map (make-sparse-keymap))
     :bind-keymap ("C-o" . lps/manipulate-lines-map)
     :bind
     (:map lps/manipulate-lines-map
