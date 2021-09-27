@@ -1539,7 +1539,9 @@ Breaks if region or line spans multiple visual lines"
   :defer t)
 
 (use-package forge
-  :after magit)
+  :after magit
+  :custom
+  (forge-bug-reference-hooks nil))
 
 ;; Always highlight matching parenthesis
 (use-package paren
@@ -2279,6 +2281,48 @@ the number of the file to view, anything else to skip: ") "1") list)))
         ;;                            (?X . "{%l}"))))
         ;;   (setq reftex-cite-format 'biblatex))
         ))
+
+(use-package reftex-cite
+  :diminish
+  :after reftex
+  :config
+  ;; From https://stackoverflow.com/questions/9682592/setting-up-reftex-tab-completion-in-emacs
+  (defun lps/get-bibtex-keys (file)
+    (with-current-buffer (find-file-noselect file)
+      (mapcar 'car (bibtex-parse-keys))))
+
+  (defun lps/LaTeX-add-all-bibitems-from-bibtex ()
+    (interactive)
+    (mapc 'LaTeX-add-bibitems
+          (apply 'append
+                 (mapcar 'lps/get-bibtex-keys (reftex-get-bibfile-list)))))
+
+  ;; Override this function to have a better completion
+  (defun reftex--query-search-regexps (default)
+    "Query for regexps for searching entries using DEFAULT as default.
+Return a list of regular expressions."
+    (split-string
+     (let ((orderless-component-separator "[ \t]*&&[ \t]*"))
+       (completing-read
+        (concat
+         "Regex { && Regex...}: "
+         "[" default "]: ")
+        ;; Ensure default is always in the completion list.
+        (let ((def (when default (list default)))
+              (coll (if reftex-mode
+                        (if (fboundp 'LaTeX-bibitem-list)
+                            (progn
+                              ;; FIXME: don't do it every time ?
+                              (lps/LaTeX-add-all-bibitems-from-bibtex)
+                              (LaTeX-bibitem-list))
+                          (cdr (assoc 'bibview-cache
+                                      (symbol-value reftex-docstruct-symbol))))
+                      nil)))
+          (if (and def (member def coll))
+              coll
+            (cons def coll)))
+        nil nil nil 'reftex-cite-regexp-hist))
+     "[ \t]*&&[ \t]*")))
 
 (use-package biblio-core
   :defer t
