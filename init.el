@@ -1828,14 +1828,16 @@ Breaks if region or line spans multiple visual lines"
 
 (use-package emacs
   :ensure nil
-  :hook (c-mode . lps/c-mode-basic-compile-command)
+  :hook
+  ((c-mode c++-mode) . lps/c-c++-mode-basic-compile-command)
   :config
-  (defun lps/c-mode-basic-compile-command ()
-    (let* ((buf (buffer-file-name))
-           (buf-no-ext (file-name-sans-extension buf)))
-      (setq-local compile-command (concat "gcc "
-                                          buf-no-ext
-                                          ".c"
+  (defun lps/c-c++-mode-basic-compile-command ()
+    (let* ((buf (file-name-nondirectory (or (buffer-file-name) (buffer-name))))
+           (buf-no-ext (file-name-sans-extension buf))
+           (c-mode-p (eq major-mode 'c-mode))
+           (compiler (if c-mode-p "gcc " "g++ ")))
+      (setq-local compile-command (concat compiler
+                                          buf
                                           " -o "
                                           buf-no-ext)))))
 
