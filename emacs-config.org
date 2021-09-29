@@ -1605,27 +1605,13 @@ Hence, we add a few bindings to an already existing keymap, to make them easily 
           ("M-s" . isearch-forward) ;; avoids early/late release of Meta
           ("r" . isearch-backward)
           ("x" . isearch-forward-regexp))
-    (:map isearch-mode-map
-          ("C-h" . lps/isearch-show-help-or-which-key))
     :custom
     ;; Interpret whitespaces as "anything but a newline"
     (search-whitespace-regexp ".*?")
     (isearch-regexp-lax-whitespace t)
-    (isearch-allow-scroll t)
-
-    :config
-    ;; To fix, which-key popup breaks things ...
-    (defun lps/isearch-show-help-or-which-key (&optional arg)
-      "Show help in isearch-mode in a which-key popup.
-  With prefix ARG, call isearch-mode-help."
-      (interactive "P")
-      (save-excursion
-        (if (fboundp 'which-key-show-keymap)
-            (if arg
-                (isearch-mode-help)
-              (let ((which-key-side-window-location 'right))
-                (which-key-show-keymap 'isearch-mode-map)))
-          (isearch-mode-help)))))
+    (isearch-yank-on-move t)
+    (isearch-allow-motion t)
+    (isearch-allow-scroll t))
 
   (use-package replace
     :ensure nil
@@ -2204,7 +2190,8 @@ Now, in order to work with structured text, such as source code, we want to be a
           ("C-M-," . paredit-convolute-sexp)
           ("C-S-t" . transpose-sexps)
           ("M-j" . eval-print-last-sexp)
-          ([remap newline] . paredit-newline)))
+          ([remap newline] . paredit-newline)
+          ("<C-backspace>" . paredit-delete-region)))
 
   (use-package elec-pair
     :hook ((prog-mode
