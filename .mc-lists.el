@@ -9,16 +9,20 @@
         TeX-font
         TeX-insert-dollar
         TeX-insert-sub-or-superscript
+        backward-sexp
         beginning-of-visual-line
         c-indent-line-or-region
         counsel-M-x
         end-of-visual-line
         forward-sentence
+        forward-sexp
         hungry-delete-backward
         hungry-delete-forward
+        kill-region
         kill-sexp
         lps/eval-and-replace-last-sexp
         lps/exchange-point-and-mark
+        mark-sexp
         org-beginning-of-line
         org-delete-char
         org-end-of-line

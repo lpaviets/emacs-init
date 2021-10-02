@@ -2084,6 +2084,23 @@ Breaks if region or line spans multiple visual lines"
         ("idea" . ?i)
         ("read" . ?r)))
 
+;; From https://stackoverflow.com/questions/9005843/interactively-enter-headline-under-which-to-place-an-entry-using-capture
+(defun lps/org-ask-location ()
+  (let* ((org-refile-targets '((nil :maxlevel . 2)))
+         (hd (condition-case nil
+                 (car (org-refile-get-location nil nil t))
+               (error (car org-refile-history)))))
+    (goto-char (point-min))
+    (outline-next-heading)
+    (if (re-search-forward
+         (format org-complex-heading-regexp-format (regexp-quote hd))
+         nil t)
+        (goto-char (point-at-bol))
+      (goto-char (point-max))
+      (or (bolp) (insert "\n"))
+      (insert "* " hd "\n")))
+  (end-of-line))
+
 (setq org-capture-templates
       `(("t" "Tasks / Projects")
         ("tt" "Task" entry
@@ -2107,11 +2124,18 @@ Breaks if region or line spans multiple visual lines"
          "* %(call-interactively #'org-time-stamp) %? :agenda:\n"
          :empty-lines 1)
 
-        ("r" "Random" plain
-         (file+headline "~/Documents/OrgFiles/everything.org"
+        ("r" "Random")
+        ("rr" "Random" plain
+         (file+headline "everything.org"
                         "A trier")
          "%x%?\n%i"
-         :empty-lines-after 1)))
+         :empty-lines-after 1)
+
+        ("rm" "Movie" checkitem
+         (file+function "movies.org" lps/org-ask-location))
+
+        ("rR" "Restaurant" checkitem
+         (file+function "restaurants.org" lps/org-ask-location))))
 
 (setq org-capture-bookmark nil))
 
@@ -2440,7 +2464,8 @@ PWD is not in a git repo (or the git command is not found)."
                             (if (> (length git-output) 0)
                                 (substring git-output 0 -1)
                               "(no branch)")
-                            "]") 'face `(:foreground "green3")))))
+                            "]")
+                    'face `(:foreground "green3")))))
 
   (defun lps/eshell-prompt-function ()
     (concat
@@ -2458,7 +2483,8 @@ PWD is not in a git repo (or the git command is not found)."
                       (mapconcat (lambda (elm) elm)
                                  p-lst
                                  "/")))
-                  (split-string (lps/pwd-repl-home (eshell/pwd)) "/")) 'face `(:foreground "DeepSkyBlue1"))
+                  (split-string (lps/pwd-repl-home (eshell/pwd)) "/"))
+                 'face `(:foreground "DeepSkyBlue1"))
      (or (lps/curr-dir-git-branch-string (eshell/pwd)))
      (propertize " # " 'face 'default))))
 
