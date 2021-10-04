@@ -1939,6 +1939,36 @@ Breaks if region or line spans multiple visual lines"
 (use-package cider
   :defer t)
 
+(use-package js2-mode
+  :defer t
+  :mode
+  (("\\.js\\'" . js2-mode))
+  :custom
+  (js2-include-node-externs t))
+
+(use-package tide
+  :hook
+  (js2-mode . lps/setup-tide-mode)
+  (tide . lps/add-tide-hooks)
+  :config
+  (defun lps/setup-tide-mode ()
+    "Set up Tide mode."
+    (interactive)
+    (tide-setup)
+    (tide-hl-identifier-mode 1)
+    (if tide-completion-setup-company-backend
+        (setq-local company-backends (list (cons 'company-tide
+                                                 (car company-backends))))))
+
+  (defun lps/add-tide-hooks ()
+    (add-hook 'before-save-hook #'tide-format-before-save nil t)))
+
+(use-package web-mode
+  :defer t
+  :mode
+  (("\\.html?" . web-mode)
+   ("\\.css" . web-mode)))
+
 (use-package gdb-mi
   :ensure nil
   :defer t

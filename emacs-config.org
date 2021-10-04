@@ -2610,6 +2610,50 @@ Finally, another recent and promising Lisp, which is much more opinionated than 
     :defer t)
 #+end_src
 
+*** Web development
+**** Javascript
+The built-in ~js-mode~ is good, but as it is often the case with Emacs and popular languages, it has been improved in community packages.
+
+#+begin_src emacs-lisp
+  (use-package js2-mode
+    :defer t
+    :mode
+    (("\\.js\\'" . js2-mode))
+    :custom
+    (js2-include-node-externs t))
+#+end_src
+
+We also a language server to help us with refactoring, completion and other fancy IDE-like features.
+
+#+begin_src emacs-lisp
+  (use-package tide
+    :hook
+    (js2-mode . lps/setup-tide-mode)
+    (tide . lps/add-tide-hooks)
+    :config
+    (defun lps/setup-tide-mode ()
+      "Set up Tide mode."
+      (interactive)
+      (tide-setup)
+      (tide-hl-identifier-mode 1)
+      (if tide-completion-setup-company-backend
+          (setq-local company-backends (list (cons 'company-tide
+                                                   (car company-backends))))))
+
+    (defun lps/add-tide-hooks ()
+      (add-hook 'before-save-hook #'tide-format-before-save nil t)))
+#+end_src
+
+**** HTML/CSS
+For HTML/CSS, we use another featureful package called =web-mode=. It can also be used to deal with Javascript or PHP code, but in my opinion, there are better alternatives for those specifically, so I only use =web-mode= for HTML/CSS (and their numerous variants ...).
+#+begin_src emacs-lisp
+  (use-package web-mode
+    :defer t
+    :mode
+    (("\\.html?" . web-mode)
+     ("\\.css" . web-mode)))
+#+end_src
+
 ** Debug
 *** GUD
 Emacs already provides a large number of debuggers, under the name "Grand Unified Debugger".
