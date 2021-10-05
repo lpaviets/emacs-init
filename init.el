@@ -1956,7 +1956,9 @@ Breaks if region or line spans multiple visual lines"
     (interactive)
     (tide-setup)
     (tide-hl-identifier-mode 1)
-    (if tide-completion-setup-company-backend
+    (if (and tide-completion-setup-company-backend
+             (not (or (eq 'company-tide (car company-backends))
+                      (member 'company-tide (car company-backends)))))
         (setq-local company-backends (list (cons 'company-tide
                                                  (car company-backends))))))
 
@@ -1967,7 +1969,17 @@ Breaks if region or line spans multiple visual lines"
   :defer t
   :mode
   (("\\.html?" . web-mode)
-   ("\\.css" . web-mode)))
+   ("\\.css" . web-mode))
+  :hook
+  (web-mode . rainbow-mode))
+
+(use-package emmmet-mode
+  :defer t
+  :hook
+  ((sgml-mode css-mode web-mode) . emmet-mode)
+  (emmet-mode . emmet-preview-mode)
+  :custom
+  (emmet-move-cursor-between-quotes t))
 
 (use-package gdb-mi
   :ensure nil
