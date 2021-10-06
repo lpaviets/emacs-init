@@ -1317,6 +1317,20 @@ Some commands are usually invoked several times in succession. For example, if y
             ("z" . repeat))))
 #+end_src
 
+*** Remapping and better defaults
+Several commands are, surprinsingly, bound by default to some binding, while there exists (arguably) simpler and more intuitive/DWIM-like versions of those same commands. Most of the time, we really want to use those simpler commands, and so we remap them to be invoked in place of their "strict" counterpart.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :bind
+    ([remap upcase-word] . upcase-dwim)
+    ([remap downcase-word] . downcase-dwim)
+    ([remap capitalize-word] . capitalize-dwim)
+    ([remap count-words-region] . count-words)
+    ([remap count-words-region] . count-words))
+#+end_src
+
 * Editing
 
    Emacs is fundamentally a text editor. It provides a lot of functions to deal with text, and a way to create macros, to automate things, to repeat something multiple times ... easily. However, because there are /so many/ available functions, we might need some help to navigate around and do fancy things.
@@ -2651,7 +2665,9 @@ For HTML/CSS, we use another featureful package called =web-mode=. It can also b
     :defer t
     :mode
     (("\\.html?" . web-mode)
-     ("\\.css" . web-mode)))
+     ("\\.css" . web-mode))
+    :hook
+    (web-mode . rainbow-mode))
 #+end_src
 
 ** Debug

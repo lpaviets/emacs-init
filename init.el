@@ -954,6 +954,15 @@ buffer in current window."
     (:map lps/quick-edit-map
           ("z" . repeat))))
 
+(use-package emacs
+  :ensure nil
+  :bind
+  ([remap upcase-word] . upcase-dwim)
+  ([remap downcase-word] . downcase-dwim)
+  ([remap capitalize-word] . capitalize-dwim)
+  ([remap count-words-region] . count-words)
+  ([remap count-words-region] . count-words))
+
 (use-package multiple-cursors
   :defer t
   :bind (:map lps/all-hydras-map
@@ -1967,7 +1976,9 @@ Breaks if region or line spans multiple visual lines"
   :defer t
   :mode
   (("\\.html?" . web-mode)
-   ("\\.css" . web-mode)))
+   ("\\.css" . web-mode))
+  :hook
+  (web-mode . rainbow-mode))
 
 (use-package gdb-mi
   :ensure nil
