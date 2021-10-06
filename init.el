@@ -448,6 +448,11 @@ installed themes instead."
   (calendar-set-date-style 'european))
 
 (use-package emacs
+  :init
+  (define-key key-translation-map (kbd "<C-dead-circumflex>") (kbd "C-^"))
+  (define-key key-translation-map (kbd "<M-dead-circumflex>") (kbd "M-^")))
+
+(use-package emacs
   :ensure nil
   :custom
   (enable-recursive-minibuffers t)
@@ -1443,8 +1448,6 @@ Move point in the last duplicated string (line or region)."
   :ensure nil
   :bind-keymap
   ("C-z" . lps/quick-edit-map)
-  :bind
-  ("<M-dead-circumflex>" . delete-indentation)
   (:map lps/quick-edit-map
         ("C-u" . lps/underline-or-frame-dwim)
         ("k" . zap-up-to-char))
@@ -1530,7 +1533,7 @@ Breaks if region or line spans multiple visual lines"
   :bind
   ("C-x g" . magit-status)
   (:map magit-section-mode-map
-        ("<M-dead-circumflex>" . magit-section-up)))
+        ("M-^" . magit-section-up)))
 
 (use-package git-timemachine
   :defer t)
@@ -2014,6 +2017,7 @@ Breaks if region or line spans multiple visual lines"
   :hook (org-mode . lps/org-mode-setup)
   :bind
   ("C-c o" . org-capture)
+  ("C-c a" . org-agenda)
   (:map org-mode-map
         ("<C-S-return>" . org-insert-subheading)
         ("<C-S-left>" . nil)

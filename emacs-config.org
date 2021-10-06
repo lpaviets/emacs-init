@@ -643,6 +643,15 @@ Another thing that is technically more a stylistic choice rather than a real enc
     (calendar-set-date-style 'european))
 #+end_src
 
+Finally, as I am mostly using a French, AZERTY keyboard, some combinations are hard to input, /e.g./ everything of the form =C-^= or =M-~=. Indeed, those are dead keys, and cannot really be pressed at the same time than a modifier key. Hence, we simply "remap" (using translation maps, see the [[info:elisp#Translation Keymaps][manual]] !)
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :init
+    (define-key key-translation-map (kbd "<C-dead-circumflex>") (kbd "C-^"))
+    (define-key key-translation-map (kbd "<M-dead-circumflex>") (kbd "M-^")))
+#+end_src
+
 ** Minibuffer
 *** Generic tweaks
 First of all, some configuration to make all the minibuffer sessions more pleasant, regardless of the completion or narrowing system used.
@@ -1939,8 +1948,6 @@ We also define a bunch of functions and commands related to editing text that ar
     :ensure nil
     :bind-keymap
     ("C-z" . lps/quick-edit-map)
-    :bind
-    ("<M-dead-circumflex>" . delete-indentation)
     (:map lps/quick-edit-map
           ("C-u" . lps/underline-or-frame-dwim)
           ("k" . zap-up-to-char))
@@ -2042,7 +2049,7 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
     :bind
     ("C-x g" . magit-status)
     (:map magit-section-mode-map
-          ("<M-dead-circumflex>" . magit-section-up)))
+          ("M-^" . magit-section-up)))
 #+end_src
 
 *** Git-timemachine
@@ -2740,6 +2747,7 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
     :hook (org-mode . lps/org-mode-setup)
     :bind
     ("C-c o" . org-capture)
+    ("C-c a" . org-agenda)
     (:map org-mode-map
           ("<C-S-return>" . org-insert-subheading)
           ("<C-S-left>" . nil)
