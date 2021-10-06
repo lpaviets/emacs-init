@@ -1789,10 +1789,10 @@ Breaks if region or line spans multiple visual lines"
 ;; Flycheck
 (use-package flycheck
   :defer t
-  :config
-  ;(setq flycheck-relevant-error-other-file-show nil) ;might be useful
-  (setq flycheck-indication-mode 'left-margin)
-  :diminish)
+  :custom
+  ;; (setq flycheck-relevant-error-other-file-show nil) ;might be useful
+  (flycheck-indication-mode 'left-margin)
+  (flycheck-display-errors-delay 0.3))
 
 (use-package emacs
   :ensure nil
@@ -1971,6 +1971,7 @@ Breaks if region or line spans multiple visual lines"
     "Set up Tide mode."
     (interactive)
     (tide-setup)
+    (flycheck-mode)
     (tide-hl-identifier-mode 1)
     (if (and tide-completion-setup-company-backend
              (not (or (eq 'company-tide (car company-backends))
