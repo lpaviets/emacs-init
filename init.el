@@ -120,6 +120,10 @@
 (setq custom-file (concat user-emacs-directory "custom-file.el"))
 (load custom-file 'noerror)
 
+(use-package emacs
+  :custom
+  (native-comp-async-report-warnings-errors 'silent))
+
 ;; Disable the annoying startup message and Emacs logo
 (setq inhibit-startup-message t)
 
@@ -2197,6 +2201,13 @@ Breaks if region or line spans multiple visual lines"
   :bind (:map pdf-view-mode-map
               ("C-s" . isearch-forward)
               ("C-c ?" . lps/pdf-maybe-goto-index))
+  :custom
+  (pdf-links-read-link-convert-commands '("-font" "FreeMono"
+                                          "-pointsize" "%P"
+                                          "-undercolor" "%f"
+                                          "-fill" "%b"
+                                          "-draw" "text %X,%Y '%c'"))
+  (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
   :config
   (pdf-tools-install :no-query)
   ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)

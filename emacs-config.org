@@ -203,6 +203,16 @@ We do not want Emacs to mess with our own =init.el= file, and so we tell it wher
   (load custom-file 'noerror)
 #+end_src
 
+** Byte- and native compilation
+
+In this section, we configure how Emacs byte-compiles and/or natively compiles the source code of packages that we install.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :custom
+    (native-comp-async-report-warnings-errors 'silent))
+#+end_src
+
 * UI Configuration
 ** Visual interface changes
 
@@ -2971,6 +2981,13 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
     :bind (:map pdf-view-mode-map
                 ("C-s" . isearch-forward)
                 ("C-c ?" . lps/pdf-maybe-goto-index))
+    :custom
+    (pdf-links-read-link-convert-commands '("-font" "FreeMono"
+                                            "-pointsize" "%P"
+                                            "-undercolor" "%f"
+                                            "-fill" "%b"
+                                            "-draw" "text %X,%Y '%c'"))
+    (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
     :config
     (pdf-tools-install :no-query)
     ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
