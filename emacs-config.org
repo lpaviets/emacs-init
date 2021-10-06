@@ -2650,7 +2650,9 @@ We also a language server to help us with refactoring, completion and other fanc
       (interactive)
       (tide-setup)
       (tide-hl-identifier-mode 1)
-      (if tide-completion-setup-company-backend
+      (if (and tide-completion-setup-company-backend
+               (not (or (eq 'company-tide (car company-backends))
+                        (member 'company-tide (car company-backends)))))
           (setq-local company-backends (list (cons 'company-tide
                                                    (car company-backends))))))
 
@@ -2668,6 +2670,18 @@ For HTML/CSS, we use another featureful package called =web-mode=. It can also b
      ("\\.css" . web-mode))
     :hook
     (web-mode . rainbow-mode))
+#+end_src
+
+Because HTML tends to be very verbose, we also want to be able to quickly type the usual boilerplate. We use =emmet-mode=, which implement a way to quickly expand (many) abbreviations into templates. It is somewhat similar to =Yasnippet=, with some differences nonetheless, and the two can be used at the same time so why would we have to choose ?
+
+#+begin_src emacs-lisp
+  (use-package emmmet-mode
+    :defer t
+    :hook
+    ((sgml-mode css-mode web-mode) . emmet-mode)
+    (emmet-mode . emmet-preview-mode)
+    :custom
+    (emmet-move-cursor-between-quotes t))
 #+end_src
 
 ** Debug
