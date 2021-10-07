@@ -320,14 +320,15 @@ installed themes instead."
 
   ;; Add recursive-depth info to the mode line
   ;; Useful for e.g. Isearch sessions
-  (setq global-mode-string (list
-                            '(:eval
-                              (let ((rec-depth (recursion-depth)))
-                                (unless (zerop rec-depth)
-                                  (propertize (format "[%d] " rec-depth)
-                                              'face
-                                              '(:foreground "orange red")))))
-                            global-mode-string)))
+  (let ((rec-depth-indicator '(:eval
+                               (let ((rec-depth (recursion-depth)))
+                                 (unless (zerop rec-depth)
+                                   (propertize (format "[%d] " rec-depth)
+                                               'face
+                                               '(:foreground "orange red")))))))
+    (unless (and (listp global-mode-string)
+                 (member rec-depth-indicator global-mode-string))
+      (push rec-depth-indicator global-mode-string))))
 
 (use-package battery
   :ensure nil
@@ -1448,6 +1449,7 @@ Move point in the last duplicated string (line or region)."
   :ensure nil
   :bind-keymap
   ("C-z" . lps/quick-edit-map)
+  :bind
   (:map lps/quick-edit-map
         ("C-u" . lps/underline-or-frame-dwim)
         ("k" . zap-up-to-char))
