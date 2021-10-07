@@ -262,52 +262,17 @@ Emacs is very much keyboard-oriented. As such, we have little-to-no use of the v
 
 *** Lines and columns
 
-Because we now have plenty of free space on our screen, we can sacrifice a bit of it to put useful information there, such as line numbers. We also want to see the current line and column in the modeline.
+Because we now have plenty of free space on our screen, we can sacrifice a bit of it to put useful information there, such as line numbers. We also want to see the current line and column in the modeline, and while we are at it, we also want Emacs to wrap our lines, so that we never have to scroll horizontally to see the end of a long line (besides, how would we do it, now that we don't have a scrollbar anymore ?!)
 
 #+begin_src emacs-lisp
-  ;; Global line/column numbering mode
-  ;; Modes in which we might want to disable it:
+  ;; Line/column numbering modes
 
-  (column-number-mode t)
-  (global-display-line-numbers-mode t)
-
-  (defun lps/disable-line-numbers ()
-    (display-line-numbers-mode 0))
-
-  (defvar lps/disabled-line-numbers-modes-hooks '(org-mode-hook
-                                                  ;; Term & Shells
-                                                  eshell-mode-hook
-                                                  comint-mode-hook
-                                                  cider-repl-mode-hook ; does not derive from comint-mode ...
-                                                  ;; PDF viewers
-                                                  pdf-view-mode-hook
-                                                  doc-view-mode-hook
-                                                  ;; Help modes
-                                                  helpful-mode-hook
-                                                  help-mode-hook
-                                                  apropos-mode-hook
-                                                  Info-mode-hook
-                                                  ;; mu4e
-                                                  mu4e-main-mode-hook
-                                                  mu4e-view-mode-hook
-                                                  mu4e-headers-mode-hook
-                                                  ;; reading
-                                                  nov-mode-hook
-                                                  olivetti-mode-hook
-                                                  ;; Extra modes
-                                                  undo-tree-visualizer-mode-hook
-                                                  treemacs-mode-hook
-                                                  dired-mode-hook
-                                                  occur-mode-hook))
-
-  (dolist (mode-hook lps/disabled-line-numbers-modes-hooks)
-    (add-hook mode-hook #'lps/disable-line-numbers))
-#+end_src
-
-While we are at it, we also want Emacs to wrap our lines, so that we never have to scroll horizontally to see the end of a long line (besides, how would we do it, now that we don't have a scrollbar anymore ?!)
-
-#+begin_src emacs-lisp
-  (global-visual-line-mode 1)
+  (use-package emacs
+    :init
+    (column-number-mode t)
+    (global-visual-line-mode 1)
+    :hook
+    (prog-mode . display-line-numbers-mode))
 #+end_src
 
 *** Theme

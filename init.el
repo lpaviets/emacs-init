@@ -143,45 +143,14 @@
 
 (menu-bar-mode -1)          ; Disable the menu bar
 
-;; Global line/column numbering mode
-;; Modes in which we might want to disable it:
+;; Line/column numbering modes
 
-(column-number-mode t)
-(global-display-line-numbers-mode t)
-
-(defun lps/disable-line-numbers ()
-  (display-line-numbers-mode 0))
-
-(defvar lps/disabled-line-numbers-modes-hooks '(org-mode-hook
-                                                ;; Term & Shells
-                                                eshell-mode-hook
-                                                comint-mode-hook
-                                                cider-repl-mode-hook ; does not derive from comint-mode ...
-                                                ;; PDF viewers
-                                                pdf-view-mode-hook
-                                                doc-view-mode-hook
-                                                ;; Help modes
-                                                helpful-mode-hook
-                                                help-mode-hook
-                                                apropos-mode-hook
-                                                Info-mode-hook
-                                                ;; mu4e
-                                                mu4e-main-mode-hook
-                                                mu4e-view-mode-hook
-                                                mu4e-headers-mode-hook
-                                                ;; reading
-                                                nov-mode-hook
-                                                olivetti-mode-hook
-                                                ;; Extra modes
-                                                undo-tree-visualizer-mode-hook
-                                                treemacs-mode-hook
-                                                dired-mode-hook
-                                                occur-mode-hook))
-
-(dolist (mode-hook lps/disabled-line-numbers-modes-hooks)
-  (add-hook mode-hook #'lps/disable-line-numbers))
-
-(global-visual-line-mode 1)
+(use-package emacs
+  :init
+  (column-number-mode t)
+  (global-visual-line-mode 1)
+  :hook
+  (prog-mode . display-line-numbers-mode))
 
 ;; Themes
 (use-package solarized-theme)
