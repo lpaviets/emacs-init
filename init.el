@@ -858,7 +858,7 @@ buffer in current window."
 (use-package consult
   :defer t
   :bind
-  ("C-s" . lps/consult-line-strict-match)
+  ("C-S-s" . lps/consult-line-strict-match)
   ("C-c i" . lps/consult-imenu-or-org-heading)
   ("C-x b" . consult-buffer)
   :custom
