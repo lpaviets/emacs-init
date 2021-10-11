@@ -420,6 +420,7 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
     (doom-modeline-unicode-fallback t)
     (doom-modeline-buffer-file-name-style 'buffer-name)
     (doom-modeline-mu4e t)
+    (mode-line-compact 'long)
     :config
     ;; Hide encoding in modeline when UTF-8(-unix)
     (defun lps/hide-utf-8-encoding ()
@@ -439,7 +440,15 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
                                                  '(:foreground "orange red")))))))
       (unless (and (listp global-mode-string)
                    (member rec-depth-indicator global-mode-string))
-        (push rec-depth-indicator global-mode-string))))
+        (push rec-depth-indicator global-mode-string)))
+
+    ;; Hack, as we disable minor modes in mode-line
+    ;; Put this in global-mode-string, where it definitely does not belong ...
+    (cl-pushnew '(:eval
+                  (when (bound-and-true-p company-search-mode)
+                    company-search-lighter))
+                global-mode-string
+                :test 'equal))
 #+end_src
 
 We also want to add some extra information on the modeline, of the kind that we could get in a status bar from a typical window manager

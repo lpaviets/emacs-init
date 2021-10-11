@@ -278,6 +278,7 @@ installed themes instead."
   (doom-modeline-unicode-fallback t)
   (doom-modeline-buffer-file-name-style 'buffer-name)
   (doom-modeline-mu4e t)
+  (mode-line-compact 'long)
   :config
   ;; Hide encoding in modeline when UTF-8(-unix)
   (defun lps/hide-utf-8-encoding ()
@@ -297,7 +298,15 @@ installed themes instead."
                                                '(:foreground "orange red")))))))
     (unless (and (listp global-mode-string)
                  (member rec-depth-indicator global-mode-string))
-      (push rec-depth-indicator global-mode-string))))
+      (push rec-depth-indicator global-mode-string)))
+
+  ;; Hack, as we disable minor modes in mode-line
+  ;; Put this in global-mode-string, where it definitely does not belong ...
+  (cl-pushnew '(:eval
+                (when (bound-and-true-p company-search-mode)
+                  company-search-lighter))
+              global-mode-string
+              :test 'equal))
 
 (use-package battery
   :ensure nil
