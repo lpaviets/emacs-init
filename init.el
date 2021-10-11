@@ -1182,7 +1182,7 @@ buffer in current window."
         ("x" . isearch-forward-regexp))
   :custom
   ;; Interpret whitespaces as "anything but a newline"
-  (search-whitespace-regexp ".*?")
+  (search-whitespace-regexp "[-\\/_ \\t.]+")
   (isearch-regexp-lax-whitespace t)
   (isearch-yank-on-move t)
   (isearch-allow-motion t)
@@ -2838,6 +2838,17 @@ PWD is not in a git repo (or the git command is not found)."
                   (smtpmail-smtp-server  . "smtp.ens-lyon.fr")
                   (smtpmail-smtp-service . 587)
                   (smtpmail-stream-type  . starttls)))))
+
+  ;; Bookmarks
+  (add-to-list 'mu4e-bookmarks `(:name
+                                 "Important"
+                                 :query ,(concat "maildir:/Orange/Important"
+                                                 " OR "
+                                                 "maildir:/Unicaen/Important"
+                                                 " OR "
+                                                 "maildir:/ENS_Lyon/Important")
+                                 :key   ?i)
+               t)
 
   ;; Taken from mu4e~stop in mu4e-utils.el
   ;; Do not kill mu process
