@@ -150,7 +150,7 @@
   (column-number-mode t)
   (global-visual-line-mode 1)
   :hook
-  (prog-mode . display-line-numbers-mode))
+  ((prog-mode LaTeX-mode) . display-line-numbers-mode))
 
 ;; Themes
 (use-package solarized-theme)
@@ -1652,6 +1652,19 @@ Breaks if region or line spans multiple visual lines"
           org-mode
           inferior-python-mode)
          . electric-pair-local-mode)) ;; needed for org-babel
+
+(use-package emacs
+  :ensure nil
+  :init
+  (defun lps/insert-parentheses (&optional arg)
+    "Same as `insert-parentheses' but if no ARG is provided, it wraps
+the next s-expression in parentheses rather than inserting () at point"
+    (interactive "P")
+    (if arg
+        (insert-parentheses arg)
+      (insert-parentheses 1)))
+  :bind
+  ([remap insert-parentheses] . lps/insert-parentheses))
 
 ;;YASnippet
 (use-package yasnippet

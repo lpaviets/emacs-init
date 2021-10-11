@@ -272,7 +272,7 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
     (column-number-mode t)
     (global-visual-line-mode 1)
     :hook
-    (prog-mode . display-line-numbers-mode))
+    ((prog-mode LaTeX-mode) . display-line-numbers-mode))
 #+end_src
 
 *** Theme
@@ -2196,6 +2196,23 @@ Now, in order to work with structured text, such as source code, we want to be a
             org-mode
             inferior-python-mode)
            . electric-pair-local-mode)) ;; needed for org-babel
+#+end_src
+
+Finally, we also remap one built-in command to a (usually) more useful variant, which has the same behaviour as the paredit one.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :init
+    (defun lps/insert-parentheses (&optional arg)
+      "Same as `insert-parentheses' but if no ARG is provided, it wraps
+  the next s-expression in parentheses rather than inserting () at point"
+      (interactive "P")
+      (if arg
+          (insert-parentheses arg)
+        (insert-parentheses 1)))
+    :bind
+    ([remap insert-parentheses] . lps/insert-parentheses))
 #+end_src
 
 ** Better auto-completion
