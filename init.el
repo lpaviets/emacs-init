@@ -2760,6 +2760,8 @@ PWD is not in a git repo (or the git command is not found)."
   (setq mail-user-agent 'mu4e-user-agent)
   (set-variable 'read-mail-command 'mu4e)
   :config
+  (defvar lps/safe-mail-send t "If non-nil, ask for a signature, an encryption, and ask confirmation when sending a non-multipart MIME mail")
+
   (setq mu4e-completing-read-function 'completing-read)
 
   ;; Security issues
@@ -2834,21 +2836,22 @@ PWD is not in a git repo (or the git command is not found)."
   (setq mm-sign-option 'guided)
 
   (defun lps/sign-or-encrypt-message ()
-    (let ((answer (read-from-minibuffer (concat "Sign or encrypt?\n"
-                                                "Empty to do nothing.\n[s/e]: "))))
-      (cond
-       ((string-equal answer "s") (progn
-                                    (message "Sign this message.")
-                                    ;; Why doesn't mml-secure-message-sign-pgpmime work ... ?
-                                    (mml-secure-message-sign-pgpmime) ;;Works but only signs a part of the message.
-                                    (message "Done trying to sign the message")))
-       ((string-equal answer "e") (progn
-                                    (message "Encrypt and sign this message.")
-                                    (mml-secure-message-encrypt-pgpmime)
-                                    (message "Done trying to encrypt the message")))
-       (t (progn
-            (message "Not signing or encrypting this message.")
-            nil)))))
+    (when lps/safe-mail-send
+      (let ((answer (read-from-minibuffer (concat "Sign or encrypt?\n"
+                                                  "Empty to do nothing.\n[s/e]: "))))
+        (cond
+         ((string-equal answer "s") (progn
+                                      (message "Sign this message.")
+                                      ;; Why doesn't mml-secure-message-sign-pgpmime work ... ?
+                                      (mml-secure-message-sign-pgpmime) ;;Works but only signs a part of the message.
+                                      (message "Done trying to sign the message")))
+         ((string-equal answer "e") (progn
+                                      (message "Encrypt and sign this message.")
+                                      (mml-secure-message-encrypt-pgpmime)
+                                      (message "Done trying to encrypt the message")))
+         (t (progn
+              (message "Not signing or encrypting this message.")
+              nil))))))
 
   (add-hook 'message-send-hook 'lps/sign-or-encrypt-message)
 
@@ -3000,10 +3003,14 @@ PWD is not in a git repo (or the git command is not found)."
 (use-package org-mime
   :after mu4e
   :config
+  (defun lps/safe-org-mime-confirm-when-no-multipart ()
+    (when lps/safe-mail-send
+      (org-mime-confirm-when-no-multipart)))
+
   ;; Make sure that this hook is added AFTER lps/sign-or-encrypt-message
   ;; so that it is executed BEFORE it.
   ;; We want to htmlize, then sign/encrypt, not the other way around !
-  (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
+  (add-hook 'message-send-hook 'lps/safe-org-mime-confirm-when-no-multipart)
   (setq org-mime-export-options'(:section-numbers nil
                                                   :with-author nil
                                                   :with-toc nil))
