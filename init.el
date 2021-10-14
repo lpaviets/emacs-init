@@ -2756,6 +2756,9 @@ PWD is not in a git repo (or the git command is not found)."
          (:map mu4e-main-mode-map
                ("q" . lps/mu4e-kill-buffers)
                ("Q" . mu4e-quit)))
+  :init
+  (setq mail-user-agent 'mu4e-user-agent)
+  (set-variable 'read-mail-command 'mu4e)
   :config
   (setq mu4e-completing-read-function 'completing-read)
 
