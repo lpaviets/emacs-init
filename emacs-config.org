@@ -1039,6 +1039,18 @@ Sometimes, when documents get bigger and bigger, it is useful to be able to temp
     (outline-minor-mode-cycle t))
 #+end_src
 
+** Scroll
+There are (obviously) many variables and functions controlling how scrolling works: amount of scroll, position of the point after a scroll, horizontal & vertical scrolls, and so on.
+We use the keyboard even for scrolling, so we want to have the nicest possible experience for this. On the other hand, sometimes, the mouse wheel can still be pretty convenient, so it's good to have a way to customize its behaviour too.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :custom
+    (scroll-preserve-screen-position t)
+    (mouse-wheel-tilt-scroll t))
+#+end_src
+
 ** Help !
 
 Emacs already has a /great/ documentation system, but it is still possible to improve it ! [[https://github.com/Wilfred/helpful][helpful]] makes things easier to remember and to use without having to search for documentation in multiple places.
@@ -2815,7 +2827,8 @@ Take care when copying this block of code: the ~use-package~ declaration continu
     (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
     (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
     (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
-    (set-face-attribute 'org-formula nil :inherit 'fixed-pitch))
+    (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-link nil :inherit '(link fixed-pitch)))
 
 #+end_src
 

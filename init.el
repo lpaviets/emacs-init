@@ -768,6 +768,12 @@ buffer in current window."
   (outline-minor-mode-prefix "\C-o")
   (outline-minor-mode-cycle t))
 
+(use-package emacs
+  :ensure nil
+  :custom
+  (scroll-preserve-screen-position t)
+  (mouse-wheel-tilt-scroll t))
+
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
   :custom
@@ -2076,7 +2082,8 @@ the next s-expression in parentheses rather than inserting () at point"
   (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
   (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-formula nil :inherit 'fixed-pitch))
+  (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
+  (set-face-attribute 'org-link nil :inherit '(link fixed-pitch)))
 
 (org-babel-do-load-languages
  'org-babel-load-languages
