@@ -3053,6 +3053,8 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     :bind
     (:map TeX-mode-map
           ("C-c '" . TeX-error-overview))
+    (:map LaTeX-mode-map
+          ("TAB" . lps/cdlatex-tab))
     :hook
     (LaTeX-mode . outline-minor-mode)
     (LaTeX-mode . lps/latex-fontification)
@@ -3224,6 +3226,71 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
                           "")))
           (and def (string-equal input "") (setq input def))
           input)))
+
+    ;; Function to make TAB more useful !
+    ;; Almost taken directly from CDLaTeX, with some parts removed as I don't use them
+    (defun lps/cdlatex-tab ()
+      "This function is intended to do many cursor movements.
+  It is bound to the tab key since tab does nothing useful in a TeX file.
+
+  It jumps to the next point in a LaTeX text where one would reasonably
+  expect that more input can be put in.
+  To do that, the cursor is moved according to the following rules:
+
+  The cursor stops...
+  - before closing brackets if preceding-char is any of -({[]})
+  - after  closing brackets, but not if following-char is any of ({[_^
+  - just after $, if the cursor was before that $.
+  - at end of non-empty lines
+  - at the beginning of empty lines
+  - before a SPACE at beginning of line
+  - after first of several SPACE
+
+  Sounds strange?  Try it out!"
+      (interactive)
+      (catch 'stop
+        (cond
+         ((looking-at "}\\|\\]\\|)")
+          (forward-char 1)
+          (if (looking-at "[^_^({[]")
+              ;; stop after closing bracket, unless ^_[{( follow
+              (throw 'stop t)))
+         ((= (following-char) ?$)
+          (while (= (following-char) ?$) (forward-char 1))
+          (throw 'stop t))
+         ((= (following-char) ?\ )
+          ;; stop after first of many spaces
+          (forward-char 1)
+          (re-search-forward "[^ ]")
+          (if (/= (preceding-char) ?\n) (forward-char -1)))
+         (t
+          (forward-char 1)))
+
+        ;; move to next possible stopping site and check out the place
+        (while (re-search-forward "[ )}\n]\\|\\]" (point-max) t)
+          (forward-char -1)
+          (cond
+           ((= (following-char) ?\ )
+            ;; stop at first space or b-o-l
+            (if (not (bolp)) (forward-char 1)) (throw 'stop t))
+           ((= (following-char) ?\n)
+            ;; stop at line end, but not after \\
+            (if (and (bolp) (not (eobp)))
+                (throw 'stop t)
+              (if (equal "\\\\" (buffer-substring-no-properties
+                                 (- (point) 2) (point)))
+                  (forward-char 1)
+                (throw 'stop t))))
+           (t
+            ;; Stop before )}] if preceding-char is any parenthesis
+            (if (or (= (char-syntax (preceding-char)) ?\()
+                    (= (char-syntax (preceding-char)) ?\))
+                    (= (preceding-char) ?-))
+                (throw 'stop t)
+              (forward-char 1)
+              (if (looking-at "[^_\\^({\\[]")
+                  ;; stop after closing bracket, unless ^_[{( follow
+                  (throw 'stop t))))))))
 
     ;; Add environment for auto. insertion with C-c C-e
     (defun lps/latex-add-environments ()
