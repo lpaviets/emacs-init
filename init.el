@@ -40,6 +40,10 @@
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
 
+;; Symlink (or directly place) your personal packages in this directory.
+(add-to-list 'load-path (concat (expand-file-name user-emacs-directory)
+                                "extra-packages/"))
+
 (require 'use-package)
 ;; Comment this line if you don't want to automatically install
 ;; all the packages that you are missing
