@@ -88,8 +88,15 @@ It makes both installation and customization easier, and the code is also simple
     (package-install 'use-package))
 
   ;; Symlink (or directly place) your personal packages in this directory.
-  (add-to-list 'load-path (concat (expand-file-name user-emacs-directory)
-                                  "extra-packages/"))
+  ;; Simple way to add personal packages
+  ;; Need to use `update-file-autoloads' or `update-directory-autoloads' in this dir
+  ;; regularly and place the autoloads in the personal-autoloads.el file
+  (let* ((extra-package-dir (concat (expand-file-name user-emacs-directory)
+                                   "extra-packages"))
+         (extra-autoloads (concat extra-package-dir "/personal-autoloads.el")))
+    (add-to-list 'load-path extra-package-dir)
+    (when (file-exists-p extra-autoloads)
+      (load extra-autoloads)))
 
   (require 'use-package)
   ;; Comment this line if you don't want to automatically install
