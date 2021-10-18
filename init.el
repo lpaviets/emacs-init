@@ -40,6 +40,10 @@
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
 
+;; Symlink (or directly place) your personal packages in this directory.
+(add-to-list 'load-path (concat (expand-file-name user-emacs-directory)
+                                "extra-packages/"))
+
 (require 'use-package)
 ;; Comment this line if you don't want to automatically install
 ;; all the packages that you are missing
@@ -1064,7 +1068,7 @@ buffer in current window."
 
   :custom
   ;; Generic company settings
-  (company-minimum-prefix-length 1)
+  (company-minimum-prefix-length 4)
   (company-idle-delay 0.0)
   (company-selection-wrap-around t)
   (company-show-numbers t)
@@ -1094,20 +1098,19 @@ buffer in current window."
 
   ;; AZERTY-friendly company number selection
   ;; Might lead to company-box being a bit broken ? Long function names are cut-off
-
   (dolist (map (list company-active-map company-search-map))
-    (mapc (lambda (x) (define-key map (read-kbd-macro (format "M-%s" (cdr x)))
-                        `(lambda () (interactive) (company-complete-number ,(car x)))))
-          '((10 . "à")
-            (1 . "&")
-            (2 . "é")
-            (3 . "\"")
-            (4 . "'")
-            (5 . "(")
-            (6 . "-")
-            (7 . "è")
-            (8 . "_")
-            (9 . "ç"))))
+    (dolist (key-char '((10 . ?à)
+                        (1 . ?&)
+                        (2 . ?é)
+                        (3 . ?\")
+                        (4 . ?')
+                        (5 . ?\()
+                        (6 . ?-)
+                        (7 . ?è)
+                        (8 . ?_)
+                        (9 . ?ç)))
+      (define-key map (kbd (format "M-%c" (cdr key-char)))
+        `(lambda () (interactive) (company-complete-number ,(car key-char))))))
 
   ;; Experimental support for multi-backend 'keep-prefix behaviour
   ;; I simply deleted a test from the original function, which
