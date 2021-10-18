@@ -1474,7 +1474,7 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
 
     :custom
     ;; Generic company settings
-    (company-minimum-prefix-length 1)
+    (company-minimum-prefix-length 4)
     (company-idle-delay 0.0)
     (company-selection-wrap-around t)
     (company-show-numbers t)
@@ -1504,20 +1504,19 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
 
     ;; AZERTY-friendly company number selection
     ;; Might lead to company-box being a bit broken ? Long function names are cut-off
-
     (dolist (map (list company-active-map company-search-map))
-      (mapc (lambda (x) (define-key map (read-kbd-macro (format "M-%s" (cdr x)))
-                          `(lambda () (interactive) (company-complete-number ,(car x)))))
-            '((10 . "à")
-              (1 . "&")
-              (2 . "é")
-              (3 . "\"")
-              (4 . "'")
-              (5 . "(")
-              (6 . "-")
-              (7 . "è")
-              (8 . "_")
-              (9 . "ç"))))
+      (dolist (key-char '((10 . ?à)
+                          (1 . ?&)
+                          (2 . ?é)
+                          (3 . ?\")
+                          (4 . ?')
+                          (5 . ?\()
+                          (6 . ?-)
+                          (7 . ?è)
+                          (8 . ?_)
+                          (9 . ?ç)))
+        (define-key map (kbd (format "M-%c" (cdr key-char)))
+          `(lambda () (interactive) (company-complete-number ,(car key-char))))))
 
     ;; Experimental support for multi-backend 'keep-prefix behaviour
     ;; I simply deleted a test from the original function, which
