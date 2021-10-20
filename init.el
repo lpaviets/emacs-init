@@ -953,11 +953,11 @@ buffer in current window."
 
 (when (version< "28.0" emacs-version)
   (use-package repeat
-    :init
-    (repeat-mode 1)
     :bind
     (:map lps/quick-edit-map
-          ("z" . repeat))))
+          ("z" . repeat))
+    :init
+    (repeat-mode 1)))
 
 (use-package emacs
   :ensure nil
@@ -1606,46 +1606,6 @@ Breaks if region or line spans multiple visual lines"
 (use-package rainbow-delimiters
   :hook ((prog-mode comint-mode fundamental-mode) . rainbow-delimiters-mode))
 
-;; Smartparens is currently bugged
-(use-package smartparens
-  :disabled t
-  :custom (sp-highlight-pair-overlay nil)
-  :hook (smartparens-mode . show-smartparens-mode)
-  :bind
-  ("C-M-f" . sp-forward-sexp)
-  ("C-M-b" . sp-backward-sexp)
-
-  ;; Define those as in paredit
-  ("C-M-n" . sp-up-sexp)
-  ("C-M-d" . sp-down-sexp)
-  ("C-M-u" . sp-backward-up-sexp)
-  ("C-M-p" . sp-backward-down-sexp)
-
-  ("C-S-a" . sp-beginning-of-sexp)
-  ("C-S-e" . sp-end-of-sexp)
-
-  ("C-M-t" . sp-transpose-sexp)
-
-  ("C-M-k" . sp-kill-sexp)
-  ("C-M-w" . sp-copy-sexp)
-
-  ("M-<delete>" . sp-unwrap-sexp)
-  ("M-<backspace>" . sp-backward-unwrap-sexp)
-
-  ("C-<right>" . sp-forward-slurp-sexp)
-  ("C-<left>" . sp-forward-barf-sexp)
-  ("C-M-<left>" . sp-backward-slurp-sexp) ; kbd ghosting ?
-  ("C-M-<right>" . sp-backward-barf-sexp) ; kbd ghosting ?
-
-  ("M-s" . sp-splice-sexp) ; unbinds "occur"
-  ;; ("C-M-<delete>" . sp-splice-sexp-killing-forward)
-  ;; ("C-M-<backspace>" . sp-splice-sexp-killing-backward)
-  ;; ("C-S-<backspace>" . sp-splice-sexp-killing-around)
-
-  ("M-F" . sp-forward-symbol)
-  ("M-B" . sp-backward-symbol))
-
-
 (use-package paredit
   :init
   (defun lps/paredit-enable-electric-pair-disable ()
@@ -1663,14 +1623,45 @@ Breaks if region or line spans multiple visual lines"
 
   :bind
   (:map paredit-mode-map
-        ("C-M-y" . paredit-copy-as-kill)
+        ("C-S-w" . paredit-copy-as-kill)
         ("M-s" . nil) ;; To get isearch-mode-map
         ("M-s M-s" . paredit-splice-sexp)
         ("C-M-," . paredit-convolute-sexp)
         ("C-S-t" . transpose-sexps)
         ("M-j" . eval-print-last-sexp)
         ([remap newline] . paredit-newline)
-        ("<C-backspace>" . paredit-delete-region)))
+        ("<C-backspace>" . paredit-delete-region))
+
+  :config
+  (defvar lps/paredit-repeat-map
+    (let ((map (make-sparse-keymap)))
+      (dolist (key-cmd '(("b" . paredit-backward)
+                         ("f" . paredit-forward)
+                         ("u" . paredit-backward-up)
+                         ("p" . paredit-backward-down)
+                         ("n" . paredit-forward-up)
+                         ("d" . paredit-forward-down)
+                         ("T" . transpose-sexps)
+                         ("(" . paredit-wrap-round)
+                         ("\"" . paredit-meta-doublequote)
+                         ("w" . paredit-copy-as-kill)
+                         ("k" . kill-sexp)
+                         ("K" . paredit-kill)
+                         ("SPC" . mark-sexp)
+                         ("<left>" . paredit-forward-barf-sexp)
+                         ("<right>" . paredit-forward-slurp-sexp)
+                         ("<M-left>" . paredit-backward-slurp-sexp)
+                         ("<M-right>" . paredit-backward-barf-sexp)
+                         ("r" . paredit-raise-sexp)
+                         ("s" . paredit-splice-sexp)
+                         (";" . paredit-comment-dwim)
+                         ("l" . paredit-recenter-on-sexp)
+                         ("a" . beginning-of-defun)
+                         ("e" . end-of-defun)
+                         ("q" . paredit-reindent-defun)))
+        (define-key map (kbd (car key-cmd)) (cdr key-cmd))
+        (put (cdr key-cmd) 'repeat-map 'lps/paredit-repeat-map))
+      map)))
 
 (use-package elec-pair
   :hook ((prog-mode
