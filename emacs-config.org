@@ -2986,6 +2986,9 @@ Not only is Org Mode great to write structured documents that can be exported to
           ("rm" "Movie" checkitem
            (file+function "movies.org" lps/org-ask-location))
 
+          ("rb" "Book" checkitem
+             (file+function "books.org" lps/org-ask-location))
+
           ("rR" "Restaurant" checkitem
            (file+function "restaurants.org" lps/org-ask-location))))
 

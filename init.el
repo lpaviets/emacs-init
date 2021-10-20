@@ -2205,6 +2205,9 @@ the next s-expression in parentheses rather than inserting () at point"
         ("rm" "Movie" checkitem
          (file+function "movies.org" lps/org-ask-location))
 
+        ("rb" "Book" checkitem
+           (file+function "books.org" lps/org-ask-location))
+
         ("rR" "Restaurant" checkitem
          (file+function "restaurants.org" lps/org-ask-location))))
 
