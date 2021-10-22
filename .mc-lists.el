@@ -43,22 +43,29 @@
         paredit-wrap-round
         reftex-label
         reindent-then-newline-and-indent
+        zap-up-to-char
         ))
 
 (setq mc/cmds-to-run-once
       '(
         consult-line
+        helpful-key
         hydra-multiple-cursors/body
         hydra-multiple-cursors/mc/edit-lines-and-exit
         hydra-multiple-cursors/mc/mark-all-dwim
+        hydra-multiple-cursors/mc/mark-all-like-this-and-exit
+        hydra-multiple-cursors/mc/mark-all-like-this-and-exti
         hydra-multiple-cursors/mc/mark-all-words-like-this-and-exit
         hydra-multiple-cursors/mc/mark-next-like-this
+        hydra-multiple-cursors/mc/mark-next-lines
         hydra-multiple-cursors/mc/mark-previous-like-this
+        hydra-multiple-cursors/mc/mark-previous-lines
         hydra-multiple-cursors/mc/skip-to-next-like-this
         hydra-multiple-cursors/mc/unmark-next-like-this
         hydra-multiple-cursors/mc/unmark-previous-like-this
         hydra-multiple-cursors/nil
         lps/duplicate-line-or-region-down
+        next-buffer
         swiper-mc
         wdired-finish-edit
         ))

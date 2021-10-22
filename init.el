@@ -970,8 +970,10 @@ buffer in current window."
 
 (use-package multiple-cursors
   :defer t
-  :bind (:map lps/all-hydras-map
-              ("M" . hydra-multiple-cursors/body))
+  :bind
+  ("<C-S-mouse-1>" . mc/add-cursor-on-click)
+  (:map lps/all-hydras-map
+        ("M" . hydra-multiple-cursors/body))
   :config
   (pretty-hydra-define hydra-multiple-cursors (:title "Multiple cursors"
                                                       :quit-key "q")
@@ -994,7 +996,11 @@ buffer in current window."
       ("P" mc/skip-to-previous-like-this "Skip to previous like this"))
      "Unmark"
      (("M-n" mc/unmark-next-like-this "Unmark next like this")
-      ("M-p" mc/unmark-previous-like-this "Unmark previous like this")))))
+      ("M-p" mc/unmark-previous-like-this "Unmark previous like this"))
+     "More"
+     (("M" mc/mark-more-like-this-extended "Mark like this interactively")
+      ("C-n" mc/mark-next-lines "Mark next lines")
+      ("C-p" mc/mark-previous-lines "Mark previous lines")))))
 
 (use-package orderless
   :custom
