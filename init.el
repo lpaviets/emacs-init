@@ -1810,6 +1810,12 @@ the next s-expression in parentheses rather than inserting () at point"
   (:map prog-mode-map
         ("<f5>" . compile)))
 
+(use-package emacs
+  :ensure nil
+  :custom
+  (comint-scroll-to-bottom-on-input t)
+  (comint-prompt-read-only t))
+
 (use-package python
   :ensure nil
   :defer t
@@ -1942,6 +1948,29 @@ the next s-expression in parentheses rather than inserting () at point"
   (defun lps/sly-mrepl-other-window ()
     (interactive)
     (sly-mrepl #'pop-to-buffer))
+
+  (defun lps/sly-mrepl-paredit-open-scroll-to-bottom (&rest args)
+    "Fix to also scroll to the bottom of the SLY REPL when inserting a parenthesis.
+This is needed, as `comint-preinput-scroll-to-bottom' does not
+recognize `paredit-open-round' as a command susceptible to
+trigger the scrolling."
+    (if (and (derived-mode-p major-mode 'comint-mode)
+             comint-scroll-to-bottom-on-input)
+        (let* ((current (current-buffer))
+               (process (get-buffer-process current))
+               (scroll comint-scroll-to-bottom-on-input))
+          (when (and process (< (point) (process-mark process)))
+            (if (eq scroll 'this)
+                (goto-char (point-max))
+              (walk-windows
+               (lambda (window)
+                 (if (and (eq (window-buffer window) current)
+                          (or (eq scroll t) (eq scroll 'all)))
+                     (with-selected-window window
+                       (goto-char (point-max)))))
+               nil t))))))
+
+  (advice-add 'paredit-open-round :before 'lps/sly-mrepl-paredit-open-scroll-to-bottom)
 
   (add-hook 'sly-mrepl-mode-hook #'lps/sly-company-setup))
 
