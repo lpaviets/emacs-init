@@ -1535,7 +1535,10 @@ Breaks if region or line spans multiple visual lines"
   :bind
   ("C-x g" . magit-status)
   (:map magit-section-mode-map
-        ("M-^" . magit-section-up)))
+        ("M-^" . magit-section-up))
+  :config
+  (dolist (action '(stage-all-changes unstage-all-changes))
+    (add-to-list 'magit-no-confirm action)))
 
 (use-package git-timemachine
   :defer t)
@@ -1747,13 +1750,21 @@ the next s-expression in parentheses rather than inserting () at point"
   (defun lps/lsp-by-default-in-session ()
     (if (> lps/--default-lsp-mode 0)
         (lsp-deferred)
-      (if (and (= lps/--default-lsp-mode 0) (y-or-n-p "Automatically use lsp-mode in the current session ?"))
+      (if (and (= lps/--default-lsp-mode 0)
+               (y-or-n-p "Automatically use lsp-mode in the current session ?"))
           (progn
             (setq lps/--default-lsp-mode 1)
             (lsp))
         (setq lps/--default-lsp-mode -1))))
+
+  (defun lps/--no-lsp-here (fun &rest args)
+    (let ((lps/--default-lsp-mode -1))
+      (apply fun args)))
+
+  (advice-add 'helpful-update :around 'lps/--no-lsp-here)
+
   :custom
-  (lsp-diagnostics-provider :flycheck) ;:none if none wanted
+  (lsp-diagnostics-provider :flycheck)  ;:none if none wanted
 
   :config
   (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
