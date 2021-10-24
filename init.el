@@ -944,7 +944,10 @@ buffer in current window."
 
 (use-package ffap
   :ensure nil
-  :init (ffap-bindings)
+  :init
+  (ffap-bindings)
+  :custom
+  (ffap-pass-wildcards-to-dired t)
   :config
   (defun lps/find-file-as-root (filename)
     "Switch to a buffer visiting the file FILENAME as root, creating one if none exists."
@@ -1632,6 +1635,7 @@ Breaks if region or line spans multiple visual lines"
 
   :bind
   (:map paredit-mode-map
+        ("M-?" . nil)
         ("C-S-w" . paredit-copy-as-kill)
         ("M-s" . nil) ;; To get isearch-mode-map
         ("M-s M-s" . paredit-splice-sexp)
@@ -1639,42 +1643,7 @@ Breaks if region or line spans multiple visual lines"
         ("C-S-t" . transpose-sexps)
         ("M-j" . eval-print-last-sexp)
         ([remap newline] . paredit-newline)
-        ("<C-backspace>" . paredit-delete-region))
-
-  :config
-  ;; (defvar lps/paredit-repeat-map
-  ;;   (let ((map (make-sparse-keymap)))
-  ;;     (dolist (key-cmd-rep '(("b" paredit-backward t)
-  ;;                            ("f" paredit-forward t)
-  ;;                            ("u" paredit-backward-up t)
-  ;;                            ("p" paredit-backward-down t)
-  ;;                            ("n" paredit-forward-up t)
-  ;;                            ("d" paredit-forward-down t)
-  ;;                            ("T" transpose-sexps)
-  ;;                            ("(" paredit-wrap-round)
-  ;;                            ("\"" paredit-meta-doublequote)
-  ;;                            ("w" paredit-copy-as-kill)
-  ;;                            ("k" kill-sexp)
-  ;;                            ("K" paredit-kill)
-  ;;                            ("<left>" paredit-forward-barf-sexp)
-  ;;                            ("<right>" paredit-forward-slurp-sexp)
-  ;;                            ("<M-left>" paredit-backward-slurp-sexp)
-  ;;                            ("<M-right>" paredit-backward-barf-sexp)
-  ;;                            ("r" paredit-raise-sexp)
-  ;;                            ("s" paredit-splice-sexp)
-  ;;                            (";" paredit-comment-dwim)
-  ;;                            ("l" paredit-recenter-on-sexp)
-  ;;                            ("a" beginning-of-defun)
-  ;;                            ("e" end-of-defun)
-  ;;                            ("q" paredit-reindent-defun)))
-  ;;       (let ((key (car key-cmd-rep))
-  ;;             (cmd (cadr key-cmd-rep))
-  ;;             (rep (caddr key-cmd-rep)))
-  ;;         (define-key map (kbd key) cmd)
-  ;;         (when rep
-  ;;           (put cmd 'repeat-map 'lps/paredit-repeat-map))))
-  ;;     map))
-  )
+        ("<C-backspace>" . paredit-delete-region)))
 
 (use-package elec-pair
   :hook ((prog-mode
@@ -2055,6 +2024,18 @@ trigger the scrolling."
 
 (use-package antlr-mode
   :mode ("\\.g4\\'" . antlr-mode))
+
+(use-package sage-shell-mode
+  :hook
+  ((sage-shell-mode sage-shell:sage-mode) . lps/sage-shell-hooks)
+  :config
+  ;; Be careful: if you use the (now somewhat obsolete) `sage-mode',
+  ;; this might break things and call the wrong functions
+  (sage-shell:define-alias)
+  ;; Sage is its own shell, no need to open a Python shell too !
+  (defun lps/sage-shell-hooks ()
+    (eldoc-mode 1)
+    (setq-local python-mode-hook (remove 'lps/run-python python-mode-hook))))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
