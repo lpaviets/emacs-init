@@ -18,6 +18,7 @@
         forward-sexp
         hungry-delete-backward
         hungry-delete-forward
+        hydra--negative-argument
         kill-region
         kill-sexp
         lps/eval-and-replace-last-sexp

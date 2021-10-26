@@ -2066,6 +2066,7 @@ trigger the scrolling."
   ;; Coding in blocks
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
+  (org-use-speed-commands t)
   (org-directory "~/Documents/OrgFiles/")
   (org-special-ctrl-a/e t) ;; Not enough with visual-line-mode, need to bind C-a/C-e too
   :config
