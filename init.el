@@ -798,6 +798,21 @@ buffer in current window."
   ([remap describe-key]      . helpful-key)
   ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
 
+(use-package emacs
+  :ensure nil
+  :custom
+  (apropos-documentation-sort-by-scores t))
+
+;; which-key. Shows all the available key sequences after a prefix
+(use-package which-key
+  :init
+  (which-key-mode 1)
+  (which-key-setup-side-window-bottom) ;; default
+  :diminish
+  :custom
+  (which-key-idle-delay 1)
+  (which-key-idle-secondary-delay 0.05))
+
 (use-package help-at-pt
   :ensure nil
   :custom
@@ -870,16 +885,6 @@ buffer in current window."
 (if (version< emacs-version "28.0") ; ) parsing bug
     (defalias 'yes-or-no-p 'y-or-n-p)
   (setq use-short-answers t))
-
-;; which-key. Shows all the available key sequences after a prefix
-(use-package which-key
-  :init
-  (which-key-mode 1)
-  (which-key-setup-side-window-bottom) ;; default
-  :diminish
-  :custom
-  (which-key-idle-delay 1)
-  (which-key-idle-secondary-delay 0.05))
 
 (use-package consult
   :defer t

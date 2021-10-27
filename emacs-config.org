@@ -1063,7 +1063,7 @@ We use the keyboard even for scrolling, so we want to have the nicest possible e
 #+end_src
 
 ** Help !
-
+*** Improve default help
 Emacs already has a /great/ documentation system, but it is still possible to improve it ! [[https://github.com/Wilfred/helpful][helpful]] makes things easier to remember and to use without having to search for documentation in multiple places.
 
 It will condense all the available information about something within a single Help buffer, and will add some documentation to the commands you are currently typing.
@@ -1083,6 +1083,35 @@ It will condense all the available information about something within a single H
     ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
 
 #+end_src
+
+We can also improve some of the other help commands:
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :custom
+    (apropos-documentation-sort-by-scores t))
+#+end_src
+*** Which-key
+
+Because there are a lot of similar commands, it is quite easy to get lost. [[https://github.com/justbur/emacs-which-key][which-key]] is a package that shows all the available commands after having typed some prefix, meaning that knowing the beginning of a key sequence is enough to get the rest of the information.
+
+For example, if you press =C-c=, then a panel will appear at the bottom of the screen to show how you can currently continue this command, depending on which buffer you are in.
+
+
+#+begin_src emacs-lisp
+  ;; which-key. Shows all the available key sequences after a prefix
+  (use-package which-key
+    :init
+    (which-key-mode 1)
+    (which-key-setup-side-window-bottom) ;; default
+    :diminish
+    :custom
+    (which-key-idle-delay 1)
+    (which-key-idle-secondary-delay 0.05))
+#+end_src
+
+*** Help at point
 
 By default, whenever you place your /mouse/ cursor over something - say, a hyperlink -, Emacs will display a help message in the echo area.
 However, we tend not to use the mouse at all, and in particular having to use the mouse for help would feel a little bit "backwards" compared to Emacs' general philosophy.
@@ -1211,25 +1240,6 @@ Typing "yes" and "no" might be a bit too tiring
   (if (version< emacs-version "28.0") ; ) parsing bug
       (defalias 'yes-or-no-p 'y-or-n-p)
     (setq use-short-answers t))
-#+end_src
-
-** Help
-
-Because there are a lot of similar commands, it is quite easy to get lost. [[https://github.com/justbur/emacs-which-key][which-key]] is a package that shows all the available commands after having typed some prefix, meaning that knowing the beginning of a key sequence is enough to get the rest of the information.
-
-For example, if you press =C-c=, then a panel will appear at the bottom of the screen to show how you can currently continue this command, depending on which buffer you are in.
-
-
-#+begin_src emacs-lisp
-  ;; which-key. Shows all the available key sequences after a prefix
-  (use-package which-key
-    :init
-    (which-key-mode 1)
-    (which-key-setup-side-window-bottom) ;; default
-    :diminish
-    :custom
-    (which-key-idle-delay 1)
-    (which-key-idle-secondary-delay 0.05))
 #+end_src
 
 ** Utilities
