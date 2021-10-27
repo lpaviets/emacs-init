@@ -2436,7 +2436,7 @@ In this section, we fine-tune our editing tools for various programming language
   (use-package python
     :ensure nil
     :defer t
-    :hook (python-mode . lps/run-python)
+;;    :hook (python-mode . lps/run-python)
     :custom
     (python-shell-interpreter "python3")
     :config

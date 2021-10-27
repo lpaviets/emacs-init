@@ -1797,16 +1797,16 @@ the next s-expression in parentheses rather than inserting () at point"
   (comint-prompt-read-only t))
 
 (use-package python
-  :ensure nil
-  :defer t
-  :hook (python-mode . lps/run-python)
-  :custom
-  (python-shell-interpreter "python3")
-  :config
-  (require 'lsp-pyright)
-  (defun lps/run-python ()
-    (save-excursion
-      (call-interactively 'run-python))))
+    :ensure nil
+    :defer t
+;;    :hook (python-mode . lps/run-python)
+    :custom
+    (python-shell-interpreter "python3")
+    :config
+    (require 'lsp-pyright)
+    (defun lps/run-python ()
+      (save-excursion
+        (call-interactively 'run-python))))
 
 (use-package lsp-pyright
   :defer t)
