@@ -21,8 +21,10 @@
         hydra--negative-argument
         kill-region
         kill-sexp
+        lps/copy-line-at-point
         lps/eval-and-replace-last-sexp
         lps/exchange-point-and-mark
+        lps/select-line
         mark-sexp
         org-beginning-of-line
         org-delete-char
@@ -33,6 +35,7 @@
         paredit-close-round
         paredit-forward
         paredit-forward-delete
+        paredit-forward-down
         paredit-forward-kill-word
         paredit-forward-slurp-sexp
         paredit-forward-up
@@ -40,6 +43,7 @@
         paredit-meta-doublequote
         paredit-open-round
         paredit-raise-sexp
+        paredit-semicolon
         paredit-splice-sexp
         paredit-wrap-round
         reftex-label

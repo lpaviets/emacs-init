@@ -3175,8 +3175,50 @@ PWD is not in a git repo (or the git command is not found)."
     (visual-fill-column-mode 1))
   (add-hook 'nov-mode-hook #'lps/nov-mode-comfort-settings))
 
+(use-package flyspell-correct
+  :after flyspell
+  :bind
+  (:map flyspell-mode-map
+        ("C-$" . flyspell-correct-wrapper)))
+
+(use-package ispell
+  :defer t
+  :bind
+  ("<f8>" . ispell)
+  ("S-<f8>" . ispell-change-dictionary)
+  ("C-S-<f8>" . lps/flyspell-toggle)
+  :config
+  (add-to-list 'ispell-skip-region-alist '("^#+BEGIN_SRC" . "^#+END_SRC"))
+
+  ;; From https://www.emacswiki.org/emacs/FlySpell
+  (defun lps/flyspell-on-for-buffer-type ()
+    "Enable Flyspell appropriately for the major mode of the current
+buffer. Uses `flyspell-prog-mode' for modes derived from `prog-mode', so
+only strings and comments get checked. All other buffers get `flyspell-mode'
+to check all text. If flyspell is already enabled, does nothing."
+    (interactive)
+    (when flyspell-mode ; if not already on
+      (if (derived-mode-p 'prog-mode)
+          (progn
+            (message "Flyspell on (code)")
+            (flyspell-prog-mode 1))
+        (progn
+          (message "Flyspell on (text)")
+          (flyspell-mode 1)))))
+
+    (defun lps/flyspell-toggle ()
+      "Turn Flyspell on if it is off, or off if it is on.
+When turning on, it uses `lps/flyspell-on-for-buffer-type' so code-vs-text
+is handled appropriately."
+      (interactive)
+      (if flyspell-mode
+          (progn
+            (message "Flyspell off")
+            (flyspell-mode -1))
+        (lps/flyspell-on-for-buffer-type))))
+
 (use-package guess-language
-  :hook (text-mode . guess-language-mode)
+  ;;:hook (text-mode . guess-language-mode)
   :custom
   (guess-language-languages '(en fr))
   (guess-language-after-detection-functions '(guess-language-switch-flyspell-function)))
