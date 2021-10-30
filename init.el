@@ -1921,6 +1921,8 @@ the next s-expression in parentheses rather than inserting () at point"
 (use-package sly-mrepl
   :ensure nil
   :after sly
+  :hook
+  (sly-mrepl-mode . lps/sly-setup)
   :bind
   (:map sly-mrepl-mode-map
         ("C-c C-n" . sly-mrepl-next-prompt)
@@ -1934,6 +1936,7 @@ the next s-expression in parentheses rather than inserting () at point"
     (interactive)
     (sly-mrepl #'pop-to-buffer))
 
+  ;; Allow paredit to scroll to bottom on input when insert a parenthesis
   (defun lps/sly-mrepl-paredit-open-scroll-to-bottom (&rest args)
     "Fix to also scroll to the bottom of the SLY REPL when inserting a parenthesis.
 This is needed, as `comint-preinput-scroll-to-bottom' does not
@@ -1957,7 +1960,11 @@ trigger the scrolling."
 
   (advice-add 'paredit-open-round :before 'lps/sly-mrepl-paredit-open-scroll-to-bottom)
 
-  (add-hook 'sly-mrepl-mode-hook #'lps/sly-company-setup))
+  ;; Setup various variables
+  (defun lps/sly-setup ()
+    (lps/sly-company-setup)
+    ;; Why does SLY disable it ???
+    (setq-local comint-scroll-to-bottom-on-input t)))
 
 (use-package sly-stickers
   :ensure nil
@@ -2291,8 +2298,7 @@ move to the end of the document, and search backward instead."
   :defer t
   :bind
   (:map TeX-mode-map
-        ("C-c '" . TeX-error-overview))
-  (:map LaTeX-mode-map
+        ("C-c '" . TeX-error-overview)
         ("TAB" . lps/cdlatex-tab))
   :hook
   (LaTeX-mode . outline-minor-mode)
