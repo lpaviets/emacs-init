@@ -2898,7 +2898,8 @@ PWD is not in a git repo (or the git command is not found)."
   (setq mu4e-confirm-quit nil)
 
   ;; View images
-  (setq mu4e-view-show-images t)
+  (when (version< mu4e-mu-version "1.7")
+    (setq mu4e-view-show-images t))
   (when (fboundp 'imagemagick-register-types)
     (imagemagick-register-types))
 
@@ -3152,6 +3153,23 @@ PWD is not in a git repo (or the git command is not found)."
           (message-goto-body)
           (while secure
             (insert (pop secure))))))))
+
+(use-package message-attachment-reminder
+  :after mu4e
+  :custom
+  (message-attachment-reminder-regexp
+   (regexp-opt '(;; English
+                 "attached"
+                 "attachment"
+                 "enclosed"
+                 ;; French
+                 "ci-joint"
+                 "pièce-jointe"))))
+
+(use-package mu4e-column-faces
+  :after mu4e
+  :config
+  (mu4e-column-faces-mode))
 
 (use-package elpher)
 

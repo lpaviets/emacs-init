@@ -3825,7 +3825,8 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     (setq mu4e-confirm-quit nil)
 
     ;; View images
-    (setq mu4e-view-show-images t)
+    (when (version< mu4e-mu-version "1.7")
+      (setq mu4e-view-show-images t))
     (when (fboundp 'imagemagick-register-types)
       (imagemagick-register-types))
 
@@ -4098,6 +4099,34 @@ To deal with this problem, we use a ~org~ package, called [[https://github.com/o
             (message-goto-body)
             (while secure
               (insert (pop secure))))))))
+#+end_src
+
+** Other improvements
+
+This section is dedicated to minor improvements to the mailing workflow.
+For example, a thing that is often embarassing is sending a mail without its attachment. We try to prevent this by having a package scan the content of the message, and if it finds evidence of an absent attachment, it will gently remind us.
+
+#+begin_src emacs-lisp
+  (use-package message-attachment-reminder
+    :after mu4e
+    :custom
+    (message-attachment-reminder-regexp
+     (regexp-opt '(;; English
+                   "attached"
+                   "attachment"
+                   "enclosed"
+                   ;; French
+                   "ci-joint"
+                   "pièce-jointe"))))
+#+end_src
+
+The headers view of ~mu4e~ is not very pretty. Why not make it colourful ?
+
+#+begin_src emacs-lisp
+  (use-package mu4e-column-faces
+    :after mu4e
+    :config
+    (mu4e-column-faces-mode))
 #+end_src
 
 * Web
