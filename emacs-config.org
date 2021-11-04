@@ -2259,12 +2259,6 @@ It is even possible to define your own snippets. The following package contains 
     :after yasnippet)
 #+end_src
 
-**** Extra snippets
-#+begin_src emacs-lisp
-  (use-package common-lisp-snippets
-    :after yasnippet)
-#+end_src
-
 *** Company backends
 
 A first backend that we want to consider is the one using snippets provided by ~yasnippet~
@@ -2353,7 +2347,11 @@ We add another backend to support completion in shell and terminal-modes
       (interactive)
       (setq lps/--default-lsp-mode (not lps/--default-lsp-mode)))
 
-    :hook ((python-mode c-mode c++-mode) . lps/lsp-by-default-in-session))
+    :hook ((python-mode
+            c-mode
+            c++-mode
+            haskell-mode)
+           . lps/lsp-by-default-in-session))
 
   (use-package lsp-ui
     :after lsp-mode
@@ -2431,6 +2429,7 @@ Many programming languages have, in one way or another, a REPL or a command-line
 #+end_src
 
 ** Programming languages
+
 In this section, we fine-tune our editing tools for various programming languages.
 *** Python
 
@@ -2683,12 +2682,57 @@ We also add extra-packages to facilitate some usual operations.
     :after sly)
 #+end_src
 
+Finally, we add some snippets for an even faster programming experience:
+
+#+begin_src emacs-lisp
+  (use-package common-lisp-snippets
+    :after yasnippet sly)
+#+end_src
+
 ****  Clojure
 Finally, another recent and promising Lisp, which is much more opinionated than Common Lisp and runs on the JVM. It is a functional language, with a strong emphasis on immutable data structure, and has various tools that make concurrent programming easy.
 
 #+begin_src emacs-lisp
   (use-package cider
     :defer t)
+#+end_src
+
+*** Haskell
+
+Haskell is a functional, strongly typed programming language. A variety of modes have been written for it, and are pretty much necessary, as Haskell's syntax and source files look nothing like "basic C/Java" at all and so we cannot simply use variants of ~c-mode~ to program in Haskell.
+
+*MANUAL* [[https://www.haskell.org/cabal/][Cabal]] and [[https://github.com/ndmitchell/hoogle][Hoogle]] need to be installed separately. Once ~cabal~ is installed, you can just call =cabal update && cabal install hoogle= to install ~Hoogle~.
+
+#+begin_src emacs-lisp
+  (use-package haskell-mode
+    :defer t
+    :mode
+    ("\\.hs\\'" . haskell-mode)
+    ("\\.lhs\\'" . haskell-mode)
+    :hook
+    (haskell-mode . haskell-collapse-mode)
+    (haskell-mode . interactive-haskell-mode)
+    (haskell-mode . hindent-mode)
+    (haskell-mode . haskell-indentation-mode)
+    :custom
+    (haskell-process-suggest-remove-import-lines t)  ; warnings for redundant imports etc
+    (haskell-process-auto-import-loaded-modules t)
+    (haskell-process-show-overlays nil)) ; redundant with flycheck
+
+  (use-package haskell-snippets
+    :after yasnippet haskell-mode)
+#+end_src
+
+For all the intelligent stuff (completion, refactoring ...), we will not bother setting up numerous fancy modes but we rely instead on LSP. Although it is not my preferred way of doing things, I am not a Haskell guru at all, and don't use it that much, so a simple "Out of the box" experience will be fine, even if it is a bit bloated and offers less customization facilities.
+
+*MANUAL* The language server needs to be installed manually. I use [[https://github.com/haskell/haskell-language-server][haskell-language-server]] in this config.
+Be careful when installing ~ghcup~ and the likes. In some cases, only your ~.bashrc~ will be modified to add ~~/.ghcup/...~ to your PATH environment variable. This makes Emacs unable to locate the correct binaries for the language server, even if you specify the full path to the wrapper (Emacs will then be able to correctly start the wrapper, but the wrapper itself won't be able to locate the correct binaries). In this case, simply move the corresponding line from your ~.bashrc~ (probably the last one, or towards the end of the file), to ~~/.profile~ or ~~/.bash_profile~, so the PATH is correctly setup even outside of interactive bash terminals and Emacs will always inherit it.
+
+#+begin_src emacs-lisp
+  (use-package lsp-haskell
+    :defer t
+    :custom
+    (lsp-haskell-server-path "~/.ghcup/bin/haskell-language-server-wrapper"))
 #+end_src
 
 *** Web development

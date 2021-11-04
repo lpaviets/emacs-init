@@ -1683,9 +1683,6 @@ the next s-expression in parentheses rather than inserting () at point"
 (use-package yasnippet-snippets
   :after yasnippet)
 
-(use-package common-lisp-snippets
-  :after yasnippet)
-
 (use-package company-yasnippet
   :ensure nil
   :after company)
@@ -1750,7 +1747,11 @@ the next s-expression in parentheses rather than inserting () at point"
     (interactive)
     (setq lps/--default-lsp-mode (not lps/--default-lsp-mode)))
 
-  :hook ((python-mode c-mode c++-mode) . lps/lsp-by-default-in-session))
+  :hook ((python-mode
+          c-mode
+          c++-mode
+          haskell-mode)
+         . lps/lsp-by-default-in-session))
 
 (use-package lsp-ui
   :after lsp-mode
@@ -1983,8 +1984,34 @@ trigger the scrolling."
 (use-package sly-asdf
   :after sly)
 
+(use-package common-lisp-snippets
+  :after yasnippet sly)
+
 (use-package cider
   :defer t)
+
+(use-package haskell-mode
+  :defer t
+  :mode
+  ("\\.hs\\'" . haskell-mode)
+  ("\\.lhs\\'" . haskell-mode)
+  :hook
+  (haskell-mode . haskell-collapse-mode)
+  (haskell-mode . interactive-haskell-mode)
+  (haskell-mode . hindent-mode)
+  (haskell-mode . haskell-indentation-mode)
+  :custom
+  (haskell-process-suggest-remove-import-lines t)  ; warnings for redundant imports etc
+  (haskell-process-auto-import-loaded-modules t)
+  (haskell-process-show-overlays nil)) ; redundant with flycheck
+
+(use-package haskell-snippets
+  :after yasnippet haskell-mode)
+
+(use-package lsp-haskell
+  :defer t
+  :custom
+  (lsp-haskell-server-path "~/.ghcup/bin/haskell-language-server-wrapper"))
 
 (use-package js2-mode
   :defer t
