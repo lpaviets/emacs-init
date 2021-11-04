@@ -1250,8 +1250,9 @@ buffer in current window."
 
 (use-package emacs
   :ensure nil
-  :bind (:map lps/all-hydras-map
-              ("r" . hydra-rectangle/body))
+  :bind
+  (:map lps/all-hydras-map
+        ("r" . hydra-rectangle/body))
   :init
   (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
                                        :color pink
@@ -1261,7 +1262,7 @@ buffer in current window."
       ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_
     _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_
       ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
-    ^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
+    ^^^^          _u_ndo        _q_ quit     _I_nsert-string-rectangle      '---''(./..)-'(_\_)
     "
     ("p" rectangle-previous-line)
     ("n" rectangle-next-line)
@@ -1278,9 +1279,17 @@ buffer in current window."
     ("r" (if (region-active-p)
              (deactivate-mark)
            (rectangle-mark-mode 1)))        ;; C-x SPC
-    ("i" string-insert-rectangle)
+    ("I" string-insert-rectangle)
     ("u" undo nil)
     ("q" nil)))
+
+(use-package emacs
+  :after rect
+  :bind
+  ("C-x r I" . string-insert-rectangle)
+  (:map rectangle-mark-mode-map
+        ("RET" . rectangle-exchange-point-and-mark)
+        ("<C-return>" . cua-rectangle-mark-mode)))
 
 (use-package expand-region
   :bind ("C-=" . er/expand-region))

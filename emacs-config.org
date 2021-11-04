@@ -1694,13 +1694,17 @@ The previously defined commands, along with ~Swiper~, are great to navigate in a
 
 Manipulating rectangles is a cool Emacs feature. You can select a region with the shape of a rectangle, copy and yank it, insert strings at the beginning of each line of the selection, and several other features.
 
-Because the functions operating on rectangles are not always the easier to remember, we simply define a new Hydra referencing the most useful ones.
+Because the functions operating on rectangles are not always the easier to remember, we simply define a new Hydra referencing the most useful ones. We also bind keys that were seemingly forgotten.
+
+There is even a hidden gem in Emacs, which usually goes unknown for a (IMO) stupid reason: it is ~cua-rectangle-mark-mode~, a (arguably better) different way to manipulate rectangles and rectangular regions with Emacs. Being related to CUA, with most people associate with "C-c/C-x/C-v bindings for copy-cut-paste" and which is therefore almost non-existent in discussion between "advanced" Emacs users, it is a feature that is generally absent from the list 'cool Emacs things that you can do, although the usual ~rectangle-mark-mode~ isn't. This is why we add a binding to ~rectangle-mark-mode~ to change the current selection type to the more advanced ~CUA~ one.
+
 
 #+begin_src emacs-lisp
   (use-package emacs
     :ensure nil
-    :bind (:map lps/all-hydras-map
-                ("r" . hydra-rectangle/body))
+    :bind
+    (:map lps/all-hydras-map
+          ("r" . hydra-rectangle/body))
     :init
     (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
                                          :color pink
@@ -1710,7 +1714,7 @@ Because the functions operating on rectangles are not always the easier to remem
         ^_p_^       _w_ copy      _o_pen       _N_umber-lines                   |\\     -,,,--,,_
       _b_   _f_     _y_ank        _t_ype       _e_xchange-point                 /,`.-'`'   ..  \-;;,_
         ^_n_^       _d_ kill      _c_lear      _r_eset-region-mark             |,4-  ) )_   .;.(  `'-'
-      ^^^^          _u_ndo        _q_ quit     _i_nsert-string-rectangle      '---''(./..)-'(_\_)
+      ^^^^          _u_ndo        _q_ quit     _I_nsert-string-rectangle      '---''(./..)-'(_\_)
       "
       ("p" rectangle-previous-line)
       ("n" rectangle-next-line)
@@ -1727,9 +1731,17 @@ Because the functions operating on rectangles are not always the easier to remem
       ("r" (if (region-active-p)
                (deactivate-mark)
              (rectangle-mark-mode 1)))        ;; C-x SPC
-      ("i" string-insert-rectangle)
+      ("I" string-insert-rectangle)
       ("u" undo nil)
       ("q" nil)))
+
+  (use-package emacs
+    :after rect
+    :bind
+    ("C-x r I" . string-insert-rectangle)
+    (:map rectangle-mark-mode-map
+          ("RET" . rectangle-exchange-point-and-mark)
+          ("<C-return>" . cua-rectangle-mark-mode)))
 #+end_src
 
 ** Selection
