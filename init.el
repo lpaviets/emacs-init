@@ -2335,14 +2335,16 @@ move to the end of the document, and search backward instead."
   :bind
   (:map TeX-mode-map
         ("C-c '" . TeX-error-overview)
-        ("TAB" . lps/cdlatex-tab))
+        ;; ("TAB" . lps/cdlatex-tab)
+        ("<backtab>" . indent-for-tab-command))
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . lps/latex-fontification)
   (LaTeX-mode . lps/latex-add-environments)
   (LaTeX-mode . lps/latex-company-setup)
-  (LaTeX-mode . LaTeX-math-mode)
+  ;; (LaTeX-mode . LaTeX-math-mode)
   (LaTeX-mode . TeX-fold-mode)
+  (LaTeX-mode . cdlatex-mode)
 
   :custom
   ;; Automatically insert closing brackets
@@ -2508,70 +2510,70 @@ The return value is the string as entered in the minibuffer."
         (and def (string-equal input "") (setq input def))
         input)))
 
-  ;; Function to make TAB more useful !
-  ;; Almost taken directly from CDLaTeX, with some parts removed as I don't use them
-  (defun lps/cdlatex-tab ()
-    "This function is intended to do many cursor movements.
-It is bound to the tab key since tab does nothing useful in a TeX file.
+;;   ;; Function to make TAB more useful !
+;;   ;; Almost taken directly from CDLaTeX, with some parts removed as I don't use them
+;;   (defun lps/cdlatex-tab ()
+;;     "This function is intended to do many cursor movements.
+;; It is bound to the tab key since tab does nothing useful in a TeX file.
 
-It jumps to the next point in a LaTeX text where one would reasonably
-expect that more input can be put in.
-To do that, the cursor is moved according to the following rules:
+;; It jumps to the next point in a LaTeX text where one would reasonably
+;; expect that more input can be put in.
+;; To do that, the cursor is moved according to the following rules:
 
-The cursor stops...
-- before closing brackets if preceding-char is any of -({[]})
-- after  closing brackets, but not if following-char is any of ({[_^
-- just after $, if the cursor was before that $.
-- at end of non-empty lines
-- at the beginning of empty lines
-- before a SPACE at beginning of line
-- after first of several SPACE
+;; The cursor stops...
+;; - before closing brackets if preceding-char is any of -({[]})
+;; - after  closing brackets, but not if following-char is any of ({[_^
+;; - just after $, if the cursor was before that $.
+;; - at end of non-empty lines
+;; - at the beginning of empty lines
+;; - before a SPACE at beginning of line
+;; - after first of several SPACE
 
-Sounds strange?  Try it out!"
-    (interactive)
-    (catch 'stop
-      (cond
-       ((looking-at "}\\|\\]\\|)")
-        (forward-char 1)
-        (if (looking-at "[^_^({[]")
-            ;; stop after closing bracket, unless ^_[{( follow
-            (throw 'stop t)))
-       ((= (following-char) ?$)
-        (while (= (following-char) ?$) (forward-char 1))
-        (throw 'stop t))
-       ((= (following-char) ?\ )
-        ;; stop after first of many spaces
-        (forward-char 1)
-        (re-search-forward "[^ ]")
-        (if (/= (preceding-char) ?\n) (forward-char -1)))
-       (t
-        (forward-char 1)))
+;; Sounds strange?  Try it out!"
+;;     (interactive)
+;;     (catch 'stop
+;;       (cond
+;;        ((looking-at "}\\|\\]\\|)")
+;;         (forward-char 1)
+;;         (if (looking-at "[^_^({[]")
+;;             ;; stop after closing bracket, unless ^_[{( follow
+;;             (throw 'stop t)))
+;;        ((= (following-char) ?$)
+;;         (while (= (following-char) ?$) (forward-char 1))
+;;         (throw 'stop t))
+;;        ((= (following-char) ?\ )
+;;         ;; stop after first of many spaces
+;;         (forward-char 1)
+;;         (re-search-forward "[^ ]")
+;;         (if (/= (preceding-char) ?\n) (forward-char -1)))
+;;        (t
+;;         (forward-char 1)))
 
-      ;; move to next possible stopping site and check out the place
-      (while (re-search-forward "[ )}\n]\\|\\]" (point-max) t)
-        (forward-char -1)
-        (cond
-         ((= (following-char) ?\ )
-          ;; stop at first space or b-o-l
-          (if (not (bolp)) (forward-char 1)) (throw 'stop t))
-         ((= (following-char) ?\n)
-          ;; stop at line end, but not after \\
-          (if (and (bolp) (not (eobp)))
-              (throw 'stop t)
-            (if (equal "\\\\" (buffer-substring-no-properties
-                               (- (point) 2) (point)))
-                (forward-char 1)
-              (throw 'stop t))))
-         (t
-          ;; Stop before )}] if preceding-char is any parenthesis
-          (if (or (= (char-syntax (preceding-char)) ?\()
-                  (= (char-syntax (preceding-char)) ?\))
-                  (= (preceding-char) ?-))
-              (throw 'stop t)
-            (forward-char 1)
-            (if (looking-at "[^_\\^({\\[]")
-                ;; stop after closing bracket, unless ^_[{( follow
-                (throw 'stop t))))))))
+;;       ;; move to next possible stopping site and check out the place
+;;       (while (re-search-forward "[ )}\n]\\|\\]" (point-max) t)
+;;         (forward-char -1)
+;;         (cond
+;;          ((= (following-char) ?\ )
+;;           ;; stop at first space or b-o-l
+;;           (if (not (bolp)) (forward-char 1)) (throw 'stop t))
+;;          ((= (following-char) ?\n)
+;;           ;; stop at line end, but not after \\
+;;           (if (and (bolp) (not (eobp)))
+;;               (throw 'stop t)
+;;             (if (equal "\\\\" (buffer-substring-no-properties
+;;                                (- (point) 2) (point)))
+;;                 (forward-char 1)
+;;               (throw 'stop t))))
+;;          (t
+;;           ;; Stop before )}] if preceding-char is any parenthesis
+;;           (if (or (= (char-syntax (preceding-char)) ?\()
+;;                   (= (char-syntax (preceding-char)) ?\))
+;;                   (= (preceding-char) ?-))
+;;               (throw 'stop t)
+;;             (forward-char 1)
+;;             (if (looking-at "[^_\\^({\\[]")
+;;                 ;; stop after closing bracket, unless ^_[{( follow
+;;                 (throw 'stop t))))))))
 
   ;; Add environment for auto. insertion with C-c C-e
   (defun lps/latex-add-environments ()
@@ -2580,7 +2582,15 @@ Sounds strange?  Try it out!"
 
   ;; Better completion functions
   (defun lps/latex-company-setup () ;; TO FIX !
-    (setq-local company-backends '((company-math-symbols-unicode company-math-symbols-latex company-latex-commands company-capf company-dabbrev company-ispell company-yasnippet)))))
+    (setq-local company-backends
+                '((company-math-symbols-unicode
+                   company-math-symbols-latex
+                   company-latex-commands
+                   company-capf
+                   company-dabbrev
+                   company-ispell
+                   company-yasnippet)))
+    (setq-local company-minimum-prefix-length 4)))
 
 (use-package bibtex
   :defer t
@@ -2680,6 +2690,50 @@ Return a list of regular expressions."
   (setq preview-auto-reveal t)
   (setq preview-auto-cache-preamble t)
   (add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t))
+
+(use-package cdlatex
+  :defer t
+  :hook
+  (cdlatex-tab . lps/LaTeX-indent)
+  :bind
+  (:map cdlatex-mode-map
+        ("C-c ?" . nil)
+        ("<C-return>" . nil))
+  :custom
+  (cdlatex-make-sub-superscript-roman-if-pressed-twice nil)
+  (cdlatex-simplify-sub-super-scripts nil)
+  (cdlatex-math-modify-prefix "C-^")
+  (cdlatex-math-symbol-prefix ?°)
+  (cdlatex-math-symbol-alist
+   '((?< ("\\leq" "\\Leftarrow" "\\longleftarrow" "\\Longleftarrow"))
+     (?> ("\\geq" "\\Rightarrow" "\\longrightarrow" "\\Longrightarrow"))
+     (?\[ ("\\subseteq" "\\leftarrow"))
+     (?\] ("\\supseteq" "\\rightarrow"))
+     (?: ("\\colon"))
+     (?- ("\\cap" "\\bigcap"))
+     (?+ ("\\cup" "\\bigcup"))
+     (?L ("\\Lambda" "\\limits"))
+     (?c ("\\mathcal{?}" "\\mathbb{?}" "\\mathfrak{?}"))
+     (?\( ("\\langle ?\\rangle" "\\left? \\right"))))
+
+  :config
+  (defun lps/LaTeX-indent ()
+    (if (use-region-p)
+        (progn
+          (indent-region (region-beginning) (region-end))
+          t)
+      (let ((old-indent (current-indentation)))
+        (funcall indent-line-function)
+        (/= old-indent (current-indentation)))))
+
+  (defun lps/cdlatex-indent-after-expand (fun &rest args)
+    (let ((beg (point))
+          (end (point-marker)))
+      (set-marker-insertion-type end t)
+      (apply fun args)
+      (indent-region beg end)))
+
+  (advice-add 'cdlatex-environment :around #'lps/cdlatex-indent-after-expand))
 
 ;; eshell
 (use-package eshell-did-you-mean

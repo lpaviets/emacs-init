@@ -12,6 +12,7 @@
         backward-sexp
         beginning-of-visual-line
         c-indent-line-or-region
+        cdlatex-pbb
         counsel-M-x
         end-of-visual-line
         forward-sentence
@@ -21,9 +22,11 @@
         hydra--negative-argument
         kill-region
         kill-sexp
+        kill-visual-line
         lps/copy-line-at-point
         lps/eval-and-replace-last-sexp
         lps/exchange-point-and-mark
+        lps/insert-parentheses
         lps/select-line
         mark-sexp
         org-beginning-of-line
