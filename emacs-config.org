@@ -1319,6 +1319,7 @@ In this section, we define some useful macros to write code in Emacs Lisp.
 
 ** Some useful commands
 *** Open file
+
 We often want to visit links. If the point is on a file path, for example, it is often useful to be able to quicky navigate to this file.
 
 #+begin_src emacs-lisp
@@ -1330,9 +1331,22 @@ We often want to visit links. If the point is on a file path, for example, it is
     (ffap-pass-wildcards-to-dired t)
     :config
     (defun lps/find-file-as-root (filename)
-      "Switch to a buffer visiting the file FILENAME as root, creating one if none exists."
+      "Switch to a buffer visiting the file FILENAME as root, creating
+  one if none exists."
       (interactive "P")
       (find-file (concat "/sudo:root@localhost:" filename))))
+
+  (use-package recentf
+    :ensure nil
+    :init
+    (recentf-mode 1)
+    :custom
+    (recentf-max-saved-items 30)
+    :config
+    (dolist (excl (list (concat user-emacs-directory "eshell/*")
+                        recentf-save-file
+                        "/usr/local/share/emacs/*"))
+      (add-to-list 'recentf-exclude excl)))
 #+end_src
 
 *** Repeat commands

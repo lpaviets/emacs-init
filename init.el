@@ -955,9 +955,22 @@ buffer in current window."
   (ffap-pass-wildcards-to-dired t)
   :config
   (defun lps/find-file-as-root (filename)
-    "Switch to a buffer visiting the file FILENAME as root, creating one if none exists."
+    "Switch to a buffer visiting the file FILENAME as root, creating
+one if none exists."
     (interactive "P")
     (find-file (concat "/sudo:root@localhost:" filename))))
+
+(use-package recentf
+  :ensure nil
+  :init
+  (recentf-mode 1)
+  :custom
+  (recentf-max-saved-items 30)
+  :config
+  (dolist (excl (list (concat user-emacs-directory "eshell/*")
+                      recentf-save-file
+                      "/usr/local/share/emacs/*"))
+    (add-to-list 'recentf-exclude excl)))
 
 (when (version< "28.0" emacs-version)
   (use-package repeat
