@@ -1343,10 +1343,11 @@ We often want to visit links. If the point is on a file path, for example, it is
     :custom
     (recentf-max-saved-items 30)
     :config
-    (dolist (excl (list (concat user-emacs-directory "eshell/*")
+    (dolist (excl (list (concat user-emacs-directory "eshell/")
                         recentf-save-file
-                        "/usr/local/share/emacs/*"))
-      (add-to-list 'recentf-exclude excl)))
+                        "/usr/local/share/emacs/"
+                        bookmark-file))
+      (add-to-list 'recentf-exclude (expand-file-name excl))))
 #+end_src
 
 *** Repeat commands

@@ -967,10 +967,11 @@ one if none exists."
   :custom
   (recentf-max-saved-items 30)
   :config
-  (dolist (excl (list (concat user-emacs-directory "eshell/*")
+  (dolist (excl (list (concat user-emacs-directory "eshell/")
                       recentf-save-file
-                      "/usr/local/share/emacs/*"))
-    (add-to-list 'recentf-exclude excl)))
+                      "/usr/local/share/emacs/"
+                      bookmark-file))
+    (add-to-list 'recentf-exclude (expand-file-name excl))))
 
 (when (version< "28.0" emacs-version)
   (use-package repeat
