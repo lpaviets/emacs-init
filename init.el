@@ -980,7 +980,8 @@ one if none exists."
                       "\\.synctex\\.gz" "\\.out$" "\\.toc"
                       (expand-file-name recentf-save-file)
                       "/usr/local/share/emacs/"
-                      "bookmarks$"))
+                      "bookmarks$"
+                      (expand-file-name "~/Mail/")))
     (add-to-list 'recentf-exclude excl)))
 
 (when (version< "28.0" emacs-version)
@@ -1672,13 +1673,13 @@ Breaks if region or line spans multiple visual lines"
          . lps/paredit-enable-electric-pair-disable)
 
   :bind
+  ("C-S-t" . transpose-sexps) ;; Not restricted to paredit
   (:map paredit-mode-map
         ("M-?" . nil)
         ("C-S-w" . paredit-copy-as-kill)
         ("M-s" . nil) ;; To get isearch-mode-map
         ("M-s M-s" . paredit-splice-sexp)
         ("C-M-," . paredit-convolute-sexp)
-        ("C-S-t" . transpose-sexps)
         ("M-j" . eval-print-last-sexp)
         ([remap newline] . paredit-newline)
         ("<C-backspace>" . paredit-delete-region)))
