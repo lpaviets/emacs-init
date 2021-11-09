@@ -446,8 +446,6 @@ installed themes instead."
   :ensure nil
   :custom
   (enable-recursive-minibuffers t)
-  :bind
-  ("s-g" . exit-recursive-edit)
   :config
   (minibuffer-depth-indicate-mode 1))
 
@@ -537,7 +535,7 @@ installed themes instead."
 (use-package emacs
   :ensure nil
   :bind
-  ("s-k" . kill-this-buffer)
+  ([remap kill-buffer] . lps/kill-buffer)
   :init
   ;; Automatically reload a file if it has been modified
   (global-auto-revert-mode t)
@@ -550,6 +548,16 @@ installed themes instead."
      (display-buffer-in-previous-window)))
 
   :config
+  (defun lps/kill-buffer (&optional arg)
+    "Kill the current buffer if no ARG. Otherwise, prompt for a
+buffer to kill. If ARG is nil and the function is called from the
+minibuffer, exit recursive edit with `abort-recursive-edit'"
+  (interactive "P")
+  (if arg
+      (call-interactively 'kill-buffer)
+    (if (minibufferp)
+        (abort-recursive-edit)
+      (kill-buffer (current-buffer)))))
 
   ;; Display all the "help" buffers in the same window
   (defvar lps/help-modes '(helpful-mode
