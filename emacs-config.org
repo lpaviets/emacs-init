@@ -3661,14 +3661,17 @@ We install a few packages which make eshell easier to use.
     (eshell-prompt-function #'lps/eshell-prompt-function)
     (eshell-prompt-regexp "^[^#$\n]* [#$] ")
 
-    :hook (eshell-mode . (lambda ()
-                           (bind-key "C-l" 'eshell/clear eshell-mode-map)))
-
     :bind
     (:map lps/system-tools-map
           ("e" . eshell))
+    (:map eshell-hist-mode-map
+          ("C-c C-l" . nil)
+          ("C-c M-l" . eshell-list-history))
+    (:map eshell-mode-map
+          ("C-c C-l" . eshell/clear))
 
     :config
+    (require 'em-hist)
     ;; From https://blog.liangzan.net/blog/2012/12/12/customizing-your-emacs-eshell-prompt/
     (defun lps/pwd-repl-home (pwd)
       (interactive)
