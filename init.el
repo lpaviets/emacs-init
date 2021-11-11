@@ -2217,15 +2217,26 @@ trigger the scrolling."
               (member (car key-template) bound-key-templates)
             (push key-template org-structure-template-alist))))))
 
-;; Automatically tangles this emacs-config config file when we save it
+;; Automatically tangles this emacs-config config file
+;; We do not tangle after each save, but we rather do this:
+;; When we save a file, if this file is a config file, we add a hook to
+;; `kill-emacs-hook' that will tangle it when we end our session
+;; This way, the `init.el' file is only ever overidden once, at the end,
+;; and we don't lose time tangling a thousands line-long .org file after
+;; each small modification
+
 (defun lps/org-babel-tangle-config ()
+  (interactive)
+  (find-file (expand-file-name (concat user-emacs-directory "emacs-config.org")))
+  (let ((org-confirm-babel-evaluate nil))
+    (org-babel-tangle)))
+
+(defun lps/set-literate-config-modified ()
   (when (string-equal (buffer-file-name)
                       (expand-file-name (concat user-emacs-directory "emacs-config.org")))
-    ;; Dynamic scoping to the rescue
-    (let ((org-confirm-babel-evaluate nil))
-      (org-babel-tangle))))
+    (add-hook 'kill-emacs-hook 'lps/org-babel-tangle-config)))
 
-(add-hook 'org-mode-hook (lambda () (add-hook 'after-save-hook #'lps/org-babel-tangle-config)))
+(add-hook 'after-save-hook 'lps/set-literate-config-modified)
 
 (defun lps/elisp-completion-in-user-init ()
   (when (string-equal (buffer-file-name)
