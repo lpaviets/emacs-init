@@ -33,6 +33,7 @@
         org-delete-char
         org-end-of-line
         org-self-insert-command
+        paredit-backslash
         paredit-backward
         paredit-backward-up
         paredit-close-round
