@@ -321,8 +321,12 @@ installed themes instead."
 
 (use-package battery
   :ensure nil
-  :init
-  (display-battery-mode 1))
+  :config
+  (when (and battery-status-function
+              (let ((status (battery-format "%B" (funcall battery-status-function))))
+                (not (or (string-match-p "N/A" status)
+                         (string-match-p "unknown" status)))))
+      (display-battery-mode 1)))
 
 (use-package time
   :ensure nil
