@@ -1074,6 +1074,12 @@ We use the keyboard even for scrolling, so we want to have the nicest possible e
     (mouse-wheel-tilt-scroll t))
 #+end_src
 
+** XWidget
+
+You can compile emacs with XWidget support to be able to visualize many things in a pretty way (/e.g./ HTML files or mails, render markdown ...). For this, you need to build Emacs with the =--with-xwidgets= flag.
+
+NOTE: YOu might need to call =export WEBKIT_FORCE_SANDBOX=0= for it to work.
+
 ** Help !
 *** Improve default help
 Emacs already has a /great/ documentation system, but it is still possible to improve it ! [[https://github.com/Wilfred/helpful][helpful]] makes things easier to remember and to use without having to search for documentation in multiple places.
