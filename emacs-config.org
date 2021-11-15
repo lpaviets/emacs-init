@@ -225,6 +225,66 @@ In this section, we configure how Emacs byte-compiles and/or natively compiles t
 #+end_src
 
 * UI Configuration
+** Font and encoding
+*** Encoding and input
+Even if most of the time, you should be working with UTF-8, we still want to make sure that this is the default and that Emacs assumes that we are using UTF-8
+#+begin_src emacs-lisp
+  (use-package emacs
+    :custom
+    (locale-coding-system 'utf-8)
+    :init
+    (prefer-coding-system 'utf-8)
+    (set-language-environment 'utf-8)
+    (set-default-coding-systems 'utf-8)
+    (set-clipboard-coding-system 'utf-8)
+    (set-file-name-coding-system 'utf-8)
+    (set-terminal-coding-system 'utf-8)
+    (set-keyboard-coding-system 'utf-8)
+    (set-selection-coding-system 'utf-8))
+#+end_src
+
+Finally, as I am mostly using a French, AZERTY keyboard, some combinations are hard to input, /e.g./ everything of the form =C-^= or =M-~=. Indeed, those are dead keys, and cannot really be pressed at the same time than a modifier key. Hence, we simply "remap" (using translation maps, see the [[info:elisp#Translation Keymaps][manual]] !)
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :init
+    (define-key key-translation-map (kbd "<C-dead-circumflex>") (kbd "C-^"))
+    (define-key key-translation-map (kbd "<M-dead-circumflex>") (kbd "M-^")))
+#+end_src
+
+*** Fonts and faces
+
+In this section, we configure the default fonts.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :init
+    ;; Use the right font according to what is installed on the system
+
+    ;; Variable pitch
+    (when (member "Cantarell" (font-family-list))
+      (set-face-font 'variable-pitch "Cantarell:size=15"))
+
+    ;; Default fixed-pitch
+    (when (member "Ubuntu Mono" (font-family-list))
+      (set-face-font 'fixed-pitch "Ubuntu Mono:size=16"))
+
+    ;; Default (not used in the same place as fixed-pitch)
+    (when (member "DejaVu Sans Mono" (font-family-list))
+      (set-face-font 'default "DejaVu Sans Mono:size=14")))
+#+end_src
+
+*** International
+
+Another thing that is technically more a stylistic choice rather than a real encoding problem is how dates are formatted. I decide to use the European style
+
+#+begin_src emacs-lisp
+  (use-package calendar
+    :ensure nil
+    :config
+    (calendar-set-date-style 'european))
+#+end_src
+
 ** Visual interface changes
 
 We remove all the unnecessary elements from the interface, /e.g./ menus, scroll bar and so on.
@@ -606,40 +666,6 @@ This is one moment where a pretty hydra could help us change general UI paramete
         ;;   ("i" highlight-indent-guides-mode  "Show Indent Guides" :toggle t )
         ("g" fci-mode "Show Fill Column" :toggle t )
         ("<SPC>" nil "Quit" :color blue )))))
-#+end_src
-
-** Font and encoding
-
-Even if most of the time, you should be working with UTF-8, we still want to make sure that this is the default and that Emacs assumes that we are using UTF-8
-
-#+begin_src emacs-lisp
-  (prefer-coding-system 'utf-8)
-  (setq locale-coding-system 'utf-8)
-  (set-language-environment 'utf-8)
-  (set-default-coding-systems 'utf-8)
-  (set-clipboard-coding-system 'utf-8)
-  (set-file-name-coding-system 'utf-8)
-  (set-terminal-coding-system 'utf-8)
-  (set-keyboard-coding-system 'utf-8)
-  (set-selection-coding-system 'utf-8)
-#+end_src
-
-Another thing that is technically more a stylistic choice rather than a real encoding problem is how dates are formatted. I decide to use the European style
-
-#+begin_src emacs-lisp
-  (use-package calendar
-    :ensure nil
-    :config
-    (calendar-set-date-style 'european))
-#+end_src
-
-Finally, as I am mostly using a French, AZERTY keyboard, some combinations are hard to input, /e.g./ everything of the form =C-^= or =M-~=. Indeed, those are dead keys, and cannot really be pressed at the same time than a modifier key. Hence, we simply "remap" (using translation maps, see the [[info:elisp#Translation Keymaps][manual]] !)
-
-#+begin_src emacs-lisp
-  (use-package emacs
-    :init
-    (define-key key-translation-map (kbd "<C-dead-circumflex>") (kbd "C-^"))
-    (define-key key-translation-map (kbd "<M-dead-circumflex>") (kbd "M-^")))
 #+end_src
 
 ** Minibuffer
@@ -2945,18 +2971,11 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
 
 Take care when copying this block of code: the ~use-package~ declaration continues.
 
-** Font faces
+** Font and faces
 
      In order for Org Mode to feel like a document instead of code, we use a different font.
 
 #+begin_src emacs-lisp
-  ;; Use the right font according to what is installed on the system
-
-  (let ((my-temp-org-font "Cantarell"))
-    (if (member my-temp-org-font (font-family-list))
-        (setq my-org-mode-font my-temp-org-font)
-      (setq my-org-mode-font "Ubuntu Mono")))
-
   (defun lps/org-font-setup ()
     ;; Replace list hyphen with dot
     (font-lock-add-keywords 'org-mode
@@ -2974,11 +2993,11 @@ Take care when copying this block of code: the ~use-package~ declaration continu
                     (org-level-6 . 1.0)
                     (org-level-7 . 1.0)
                     (org-level-8 . 1.0)))
-      (set-face-attribute (car face) nil :font my-org-mode-font :weight 'regular :height (cdr face)))
+      (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'variable-pitch))
 
     ;; Ensure that anything that should be fixed-pitch in Org files appears that way
     (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch :extend t)
-    (set-face-attribute 'org-block-begin-line nil :slant 'italic :foreground "dark gray" :background "#1d1d2b" :inherit 'variable-pitch :height 1.0)
+    (set-face-attribute 'org-block-begin-line nil :slant 'italic :foreground "dark gray" :background "#1d1d2b" :inherit 'fixed-pitch :height 1.0)
     (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
     (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
     (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))

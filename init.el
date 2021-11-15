@@ -135,6 +135,45 @@
   :custom
   (native-comp-async-report-warnings-errors 'silent))
 
+(use-package emacs
+  :custom
+  (locale-coding-system 'utf-8)
+  :init
+  (prefer-coding-system 'utf-8)
+  (set-language-environment 'utf-8)
+  (set-default-coding-systems 'utf-8)
+  (set-clipboard-coding-system 'utf-8)
+  (set-file-name-coding-system 'utf-8)
+  (set-terminal-coding-system 'utf-8)
+  (set-keyboard-coding-system 'utf-8)
+  (set-selection-coding-system 'utf-8))
+
+(use-package emacs
+  :init
+  (define-key key-translation-map (kbd "<C-dead-circumflex>") (kbd "C-^"))
+  (define-key key-translation-map (kbd "<M-dead-circumflex>") (kbd "M-^")))
+
+(use-package emacs
+  :init
+  ;; Use the right font according to what is installed on the system
+
+  ;; Variable pitch
+  (when (member "Cantarell" (font-family-list))
+    (set-face-font 'variable-pitch "Cantarell:size=15"))
+
+  ;; Default fixed-pitch
+  (when (member "Ubuntu Mono" (font-family-list))
+    (set-face-font 'fixed-pitch "Ubuntu Mono:size=16"))
+
+  ;; Default (not used in the same place as fixed-pitch)
+  (when (member "DejaVu Sans Mono" (font-family-list))
+    (set-face-font 'default "DejaVu Sans Mono:size=14")))
+
+(use-package calendar
+  :ensure nil
+  :config
+  (calendar-set-date-style 'european))
+
 ;; Disable the annoying startup message and Emacs logo
 (setq inhibit-startup-message t)
 
@@ -425,26 +464,6 @@ installed themes instead."
       ;;   ("i" highlight-indent-guides-mode  "Show Indent Guides" :toggle t )
       ("g" fci-mode "Show Fill Column" :toggle t )
       ("<SPC>" nil "Quit" :color blue )))))
-
-(prefer-coding-system 'utf-8)
-(setq locale-coding-system 'utf-8)
-(set-language-environment 'utf-8)
-(set-default-coding-systems 'utf-8)
-(set-clipboard-coding-system 'utf-8)
-(set-file-name-coding-system 'utf-8)
-(set-terminal-coding-system 'utf-8)
-(set-keyboard-coding-system 'utf-8)
-(set-selection-coding-system 'utf-8)
-
-(use-package calendar
-  :ensure nil
-  :config
-  (calendar-set-date-style 'european))
-
-(use-package emacs
-  :init
-  (define-key key-translation-map (kbd "<C-dead-circumflex>") (kbd "C-^"))
-  (define-key key-translation-map (kbd "<M-dead-circumflex>") (kbd "M-^")))
 
 (use-package emacs
   :ensure nil
@@ -904,6 +923,8 @@ buffer in current window."
   ("C-S-s" . lps/consult-line-strict-match)
   ("C-c i" . lps/consult-imenu-or-org-heading)
   ("C-x b" . consult-buffer)
+  (:map lps/system-tools-map
+        ("C-f" . consult-file-externally))
   :custom
   (consult-narrow-key "<")
   :config
@@ -2157,13 +2178,6 @@ trigger the scrolling."
 
   (setq org-ellipsis " ▾")
 
-;; Use the right font according to what is installed on the system
-
-(let ((my-temp-org-font "Cantarell"))
-  (if (member my-temp-org-font (font-family-list))
-      (setq my-org-mode-font my-temp-org-font)
-    (setq my-org-mode-font "Ubuntu Mono")))
-
 (defun lps/org-font-setup ()
   ;; Replace list hyphen with dot
   (font-lock-add-keywords 'org-mode
@@ -2181,11 +2195,11 @@ trigger the scrolling."
                   (org-level-6 . 1.0)
                   (org-level-7 . 1.0)
                   (org-level-8 . 1.0)))
-    (set-face-attribute (car face) nil :font my-org-mode-font :weight 'regular :height (cdr face)))
+    (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'variable-pitch))
 
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way
   (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch :extend t)
-  (set-face-attribute 'org-block-begin-line nil :slant 'italic :foreground "dark gray" :background "#1d1d2b" :inherit 'variable-pitch :height 1.0)
+  (set-face-attribute 'org-block-begin-line nil :slant 'italic :foreground "dark gray" :background "#1d1d2b" :inherit 'fixed-pitch :height 1.0)
   (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
