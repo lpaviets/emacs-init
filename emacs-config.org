@@ -1269,6 +1269,8 @@ Typing "yes" and "no" might be a bit too tiring
     ("C-S-s" . lps/consult-line-strict-match)
     ("C-c i" . lps/consult-imenu-or-org-heading)
     ("C-x b" . consult-buffer)
+    (:map lps/system-tools-map
+          ("C-f" . consult-file-externally))
     :custom
     (consult-narrow-key "<")
     :config
