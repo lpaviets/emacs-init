@@ -159,15 +159,15 @@
 
   ;; Variable pitch
   (when (member "Cantarell" (font-family-list))
-    (set-face-font 'variable-pitch "Cantarell:size=15"))
+    (set-face-font 'variable-pitch "Cantarell:size=16"))
 
   ;; Default fixed-pitch
   (when (member "Ubuntu Mono" (font-family-list))
-    (set-face-font 'fixed-pitch "Ubuntu Mono:size=16"))
+    (set-face-font 'fixed-pitch "Ubuntu Mono:size=17"))
 
   ;; Default (not used in the same place as fixed-pitch)
   (when (member "DejaVu Sans Mono" (font-family-list))
-    (set-face-font 'default "DejaVu Sans Mono:size=14")))
+    (set-face-font 'default "DejaVu Sans Mono:size=15")))
 
 (use-package calendar
   :ensure nil
