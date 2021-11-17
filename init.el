@@ -128,6 +128,10 @@
   (:map lps/system-tools-map
         ("r" . restart-emacs)))
 
+(use-package server
+  :custom
+  (server-client-instructions nil))
+
 (setq custom-file (concat user-emacs-directory "custom-file.el"))
 (load custom-file 'noerror)
 

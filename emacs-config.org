@@ -205,6 +205,17 @@ In order to test things more rapidly and to be able to apply configuration chang
           ("r" . restart-emacs)))
 #+end_src
 
+** Server mode and emacsclient
+
+For various reasons, we might want to use Emacs in "server-mode": although it is not completely correct, the idea is that we start a daemon running "the real Emacs process" as a server, and we will simply connect clients to it to work with.
+There are small differences with the way Emacs normally works, so we deal with them in this section.
+
+#+begin_src emacs-lisp
+  (use-package server
+    :custom
+    (server-client-instructions nil))
+#+end_src
+
 ** Custom file
 
 We do not want Emacs to mess with our own =init.el= file, and so we tell it where to store all its precious customizations
