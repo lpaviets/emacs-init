@@ -271,18 +271,17 @@ In this section, we configure the default fonts.
   (use-package emacs
     :init
     ;; Use the right font according to what is installed on the system
-
     ;; Variable pitch
     (when (member "Cantarell" (font-family-list))
-      (set-face-font 'variable-pitch "Cantarell:size=16"))
+      (set-face-font 'variable-pitch "Cantarell"))
 
     ;; Default fixed-pitch
     (when (member "Ubuntu Mono" (font-family-list))
-      (set-face-font 'fixed-pitch "Ubuntu Mono:size=17"))
+      (set-face-font 'fixed-pitch "Ubuntu Mono"))
 
     ;; Default (not used in the same place as fixed-pitch)
     (when (member "DejaVu Sans Mono" (font-family-list))
-      (set-face-font 'default "DejaVu Sans Mono:size=15")))
+      (set-face-font 'default "DejaVu Sans Mono")))
 #+end_src
 
 *** International
