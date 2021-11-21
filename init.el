@@ -2989,11 +2989,9 @@ PWD is not in a git repo (or the git command is not found)."
   :defer t
   :init
   (setq delete-by-moving-to-trash t)
-  ;; Prevents dired from opening thousands of buffers
   :bind
   (:map dired-mode-map
         ("RET" . dired-find-alternate-file)
-        ("^" . lps/dired-up-directory-same-buffer)
         ("F" . find-name-dired))
   :custom
   ;; Delete and copy directories recursively
@@ -3001,11 +2999,8 @@ PWD is not in a git repo (or the git command is not found)."
   (dired-recursive-copies 'always)
   (dired-auto-revert-buffer t)
   (dired-listing-switches "-alFh")
-
-  :config
-  (defun lps/dired-up-directory-same-buffer ()
-    (interactive)
-    (find-alternate-file "..")))
+  (dired-isearch-filenames 'dwim)
+  (dired-kill-when-opening-new-dired-buffer t))
 
 ;; Make things prettier
 (use-package all-the-icons-dired
