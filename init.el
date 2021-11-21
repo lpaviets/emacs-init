@@ -1118,7 +1118,24 @@ one if none exists."
      ((equal "!" pattern)
       '(orderless-literal . ""))
      ((string-prefix-p "!" pattern)
-      `(orderless-without-literal . ,(substring pattern 1))))))
+      `(orderless-without-literal . ,(substring pattern 1)))))
+
+  ;; Fix some bugs with remote filenames
+  ;; Taken from Vertico documentation
+  (when (featurep 'vertico)
+    (defun basic-remote-try-completion (string table pred point)
+      (and (vertico--remote-p string)
+           (completion-basic-try-completion string table pred point)))
+
+    (defun basic-remote-all-completions (string table pred point)
+      (and (vertico--remote-p string)
+           (completion-basic-all-completions string table pred point)))
+
+    (add-to-list
+     'completion-styles-alist
+     '(basic-remote basic-remote-try-completion basic-remote-all-completions nil))
+
+    (setq completion-category-overrides '((file (styles basic-remote partial-completion))))))
 
 ;; Company. Auto-completion package
 (use-package company
@@ -2446,6 +2463,7 @@ move to the end of the document, and search backward instead."
 
   :config
   ;; Auto-insert
+  (require 'autoinsert)
   (add-to-list 'auto-insert-alist
                '(latex-mode
                  nil
@@ -2863,7 +2881,7 @@ Return a list of regular expressions."
   :config
   (require 'em-hist)
   ;; From https://blog.liangzan.net/blog/2012/12/12/customizing-your-emacs-eshell-prompt/
-  (defun lps/pwd-repl-home (pwd)
+  (defun lps/eshell-pwd-repl-home (pwd)
     (interactive)
     (let* ((home (expand-file-name (getenv "HOME")))
            (home-len (length home)))
@@ -2873,12 +2891,44 @@ Return a list of regular expressions."
           (concat "~" (substring pwd home-len))
         pwd)))
 
+  (defun lps/eshell-remote-repl-info (remote)
+    ;; Might not handle username/remote name with @ or : symbols in them
+    ;; if such a thing is even possible
+    ;; For a cleaner implementation, use `tramp-dissect-file-name'
+    ;; or `with-parsed-tramp-file-name'
+    (let* ((method-end (string-search ":" remote))
+           (method (substring remote 1 method-end))
+           (user (substring remote (1+ method-end) -1))
+           (len-user (length user))
+           (shortened-user (if (> len-user 13)
+                               (concat (substring user 0 6)
+                                       "…"
+                                       (substring user -6))
+                             user)))
+      (concat "[" method "|" shortened-user "]")))
+
+  (defun lps/eshell-abbreviate-short-dir-name (name)
+    (if (zerop (length name))
+        ""
+      (substring name 0 1)))
+
+  (defun lps/eshell-abbreviate-long-path (path)
+    (let ((split-path (split-string path "/")))
+      (if (> (length split-path) 3)
+          (concat
+           (mapconcat #'lps/eshell-abbreviate-short-dir-name
+                      (butlast split-path 3)
+                      "/")
+           "/"
+           (mapconcat #'identity (last split-path 3) "/"))
+        path)))
+
   ;; See the possible colours: M-x list-colors-display
-  (defun lps/curr-dir-git-branch-string (pwd)
+  (defun lps/eshell-curr-dir-git-branch-string (pwd)
     "Returns current git branch as a string, or the empty string if
 PWD is not in a git repo (or the git command is not found)."
     (interactive)
-    (when (and (eshell-search-path "git")
+    (if (and (eshell-search-path "git")
                (locate-dominating-file pwd ".git"))
       (let ((git-output (shell-command-to-string (concat "cd " pwd " && git branch | grep '\\*' | sed -e 's/^\\* //'"))))
         (propertize (concat "["
@@ -2886,28 +2936,25 @@ PWD is not in a git repo (or the git command is not found)."
                                 (substring git-output 0 -1)
                               "(no branch)")
                             "]")
-                    'face `(:foreground "green3")))))
+                    'face `(:foreground "green3")))
+      ""))
 
   (defun lps/eshell-prompt-function ()
-    (concat
-     (propertize ((lambda (p-lst)
-                    (if (> (length p-lst) 3)
-                        (concat
-                         (mapconcat (lambda (elm) (if (zerop (length elm)) ""
-                                                    (substring elm 0 1)))
-                                    (butlast p-lst 3)
-                                    "/")
-                         "/"
-                         (mapconcat (lambda (elm) elm)
-                                    (last p-lst 3)
-                                    "/"))
-                      (mapconcat (lambda (elm) elm)
-                                 p-lst
-                                 "/")))
-                  (split-string (lps/pwd-repl-home (eshell/pwd)) "/"))
-                 'face `(:foreground "DeepSkyBlue1"))
-     (or (lps/curr-dir-git-branch-string (eshell/pwd)))
-     (propertize " # " 'face 'default))))
+    (let* ((eshell-pwd (eshell/pwd))
+           (remote (file-remote-p eshell-pwd)))
+      (when remote
+        (setq eshell-pwd (substring eshell-pwd (length remote))))
+      (concat
+       (if remote
+           (propertize (lps/eshell-remote-repl-info remote)
+                       'face '(:foreground "light slate blue"))
+           "")
+       (propertize (lps/eshell-abbreviate-long-path (lps/eshell-pwd-repl-home eshell-pwd))
+                   'face `(:foreground "DeepSkyBlue1"))
+       (unless remote
+         (propertize (lps/eshell-curr-dir-git-branch-string eshell-pwd)
+                     'face `(:foreground "green3")))
+       (propertize " # " 'face 'default)))))
 
 ;; (use-package eshell-git-prompt
 ;;   :config (eshell-git-prompt-use-theme 'powerline)) ;; Visually buggy
