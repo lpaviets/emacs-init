@@ -160,18 +160,26 @@
 (use-package emacs
   :init
   ;; Use the right font according to what is installed on the system
+  (defun lps/set-default-fonts ()
+    ;; Variable pitch
+    (let ((font-list (font-family-list)))
+      (when (member "Cantarell" font-list)
+        (set-face-font 'variable-pitch "Cantarell"))
 
-  ;; Variable pitch
-  (when (member "Cantarell" (font-family-list))
-    (set-face-font 'variable-pitch "Cantarell:size=16"))
+      ;; Default fixed-pitch
+      (when (member "DejaVu Sans Mono" font-list)
+        (set-face-font 'fixed-pitch "DejaVu Sans Mono"))
 
-  ;; Default fixed-pitch
-  (when (member "Ubuntu Mono" (font-family-list))
-    (set-face-font 'fixed-pitch "Ubuntu Mono:size=17"))
+      ;; Default (not used in the same place as fixed-pitch)
+      (when (member "DejaVu Sans Mono" font-list)
+        (set-face-font 'default "DejaVu Sans Mono"))))
 
-  ;; Default (not used in the same place as fixed-pitch)
-  (when (member "DejaVu Sans Mono" (font-family-list))
-    (set-face-font 'default "DejaVu Sans Mono:size=15")))
+  (if (daemonp)
+      (add-hook 'after-make-frame-functions
+                (lambda (frame)
+                  (with-selected-frame frame
+                    (lps/set-default-fonts))))
+    (lps/set-default-fonts)))
 
 (use-package calendar
   :ensure nil

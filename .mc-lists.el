@@ -65,6 +65,7 @@
         hydra-multiple-cursors/mc/mark-all-like-this-and-exit
         hydra-multiple-cursors/mc/mark-all-like-this-and-exti
         hydra-multiple-cursors/mc/mark-all-words-like-this-and-exit
+        hydra-multiple-cursors/mc/mark-more-like-this-extended
         hydra-multiple-cursors/mc/mark-next-like-this
         hydra-multiple-cursors/mc/mark-next-lines
         hydra-multiple-cursors/mc/mark-previous-like-this

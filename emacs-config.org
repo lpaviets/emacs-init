@@ -271,17 +271,26 @@ In this section, we configure the default fonts.
   (use-package emacs
     :init
     ;; Use the right font according to what is installed on the system
-    ;; Variable pitch
-    (when (member "Cantarell" (font-family-list))
-      (set-face-font 'variable-pitch "Cantarell"))
+    (defun lps/set-default-fonts ()
+      ;; Variable pitch
+      (let ((font-list (font-family-list)))
+        (when (member "Cantarell" font-list)
+          (set-face-font 'variable-pitch "Cantarell"))
 
-    ;; Default fixed-pitch
-    (when (member "Ubuntu Mono" (font-family-list))
-      (set-face-font 'fixed-pitch "Ubuntu Mono"))
+        ;; Default fixed-pitch
+        (when (member "DejaVu Sans Mono" font-list)
+          (set-face-font 'fixed-pitch "DejaVu Sans Mono"))
 
-    ;; Default (not used in the same place as fixed-pitch)
-    (when (member "DejaVu Sans Mono" (font-family-list))
-      (set-face-font 'default "DejaVu Sans Mono")))
+        ;; Default (not used in the same place as fixed-pitch)
+        (when (member "DejaVu Sans Mono" font-list)
+          (set-face-font 'default "DejaVu Sans Mono"))))
+
+    (if (daemonp)
+        (add-hook 'after-make-frame-functions
+                  (lambda (frame)
+                    (with-selected-frame frame
+                      (lps/set-default-fonts))))
+      (lps/set-default-fonts)))
 #+end_src
 
 *** International
@@ -632,6 +641,7 @@ Some hydras will be called less frequently and for other purposes than getting a
   (use-package pretty-hydra
     :after hydra)
 #+end_src
+
 ** Interactively change the UI
 
 This is one moment where a pretty hydra could help us change general UI parameters, such as the text size, some highlighting options and so on.
@@ -1146,6 +1156,7 @@ We can also improve some of the other help commands:
     :custom
     (apropos-documentation-sort-by-scores t))
 #+end_src
+
 *** Which-key
 
 Because there are a lot of similar commands, it is quite easy to get lost. [[https://github.com/justbur/emacs-which-key][which-key]] is a package that shows all the available commands after having typed some prefix, meaning that knowing the beginning of a key sequence is enough to get the rest of the information.
