@@ -643,9 +643,12 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
                (mode . helpful-mode)
                (mode . Info-mode)
                (mode . help-mode)))
-      ("Special" (or
-                  (name . "^\\*.*\\*$")
-                  (mode . special-mode)))
+      ("Special" (and
+                  (not (process))
+                  (or
+                   (starred-name)
+                   (mode . special-mode))))
+      ("Process" (process))
       ("Images/PDF" (or
                      (file-extension . "pdf")
                      (mode . image-mode)))
@@ -1548,10 +1551,10 @@ Move point in the last duplicated string (line or region)."
   :bind
   (:map lps/quick-edit-map
         ("C-u" . lps/underline-or-frame-dwim)
-        ("k" . zap-up-to-char))
+        ("k" . zap-up-to-char)
+        ("C-t" . lps/make-filename-from-sentence))
 
   :config
-
   (defun lps/--fill-width-repeat-string (width str)
     "Insert STR as many times as necessary to fill WIDTH,
 potentially using only a prefix of STR for the final iteration"
@@ -1563,13 +1566,16 @@ potentially using only a prefix of STR for the final iteration"
       (insert (substring str 0 rem))))
 
   (defun lps/underline-or-frame-dwim (str &optional arg)
-    "Underlines the current line with the string STR or with \"-\"
-if none is provided.
+    "Underlines the current line with the string STR or with `comment-start'
+if none is provided. If `comment-start' is NIL, use \"-\" instead.
 If called interactively, prompt for STR.
-With a prefix argument, frame the line using STR instead.
+With a prefix argument, frame the line using STR instead of underlining it.
+In this case, also insert a blank space before and after the region if none
+are present.
 Breaks if region or line spans multiple visual lines"
-    (interactive (list (let ((default "-"))
-                         (read-string (concat "Use string (default " default " ): ") nil nil "-"))
+    (interactive (list (let ((default (or comment-start "-")))
+                         (read-string (concat "Use string (default " default " ): ")
+                                      nil nil default))
                        current-prefix-arg))
     (save-excursion
       (let* ((len (length str))
@@ -1587,7 +1593,14 @@ Breaks if region or line spans multiple visual lines"
             (progn
               (goto-char from)
               (insert str)
+              (unless (looking-at " ")
+                (insert " ")
+                (setq width (1+ width))
+                (setq to (1+ to)))
               (goto-char (+ len to))
+              (unless (looking-at " ")
+                (insert " ")
+                (setq width (1+ width)))
               (insert str)
               (beginning-of-line)
               (insert "\n")
@@ -1603,7 +1616,39 @@ Breaks if region or line spans multiple visual lines"
             (end-of-line)
             (insert "\n")
             (indent-to col)
-            (lps/--fill-width-repeat-string width str)))))))
+            (lps/--fill-width-repeat-string width str))))))
+
+  (defvar lps/do-not-capitalize-list '("the" "a" "of" "in" "on"
+                                       "no" "or" "and" "if"
+                                       "le" "la" "les" "et" "ou"
+                                       "si" "un" "une" "de" "des"))
+
+  (defun lps/make-filename-from-sentence ()
+    "Create a title from the current line or region and add it to the
+ kill-ring"
+    (interactive)
+    (let* ((bounds (if (region-active-p)
+                       (car (region-bounds))
+                     (cons (line-beginning-position)
+                           (line-end-position))))
+           (start (car bounds))
+           (end (cdr bounds)))
+      (goto-char start)
+      (capitalize-word 1)
+      (while (< (point) end)
+        (let ((num-spaces (skip-chars-forward "[:space:]")))
+          (if (> num-spaces 0)
+              (progn
+                (delete-backward-char num-spaces)
+                (insert "_"))
+            (forward-char 1)))
+        (let ((word-at-pt (word-at-point)))
+          (if (or (not word-at-pt)
+                  (member (downcase word-at-pt)
+                          lps/do-not-capitalize-list))
+              (downcase-word 1)
+            (capitalize-word 1))))
+      (kill-ring-save start (point)))))
 
 (use-package projectile
   :diminish
@@ -2381,6 +2426,7 @@ trigger the scrolling."
                                           "-fill" "%b"
                                           "-draw" "text %X,%Y '%c'"))
   (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
+  (pdf-view-display-size 'fit-page)
   :config
   (pdf-tools-install :no-query)
   ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
