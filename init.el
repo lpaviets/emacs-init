@@ -2463,36 +2463,36 @@ move to the end of the document, and search backward instead."
 
   :config
   ;; Auto-insert
-  (require 'autoinsert)
-  (add-to-list 'auto-insert-alist
-               '(latex-mode
-                 nil
-                 (LaTeX-environment-menu "document")
-                 '(if (y-or-n-p "Insert default packages and custom commands ?")
-                      (save-excursion
-                        (forward-line -2)
-                        (insert "\n\\usepackage[T1]{fontenc}\n"
-                                "\\usepackage[utf8]{inputenc}\n\n"
-                                "\\usepackage{tikz}\n"
-                                "\\usepackage{amsmath, amssymb, amsthm}\n"
-                                "\\usepackage{thm-restate}\n"
-                                "\\usepackage{hyperref}\n"
-                                "\\usepackage{autoref}\n"
-                                "\\usepackage{cleveref}\n"
-                                "\\usepackage{url}\n\n"
-                                "\\newcommand\\NN{\\mathbb N}\n"
-                                "\\newcommand\\ZZ{\\mathbb Z}\n"
-                                "\\newcommand\\RR{\\mathbb R}\n\n"
-                                "\\newtheorem{conj}{Conjecture}\n"
-                                "\\newtheorem{prop}{Proposition}\n"
-                                "\\newtheorem{definition}{Definition}\n"
-                                "\\newtheorem{cor}{Corollary}\n"
-                                "\\newtheorem{lemma}{Lemma}\n"
-                                "\\newtheorem{theorem}{Theorem}\n"
-                                "\\newtheorem*{remark}{Remark}\n\n"
-                                "\\crefname{lemma}{Lemma}{Lemmas}\n"
-                                "\\crefname{theorem}{Theorem}{Theorems}\n\n")))
-                 '(indent-region (point-min) (point-max))))
+  (with-eval-after-load 'autoinsert
+    (add-to-list 'auto-insert-alist
+                 '(latex-mode
+                   nil
+                   (LaTeX-environment-menu "document")
+                   '(if (y-or-n-p "Insert default packages and custom commands ?")
+                        (save-excursion
+                          (forward-line -2)
+                          (insert "\n\\usepackage[T1]{fontenc}\n"
+                                  "\\usepackage[utf8]{inputenc}\n\n"
+                                  "\\usepackage{tikz}\n"
+                                  "\\usepackage{amsmath, amssymb, amsthm}\n"
+                                  "\\usepackage{thm-restate}\n"
+                                  "\\usepackage{hyperref}\n"
+                                  "\\usepackage{autoref}\n"
+                                  "\\usepackage{cleveref}\n"
+                                  "\\usepackage{url}\n\n"
+                                  "\\newcommand\\NN{\\mathbb N}\n"
+                                  "\\newcommand\\ZZ{\\mathbb Z}\n"
+                                  "\\newcommand\\RR{\\mathbb R}\n\n"
+                                  "\\newtheorem{conj}{Conjecture}\n"
+                                  "\\newtheorem{prop}{Proposition}\n"
+                                  "\\newtheorem{definition}{Definition}\n"
+                                  "\\newtheorem{cor}{Corollary}\n"
+                                  "\\newtheorem{lemma}{Lemma}\n"
+                                  "\\newtheorem{theorem}{Theorem}\n"
+                                  "\\newtheorem*{remark}{Remark}\n\n"
+                                  "\\crefname{lemma}{Lemma}{Lemmas}\n"
+                                  "\\crefname{theorem}{Theorem}{Theorems}\n\n")))
+                   '(indent-region (point-min) (point-max)))))
 
   ;; Improve fontification
   (defun lps/latex-fontification ()
@@ -2864,6 +2864,7 @@ Return a list of regular expressions."
   (eshell-prefer-lisp-variables t)
   (eshell-prefer-lisp-functions t)
   (eshell-hist-ignoredups t)
+  (eshell-history-size 1024)
   (eshell-scroll-to-bottom-on-input t)
   (eshell-highlight-prompt t)
   (eshell-prompt-function #'lps/eshell-prompt-function)
