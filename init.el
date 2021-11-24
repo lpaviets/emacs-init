@@ -1794,13 +1794,25 @@ Breaks if region or line spans multiple visual lines"
   :init
   (defun lps/insert-parentheses (&optional arg)
     "Same as `insert-parentheses' but if no ARG is provided, it wraps
-the next s-expression in parentheses rather than inserting () at point"
+the next s-expression in parentheses rather than inserting () at point
+Does not insert a space before the inserted opening parenthesis"
     (interactive "P")
-    (if arg
-        (insert-parentheses arg)
-      (insert-parentheses 1)))
+    (let ((parens-require-spaces nil))
+      (if arg
+          (insert-parentheses arg)
+        (insert-parentheses 1))))
+
+  (defun lps/insert-quotes (&optional arg)
+    "Same as `lps/insert-parentheses' with quotes \" characters "
+    (interactive "P")
+    (let ((parens-require-spaces nil))
+      (if arg
+          (insert-pair arg ?\" ?\")
+        (insert-pair 1 ?\" ?\"))))
+
   :bind
-  ([remap insert-parentheses] . lps/insert-parentheses))
+  ([remap insert-parentheses] . lps/insert-parentheses)
+  ("M-\"" . lps/insert-quotes))
 
 ;;YASnippet
 (use-package yasnippet
@@ -2185,7 +2197,6 @@ trigger the scrolling."
   :defer t
   :hook
   ((sgml-mode css-mode web-mode) . emmet-mode)
-  (emmet-mode . emmet-preview-mode)
   :custom
   (emmet-move-cursor-between-quotes t))
 
