@@ -842,12 +842,19 @@ buffer in current window."
   ([remap describe-variable] . helpful-variable)
   ([remap describe-symbol]   . helpful-symbol)
   ([remap describe-key]      . helpful-key)
-  ("C-h u"                   . helpful-at-point)) ;; Help "<u>nder" cursor
+  (:map help-map
+        (";" . helpful-at-point)))
 
 (use-package emacs
   :ensure nil
   :custom
-  (apropos-documentation-sort-by-scores t))
+  (apropos-documentation-sort-by-scores t)
+  :bind
+  (:map help-map
+        ("u" . describe-face)
+        ("U" . describe-font)
+        ("C-k" . describe-keymap)
+        ("M" . man)))
 
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
@@ -1321,12 +1328,13 @@ one if none exists."
 
 (use-package avy
   :defer t
-  :bind ("C-ù" . avy-goto-char-timer)
+  :bind
+  ("M-é" . avy-goto-char-2)
   :custom
   ;; Using an AZERTY keyboard home row
   (avy-keys '(?q ?s ?d ?f ?g ?h ?j ?k ?l ?m))
   (avy-all-windows nil)
-  (avy-single-candidate-jump nil )
+  (avy-single-candidate-jump t)
   (avy-timeout-seconds 0.5)
   (avy-translate-char-function '(lambda (c) (if (= c 32) ?q c))))
 
