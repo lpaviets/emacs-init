@@ -4120,6 +4120,44 @@ Because those are useful functions, we bind them globally.
           ("f L" . locate-with-filter)))
 #+end_src
 
+** TRAMP
+According to its own description, [[info:TRAMP][TRAMP]] is a "remote file editing package for Emacs". This is a bit misleading, as TRAMP is also used to execute commands as another user, for example.
+It is quite heavily customizable. However, I do not use it that much, and I am just defining a function here to help me remember the easy-to-forget syntax.
+
+#+begin_src emacs-lisp
+  (use-package tramp
+    :bind
+    ("C-x C-S-f" . lps/tramp-find-file)
+    :hook
+    (shell-mode . lps/remote-shell-setup)
+    :config
+    (defun lps/tramp-find-file (&optional method user host file)
+      (interactive (list (completing-read "Method: "
+                                          tramp-methods
+                                          nil t nil nil "-" t)
+                         (read-string "User: "
+                                      nil nil nil t)
+                         (read-string "Host: "
+                                      nil nil nil t)
+                         (read-string "File: "
+                                      nil nil nil t)))
+      (let ((port (when (member method '("ssh" "sshx"))
+                    (read-string "Port: "))))
+        (find-file (concat "/" method ":"
+                           (unless (string-empty-p user)
+                             (concat user "@"))
+                           host
+                           ":"
+                           (when port
+                             (concat "#" port))
+                           file))))
+
+    (defun lps/remote-shell-setup ()
+      (when (and (fboundp 'company-mode)
+                 (file-remote-p default-directory))
+        (company-mode -1))))
+#+end_src
+
 ** Tools
 *** Disk usage
 Although ~Dired~ is a powerful tool, it still lacks a neat feature, namely, it doesn't show the /recursive/ size of the folders. We can usually do one of two things: either write a lot of Elisp to include this into ~Dired~ (and risk breaking things), or use a shell and functions such as ~du~. We choose a third way, which consists in using a standalone package doing exactly what we want, with extra functionalities, such as interactive sorting and filtering, deletion of files, and so on, all within the same buffer.

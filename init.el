@@ -3168,6 +3168,38 @@ PWD is not in a git repo (or the git command is not found)."
         ("f l" . locate)
         ("f L" . locate-with-filter)))
 
+(use-package tramp
+  :bind
+  ("C-x C-S-f" . lps/tramp-find-file)
+  :hook
+  (shell-mode . lps/remote-shell-setup)
+  :config
+  (defun lps/tramp-find-file (&optional method user host file)
+    (interactive (list (completing-read "Method: "
+                                        tramp-methods
+                                        nil t nil nil "-" t)
+                       (read-string "User: "
+                                    nil nil nil t)
+                       (read-string "Host: "
+                                    nil nil nil t)
+                       (read-string "File: "
+                                    nil nil nil t)))
+    (let ((port (when (member method '("ssh" "sshx"))
+                  (read-string "Port: "))))
+      (find-file (concat "/" method ":"
+                         (unless (string-empty-p user)
+                           (concat user "@"))
+                         host
+                         ":"
+                         (when port
+                           (concat "#" port))
+                         file))))
+
+  (defun lps/remote-shell-setup ()
+    (when (and (fboundp 'company-mode)
+               (file-remote-p default-directory))
+      (company-mode -1))))
+
 (use-package disk-usage
   :defer t
   :bind
