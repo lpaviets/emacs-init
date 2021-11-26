@@ -893,6 +893,41 @@ buffer in current window."
 
   (global-set-key (kbd "C-&") #'lps/describe-thing-in-popup))
 
+;; This next feature is inspired by https://svn.red-bean.com/repos/kfogel/trunk/.emacs,
+;; which is itself taken from this gigantic, almost package-less, configuration:
+;; https://svn.red-bean.com/repos/kfogel/trunk/.emacs
+(use-package emacs
+  :ensure nil
+  :bind-keymap
+  ("C-S-h" . lps/quick-help-map)
+  :init
+  (defvar lps/quick-help-map (make-sparse-keymap))
+
+  (defmacro quick-help (name buffer text)
+    "Macro for creating callable functions that display help.
+NAME is the function's name, BUFFER is the buffer's name, and TEXT is
+what is displayed in the \"popup\"-like buffer"
+    (declare (indent defun))
+    `(progn
+       (defun ,name ()
+         ,(concat "Creates a buffer "
+                  buffer
+                  " displaying a quick help")
+         (interactive)
+         (let ((qh-buff (concat "*Quick Help: " ,buffer "*")))
+           (get-buffer-create qh-buff)
+           (with-current-buffer qh-buff
+             (insert ,text)
+             (goto-char (point-min))
+             (not-modified)
+             (read-only-mode)
+             (local-set-key (kbd "C-g") (lambda () (interactive) (other-window -1)))
+             (local-set-key (kbd "q") 'kill-buffer-and-window))
+           (pop-to-buffer qh-buff '((display-buffer-below-selected)
+                                    (window-parameters . ((no-other-window . nil)))
+                                    (window-height . fit-window-to-buffer)))
+           (message "C-g - Previous Window, q - Remove Window"))))))
+
 ;; Don't disable any command
 ;; BE CAREFUL
 ;; If you are a new user, you might to comment out this line
