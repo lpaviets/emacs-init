@@ -2961,8 +2961,8 @@ Return a list of regular expressions."
   :ensure nil
   :defer t
   :custom
-  (eshell-prefer-lisp-variables t)
-  (eshell-prefer-lisp-functions t)
+  ;; (eshell-prefer-lisp-variables t)
+  ;; (eshell-prefer-lisp-functions t)
   (eshell-hist-ignoredups t)
   (eshell-history-size 1024)
   (eshell-scroll-to-bottom-on-input t)
