@@ -32,7 +32,7 @@
 (package-initialize)
 
 (unless package-archive-contents
-  (package-refresh-contents))
+  (package-refresh-contents t)) ; Async
 
 (setq package-native-compile t)
 
@@ -117,9 +117,7 @@
     (auth-source-forget-all-cached)
     (shell-command "gpgconf --kill gpg-agent")
     ;; (shell-command "gpgconf -- reload gpg-agent")
-    (setq lps/--auth-cache-expiry-setup-p nil))
-
-  (add-hook 'kill-emacs-hook #'lps/force-forget-all-passwords))
+    (setq lps/--auth-cache-expiry-setup-p nil)))
 
 (use-package restart-emacs
   :commands
@@ -604,7 +602,7 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
   ;; Help buffers with special name
   (defvar lps/help-buffers nil)
 
-  (defun lps/buffer-help-p (buffer action)
+  (defun lps/buffer-help-p (buffer &optional action)
     "Return t if BUFFER is an help buffer, nil otherwise"
     (or (member (buffer-local-value 'major-mode (get-buffer buffer))
                 lps/help-modes)
@@ -639,10 +637,7 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
       ("Emacs" (or
                 (name . "^\\*scratch\\*$")
                 (name . "^\\*Messages\\*$")))
-      ("Help" (or
-               (mode . helpful-mode)
-               (mode . Info-mode)
-               (mode . help-mode)))
+      ("Help" (predicate lps/buffer-help-p (current-buffer)))
       ("Special" (and
                   (not (process))
                   (or
@@ -686,7 +681,8 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
                      name (file-name-nondirectory new-name)))))))
   :bind
   (:map ctl-x-x-map
-        ("R" . lps/rename-current-buffer-file)))
+        ("R" . lps/rename-current-buffer-file)
+        ("D" . delete-this-file)))
 
 (use-package winner
   :commands (winner-undo winner-redo)
@@ -2033,6 +2029,33 @@ Does not insert a space before the inserted opening parenthesis"
                                           buf
                                           " -o "
                                           buf-no-ext)))))
+
+(use-package disaster
+  :defer t
+  :bind
+  (:map c-mode-base-map
+        ("C-c C-d" . disaster)))
+
+(use-package emacs
+  :after hexl
+  :bind
+  (:map hexl-mode-map
+        ("C-c C-r" . lps/readelf))
+  :config
+  ;; Heavily inspired by https://github.com/abo-abo/elf-mode/blob/master/elf-mode.el
+  ;; Same thing, I simply do not want to add extra packages for no reason
+  (defvar lps/readelf-command "readelf -a -W %s")
+  (defun lps/readelf ()
+    (interactive)
+    (let ((cur-file (buffer-file-name))
+          (elf-buffer (get-buffer-create "*Elf*")))
+      (with-current-buffer elf-buffer
+        (let ((inhibit-read-only t))
+          (insert (shell-command-to-string
+                   (format lps/readelf-command cur-file)))
+          (set-buffer-modified-p nil)
+          (special-mode)))
+      (pop-to-buffer elf-buffer))))
 
 (use-package highlight-defined
   :hook (emacs-lisp-mode . highlight-defined-mode))
