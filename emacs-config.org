@@ -3194,7 +3194,8 @@ Org babel is what allows us to write code and execute it, all within the same do
    '((emacs-lisp . t)
      (python . t)
      (shell . t)
-     (latex . t)))
+     (latex . t)
+     (lisp . t)))
 
   ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
                                            ; else code
@@ -3215,7 +3216,8 @@ We also add templates to insert code blocks with a few key presses
           (dolist (key-template '(("sh" . "src shell")
                                   ("el" . "src emacs-lisp")
                                   ("py" . "src python")
-                                  ("latex" . "src latex")))
+                                  ("latex" . "src latex")
+                                  ("cl" . "src lisp")))
 
             (unless
                 (member (car key-template) bound-key-templates)
@@ -4188,6 +4190,15 @@ It is quite heavily customizable. However, I do not use it that much, and I am j
       (when (and (fboundp 'company-mode)
                  (file-remote-p default-directory))
         (company-mode -1))))
+#+end_src
+
+** Dotfiles
+In the \*nix world, We call /dotfiles/ files that are used to configure software, applications or packages (they are generally /hidden/ files, whose names start with a dot, hence the name). Various conventions are used in those files, specifying similar but not identical DSL to configure each software, and Emacs might have trouble choosing the right config by itself. In this section, we try to improve the general look & fell of those dotfiles.
+
+#+begin_src emacs-lisp
+  (use-package conf-mode
+    :hook
+    (conf-mode . rainbow-mode))
 #+end_src
 
 ** Tools

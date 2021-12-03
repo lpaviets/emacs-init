@@ -2365,7 +2365,8 @@ trigger the scrolling."
  '((emacs-lisp . t)
    (python . t)
    (shell . t)
-   (latex . t)))
+   (latex . t)
+   (lisp . t)))
 
 ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
                                          ; else code
@@ -2380,7 +2381,8 @@ trigger the scrolling."
         (dolist (key-template '(("sh" . "src shell")
                                 ("el" . "src emacs-lisp")
                                 ("py" . "src python")
-                                ("latex" . "src latex")))
+                                ("latex" . "src latex")
+                                ("cl" . "src lisp")))
 
           (unless
               (member (car key-template) bound-key-templates)
@@ -3222,6 +3224,10 @@ PWD is not in a git repo (or the git command is not found)."
     (when (and (fboundp 'company-mode)
                (file-remote-p default-directory))
       (company-mode -1))))
+
+(use-package conf-mode
+  :hook
+  (conf-mode . rainbow-mode))
 
 (use-package disk-usage
   :defer t
