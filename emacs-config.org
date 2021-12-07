@@ -2199,7 +2199,7 @@ We also define a bunch of functions and commands related to editing text that ar
               (lps/--fill-width-repeat-string width str))))))
 
     (defvar lps/do-not-capitalize-list '("the" "a" "of" "in" "on"
-                                         "no" "or" "and" "if"
+                                         "no" "or" "and" "if" "for"
                                          "le" "la" "les" "et" "ou"
                                          "si" "un" "une" "de" "des"))
 
@@ -4128,7 +4128,8 @@ Now, we try to add things on top of the built-in file manager, Dired.
     (dired-auto-revert-buffer t)
     (dired-listing-switches "-alFh")
     (dired-isearch-filenames 'dwim)
-    (dired-kill-when-opening-new-dired-buffer t))
+    (dired-kill-when-opening-new-dired-buffer t)
+    (dired-listing-switches "-AlFh --group-directories-first"))
 
   ;; Make things prettier
   (use-package all-the-icons-dired

@@ -1658,7 +1658,7 @@ Breaks if region or line spans multiple visual lines"
             (lps/--fill-width-repeat-string width str))))))
 
   (defvar lps/do-not-capitalize-list '("the" "a" "of" "in" "on"
-                                       "no" "or" "and" "if"
+                                       "no" "or" "and" "if" "for"
                                        "le" "la" "les" "et" "ou"
                                        "si" "un" "une" "de" "des"))
 
@@ -3173,7 +3173,8 @@ PWD is not in a git repo (or the git command is not found)."
   (dired-auto-revert-buffer t)
   (dired-listing-switches "-alFh")
   (dired-isearch-filenames 'dwim)
-  (dired-kill-when-opening-new-dired-buffer t))
+  (dired-kill-when-opening-new-dired-buffer t)
+  (dired-listing-switches "-AlFh --group-directories-first"))
 
 ;; Make things prettier
 (use-package all-the-icons-dired
