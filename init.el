@@ -1691,7 +1691,7 @@ Breaks if region or line spans multiple visual lines"
       (goto-char start)
       (capitalize-word 1)
       (while (< (point) end)
-        (let ((num-spaces (skip-chars-forward "[:space:]")))
+        (let ((num-spaces (skip-chars-forward "[:punct:][:space:]")))
           (if (> num-spaces 0)
               (progn
                 (delete-backward-char num-spaces)
@@ -2305,7 +2305,11 @@ trigger the scrolling."
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
   :custom
-  (org-bullets-bullet-list '("◉" "○" "●" "○" "●" "○" "●")))
+  (org-bullets-bullet-list
+   '("✡" "⎈" "✽" "✲" "✱" "✻" "✼" "✽" "✾" "✿" "❀" "❁" "❂" "❃" "❄" "❅" "❆" "❇")
+   ;; '("◉" "⁑" "⁂" "❖" "✮" "✱" "✸")
+   ;; '("◉" "○" "●" "○" "●" "○" "●")
+   ))
 
 (use-package org
   :commands org-capture
