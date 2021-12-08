@@ -658,32 +658,6 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
 
   (add-hook 'ibuffer-mode-hook #'lps/ibuffer-switch-to-default-filter))
 
-(use-package emacs
-  :ensure nil
-  :init
-  ;; From Magnars, from emacsrocks.com
-  (defun lps/rename-current-buffer-file ()
-    "Renames current buffer and file it is visiting."
-    (interactive)
-    (let* ((name (buffer-name))
-           (filename (buffer-file-name))
-           (basename (file-name-nondirectory filename)))
-      (if (not (and filename (file-exists-p filename)))
-          (error "Buffer '%s' is not visiting a file!" name)
-        (let ((new-name (read-file-name "New name: " (file-name-directory filename) basename nil basename)))
-          (if (get-buffer new-name)
-              (error "A buffer named '%s' already exists!" new-name)
-            (rename-file filename new-name 1)
-            (rename-buffer new-name)
-            (set-visited-file-name new-name)
-            (set-buffer-modified-p nil)
-            (message "File '%s' successfully renamed to '%s'"
-                     name (file-name-nondirectory new-name)))))))
-  :bind
-  (:map ctl-x-x-map
-        ("R" . lps/rename-current-buffer-file)
-        ("D" . delete-this-file)))
-
 (use-package winner
   :commands (winner-undo winner-redo)
   :init
@@ -813,6 +787,76 @@ buffer in current window."
    (current-buffer)))
 
 (global-set-key (kbd "C-c t") 'lps/toggle-window-dedicated)
+
+(use-package ffap
+  :ensure nil
+  :init
+  (ffap-bindings)
+  :custom
+  (ffap-pass-wildcards-to-dired t)
+  :config
+  (defun lps/find-file-as-root (filename)
+    "Switch to a buffer visiting the file FILENAME as root, creating
+one if none exists."
+    (interactive "P")
+    (find-file (concat "/sudo:root@localhost:" filename))))
+
+(use-package recentf
+  :ensure nil
+  :init
+  (recentf-mode 1)
+  :custom
+  (recentf-max-saved-items 30)
+  :config
+  (dolist (excl (list (expand-file-name (concat user-emacs-directory "eshell/"))
+                      (expand-file-name (concat user-emacs-directory "\\.elfeed/"))
+                      "\\.synctex\\.gz" "\\.out$" "\\.toc"
+                      (expand-file-name recentf-save-file)
+                      "/usr/local/share/emacs/"
+                      "bookmarks$"
+                      (expand-file-name "~/Mail/")))
+    (add-to-list 'recentf-exclude excl)))
+
+(use-package emacs
+  :ensure nil
+  :custom
+  (delete-by-moving-to-trash t)
+  :init
+  ;; From Magnars, from emacsrocks.com
+  (defun lps/rename-current-buffer-file ()
+    "Renames current buffer and file it is visiting."
+    (interactive)
+    (let* ((name (buffer-name))
+           (filename (buffer-file-name))
+           (basename (file-name-nondirectory filename)))
+      (if (not (and filename (file-exists-p filename)))
+          (error "Buffer '%s' is not visiting a file!" name)
+        (let ((new-name (read-file-name "New name: " (file-name-directory filename) basename nil basename)))
+          (if (get-buffer new-name)
+              (error "A buffer named '%s' already exists!" new-name)
+            (rename-file filename new-name 1)
+            (rename-buffer new-name)
+            (set-visited-file-name new-name)
+            (set-buffer-modified-p nil)
+            (message "File '%s' successfully renamed to '%s'"
+                     name (file-name-nondirectory new-name)))))))
+
+  (defun lps/delete-current-buffer-file (&optional arg)
+    "Delete the file visited by the current buffer
+Always delete by moving to trash, regardless of `delete-by-moving-to-trash'
+If called with a prefix argument, also kills the current buffer"
+    (interactive "P")
+    (let ((filename (buffer-file-name)))
+      (if (not (and filename (file-exists-p filename)))
+          (error "Buffer '%s' is not visiting a file!" (buffer-name))
+        (delete-file filename t)
+        (when arg
+          (kill-buffer)))))
+
+  :bind
+  (:map ctl-x-x-map
+        ("R" . lps/rename-current-buffer-file)
+        ("D" . lps/delete-current-buffer-file)))
 
 (use-package outline
   :ensure nil
@@ -1032,35 +1076,6 @@ what is displayed in the \"popup\"-like buffer"
                (length values)))))
 
   (rec-expand-let vars values body))
-
-(use-package ffap
-  :ensure nil
-  :init
-  (ffap-bindings)
-  :custom
-  (ffap-pass-wildcards-to-dired t)
-  :config
-  (defun lps/find-file-as-root (filename)
-    "Switch to a buffer visiting the file FILENAME as root, creating
-one if none exists."
-    (interactive "P")
-    (find-file (concat "/sudo:root@localhost:" filename))))
-
-(use-package recentf
-  :ensure nil
-  :init
-  (recentf-mode 1)
-  :custom
-  (recentf-max-saved-items 30)
-  :config
-  (dolist (excl (list (expand-file-name (concat user-emacs-directory "eshell/"))
-                      (expand-file-name (concat user-emacs-directory "\\.elfeed/"))
-                      "\\.synctex\\.gz" "\\.out$" "\\.toc"
-                      (expand-file-name recentf-save-file)
-                      "/usr/local/share/emacs/"
-                      "bookmarks$"
-                      (expand-file-name "~/Mail/")))
-    (add-to-list 'recentf-exclude excl)))
 
 (when (version< "28.0" emacs-version)
   (use-package repeat
@@ -1660,7 +1675,8 @@ Breaks if region or line spans multiple visual lines"
   (defvar lps/do-not-capitalize-list '("the" "a" "of" "in" "on"
                                        "no" "or" "and" "if" "for"
                                        "le" "la" "les" "et" "ou"
-                                       "si" "un" "une" "de" "des"))
+                                       "si" "un" "une" "de" "des"
+                                       "du" "d" "l" "ni"))
 
   (defun lps/make-filename-from-sentence ()
     "Create a title from the current line or region and add it to the
@@ -1877,7 +1893,7 @@ Does not insert a space before the inserted opening parenthesis"
   :custom
   (company-dabbrev-other-buffers t)
   (company-dabbrev-ignore-case 'keep-prefix)
-  (company-dabbrev-downcase 'case-replace))
+  (company-dabbrev-downcase nil))
 
 (use-package company-math
   :after company)
@@ -3160,8 +3176,6 @@ PWD is not in a git repo (or the git command is not found)."
 (use-package dired
   :ensure nil
   :defer t
-  :init
-  (setq delete-by-moving-to-trash t)
   :bind
   (:map dired-mode-map
         ("RET" . dired-find-alternate-file)

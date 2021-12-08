@@ -913,36 +913,6 @@ We also improve the appearance (and functionalities) of the buffer that we get w
 
 #+end_src
 
-A cool function to rename both a buffer and the file that it is visiting, while being careful e.g. not to override anything
-
-#+begin_src emacs-lisp
-  (use-package emacs
-    :ensure nil
-    :init
-    ;; From Magnars, from emacsrocks.com
-    (defun lps/rename-current-buffer-file ()
-      "Renames current buffer and file it is visiting."
-      (interactive)
-      (let* ((name (buffer-name))
-             (filename (buffer-file-name))
-             (basename (file-name-nondirectory filename)))
-        (if (not (and filename (file-exists-p filename)))
-            (error "Buffer '%s' is not visiting a file!" name)
-          (let ((new-name (read-file-name "New name: " (file-name-directory filename) basename nil basename)))
-            (if (get-buffer new-name)
-                (error "A buffer named '%s' already exists!" new-name)
-              (rename-file filename new-name 1)
-              (rename-buffer new-name)
-              (set-visited-file-name new-name)
-              (set-buffer-modified-p nil)
-              (message "File '%s' successfully renamed to '%s'"
-                       name (file-name-nondirectory new-name)))))))
-    :bind
-    (:map ctl-x-x-map
-          ("R" . lps/rename-current-buffer-file)
-          ("D" . delete-this-file)))
-#+end_src
-
 *** Window management
 
 Because window management can be a bit tedious with the basic Emacs functionalities, we improve it a bit. First of all, we enable =winner-mode=, which allows us to "undo" and "redo" changes in the Windows' configuration.
@@ -1093,6 +1063,89 @@ Sometimes, we also want some very specific buffer to be associated to a certain 
 
   (global-set-key (kbd "C-c t") 'lps/toggle-window-dedicated)
 
+#+end_src
+
+** Files
+Although /buffers/ are what Emacs really manipulates, they are in particular often used to deal with ... files. Hence, we need ways to do things specifically for buffer that are visiting files, and also related to file management in general.
+*** Open file
+
+We often want to visit links. If the point is on a file path, for example, it is often useful to be able to quicky navigate to this file.
+
+#+begin_src emacs-lisp
+  (use-package ffap
+    :ensure nil
+    :init
+    (ffap-bindings)
+    :custom
+    (ffap-pass-wildcards-to-dired t)
+    :config
+    (defun lps/find-file-as-root (filename)
+      "Switch to a buffer visiting the file FILENAME as root, creating
+  one if none exists."
+      (interactive "P")
+      (find-file (concat "/sudo:root@localhost:" filename))))
+
+  (use-package recentf
+    :ensure nil
+    :init
+    (recentf-mode 1)
+    :custom
+    (recentf-max-saved-items 30)
+    :config
+    (dolist (excl (list (expand-file-name (concat user-emacs-directory "eshell/"))
+                        (expand-file-name (concat user-emacs-directory "\\.elfeed/"))
+                        "\\.synctex\\.gz" "\\.out$" "\\.toc"
+                        (expand-file-name recentf-save-file)
+                        "/usr/local/share/emacs/"
+                        "bookmarks$"
+                        (expand-file-name "~/Mail/")))
+      (add-to-list 'recentf-exclude excl)))
+#+end_src
+
+*** Rename and delete file
+Dired (or even your prefered shell) is the prefered way to deal with large amount of file manipulation (mass copying, moving and so on). For one-time actions though, it is preferable to have quick ways to rename a file, rather than having to open a Dired buffer, look for the specific file we are visiting, and so.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :custom
+    (delete-by-moving-to-trash t)
+    :init
+    ;; From Magnars, from emacsrocks.com
+    (defun lps/rename-current-buffer-file ()
+      "Renames current buffer and file it is visiting."
+      (interactive)
+      (let* ((name (buffer-name))
+             (filename (buffer-file-name))
+             (basename (file-name-nondirectory filename)))
+        (if (not (and filename (file-exists-p filename)))
+            (error "Buffer '%s' is not visiting a file!" name)
+          (let ((new-name (read-file-name "New name: " (file-name-directory filename) basename nil basename)))
+            (if (get-buffer new-name)
+                (error "A buffer named '%s' already exists!" new-name)
+              (rename-file filename new-name 1)
+              (rename-buffer new-name)
+              (set-visited-file-name new-name)
+              (set-buffer-modified-p nil)
+              (message "File '%s' successfully renamed to '%s'"
+                       name (file-name-nondirectory new-name)))))))
+
+    (defun lps/delete-current-buffer-file (&optional arg)
+      "Delete the file visited by the current buffer
+  Always delete by moving to trash, regardless of `delete-by-moving-to-trash'
+  If called with a prefix argument, also kills the current buffer"
+      (interactive "P")
+      (let ((filename (buffer-file-name)))
+        (if (not (and filename (file-exists-p filename)))
+            (error "Buffer '%s' is not visiting a file!" (buffer-name))
+          (delete-file filename t)
+          (when arg
+            (kill-buffer)))))
+
+    :bind
+    (:map ctl-x-x-map
+          ("R" . lps/rename-current-buffer-file)
+          ("D" . lps/delete-current-buffer-file)))
 #+end_src
 
 ** Outline and folding
@@ -1432,41 +1485,6 @@ In this section, we define some useful macros to write code in Emacs Lisp.
 #+end_src
 
 ** Some useful commands
-*** Open file
-
-We often want to visit links. If the point is on a file path, for example, it is often useful to be able to quicky navigate to this file.
-
-#+begin_src emacs-lisp
-  (use-package ffap
-    :ensure nil
-    :init
-    (ffap-bindings)
-    :custom
-    (ffap-pass-wildcards-to-dired t)
-    :config
-    (defun lps/find-file-as-root (filename)
-      "Switch to a buffer visiting the file FILENAME as root, creating
-  one if none exists."
-      (interactive "P")
-      (find-file (concat "/sudo:root@localhost:" filename))))
-
-  (use-package recentf
-    :ensure nil
-    :init
-    (recentf-mode 1)
-    :custom
-    (recentf-max-saved-items 30)
-    :config
-    (dolist (excl (list (expand-file-name (concat user-emacs-directory "eshell/"))
-                        (expand-file-name (concat user-emacs-directory "\\.elfeed/"))
-                        "\\.synctex\\.gz" "\\.out$" "\\.toc"
-                        (expand-file-name recentf-save-file)
-                        "/usr/local/share/emacs/"
-                        "bookmarks$"
-                        (expand-file-name "~/Mail/")))
-      (add-to-list 'recentf-exclude excl)))
-#+end_src
-
 *** Repeat commands
 Some commands are usually invoked several times in succession. For example, if you wish to resize a window, you might need to invoke =shrink-window= several times.
 If we need to define repeat maps, we will do it in the corresponding package rather than here.
@@ -2201,7 +2219,8 @@ We also define a bunch of functions and commands related to editing text that ar
     (defvar lps/do-not-capitalize-list '("the" "a" "of" "in" "on"
                                          "no" "or" "and" "if" "for"
                                          "le" "la" "les" "et" "ou"
-                                         "si" "un" "une" "de" "des"))
+                                         "si" "un" "une" "de" "des"
+                                         "du" "d" "l" "ni"))
 
     (defun lps/make-filename-from-sentence ()
       "Create a title from the current line or region and add it to the
@@ -2494,7 +2513,7 @@ Most of the time, when writing text, we are going to use words over and over aga
     :custom
     (company-dabbrev-other-buffers t)
     (company-dabbrev-ignore-case 'keep-prefix)
-    (company-dabbrev-downcase 'case-replace))
+    (company-dabbrev-downcase nil))
 #+end_src
 
   We install another backend specifically for LaTeX
@@ -4115,8 +4134,6 @@ Now, we try to add things on top of the built-in file manager, Dired.
   (use-package dired
     :ensure nil
     :defer t
-    :init
-    (setq delete-by-moving-to-trash t)
     :bind
     (:map dired-mode-map
           ("RET" . dired-find-alternate-file)
