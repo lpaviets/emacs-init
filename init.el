@@ -1994,7 +1994,22 @@ Does not insert a space before the inserted opening parenthesis"
   :ensure nil
   :bind
   (:map prog-mode-map
-        ("<f5>" . compile)))
+        ("<f5>" . lps/auto-compile))
+  :config
+  (defvar lps/auto-compile-command-alist nil
+    "Alist containing commands to run to automatically compile the
+current file. Elements are of the form (MODE . COMMAND) where
+COMMAND is a function or a symbol")
+
+  (defun lps/auto-compile ()
+    "If the current major mode is in `lps/auto-compile-command-alist',
+call the associated function interactively. Otherwise, call the
+`compile' command"
+    (interactive)
+    (let ((command (or (cdr (assoc major-mode
+                                   lps/auto-compile-command-alist))
+                       'compile)))
+      (call-interactively command))))
 
 (use-package emacs
   :ensure nil
@@ -2012,7 +2027,10 @@ Does not insert a space before the inserted opening parenthesis"
     (require 'lsp-pyright)
     (defun lps/run-python ()
       (save-excursion
-        (call-interactively 'run-python))))
+        (call-interactively 'run-python)))
+
+    (add-to-list 'lps/auto-compile-command-alist
+                 (cons 'python-mode 'python-shell-send-buffer)))
 
 (use-package lsp-pyright
   :defer t)
@@ -2121,6 +2139,9 @@ Does not insert a space before the inserted opening parenthesis"
   (sly-net-coding-system 'utf-8-unix)
   (sly-complete-symbol-function 'sly-flex-completions)
   :config
+  (add-to-list 'lps/auto-compile-command-alist
+               (cons 'lisp-mode 'sly-compile-and-load-file))
+
   (setq common-lisp-hyperspec-root (concat "file://" (expand-file-name "~/Documents/Other/HyperSpec/")))
 
   (define-key sly-prefix-map (kbd "C-v") sly-selector-map)
@@ -2563,7 +2584,7 @@ move to the end of the document, and search backward instead."
   :bind
   (:map TeX-mode-map
         ("C-c '" . TeX-error-overview)
-        ;; ("TAB" . lps/cdlatex-tab)
+        ("<f5>" . lps/auto-compile)
         ("<backtab>" . indent-for-tab-command))
   :hook
   (LaTeX-mode . outline-minor-mode)
@@ -2607,6 +2628,9 @@ move to the end of the document, and search backward instead."
   (TeX-debug-bad-boxes t)
 
   :config
+  (add-to-list 'lps/auto-compile-command-alist
+               (cons 'latex-mode 'TeX-command-run-all))
+
   ;; Auto-insert
   (with-eval-after-load 'autoinsert
     (add-to-list 'auto-insert-alist
@@ -2770,71 +2794,6 @@ The return value is the string as entered in the minibuffer."
         (and def (string-equal input "") (setq input def))
         input)))
 
-  ;;   ;; Function to make TAB more useful !
-  ;;   ;; Almost taken directly from CDLaTeX, with some parts removed as I don't use them
-  ;;   (defun lps/cdlatex-tab ()
-  ;;     "This function is intended to do many cursor movements.
-  ;; It is bound to the tab key since tab does nothing useful in a TeX file.
-
-  ;; It jumps to the next point in a LaTeX text where one would reasonably
-  ;; expect that more input can be put in.
-  ;; To do that, the cursor is moved according to the following rules:
-
-  ;; The cursor stops...
-  ;; - before closing brackets if preceding-char is any of -({[]})
-  ;; - after  closing brackets, but not if following-char is any of ({[_^
-  ;; - just after $, if the cursor was before that $.
-  ;; - at end of non-empty lines
-  ;; - at the beginning of empty lines
-  ;; - before a SPACE at beginning of line
-  ;; - after first of several SPACE
-
-  ;; Sounds strange?  Try it out!"
-  ;;     (interactive)
-  ;;     (catch 'stop
-  ;;       (cond
-  ;;        ((looking-at "}\\|\\]\\|)")
-  ;;         (forward-char 1)
-  ;;         (if (looking-at "[^_^({[]")
-  ;;             ;; stop after closing bracket, unless ^_[{( follow
-  ;;             (throw 'stop t)))
-  ;;        ((= (following-char) ?$)
-  ;;         (while (= (following-char) ?$) (forward-char 1))
-  ;;         (throw 'stop t))
-  ;;        ((= (following-char) ?\ )
-  ;;         ;; stop after first of many spaces
-  ;;         (forward-char 1)
-  ;;         (re-search-forward "[^ ]")
-  ;;         (if (/= (preceding-char) ?\n) (forward-char -1)))
-  ;;        (t
-  ;;         (forward-char 1)))
-
-  ;;       ;; move to next possible stopping site and check out the place
-  ;;       (while (re-search-forward "[ )}\n]\\|\\]" (point-max) t)
-  ;;         (forward-char -1)
-  ;;         (cond
-  ;;          ((= (following-char) ?\ )
-  ;;           ;; stop at first space or b-o-l
-  ;;           (if (not (bolp)) (forward-char 1)) (throw 'stop t))
-  ;;          ((= (following-char) ?\n)
-  ;;           ;; stop at line end, but not after \\
-  ;;           (if (and (bolp) (not (eobp)))
-  ;;               (throw 'stop t)
-  ;;             (if (equal "\\\\" (buffer-substring-no-properties
-  ;;                                (- (point) 2) (point)))
-  ;;                 (forward-char 1)
-  ;;               (throw 'stop t))))
-  ;;          (t
-  ;;           ;; Stop before )}] if preceding-char is any parenthesis
-  ;;           (if (or (= (char-syntax (preceding-char)) ?\()
-  ;;                   (= (char-syntax (preceding-char)) ?\))
-  ;;                   (= (preceding-char) ?-))
-  ;;               (throw 'stop t)
-  ;;             (forward-char 1)
-  ;;             (if (looking-at "[^_\\^({\\[]")
-  ;;                 ;; stop after closing bracket, unless ^_[{( follow
-  ;;                 (throw 'stop t))))))))
-
   ;; Add environment for auto. insertion with C-c C-e
   (defun lps/latex-add-environments ()
     ;;(LaTeX-add-environments '("tikzpicture" LaTeX-env-label)) ; Should be done by auctex's tikz.el file
@@ -2960,6 +2919,7 @@ Return a list of regular expressions."
         ("C-c ?" . nil)
         ("<C-return>" . nil))
   :custom
+  (cdlatex-paired-parens "$([{")
   (cdlatex-make-sub-superscript-roman-if-pressed-twice nil)
   (cdlatex-simplify-sub-super-scripts nil)
   (cdlatex-math-modify-prefix "C-^")
