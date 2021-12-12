@@ -2419,7 +2419,9 @@ Now, in order to work with structured text, such as source code, we want to be a
            . lps/paredit-enable-electric-pair-disable)
 
     :bind
-    ("C-S-t" . transpose-sexps) ;; Not restricted to paredit
+     ;; Not restricted to paredit but useful sexp manipulation
+    ("C-M-<backspace>" . backward-kill-sexp) ; why is NOT already there ?!
+    ("C-S-t" . transpose-sexps)
     (:map paredit-mode-map
           ("M-?" . nil)
           ("C-S-w" . paredit-copy-as-kill)
@@ -2713,6 +2715,14 @@ I will use another server, based on [[https://github.com/microsoft/pyright][Pyri
 #+begin_src emacs-lisp
   (use-package lsp-pyright
     :defer t)
+#+end_src
+
+Finally, we can improve the interpreter by allowing it to handle multi-line statements better. Terminal emulators are lame and have trouble doing it without massive changes (hello, IPython !), but this is Emacs, we can do whatever we want.
+
+#+begin_src emacs-lisp
+  (use-package python-mls
+    :config
+    (python-mls-setup))
 #+end_src
 
 *** OCaml

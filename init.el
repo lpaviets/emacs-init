@@ -1827,7 +1827,9 @@ Breaks if region or line spans multiple visual lines"
          . lps/paredit-enable-electric-pair-disable)
 
   :bind
-  ("C-S-t" . transpose-sexps) ;; Not restricted to paredit
+   ;; Not restricted to paredit but useful sexp manipulation
+  ("C-M-<backspace>" . backward-kill-sexp) ; why is NOT already there ?!
+  ("C-S-t" . transpose-sexps)
   (:map paredit-mode-map
         ("M-?" . nil)
         ("C-S-w" . paredit-copy-as-kill)
@@ -2034,6 +2036,10 @@ call the associated function interactively. Otherwise, call the
 
 (use-package lsp-pyright
   :defer t)
+
+(use-package python-mls
+  :config
+  (python-mls-setup))
 
 ;; Tuareg (for OCaml and ML like languages)
 (use-package tuareg

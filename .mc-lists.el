@@ -37,6 +37,7 @@
         paredit-backward
         paredit-backward-up
         paredit-close-round
+        paredit-delete-region
         paredit-forward
         paredit-forward-delete
         paredit-forward-down
@@ -76,6 +77,7 @@
         hydra-multiple-cursors/nil
         lps/duplicate-line-or-region-down
         next-buffer
+        sly-compile-defun
         swiper-mc
         wdired-finish-edit
         ))
