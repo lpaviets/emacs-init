@@ -806,11 +806,11 @@ one if none exists."
   :init
   (recentf-mode 1)
   :custom
-  (recentf-max-saved-items 30)
+  (recentf-max-saved-items 50)
   :config
   (dolist (excl (list (expand-file-name (concat user-emacs-directory "eshell/"))
                       (expand-file-name (concat user-emacs-directory "\\.elfeed/"))
-                      "\\.synctex\\.gz" "\\.out$" "\\.toc"
+                      "\\.synctex\\.gz" "\\.out$" "\\.toc" "\\.log"
                       (expand-file-name recentf-save-file)
                       "/usr/local/share/emacs/"
                       "bookmarks$"
