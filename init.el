@@ -1836,7 +1836,6 @@ Breaks if region or line spans multiple visual lines"
         ("M-s" . nil) ;; To get isearch-mode-map
         ("M-s M-s" . paredit-splice-sexp)
         ("C-M-," . paredit-convolute-sexp)
-        ("M-j" . eval-print-last-sexp)
         ([remap newline] . paredit-newline)
         ("<C-backspace>" . paredit-delete-region)))
 
@@ -2182,8 +2181,7 @@ call the associated function interactively. Otherwise, call the
   (:map sly-mrepl-mode-map
         ("C-c C-n" . sly-mrepl-next-prompt)
         ("C-c C-p" . sly-mrepl-previous-prompt)
-        ("C-c C-k" . sly-quit-lisp)
-        ("<C-return>" . end-of-buffer))
+        ("C-c C-k" . sly-quit-lisp))
   (:map sly-selector-map
         ("C-v" . lps/sly-mrepl-other-window))
   :config
