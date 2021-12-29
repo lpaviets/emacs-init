@@ -35,8 +35,10 @@
         org-self-insert-command
         paredit-backslash
         paredit-backward
+        paredit-backward-kill-word
         paredit-backward-up
         paredit-close-round
+        paredit-copy-as-kill
         paredit-delete-region
         paredit-forward
         paredit-forward-delete
@@ -46,6 +48,7 @@
         paredit-forward-up
         paredit-kill
         paredit-meta-doublequote
+        paredit-newline
         paredit-open-round
         paredit-raise-sexp
         paredit-semicolon
@@ -77,6 +80,7 @@
         hydra-multiple-cursors/nil
         lps/duplicate-line-or-region-down
         next-buffer
+        org-shiftright
         sly-compile-defun
         swiper-mc
         wdired-finish-edit

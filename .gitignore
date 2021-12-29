@@ -114,3 +114,4 @@ flycheck_*.el
 *.sqlite
 /session.*
 /.org-id-locations
+/pyhist-python3

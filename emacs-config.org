@@ -1933,6 +1933,7 @@ The next one is used to select the current line. Once a line is marked, we can m
     :bind
     ("M-k" . lps/copy-line-at-point)
     ("M-à" . lps/select-line)
+    ("<C-backspace>" . delete-region)
     :custom
     (kill-read-only-ok t)
     :config
@@ -2693,26 +2694,26 @@ In this section, we fine-tune our editing tools for various programming language
      The command ~pyls~ needs to be available on the ~PATH~ environment variable.
 
 #+begin_src emacs-lisp
-    (use-package python
-      :ensure nil
-      :defer t
-  ;;    :hook (python-mode . lps/run-python)
-      :custom
-      (python-shell-interpreter "python3")
-      :config
-      (require 'lsp-pyright)
-      (defun lps/run-python ()
-        (save-excursion
-          (call-interactively 'run-python)))
+  (use-package python
+    :defer t
+    ;;    :hook (python-mode . lps/run-python)
+    :custom
+    (python-shell-interpreter "python3")
+    :config
+    (require 'lsp-pyright)
+    (defun lps/run-python ()
+      (save-excursion
+        (call-interactively 'run-python)))
 
-      (add-to-list 'lps/auto-compile-command-alist
-                   (cons 'python-mode 'python-shell-send-buffer)))
+    (add-to-list 'lps/auto-compile-command-alist
+                 (cons 'python-mode 'python-shell-send-buffer)))
 #+end_src
 
 I will use another server, based on [[https://github.com/microsoft/pyright][Pyright]]
 
 #+begin_src emacs-lisp
   (use-package lsp-pyright
+    :after python
     :defer t)
 #+end_src
 
@@ -2808,6 +2809,18 @@ As mentioned in the previous sections, there are already a few tools to work wit
 #+end_src
 
 *** Lisp
+**** Generic
+As Lisp dialects are often similar, at least syntactically, there are some packages who are interesting regardless of the exact language being used.
+
+The first one is adapted to Common Lisp via a SLY extension, but was already implemented for Emacs Lisp before that. It - arguably - improves the macroexansion process, and allows one to quickly view what a macroexpansion is, /without/ actually modifying the source code.
+
+#+begin_src emacs-lisp
+  (use-package macrostep
+    :bind
+    (:map lps/quick-edit-map
+          ("e" . macrostep-expand)))
+#+end_src
+
 **** Emacs Lisp
 
 Although Emacs comes with pretty good built-in functionalities, there is still room for improvement.

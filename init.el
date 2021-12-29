@@ -2019,21 +2019,21 @@ call the associated function interactively. Otherwise, call the
   (comint-prompt-read-only t))
 
 (use-package python
-    :ensure nil
-    :defer t
-;;    :hook (python-mode . lps/run-python)
-    :custom
-    (python-shell-interpreter "python3")
-    :config
-    (require 'lsp-pyright)
-    (defun lps/run-python ()
-      (save-excursion
-        (call-interactively 'run-python)))
+  :defer t
+  ;;    :hook (python-mode . lps/run-python)
+  :custom
+  (python-shell-interpreter "python3")
+  :config
+  (require 'lsp-pyright)
+  (defun lps/run-python ()
+    (save-excursion
+      (call-interactively 'run-python)))
 
-    (add-to-list 'lps/auto-compile-command-alist
-                 (cons 'python-mode 'python-shell-send-buffer)))
+  (add-to-list 'lps/auto-compile-command-alist
+               (cons 'python-mode 'python-shell-send-buffer)))
 
 (use-package lsp-pyright
+  :after python
   :defer t)
 
 (use-package python-mls
@@ -2095,6 +2095,11 @@ call the associated function interactively. Otherwise, call the
           (set-buffer-modified-p nil)
           (special-mode)))
       (pop-to-buffer elf-buffer))))
+
+(use-package macrostep
+  :bind
+  (:map lps/quick-edit-map
+        ("e" . macrostep-expand)))
 
 (use-package highlight-defined
   :hook (emacs-lisp-mode . highlight-defined-mode))
