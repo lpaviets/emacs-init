@@ -1435,6 +1435,7 @@ what is displayed in the \"popup\"-like buffer"
   :bind
   ("M-k" . lps/copy-line-at-point)
   ("M-à" . lps/select-line)
+  ("<C-backspace>" . delete-region)
   :custom
   (kill-read-only-ok t)
   :config
@@ -2233,7 +2234,34 @@ trigger the scrolling."
 
 (use-package sly-quicklisp
   :after sly
-  :hook (sly . sly-quicklisp-mode))
+  :hook (sly . sly-quicklisp-mode)
+  :bind
+  (:map sly-prefix-map
+        ("C-d C-r" . sly-register-local-projects))
+  :config
+  ;; Redefine the sly-quickload function to also list local projects
+  (defun sly-quickload (system)
+    "Interactive command made available in lisp-editing files."
+    (interactive
+     (list (completing-read "QL system? "
+                            (append
+                             (sly-eval
+                              '(ql:list-local-systems))
+                             (sly-eval
+                              '(slynk-quicklisp:available-system-names)))
+                            nil
+                            nil)))
+    (sly-eval-async `(slynk-quicklisp:quickload ,system)
+      (lambda (retval)
+        (setq sly-quicklisp--enabled-dists retval)
+        (sly-message "%s is ready to use!" system)))
+    (sly-message "ql:quickloading %s..." system))
+
+  (defun sly-register-local-projects ()
+    (interactive)
+    (sly-eval-async '(ql:register-local-projects)
+      (lambda (retval)
+        (sly-message "ql:register-local-projects completed")))))
 
 (use-package sly-macrostep
   :after sly)
@@ -3244,10 +3272,10 @@ PWD is not in a git repo (or the git command is not found)."
   (setq message-send-mail-function 'smtpmail-send-it)
   ;; Default SMTP configuration
   (setq smtpmail-debug-info t)
-  (setq smtpmail-smtp-user "lpaviets")
-  (setq smtpmail-smtp-server "smtp.ens-lyon.fr")
-  (setq smtpmail-smtp-service 587)
-  (setq smtpmail-stream-type 'starttls))
+  (setq smtpmail-smtp-user "paviets201")
+  (setq smtpmail-smtp-server "smtp.unicaen.fr")
+  (setq smtpmail-smtp-service 465)
+  (setq smtpmail-stream-type 'ssl))
 
 (use-package mu4e
   :ensure nil
