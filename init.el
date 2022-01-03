@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t -*-
+
 (set-frame-parameter nil 'fullscreen 'maximized)
 (setq gc-cons-threshold 100000000) ; 1e8 = 100 MB (default: 800kB)
 

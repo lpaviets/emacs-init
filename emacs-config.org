@@ -24,6 +24,15 @@ Whenever this is the case, it is explicitly signaled by the presence of the *MAN
 If the init.el cannot be properly loaded at startup, try to search for such keywords in this file and execute the corresponding commands.
 
 * Initialization
+** Lexical Binding
+
+This is quite a complex topic. More info on the Emacs side can be found [[info:elisp#Lexical Binding][here]], and more generally [[https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope_vs._dynamic_scope][on Wikipedia]].
+This could arguably be the default. Modern code should work fine with it, and code that /doesn't/ work with lexical binding, expecting dynamic binding everywhere, should be refactored.
+
+#+begin_src emacs-lisp
+  ;; -*- lexical-binding: t -*-
+#+end_src
+
 ** Emacs performance
 
 First, we set things up so that Emacs starts /fast/ (and also with the frame maximized)
