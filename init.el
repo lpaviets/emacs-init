@@ -2145,6 +2145,7 @@ call the associated function interactively. Otherwise, call the
   (:map sly-prefix-map
         ("C-p" . nil)
         ("M-p" . sly-pprint-eval-last-expression)
+        ("M-i" . sly-inspect-no-eval)
         ("C-i" . consult-imenu))
   :custom
   ;; Clisp makes SLY crash ?!
@@ -2178,7 +2179,16 @@ call the associated function interactively. Otherwise, call the
   ;; View HyperSpec within Emacs using EWW
   (setq browse-url-handlers
     '(("hyperspec" . eww-browse-url)
-      ("." . browse-url-default-browser))))
+      ("." . browse-url-default-browser)))
+
+  ;; Fast inspection. Might be buggy.
+  (defun sly-inspect-no-eval (symbol &optional inspector-name)
+    (interactive (list (sly-read-symbol-name " symbol's function: ")
+                       (sly-maybe-read-inspector-name)))
+    (when (not symbol)
+      (error "No symbol given"))
+    (sly-eval-for-inspector `(slynk:init-inspector ,(concat "'" symbol))
+                            :inspector-name inspector-name)))
 
 (use-package sly-mrepl
   :ensure nil
