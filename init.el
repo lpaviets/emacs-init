@@ -860,6 +860,14 @@ If called with a prefix argument, also kills the current buffer"
         ("R" . lps/rename-current-buffer-file)
         ("D" . lps/delete-current-buffer-file)))
 
+(use-package emacs
+  :init
+  (defvar lps/backup-directory (concat user-emacs-directory ".backups/"))
+  (unless (file-exists-p lps/backup-directory)
+    (make-directory lps/backup-directory))
+  :custom
+  (backup-directory-alist `(("." . ,lps/backup-directory))))
+
 (use-package outline
   :ensure nil
   :defer t

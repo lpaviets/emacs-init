@@ -1157,6 +1157,19 @@ Dired (or even your prefered shell) is the prefered way to deal with large amoun
           ("D" . lps/delete-current-buffer-file)))
 #+end_src
 
+*** Backup and auto-save
+By default, Emacs performs a lot of backups, allowing to recover both from unwanted modifications (/e.g./ modifying a file, saving it, and realizing later that you have overriden something important) or unexpected crashes. However, the way those files are handled is somewhat intrusive.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :init
+    (defvar lps/backup-directory (concat user-emacs-directory ".backups/"))
+    (unless (file-exists-p lps/backup-directory)
+      (make-directory lps/backup-directory))
+    :custom
+    (backup-directory-alist `(("." . ,lps/backup-directory))))
+#+end_src
+
 ** Outline and folding
 Sometimes, when documents get bigger and bigger, it is useful to be able to temporarily hide stuff. The built-in ~narrow-to-\*~ commands can be useful to really focus on a part of the document, but we might want to be able to get a rough outline of the /whole/ document at any time, but in a less cluttered way.
 
