@@ -2573,10 +2573,8 @@ trigger the scrolling."
 
         ("r" "Random")
         ("rr" "Random" plain
-         (file+headline "everything.org"
-                        "A trier")
-         "%x%?\n%i"
-         :empty-lines-after 1)
+         (file+function "everything.org"
+                        lps/org-ask-location))
 
         ("rm" "Movie" checkitem
          (file+function "movies.org" lps/org-ask-location))
