@@ -591,6 +591,15 @@ Some packages are used lated in the configuration, and we want to be able to use
     :hook (prog-mode . highlight-numbers-mode))
 #+end_src
 
+Another built-in and useful package that often comes up is =hl-line=. When enabled, it simply highlights the current line (/i.e./ the one on which the point is). When dealing with tables, or "rigidly organized" data, it is often useful to be able to quickly tell what is on which line.
+
+#+begin_src emacs-lisp
+  (use-package hl-line
+    :hook ((tabulated-list-mode
+            ibuffer-mode)
+           . hl-line-mode))
+#+end_src
+
 ** Whitespaces
 
 First of all, we never want ~TAB~ to insert actual tab characters. We also don't like trailing whitespaces, so we delete them automatically when we save a buffer.
@@ -1166,8 +1175,8 @@ By default, Emacs performs a lot of backups, allowing to recover both from unwan
     (defvar lps/backup-directory (concat user-emacs-directory ".backups/"))
     (unless (file-exists-p lps/backup-directory)
       (make-directory lps/backup-directory))
-    :custom
-    (backup-directory-alist `(("." . ,lps/backup-directory))))
+
+    (setq backup-directory-alist `(("." . ,lps/backup-directory))))
 #+end_src
 
 ** Outline and folding

@@ -64,6 +64,7 @@
         consult-line
         helpful-key
         hydra-multiple-cursors/body
+        hydra-multiple-cursors/mc/edit-beginnings-of-lines-and-exit
         hydra-multiple-cursors/mc/edit-lines-and-exit
         hydra-multiple-cursors/mc/mark-all-dwim
         hydra-multiple-cursors/mc/mark-all-like-this-and-exit

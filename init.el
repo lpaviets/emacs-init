@@ -403,6 +403,11 @@ installed themes instead."
 (use-package highlight-numbers
   :hook (prog-mode . highlight-numbers-mode))
 
+(use-package hl-line
+  :hook ((tabulated-list-mode
+          ibuffer-mode)
+         . hl-line-mode))
+
 (use-package emacs
   :ensure nil
   :hook (before-save . delete-trailing-whitespace)
@@ -865,8 +870,8 @@ If called with a prefix argument, also kills the current buffer"
   (defvar lps/backup-directory (concat user-emacs-directory ".backups/"))
   (unless (file-exists-p lps/backup-directory)
     (make-directory lps/backup-directory))
-  :custom
-  (backup-directory-alist `(("." . ,lps/backup-directory))))
+
+  (setq backup-directory-alist `(("." . ,lps/backup-directory))))
 
 (use-package outline
   :ensure nil
