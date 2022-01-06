@@ -2162,7 +2162,7 @@ call the associated function interactively. Otherwise, call the
         ("C-i" . consult-imenu))
   :custom
   ;; Clisp makes SLY crash ?!
-  (inferior-lisp-program "sbcl")
+  (inferior-lisp-program "sbcl --dynamic-space-size 4GB --lose-on-corruption")
   (sly-net-coding-system 'utf-8-unix)
   (sly-complete-symbol-function 'sly-flex-completions)
   :config
@@ -2292,7 +2292,20 @@ trigger the scrolling."
   :after sly)
 
 (use-package sly-asdf
-  :after sly)
+  :after sly
+  :bind
+  (:map sly-prefix-map
+        ("M-s" . sly-asdf-isearch-system)
+        ("M-%" . sly-asdf-query-replace-system))
+  :config
+  ;; Bug in the initial implementation, runs isearch instead of multi-isearch ?
+  ;; Initial implementation also reinvents the wheel -> multi-isearch-files already exists
+  (defun sly-asdf-isearch-system (sys-name)
+    "Run function `multi-isearch-files' on the files of an ASDF system SYS-NAME."
+    (interactive (list (sly-asdf-read-system-name nil nil)))
+    (let ((files (mapcar 'sly-from-lisp-filename
+                         (sly-eval `(slynk-asdf:asdf-system-files ,sys-name)))))
+      (multi-isearch-files files))))
 
 (use-package common-lisp-snippets
   :after yasnippet sly)
