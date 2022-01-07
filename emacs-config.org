@@ -1678,6 +1678,7 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
     (prog-mode . lps/company-default-backends-prog)
     (text-mode . lps/company-default-backends-text)
     :bind
+    ("TAB" . company-indent-or-complete-common)
     (:map company-active-map
           ("<tab>" . company-complete)
           ("TAB" . company-complete)
@@ -3083,7 +3084,7 @@ Finally, we add some snippets for an even faster programming experience:
     :after yasnippet sly)
 #+end_src
 
-****  Clojure
+**** Clojure
 Finally, another recent and promising Lisp, which is much more opinionated than Common Lisp and runs on the JVM. It is a functional language, with a strong emphasis on immutable data structure, and has various tools that make concurrent programming easy.
 
 #+begin_src emacs-lisp

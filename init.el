@@ -1217,6 +1217,7 @@ what is displayed in the \"popup\"-like buffer"
   (prog-mode . lps/company-default-backends-prog)
   (text-mode . lps/company-default-backends-text)
   :bind
+  ("TAB" . company-indent-or-complete-common)
   (:map company-active-map
         ("<tab>" . company-complete)
         ("TAB" . company-complete)
