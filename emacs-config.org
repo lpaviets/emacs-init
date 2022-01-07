@@ -2700,6 +2700,31 @@ We will use the built-in ~compile~ command for this, and tune it as we need.
         (call-interactively command))))
 #+end_src
 
+** Documentation
+Many languages have features to view some kind of help, or documentation, from withing the language, such as Common Lisp's ~describe~ or Python's ~help~ functions.
+However, we sometimes need a bit more, and we do not always have access to the Internet. Solution ? Download documentation, and use a nice package to navigate it.
+
+#+begin_src emacs-lisp
+    (use-package devdocs
+      :defer t
+      :bind
+      (:map prog-mode-map
+            ("<f6>" . devdocs-lookup))
+      :init
+      (defvar lps/devdocs-alist
+        '((python-mode-hook . "python~3.8")
+          (haskell-mode-hook . "haskell~8")
+          (c-mode-hook . "c")
+          (c++-mode-hook . "cpp")
+          (tuareg-mode-hook . "ocaml")
+          (LaTeX-mode-hook . "latex")))
+
+      (dolist (pair lps/devdocs-alist)
+        (let ((hook (car pair))
+              (doc (cdr pair)))
+          (add-hook hook `(lambda () (setq-local devdocs-current-docs (list ,doc)))))))
+#+end_src
+
 ** REPL and CLI
 
 Many programming languages have, in one way or another, a REPL or a command-line interface. Although some modes will be configured independently, there are some tweaks that we want everywhere, regardless of the mode.
@@ -2912,7 +2937,8 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
     :hook (lisp-mode . sly-editing-mode)
     :bind
     (:map sly-mode-map
-          ("M-_" . nil))
+          ("M-_" . nil)
+          ("<f6>" . sly-documentation-lookup))
     (:map sly-doc-map
           ("C-g" . nil)
           ("C-h" . nil)
@@ -3568,6 +3594,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (:map TeX-mode-map
           ("C-c '" . TeX-error-overview)
           ("<f5>" . lps/auto-compile)
+          ("<f6>" . devdocs-lookup)
           ("<backtab>" . indent-for-tab-command))
     :hook
     (LaTeX-mode . outline-minor-mode)

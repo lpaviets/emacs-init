@@ -2029,6 +2029,25 @@ call the associated function interactively. Otherwise, call the
                        'compile)))
       (call-interactively command))))
 
+(use-package devdocs
+  :defer t
+  :bind
+  (:map prog-mode-map
+        ("<f6>" . devdocs-lookup))
+  :init
+  (defvar lps/devdocs-alist
+    '((python-mode-hook . "python~3.8")
+      (haskell-mode-hook . "haskell~8")
+      (c-mode-hook . "c")
+      (c++-mode-hook . "cpp")
+      (tuareg-mode-hook . "ocaml")
+      (LaTeX-mode-hook . "latex")))
+
+  (dolist (pair lps/devdocs-alist)
+    (let ((hook (car pair))
+          (doc (cdr pair)))
+      (add-hook hook `(lambda () (setq-local devdocs-current-docs (list ,doc)))))))
+
 (use-package emacs
   :ensure nil
   :custom
@@ -2150,7 +2169,8 @@ call the associated function interactively. Otherwise, call the
   :hook (lisp-mode . sly-editing-mode)
   :bind
   (:map sly-mode-map
-        ("M-_" . nil))
+        ("M-_" . nil)
+        ("<f6>" . sly-documentation-lookup))
   (:map sly-doc-map
         ("C-g" . nil)
         ("C-h" . nil)
@@ -2659,6 +2679,7 @@ move to the end of the document, and search backward instead."
   (:map TeX-mode-map
         ("C-c '" . TeX-error-overview)
         ("<f5>" . lps/auto-compile)
+        ("<f6>" . devdocs-lookup)
         ("<backtab>" . indent-for-tab-command))
   :hook
   (LaTeX-mode . outline-minor-mode)
