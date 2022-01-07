@@ -109,6 +109,10 @@ flycheck_*.el
 # Personal packages, machine dependent
 /extra-packages/*
 
+# Sandbox stuff: only interested in init.el
+/sandbox/*
+!/sandbox/init.el
+
 # Other random stuff
 /network-security.data
 *.sqlite
