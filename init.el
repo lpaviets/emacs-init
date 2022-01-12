@@ -2303,6 +2303,22 @@ trigger the scrolling."
         (sly-message "%s is ready to use!" system)))
     (sly-message "ql:quickloading %s..." system))
 
+  ;; Redefine the modeline construct: takes too much space
+  (defun sly-quicklisp--mode-line-construct ()
+  "A little pretty indicator in the mode-line"
+  `(:propertize ,(cond (sly-quicklisp--enabled-dists
+                        (format "QL(%s)" (length sly-quicklisp--enabled-dists)))
+                       (sly-quicklisp-mode
+                        "QL")
+                       (t
+                        "-"))
+                face sly-quicklisp-indicator-face
+                mouse-face mode-line-highlight
+                help-echo ,(if sly-quicklisp--enabled-dists
+                               (format "Enabled dists %s"
+                                       sly-quicklisp--enabled-dists)
+                             "NO QL dists reported so far. Load a system using `sly-quickload'")))
+
   (defun sly-register-local-projects ()
     (interactive)
     (sly-eval-async '(ql:register-local-projects)
@@ -2311,6 +2327,11 @@ trigger the scrolling."
 
 (use-package sly-macrostep
   :after sly)
+
+(use-package sly-repl-ansi-color
+  :after sly
+  :config
+  (add-to-list 'sly-contribs 'sly-repl-ansi-color))
 
 (use-package sly-asdf
   :after sly
