@@ -2180,7 +2180,8 @@ call the associated function interactively. Otherwise, call the
         ("C-p" . nil)
         ("M-p" . sly-pprint-eval-last-expression)
         ("M-i" . sly-inspect-no-eval)
-        ("C-i" . consult-imenu))
+        ("C-i" . consult-imenu)
+        ("M-u" . sly-unintern-symbol))
   :custom
   ;; Clisp makes SLY crash ?!
   (inferior-lisp-program "sbcl --dynamic-space-size 4GB --lose-on-corruption")
