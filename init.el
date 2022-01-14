@@ -1241,7 +1241,7 @@ what is displayed in the \"popup\"-like buffer"
   :custom
   ;; Generic company settings
   (company-minimum-prefix-length 4)
-  (company-idle-delay 0.0)
+  (company-idle-delay nil)
   (company-selection-wrap-around t)
   (company-show-numbers t)
   (company-tooltip-align-annotations t)
@@ -3025,7 +3025,17 @@ Return a list of regular expressions."
   :config
   (setq preview-auto-reveal t)
   (setq preview-auto-cache-preamble t)
-  (add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t))
+  (add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t)
+
+  ;; Dirty way to reduce noise when idle-y
+  (defun preview-active-string (ov)
+    "Generate before-string for active image overlay OV."
+    (preview-make-clickable
+     (overlay-get ov 'preview-map)
+     (car (overlay-get ov 'preview-image))
+     ;; "%s opens text
+     ;; %s more options"
+     "")))
 
 (use-package cdlatex
   :defer t
@@ -3040,6 +3050,8 @@ Return a list of regular expressions."
   (cdlatex-make-sub-superscript-roman-if-pressed-twice nil)
   (cdlatex-simplify-sub-super-scripts nil)
   (cdlatex-math-modify-prefix "C-^")
+  (cdlatex-takeover-dollar nil)
+  (cdlatex-takeover-parenthesis nil)
   (cdlatex-math-symbol-prefix ?°)
   (cdlatex-math-symbol-alist
    '((?< ("\\leq" "\\Leftarrow" "\\longleftarrow" "\\Longleftarrow"))
@@ -3051,7 +3063,10 @@ Return a list of regular expressions."
      (?+ ("\\cup" "\\bigcup"))
      (?L ("\\Lambda" "\\limits"))
      (?c ("\\mathcal{?}" "\\mathbb{?}" "\\mathfrak{?}"))
-     (?\( ("\\langle ?\\rangle" "\\left? \\right"))))
+     (?\( ("\\langle ?\\rangle" "\\left? \\right"))
+     (?N ("\\mathbb{N}" "\\mathbb{N}^{2}"))
+     (?Z ("\\mathbb{Z}" "\\mathbb{Z}^{2}"))
+     (?R ("\\mathbb{R}" "\\mathbb{R}^{2}"))))
 
   :config
   (defun lps/LaTeX-indent ()
