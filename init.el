@@ -2235,7 +2235,7 @@ call the associated function interactively. Otherwise, call the
   (:map sly-mrepl-mode-map
         ("C-c C-n" . sly-mrepl-next-prompt)
         ("C-c C-p" . sly-mrepl-previous-prompt)
-        ("C-c C-k" . sly-quit-lisp))
+        ("C-c C-q" . sly-quit-lisp))
   (:map sly-selector-map
         ("C-v" . lps/sly-mrepl-other-window))
   :config
@@ -2333,7 +2333,19 @@ trigger the scrolling."
 (use-package sly-repl-ansi-color
   :after sly
   :config
-  (add-to-list 'sly-contribs 'sly-repl-ansi-color))
+  (add-to-list 'sly-contribs 'sly-repl-ansi-color)
+
+  (defun lps/sly-colour-lisp-output (string)
+    (with-temp-buffer
+      (insert string)
+      (goto-char (point-min))
+      (while (re-search-forward "^;.*" nil t)
+        (replace-match (format "%c[3;95m\\&%c[0m" 27 27) t nil))
+      (buffer-string)))
+
+  (add-hook 'sly-connected-hook
+   (lambda ()
+     (add-hook 'sly-mrepl-output-filter-functions 'lps/sly-colour-lisp-output))))
 
 (use-package sly-asdf
   :after sly
