@@ -915,6 +915,7 @@ We also improve the appearance (and functionalities) of the buffer that we get w
                      (starred-name)
                      (mode . special-mode))))
         ("Process" (process))
+        ("Git" (name . "^magit"))
         ("Images/PDF" (or
                        (file-extension . "pdf")
                        (mode . image-mode)))

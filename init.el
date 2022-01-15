@@ -651,6 +651,7 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
                    (starred-name)
                    (mode . special-mode))))
       ("Process" (process))
+      ("Git" (name . "^magit"))
       ("Images/PDF" (or
                      (file-extension . "pdf")
                      (mode . image-mode)))
