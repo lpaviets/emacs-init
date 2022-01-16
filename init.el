@@ -210,9 +210,13 @@
 (use-package emacs
   :init
   (column-number-mode t)
-  (global-visual-line-mode 1)
+  :custom
+  (hscroll-margin 10)
+  (hscroll-step 10)
+  (auto-hscroll-mode 'current-line)
   :hook
-  ((prog-mode LaTeX-mode) . display-line-numbers-mode))
+  ((prog-mode LaTeX-mode) . display-line-numbers-mode)
+  ((text-mode org-mode LaTeX-mode comint-mode) . visual-line-mode))
 
 ;; Themes
 (use-package solarized-theme)
@@ -1360,6 +1364,8 @@ what is displayed in the \"popup\"-like buffer"
   :bind
   ("M-n" . forward-paragraph)
   ("M-p" . backward-paragraph)
+  ("C-S-a" . beginning-of-line)
+  ("C-S-e" . end-of-line)
   :custom
   (sentence-end-double-space nil))
 

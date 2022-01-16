@@ -359,7 +359,7 @@ Emacs is very much keyboard-oriented. As such, we have little-to-no use of the v
 
 *** Lines and columns
 
-Because we now have plenty of free space on our screen, we can sacrifice a bit of it to put useful information there, such as line numbers. We also want to see the current line and column in the modeline, and while we are at it, we also want Emacs to wrap our lines, so that we never have to scroll horizontally to see the end of a long line (besides, how would we do it, now that we don't have a scrollbar anymore ?!)
+Because we now have plenty of free space on our screen, we can sacrifice a bit of it to put useful information there, such as line numbers. We also want to see the current line and column in the modeline, and while we are at it, we also want Emacs to wrap our lines in modes where this makes sense, so that we never have to scroll horizontally to see the end of a long line (besides, how would we do it, now that we don't have a scrollbar anymore ?!)
 
 #+begin_src emacs-lisp
   ;; Line/column numbering modes
@@ -367,9 +367,13 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
   (use-package emacs
     :init
     (column-number-mode t)
-    (global-visual-line-mode 1)
+    :custom
+    (hscroll-margin 10)
+    (hscroll-step 10)
+    (auto-hscroll-mode 'current-line)
     :hook
-    ((prog-mode LaTeX-mode) . display-line-numbers-mode))
+    ((prog-mode LaTeX-mode) . display-line-numbers-mode)
+    ((text-mode org-mode LaTeX-mode comint-mode) . visual-line-mode))
 #+end_src
 
 *** Theme
@@ -1830,7 +1834,7 @@ Because movement keys are the most frequently used ones, it might be useful to c
 
 Furthermore, we change a variable that makes sense for American writers, but not so much according to French conventions. The Emacs Manual recommends against it, as we are no longer able to distinguish a sentence ending from an abbreviation, but I do not use this type of abbreviation very often anyway (notable counterexamples nonetheless: /i.e./ and /e.g./).
 
-We also add more convenient bindings to move paragraph by paragraph.
+We also add more convenient bindings to move paragraph by paragraph, and to deal with long lines.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -1838,6 +1842,8 @@ We also add more convenient bindings to move paragraph by paragraph.
     :bind
     ("M-n" . forward-paragraph)
     ("M-p" . backward-paragraph)
+    ("C-S-a" . beginning-of-line)
+    ("C-S-e" . end-of-line)
     :custom
     (sentence-end-double-space nil))
 #+end_src
