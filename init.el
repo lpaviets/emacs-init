@@ -3076,6 +3076,7 @@ Return a list of regular expressions."
   (cdlatex-simplify-sub-super-scripts nil)
   (cdlatex-math-modify-prefix "C-^")
   (cdlatex-takeover-dollar nil)
+  (cdlatex-auto-help-delay 1.0)
   (cdlatex-takeover-parenthesis nil)
   (cdlatex-math-symbol-prefix ?°)
   (cdlatex-math-symbol-alist
@@ -3088,10 +3089,15 @@ Return a list of regular expressions."
      (?+ ("\\cup" "\\bigcup"))
      (?L ("\\Lambda" "\\limits"))
      (?c ("\\mathcal{?}" "\\mathbb{?}" "\\mathfrak{?}"))
-     (?\( ("\\langle ?\\rangle" "\\left? \\right"))
+     (?\( ("\\langle ?\\rangle" "\\left"))
      (?N ("\\mathbb{N}" "\\mathbb{N}^{2}"))
      (?Z ("\\mathbb{Z}" "\\mathbb{Z}^{2}"))
      (?R ("\\mathbb{R}" "\\mathbb{R}^{2}"))))
+  (cdlatex-command-alist
+   '(("prodl"       "Insert \\prod\\limits_{}^{}"
+      "\\prod\\limits_{?}^{}" cdlatex-position-cursor nil nil t)
+     ("lim"         "Insert \\lim\\limits_{}"
+      "\\lim\\limits_{?}" cdlatex-position-cursor nil nil t)))
 
   :config
   (defun lps/LaTeX-indent ()
