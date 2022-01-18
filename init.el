@@ -1265,12 +1265,12 @@ what is displayed in the \"popup\"-like buffer"
 
   ;; Use our personal default backends
   (defun lps/company-default-backends-prog ()
-    (setq-local company-backends '((company-capf company-files company-dabbrev company-yasnippet)
+    (setq-local company-backends '((company-capf company-files company-dabbrev)
                                    (company-dabbrev-code company-gtags company-etags company-keywords company-clang)
                                    company-oddmuse)))
 
   (defun lps/company-default-backends-text ()
-    (setq-local company-backends '((company-capf company-files company-dabbrev company-ispell company-yasnippet)
+    (setq-local company-backends '((company-capf company-files company-dabbrev company-ispell)
                                    company-oddmuse)))
 
   ;; AZERTY-friendly company number selection
@@ -1902,15 +1902,22 @@ Does not insert a space before the inserted opening parenthesis"
   :hook ((prog-mode LaTeX-mode) . yas-minor-mode)
   :bind (:map yas-minor-mode-map
               ("TAB" . nil)
-              ("<tab>" . nil)
-              ("<C-tab>" . yas-expand)))
+              ("<tab>" . nil)))
 
 (use-package yasnippet-snippets
   :after yasnippet)
 
 (use-package company-yasnippet
   :ensure nil
-  :after company)
+  :after company yasnippet
+  :bind
+  (:map yas-minor-mode-map
+        ("<C-tab>" . lps/company-yasnippet-show-or-complete))
+  :config
+  (defun lps/company-yasnippet-show-or-complete ()
+    (interactive)
+    (let ((company-backends '(company-yasnippet)))
+      (call-interactively 'company-complete))))
 
 (use-package company-dabbrev
   :ensure nil
@@ -2943,8 +2950,7 @@ The return value is the string as entered in the minibuffer."
                    company-latex-commands
                    company-capf
                    company-dabbrev
-                   company-ispell
-                   company-yasnippet)))
+                   company-ispell)))
     (setq-local company-minimum-prefix-length 4)))
 
 (use-package bibtex
@@ -3688,7 +3694,9 @@ PWD is not in a git repo (or the git command is not found)."
                  "enclosed"
                  ;; French
                  "ci-joint"
-                 "pièce-jointe"))))
+                 "pièce-jointe"
+                 "t'envoie"
+                 "vous envoie"))))
 
 (use-package mu4e-column-faces
   :after mu4e

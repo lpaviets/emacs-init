@@ -1726,12 +1726,12 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
 
     ;; Use our personal default backends
     (defun lps/company-default-backends-prog ()
-      (setq-local company-backends '((company-capf company-files company-dabbrev company-yasnippet)
+      (setq-local company-backends '((company-capf company-files company-dabbrev)
                                      (company-dabbrev-code company-gtags company-etags company-keywords company-clang)
                                      company-oddmuse)))
 
     (defun lps/company-default-backends-text ()
-      (setq-local company-backends '((company-capf company-files company-dabbrev company-ispell company-yasnippet)
+      (setq-local company-backends '((company-capf company-files company-dabbrev company-ispell)
                                      company-oddmuse)))
 
     ;; AZERTY-friendly company number selection
@@ -2524,8 +2524,7 @@ The previous Auto-completion section was about the general editing experience. H
     :hook ((prog-mode LaTeX-mode) . yas-minor-mode)
     :bind (:map yas-minor-mode-map
                 ("TAB" . nil)
-                ("<tab>" . nil)
-                ("<C-tab>" . yas-expand)))
+                ("<tab>" . nil)))
 #+end_src
 
 It is even possible to define your own snippets. The following package contains a lot of useful snippets for various programming languages or tools, such a C++, Clojure, various Makefiles, Emacs' Org-Mode ...
@@ -2542,7 +2541,15 @@ A first backend that we want to consider is the one using snippets provided by ~
 #+begin_src emacs-lisp
   (use-package company-yasnippet
     :ensure nil
-    :after company)
+    :after company yasnippet
+    :bind
+    (:map yas-minor-mode-map
+          ("<C-tab>" . lps/company-yasnippet-show-or-complete))
+    :config
+    (defun lps/company-yasnippet-show-or-complete ()
+      (interactive)
+      (let ((company-backends '(company-yasnippet)))
+        (call-interactively 'company-complete))))
 #+end_src
 
 Most of the time, when writing text, we are going to use words over and over again in the same buffer. ~company-dabbrev~ will return completion candidates based on this content.
@@ -3858,8 +3865,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
                      company-latex-commands
                      company-capf
                      company-dabbrev
-                     company-ispell
-                     company-yasnippet)))
+                     company-ispell)))
       (setq-local company-minimum-prefix-length 4)))
 #+end_src
 
@@ -4752,7 +4758,9 @@ For example, a thing that is often embarassing is sending a mail without its att
                    "enclosed"
                    ;; French
                    "ci-joint"
-                   "pièce-jointe"))))
+                   "pièce-jointe"
+                   "t'envoie"
+                   "vous envoie"))))
 #+end_src
 
 The headers view of ~mu4e~ is not very pretty. Why not make it colourful ?
