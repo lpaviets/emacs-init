@@ -2845,10 +2845,10 @@ The return value is the string as entered in the minibuffer."
   :hook (LaTeX-mode . reftex-mode)
   :custom
   (reftex-label-alist
-   '(("theorem" ?T "thm:" "~\\ref{%s}" t ("theorem" "th.") -3)
-     ("lemma" ?T "thm:lemma-" "~\\ref{%s}" t ("lemma") -4)
-     ("proposition" ?T "thm:prop-" "~\\ref{%s}" t ("proposition" "prop.") -4)
-     ("definition" ?T "thm:def-" "~\\ref{%s}" t ("definition" "def."))))
+   '(("theorem" ?T "thm:" "~\\ref{%s}" (nil . 1) ("theorem" "th.") -3)
+     ("lemma" ?T "thm:lemma-" "~\\ref{%s}" (nil . 1) ("lemma") -4)
+     ("proposition" ?T "thm:prop-" "~\\ref{%s}" (nil . 1) ("proposition" "prop.") -4)
+     ("definition" ?T "thm:def-" "~\\ref{%s}" (nil . 1) ("definition" "def."))))
   :config
   ;; Plug into AUCTeX
   (setq reftex-plug-into-AUCTeX t

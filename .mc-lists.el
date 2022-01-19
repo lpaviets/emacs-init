@@ -10,6 +10,7 @@
         TeX-insert-dollar
         TeX-insert-sub-or-superscript
         backward-sexp
+        backward-up-list
         beginning-of-visual-line
         c-indent-line-or-region
         cdlatex-pbb
