@@ -493,60 +493,6 @@ installed themes instead."
   :config
   (minibuffer-depth-indicate-mode 1))
 
-;; Ivy
-(use-package ivy
-  :diminish
-  :disabled t
-  :init
-  (setq completing-read-function 'ivy-completing-read)
-  :bind (("C-s" . swiper)
-         :map swiper-map
-         ("M-g" . swiper-avy)
-         :map ivy-minibuffer-map
-         ("TAB" . ivy-partial-or-done)
-         ("C-l" . ivy-immediate-done)
-         ("C-SPC" . lps/ivy-toggle-current-mark)
-         ("<mouse-3>" . nil)
-         ("<mouse-1>" . nil)
-         ("<down-mouse-1>" . nil))
-  :custom
-  (ivy-count-format "(%d/%d)")
-  (ivy-initial-inputs-alist nil)
-  (ivy-extra-directories nil)
-
-  :config
-  (ivy-mode 1)
-
-  (defun lps/ivy-toggle-current-mark ()
-    (interactive)
-    "Toggle mark for current candidate and move forwards."
-    (if (ivy--marked-p)
-        (ivy-unmark)
-      (ivy-mark))))
-
-(use-package ivy-hydra
-  :after ivy
-  :defer t)
-
-;; Adds things to Ivy
-(use-package ivy-rich
-  :after ivy
-  :init (ivy-rich-mode 1))
-
-;; Counsel. Adds things to Ivy
-(use-package counsel
-  :diminish
-  :disabled t
-  :after ivy
-  :hook (ivy-mode . counsel-mode)
-  :custom (counsel-find-file-at-point t)
-  :bind (("M-x" . counsel-M-x)
-         ("C-x b" . counsel-switch-buffer) ;; counsel-ibuffer is a fancier option
-         ("C-x C-f" . counsel-find-file)
-         ("C-c i" . counsel-imenu)
-         :map minibuffer-local-map
-         ("C-r" . 'counsel-minibuffer-history)))
-
 (use-package vertico
   :ensure t
   :custom
@@ -953,41 +899,6 @@ If called with a prefix argument, also kills the current buffer"
 
   (global-set-key (kbd "C-&") #'lps/describe-thing-in-popup))
 
-;; This next feature is inspired by https://svn.red-bean.com/repos/kfogel/trunk/.emacs,
-;; which is itself taken from this gigantic, almost package-less, configuration:
-;; https://svn.red-bean.com/repos/kfogel/trunk/.emacs
-(use-package emacs
-  :ensure nil
-  :bind-keymap
-  ("C-S-h" . lps/quick-help-map)
-  :init
-  (defvar lps/quick-help-map (make-sparse-keymap))
-
-  (defmacro quick-help (name buffer text)
-    "Macro for creating callable functions that display help.
-NAME is the function's name, BUFFER is the buffer's name, and TEXT is
-what is displayed in the \"popup\"-like buffer"
-    (declare (indent defun))
-    `(progn
-       (defun ,name ()
-         ,(concat "Creates a buffer "
-                  buffer
-                  " displaying a quick help")
-         (interactive)
-         (let ((qh-buff (concat "*Quick Help: " ,buffer "*")))
-           (get-buffer-create qh-buff)
-           (with-current-buffer qh-buff
-             (insert ,text)
-             (goto-char (point-min))
-             (not-modified)
-             (read-only-mode)
-             (local-set-key (kbd "C-g") (lambda () (interactive) (other-window -1)))
-             (local-set-key (kbd "q") 'kill-buffer-and-window))
-           (pop-to-buffer qh-buff '((display-buffer-below-selected)
-                                    (window-parameters . ((no-other-window . nil)))
-                                    (window-height . fit-window-to-buffer)))
-           (message "C-g - Previous Window, q - Remove Window"))))))
-
 ;; Don't disable any command
 ;; BE CAREFUL
 ;; If you are a new user, you might to comment out this line
@@ -1073,29 +984,6 @@ what is displayed in the \"popup\"-like buffer"
 
 (use-package embark-consult
   :after (consult embark))
-
-;; Macro to use "python-style" affectation in lexical bindings
-(defmacro multi-let (vars values body)
-  "Binds each symbol of VARS to its corresponding expression in VALUES,
-  in order.
-  multi-let (a b) (e1 e2) body is thus equivalent to
-  (let ((a e1)) (let ((b e2)) body))
-  Expressions at position k in VALUES might depend on symbol from
-  VARS at position strictly less than k, as with let*"
-  (defun rec-expand-let (vars values body)
-    (if (= (length vars) (length values))
-        (if (and vars (symbolp (car vars)))
-            `(let ((,(car vars) ,(car values)))
-               ,(rec-expand-let (cdr vars)
-                                (cdr values)
-                                body))
-          body)
-      (message
-       (format "Trying to bind %d symbols to %d values"
-               (length vars)
-               (length values)))))
-
-  (rec-expand-let vars values body))
 
 (when (version< "28.0" emacs-version)
   (use-package repeat
@@ -1743,10 +1631,6 @@ Breaks if region or line spans multiple visual lines"
       (setq projectile-project-search-path (list path-project))))
   (projectile-mode))
 
-(use-package counsel-projectile
-  :after (counsel projectile)
-  :config (counsel-projectile-mode))
-
 (use-package magit
   :defer t
   ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
@@ -1993,13 +1877,6 @@ Does not insert a space before the inserted opening parenthesis"
   (lsp-ui-doc-position 'bottom)
   (lsp-ui-doc-delay 1)
   (lsp-ui-sideline-show-code-actions nil))
-
-(use-package lsp-treemacs
-  :after lsp-mode
-  :config (lsp-treemacs-sync-mode 1))
-
-(use-package lsp-ivy
-  :after (lsp-mode ivy))
 
 ;; Might not work, recommended to use package-install instead
 ;; Dependencies might not be the correct ones
