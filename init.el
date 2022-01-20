@@ -2092,7 +2092,7 @@ call the associated function interactively. Otherwise, call the
 
   (defun lps/sly-start-repl ()
     (unless (sly-connected-p)
-      (save-excursion (sly))))
+      (sly)))
 
   (add-hook 'sly-mode-hook #'lps/sly-start-repl)
   (add-hook 'sly-mode-hook #'lps/sly-company-setup)
@@ -2120,7 +2120,7 @@ call the associated function interactively. Otherwise, call the
   :ensure nil
   :after sly
   :hook
-  (sly-mrepl-mode . lps/sly-setup)
+  (sly-mrepl . lps/sly-setup)
   :bind
   (:map sly-mrepl-mode-map
         ("C-c C-n" . sly-mrepl-next-prompt)
@@ -2157,11 +2157,15 @@ trigger the scrolling."
 
   (advice-add 'paredit-open-round :before 'lps/sly-mrepl-paredit-open-scroll-to-bottom)
 
-  ;; Setup various variables
+  ;; Setup various variables & pop to previous buffer:
+  ;; Save-excursion does not work, as (sly) connects in
+  ;; an asynchronous manner, so it returns before the REPL
+  ;; is actually setup.
   (defun lps/sly-setup ()
     (lps/sly-company-setup)
     ;; Why does SLY disable it ???
-    (setq-local comint-scroll-to-bottom-on-input t)))
+    (setq-local comint-scroll-to-bottom-on-input t)
+    (sly-switch-to-most-recent 'lisp-mode)))
 
 (use-package sly-stickers
   :ensure nil
@@ -2228,12 +2232,17 @@ trigger the scrolling."
   (defun lps/sly-colour-lisp-output (string)
     (with-temp-buffer
       (insert string)
+      ;; Set Warning/Error in red
+      (goto-char (point-min))
+      (while (re-search-forward "^.*\\(WARNING\\|ERROR\\).*" nil t)
+        (replace-match (format "%c[3;91m\\&%c[0m" 27 27) t nil))
+      ;; Replace comments in purple
       (goto-char (point-min))
       (while (re-search-forward "^;.*" nil t)
         (replace-match (format "%c[3;95m\\&%c[0m" 27 27) t nil))
       (buffer-string)))
 
-  (add-hook 'sly-connected-hook
+  (add-hook 'sly-mrepl-hook
    (lambda ()
      (add-hook 'sly-mrepl-output-filter-functions 'lps/sly-colour-lisp-output))))
 
