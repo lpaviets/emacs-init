@@ -272,51 +272,6 @@ Avoid toggling several times, just use it once if possible"
 
   (setq lps/live-presentation-p (not lps/live-presentation-p)))
 
-;; Use this to store your favourite themes
-;; Save your usual, default theme in first position
-;; so that you can easily switch back to it with
-(setq lps/rotate-themes-list
-      '(doom-Iosvkem
-        kaolin-ocean
-        kaolin-aurora
-        doom-palenight
-        tsdh-dark
-        solarized-dark
-        modus-vivendi))
-
-;; Try to save the current theme
-;; Be careful ! Some visual changes are NOT stored in
-;; a theme, and will not be retrieved by the restoring
-;; functions. For example, any font configuration might
-;; be "lost" for this session
-(setq lps/initial-enabled-themes custom-enabled-themes)
-
-(setq lps/rotate-theme-index 0)
-
-;; Still a bit buggy: forgets all the customizations done to e.g. Org Mode
-(defun lps/rotate-through-themes ()
-  "Cycles through the next theme in the `lps/rotate-themes-list'.
-If this list is empty or does not exist, cycle through all the
-installed themes instead."
-  (interactive)
-  (mapc #'disable-theme lps/initial-enabled-themes)
-  (let* ((themes-list (or (and (boundp 'lps/rotate-themes-list) lps/rotate-themes-list)
-                          (custom-available-themes)))
-         (next-index (mod (+ lps/rotate-theme-index 1) (length themes-list)))
-         (current-theme (nth lps/rotate-theme-index themes-list))
-         (next-theme (nth next-index themes-list)))
-    (setq lps/rotate-theme-index next-index)
-    (disable-theme current-theme)
-    (load-theme next-theme t)))
-
-(defun lps/restore-initial-themes ()
-  (interactive)
-  (mapc #'disable-theme custom-enabled-themes)
-  (mapc (lambda (theme) (funcall #'load-theme theme t)) lps/initial-enabled-themes)
-  (when (eq major-mode 'org-mode)
-    (lps/org-mode-setup)
-    (font-lock-update)))
-
 ;; First time used: run M-x all-the-icons-install-fonts
 (use-package all-the-icons
   :config
@@ -536,6 +491,8 @@ installed themes instead."
      (display-buffer-reuse-mode-window)
      (display-buffer-same-window)
      (display-buffer-in-previous-window)))
+  (uniquify-buffer-name-style 'forward)
+  (uniquify-after-kill-buffer-p t)
 
   :config
   (defun lps/kill-buffer (&optional arg)
@@ -576,9 +533,6 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
                  (mode . ,lps/help-modes)
                  (inhibit-same-window . nil)
                  (quit-restore ('window 'window nil nil)))))
-
-(setq uniquify-buffer-name-style 'forward)
-(setq uniquify-after-kill-buffer-p t)
 
 (use-package all-the-icons-ibuffer
   :after ibuffer
@@ -839,10 +793,6 @@ If called with a prefix argument, also kills the current buffer"
 
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
-  :custom
-  (counsel-describe-symbol-function   #'helpful-symbol)
-  (counsel-describe-function-function #'helpful-callable)
-  (counsel-describe-variable-function #'helpful-variable)
   :bind
   ([remap describe-function] . helpful-callable)
   ([remap describe-variable] . helpful-variable)
@@ -913,19 +863,6 @@ If called with a prefix argument, also kills the current buffer"
   (prescient-sort-length-enable nil)
   :config
   (prescient-persist-mode 1))
-
-(use-package ivy-prescient
-  :after ivy prescient
-  :custom
-  (ivy-prescient-retain-classic-highlighting t)
-  :config
-  (ivy-prescient-mode 1)
-  (setq ivy-prescient-sort-commands
-        (append ivy-prescient-sort-commands
-                '(counsel-minibuffer-history
-                  counsel-shell-history
-                  imenu
-                  counsel-imenu))))
 
 (use-package company-prescient
   :after company
@@ -1624,7 +1561,6 @@ Breaks if region or line spans multiple visual lines"
   ("C-c p" . projectile-command-map)
   :custom
   (projectile-switch-project-action #'projectile-dired)
-  (projectile-completion-system 'ivy)
   :config
   (let ((path-project "~/Documents/Projects"))
     (when (file-directory-p path-project)
