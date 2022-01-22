@@ -973,6 +973,11 @@ If called with a prefix argument, also kills the current buffer"
       ("C-n" mc/mark-next-lines "Mark next lines")
       ("C-p" mc/mark-previous-lines "Mark previous lines")))))
 
+(use-package iedit
+  :defer t
+  :bind
+  ("C-;" . iedit-mode))
+
 (use-package orderless
   :custom
   (completion-styles '(basic partial-completion orderless))
@@ -1331,7 +1336,7 @@ If ARG > 1, copy subsequent lines and indentation."
        arg))))
 
 (use-package drag-stuff
-  :init
+  :config
   (drag-stuff-global-mode 1)
   (add-to-list 'drag-stuff-except-modes 'org-mode)
   (drag-stuff-define-keys))
@@ -1411,6 +1416,11 @@ Move point in the last duplicated string (line or region)."
       (while matches
         (insert (or split ""))
         (insert (pop matches))))))
+
+(use-package wgrep
+  :bind
+  (:map grep-mode-map
+        ("C-x C-q" . wgrep-change-to-wgrep-mode)))
 
 (use-package align
   :ensure nil
@@ -2161,7 +2171,6 @@ trigger the scrolling."
   :after sly)
 
 (use-package sly-repl-ansi-color
-  :after sly
   :config
   (add-to-list 'sly-contribs 'sly-repl-ansi-color)
 
@@ -2183,7 +2192,8 @@ trigger the scrolling."
      (add-hook 'sly-mrepl-output-filter-functions 'lps/sly-colour-lisp-output))))
 
 (use-package sly-asdf
-  :after sly
+  :init
+  (add-to-list 'sly-contribs 'sly-asdf 'append)
   :bind
   (:map sly-prefix-map
         ("M-s" . sly-asdf-isearch-system)

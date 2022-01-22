@@ -1390,6 +1390,16 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
 #+end_src
 
 The webpage specifies that the commands provided by this package are best invoked when bound to key sequence rather than by =M-x <mc/command-name>=, although some testing on my part seems to show that it still works relatively well most of the time.
+
+Another package, perhaps less featureful but also cleaner and less complicated, is ~iedit~. It provides functionality similar to other editors to modify several instances of the same symbol interactively. One drawback - as is often the case with such packages - is that it is regexp-based, meaning that there will unavoidably be "false positive" in the matched symbols.
+
+#+begin_src emacs-lisp
+  (use-package iedit
+    :defer t
+    :bind
+    ("C-;" . iedit-mode))
+#+end_src
+
 ** Auto-completion
 
 We fundamentally use Emacs to write text. What would writing be without some kind of auto-completion ? Hence, we use a few tools to make the general experience of /writing text/ better, whether it is source code, simple sentences or even commands in the minibuffer.
@@ -1828,7 +1838,7 @@ A big part of editing text consists in moving already written lines, words or pa
 
 #+begin_src emacs-lisp
   (use-package drag-stuff
-    :init
+    :config
     (drag-stuff-global-mode 1)
     (add-to-list 'drag-stuff-except-modes 'org-mode)
     (drag-stuff-define-keys))
@@ -1925,6 +1935,15 @@ It can act as a small, local version control system due to how Undos are managed
         (while matches
           (insert (or split ""))
           (insert (pop matches))))))
+#+end_src
+
+There are also various packages implementing ~grep~, ~ripgrep~ and so on. One of them is especially nice, and is called ~wgrep~. It does the same thing to ~grep~ buffer than ~wdired~ does to Dired ones: make them editable as plain text, and commit the changes to the files (or the filesystem, for Dired) !
+
+#+begin_src emacs-lisp
+  (use-package wgrep
+    :bind
+    (:map grep-mode-map
+          ("C-x C-q" . wgrep-change-to-wgrep-mode)))
 #+end_src
 
 ** Align
@@ -2905,7 +2924,6 @@ We also add extra-packages to facilitate some usual operations.
     :after sly)
 
   (use-package sly-repl-ansi-color
-    :after sly
     :config
     (add-to-list 'sly-contribs 'sly-repl-ansi-color)
 
@@ -2927,7 +2945,8 @@ We also add extra-packages to facilitate some usual operations.
        (add-hook 'sly-mrepl-output-filter-functions 'lps/sly-colour-lisp-output))))
 
   (use-package sly-asdf
-    :after sly
+    :init
+    (add-to-list 'sly-contribs 'sly-asdf 'append)
     :bind
     (:map sly-prefix-map
           ("M-s" . sly-asdf-isearch-system)
