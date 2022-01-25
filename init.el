@@ -941,10 +941,27 @@ If called with a prefix argument, also kills the current buffer"
 
 (use-package multiple-cursors
   :defer t
+  :init
+  (defvar lps/multiple-cursors-map (make-sparse-keymap))
+  (defvar lps/multiple-cursors-repeat-map (make-sparse-keymap))
   :bind
-  ("<C-S-mouse-1>" . mc/add-cursor-on-click)
+  ("<M-S-mouse-1>" . mc/add-cursor-on-click)
   (:map lps/all-hydras-map
         ("M" . hydra-multiple-cursors/body))
+  (:map lps/multiple-cursors-map
+        ("<down>" . mc/mark-next-like-this)
+        ("<up>" . mc/mark-previous-like-this)
+        ("<right>" . mc/unmark-next-like-this)
+        ("<left>" . mc/unmark-previous-like-this)
+        ("a" . mc/mark-all-like-this)
+        ("A" . mc/mark-all-dwim))
+  (:map lps/multiple-cursors-repeat-map
+        ("<down>" . mc/mark-next-like-this)
+        ("<up>" . mc/mark-previous-like-this)
+        ("<right>" . mc/unmark-next-like-this)
+        ("<left>" . mc/unmark-previous-like-this))
+  :bind-keymap
+  ("M-S-m" . lps/multiple-cursors-map)
   :config
   (pretty-hydra-define hydra-multiple-cursors (:title "Multiple cursors"
                                                       :quit-key "q")
@@ -971,7 +988,15 @@ If called with a prefix argument, also kills the current buffer"
      "More"
      (("M" mc/mark-more-like-this-extended "Mark like this interactively")
       ("C-n" mc/mark-next-lines "Mark next lines")
-      ("C-p" mc/mark-previous-lines "Mark previous lines")))))
+      ("C-p" mc/mark-previous-lines "Mark previous lines"))))
+
+  (dolist (command '(mc/mark-next-like-this
+                     mc/mark-previous-like-this
+                     mc/unmark-next-like-this
+                     mc/unmark-previous-like-this
+                     mc/mark-all-dwim
+                     mc/mark-all-like-this))
+    (put command 'repeat-map 'lps/multiple-cursors-repeat-map)))
 
 (use-package iedit
   :defer t
