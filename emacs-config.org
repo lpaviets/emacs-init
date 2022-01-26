@@ -3873,7 +3873,8 @@ AucTeX already includes a lot of shortcuts and ways to be more efficient when ty
        (?\( ("\\langle ?\\rangle" "\\left"))
        (?N ("\\mathbb{N}" "\\mathbb{N}^{2}"))
        (?Z ("\\mathbb{Z}" "\\mathbb{Z}^{2}"))
-       (?R ("\\mathbb{R}" "\\mathbb{R}^{2}"))))
+       (?R ("\\mathbb{R}" "\\mathbb{R}^{2}"))
+       (?1 ("^{-1}"))))
     (cdlatex-command-alist
      '(("prodl"       "Insert \\prod\\limits_{}^{}"
         "\\prod\\limits_{?}^{}" cdlatex-position-cursor nil nil t)

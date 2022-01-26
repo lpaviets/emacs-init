@@ -2955,7 +2955,8 @@ Return a list of regular expressions."
      (?\( ("\\langle ?\\rangle" "\\left"))
      (?N ("\\mathbb{N}" "\\mathbb{N}^{2}"))
      (?Z ("\\mathbb{Z}" "\\mathbb{Z}^{2}"))
-     (?R ("\\mathbb{R}" "\\mathbb{R}^{2}"))))
+     (?R ("\\mathbb{R}" "\\mathbb{R}^{2}"))
+     (?1 ("^{-1}"))))
   (cdlatex-command-alist
    '(("prodl"       "Insert \\prod\\limits_{}^{}"
       "\\prod\\limits_{?}^{}" cdlatex-position-cursor nil nil t)
