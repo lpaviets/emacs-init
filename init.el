@@ -2034,9 +2034,6 @@ call the associated function interactively. Otherwise, call the
 (use-package sly
   :hook
   (lisp-mode . sly-editing-mode)
-  (sly-editing-mode . lps/sly-start-repl)
-  (sly-mode . lps/sly-company-setup)
-  (sly-minibuffer-setup . paredit-mode)
   :bind
   (:map sly-mode-map
         ("M-_" . nil)
@@ -2061,7 +2058,8 @@ call the associated function interactively. Otherwise, call the
   (add-to-list 'lps/auto-compile-command-alist
                (cons 'lisp-mode 'sly-compile-and-load-file))
 
-  (setq common-lisp-hyperspec-root (concat "file://" (expand-file-name "~/Documents/Other/HyperSpec/")))
+  (setq common-lisp-hyperspec-root
+        (concat "file://" (expand-file-name "~/Documents/Other/HyperSpec/")))
 
   (define-key sly-prefix-map (kbd "C-v") sly-selector-map)
 
@@ -2072,6 +2070,10 @@ call the associated function interactively. Otherwise, call the
   (defun lps/sly-start-repl ()
     (unless (sly-connected-p)
       (sly)))
+
+  (add-hook 'sly-editing-mode-hook 'lps/sly-start-repl)
+  (add-hook 'sly-mode-hook 'lps/sly-company-setup)
+  (add-hook 'sly-minibuffer-setup-hook 'paredit-mode)
 
   ;; Don't use Ido, just use our default
   (defalias 'sly-completing-read completing-read-function)
