@@ -1219,8 +1219,9 @@ If called with a prefix argument, also kills the current buffer"
   :bind
   ("M-n" . forward-paragraph)
   ("M-p" . backward-paragraph)
-  ("C-S-a" . beginning-of-line)
-  ("C-S-e" . end-of-line)
+  (:map visual-line-mode-map
+        ("C-S-a" . beginning-of-line)
+        ("C-S-e" . end-of-line))
   :custom
   (sentence-end-double-space nil))
 
@@ -1306,7 +1307,10 @@ If called with a prefix argument, also kills the current buffer"
         ("<C-return>" . cua-rectangle-mark-mode)))
 
 (use-package expand-region
-  :bind ("C-=" . er/expand-region))
+  :bind
+  ("C-=" . er/expand-region)
+  :custom
+  (shift-select-mode nil))
 
 (use-package emacs
   :ensure nil
@@ -2956,7 +2960,8 @@ Return a list of regular expressions."
      (?N ("\\mathbb{N}" "\\mathbb{N}^{2}"))
      (?Z ("\\mathbb{Z}" "\\mathbb{Z}^{2}"))
      (?R ("\\mathbb{R}" "\\mathbb{R}^{2}"))
-     (?1 ("^{-1}"))))
+     (?1 ("^{-1}"))
+     (?\; ("\\dots" "\\vdots" "\\ddots" "\\ldots"))))
   (cdlatex-command-alist
    '(("prodl"       "Insert \\prod\\limits_{}^{}"
       "\\prod\\limits_{?}^{}" cdlatex-position-cursor nil nil t)
