@@ -535,8 +535,8 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
                  (quit-restore ('window 'window nil nil)))))
 
 (use-package all-the-icons-ibuffer
-  :after ibuffer
-  :init (all-the-icons-ibuffer-mode 1))
+  :defer t
+  :hook (ibuffer-mode . all-the-icons-ibuffer-mode))
 
 (use-package ibuffer
   :defer t
@@ -961,7 +961,7 @@ If called with a prefix argument, also kills the current buffer"
         ("<right>" . mc/unmark-next-like-this)
         ("<left>" . mc/unmark-previous-like-this))
   :bind-keymap
-  ("M-S-m" . lps/multiple-cursors-map)
+  ("C-ù" . lps/multiple-cursors-map)
   :config
   (pretty-hydra-define hydra-multiple-cursors (:title "Multiple cursors"
                                                       :quit-key "q")
@@ -2028,7 +2028,11 @@ call the associated function interactively. Otherwise, call the
 
 ;; Make sure that sbcl is available on PATH
 (use-package sly
-  :hook (lisp-mode . sly-editing-mode)
+  :hook
+  (lisp-mode . sly-editing-mode)
+  (sly-editing-mode . lps/sly-start-repl)
+  (sly-mode . lps/sly-company-setup)
+  (sly-minibuffer-setup . paredit-mode)
   :bind
   (:map sly-mode-map
         ("M-_" . nil)
@@ -2064,11 +2068,6 @@ call the associated function interactively. Otherwise, call the
   (defun lps/sly-start-repl ()
     (unless (sly-connected-p)
       (sly)))
-
-  (add-hook 'sly-mode-hook #'lps/sly-start-repl)
-  (add-hook 'sly-mode-hook #'lps/sly-company-setup)
-
-  (add-hook 'sly-minibuffer-setup-hook #'paredit-mode)
 
   ;; Don't use Ido, just use our default
   (defalias 'sly-completing-read completing-read-function)
