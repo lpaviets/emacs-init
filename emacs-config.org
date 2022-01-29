@@ -2856,6 +2856,27 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
       (interactive)
       (sly-mrepl #'pop-to-buffer))
 
+    ;; Redefinition: do not pop-up or show the MREPL buffer
+    ;; Also, a few hacks to center the window properly
+    (defun sly-mrepl-on-connection ()
+      (let* ((inferior-buffer
+              (and (sly-process) (process-buffer (sly-process))))
+             (inferior-window
+              (and inferior-buffer (get-buffer-window inferior-buffer t))))
+        (let ((sly-mrepl-pop-sylvester
+               (or (eq sly-mrepl-pop-sylvester 'on-connection)
+                   sly-mrepl-pop-sylvester)))
+          (sly-mrepl (lambda (buffer)
+                       (with-current-buffer buffer
+                         (goto-char (point-min))
+                         (recenter-top-bottom)
+                         (goto-char (point-max))
+                         (other-window -1)))))
+        (when inferior-window
+          (bury-buffer inferior-buffer)
+          (delete-window inferior-window))
+        (goto-char (point-max))))
+
     ;; Allow paredit to scroll to bottom on input when insert a parenthesis
     (defun lps/sly-mrepl-paredit-open-scroll-to-bottom (&rest args)
       "Fix to also scroll to the bottom of the SLY REPL when inserting a parenthesis.
