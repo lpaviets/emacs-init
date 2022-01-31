@@ -2611,7 +2611,9 @@ move to the end of the document, and search backward instead."
         ("C-c '" . TeX-error-overview)
         ("<f5>" . lps/auto-compile)
         ("<f6>" . devdocs-lookup)
-        ("<backtab>" . indent-for-tab-command))
+        ("<backtab>" . indent-for-tab-command)
+        ("C-c M-%" . LaTeX-replace-in-math)
+        ("C-c C-M-%" . LaTeX-replace-regexp-in-math))
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . lps/latex-fontification)
@@ -2834,7 +2836,27 @@ The return value is the string as entered in the minibuffer."
                    company-capf
                    company-dabbrev
                    company-ispell)))
-    (setq-local company-minimum-prefix-length 4)))
+    (setq-local company-minimum-prefix-length 4))
+
+  (defun LaTeX-replace-in-math ()
+    "Call `query-replace' with `isearch-filter-predicate'set to
+filter out matches outside LaTeX math environments."
+    (interactive)
+    (let ((isearch-filter-predicate
+           (lambda (beg end)
+             (save-excursion (save-match-data (goto-char beg) (texmathp)))))
+          (case-fold-search nil))
+      (call-interactively 'query-replace)))
+
+  (defun LaTeX-replace-regexp-in-math ()
+    "Call `query-replace-regexp' with `isearch-filter-predicate'set
+to filter out matches outside LaTeX math environments."
+    (interactive)
+    (let ((isearch-filter-predicate
+           (lambda (beg end)
+             (save-excursion (save-match-data (goto-char beg) (texmathp)))))
+          (case-fold-search nil))
+      (call-interactively 'query-replace-regexp))))
 
 (use-package bibtex
   :defer t
