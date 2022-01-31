@@ -782,8 +782,8 @@ We also improve the appearance (and functionalities) of the buffer that we get w
 
 #+begin_src emacs-lisp
   (use-package all-the-icons-ibuffer
-    :after ibuffer
-    :init (all-the-icons-ibuffer-mode 1))
+    :defer t
+    :hook (ibuffer-mode . all-the-icons-ibuffer-mode))
 
   (use-package ibuffer
     :defer t
@@ -1376,7 +1376,7 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
           ("<right>" . mc/unmark-next-like-this)
           ("<left>" . mc/unmark-previous-like-this))
     :bind-keymap
-    ("M-S-m" . lps/multiple-cursors-map)
+    ("C-ù" . lps/multiple-cursors-map)
     :config
     (pretty-hydra-define hydra-multiple-cursors (:title "Multiple cursors"
                                                         :quit-key "q")
@@ -2779,7 +2779,8 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
 #+begin_src emacs-lisp
   ;; Make sure that sbcl is available on PATH
   (use-package sly
-    :hook (lisp-mode . sly-editing-mode)
+    :hook
+    (lisp-mode . sly-editing-mode)
     :bind
     (:map sly-mode-map
           ("M-_" . nil)
@@ -2804,7 +2805,8 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
     (add-to-list 'lps/auto-compile-command-alist
                  (cons 'lisp-mode 'sly-compile-and-load-file))
 
-    (setq common-lisp-hyperspec-root (concat "file://" (expand-file-name "~/Documents/Other/HyperSpec/")))
+    (setq common-lisp-hyperspec-root
+          (concat "file://" (expand-file-name "~/Documents/Other/HyperSpec/")))
 
     (define-key sly-prefix-map (kbd "C-v") sly-selector-map)
 
@@ -2816,10 +2818,9 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
       (unless (sly-connected-p)
         (sly)))
 
-    (add-hook 'sly-mode-hook #'lps/sly-start-repl)
-    (add-hook 'sly-mode-hook #'lps/sly-company-setup)
-
-    (add-hook 'sly-minibuffer-setup-hook #'paredit-mode)
+    (add-hook 'sly-editing-mode-hook 'lps/sly-start-repl)
+    (add-hook 'sly-mode-hook 'lps/sly-company-setup)
+    (add-hook 'sly-minibuffer-setup-hook 'paredit-mode)
 
     ;; Don't use Ido, just use our default
     (defalias 'sly-completing-read completing-read-function)
