@@ -1244,17 +1244,17 @@ Another lighter and built-in solution is the simpler package ~savehist~. If you 
     (savehist-mode))
 #+end_src
 
-** Command log mode
+** Keycast
 
-This mode allows you to display a small panel on the right of the screen which shows which keys you are pressing, and what commands they are associated to, all of this in real time !
-
-As of now, you need to enable the mode by using the =command-log-mode= command (or =global-command-log-mode= if you want to record everything, in all the buffers of the current session), and to use the =C-c o= keybinding (which calls the =clm/toggle-command-log-buffer= function) to open a new buffer in which you will see both the keybindings you are currently using and the commands to which they are bound.
-
-If you want =command-log-mode= to be activated by default in certain minor (or even major) modes, simply add a hook. You will still need to explicitly open the buffer, but this could also be dealt with by using other, straightforward hooks.
+I used to use a mode called =command-log-mode= to show in real time the keys that I was pressing and the commands that were executed (to demonstrate what Emacs can do,to make it easier for newcomers to follow what's happening, and so on). As of now, I consider =keycast= to simply be a better alternative.
 
 #+begin_src emacs-lisp
-  (use-package command-log-mode
-    :defer t)
+  (use-package keycast
+    :defer t
+    :custom
+    (keycast-mode-line-remove-tail-elements nil)
+    (keycast-mode-line-insert-after "%e")
+    (keycast-mode-line-format "%10s%k%c%r%10s"))
 #+end_src
 
 ** Confirmation

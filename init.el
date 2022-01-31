@@ -874,8 +874,12 @@ If called with a prefix argument, also kills the current buffer"
   :init
   (savehist-mode))
 
-(use-package command-log-mode
-  :defer t)
+(use-package keycast
+  :defer t
+  :custom
+  (keycast-mode-line-remove-tail-elements nil)
+  (keycast-mode-line-insert-after "%e")
+  (keycast-mode-line-format "%10s%k%c%r%10s"))
 
 ;; Type "y" instead of "yes RET" for confirmation
 (if (version< emacs-version "28.0") ; ) parsing bug
