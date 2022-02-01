@@ -493,6 +493,7 @@ Avoid toggling several times, just use it once if possible"
      (display-buffer-in-previous-window)))
   (uniquify-buffer-name-style 'forward)
   (uniquify-after-kill-buffer-p t)
+  (global-auto-revert-ignore-modes '(pdf-view-mode))
 
   :config
   (defun lps/kill-buffer (&optional arg)
@@ -2365,8 +2366,6 @@ trigger the scrolling."
 
 (use-package org
   :commands org-capture
-  ;; :init
-  ;; (global-set-key (kbd "C-c o") #'org-capture)
   :hook (org-mode . lps/org-mode-setup)
   :bind
   ("C-c o" . org-capture)
