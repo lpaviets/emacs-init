@@ -2108,9 +2108,14 @@ call the associated function interactively. Otherwise, call the
   (:map sly-mrepl-mode-map
         ("C-c C-n" . sly-mrepl-next-prompt)
         ("C-c C-p" . sly-mrepl-previous-prompt)
-        ("C-c C-q" . sly-quit-lisp))
+        ("C-c C-q" . sly-quit-lisp)
+        ("RET" . lps/sly-mrepl-ret)
+        ("C-RET" . sly-mrepl-return)
+        ("C-<return>" . sly-mrepl-return))
   (:map sly-selector-map
         ("C-v" . lps/sly-mrepl-other-window))
+  (:map sly-mode-map
+        ([remap sly-mrepl] . lps/sly-mrepl-other-window))
   :config
   (defun lps/sly-mrepl-other-window ()
     (interactive)
@@ -2136,6 +2141,13 @@ call the associated function interactively. Otherwise, call the
         (bury-buffer inferior-buffer)
         (delete-window inferior-window))
       (goto-char (point-max))))
+
+  ;; Change behaviour of the <return> key in the REPL
+  (defun lps/sly-mrepl-ret ()
+    (interactive)
+    (if (looking-at "[:space:]*\\'")
+        (sly-mrepl-return)
+      (paredit-newline)))
 
   ;; Allow paredit to scroll to bottom on input when insert a parenthesis
   (defun lps/sly-mrepl-paredit-open-scroll-to-bottom (&rest args)
@@ -2618,7 +2630,8 @@ move to the end of the document, and search backward instead."
         ("<f6>" . devdocs-lookup)
         ("<backtab>" . indent-for-tab-command)
         ("C-c M-%" . LaTeX-replace-in-math)
-        ("C-c C-M-%" . LaTeX-replace-regexp-in-math))
+        ("C-c C-M-%" . LaTeX-replace-regexp-in-math)
+        ("C-c C-d" . lps/TeX-remove-macro))
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . lps/latex-fontification)
@@ -2861,7 +2874,20 @@ to filter out matches outside LaTeX math environments."
            (lambda (beg end)
              (save-excursion (save-match-data (goto-char beg) (texmathp)))))
           (case-fold-search nil))
-      (call-interactively 'query-replace-regexp))))
+      (call-interactively 'query-replace-regexp)))
+
+  (defun lps/TeX-remove-macro ()
+    "Remove current macro and return `t'.  If no macro at point,
+return `nil'."
+    (interactive)
+    (when (TeX-current-macro)
+      (let ((bounds (TeX-find-macro-boundaries))
+            (brace  (save-excursion
+                      (goto-char (1- (TeX-find-macro-end)))
+                      (TeX-find-opening-brace))))
+        (delete-region (1- (cdr bounds)) (cdr bounds))
+        (delete-region (car bounds) (1+ brace)))
+      t)))
 
 (use-package bibtex
   :defer t
