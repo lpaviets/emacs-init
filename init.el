@@ -892,6 +892,8 @@ If called with a prefix argument, also kills the current buffer"
   :bind
   ("C-S-s" . lps/consult-line-strict-match)
   ("C-c i" . lps/consult-imenu-or-org-heading)
+  ("C-c r r" . consult-register-load)
+  ("C-c r s" . consult-register-store)
   ("C-x b" . consult-buffer)
   (:map lps/system-tools-map
         ("C-f" . consult-file-externally))
