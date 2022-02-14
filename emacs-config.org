@@ -2281,7 +2281,7 @@ First of all, we want to easily be able to tell with a quick glance which parent
 
   ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
   (use-package rainbow-delimiters
-    :hook ((prog-mode comint-mode fundamental-mode) . rainbow-delimiters-mode))
+    :hook ((prog-mode comint-mode) . rainbow-delimiters-mode))
 #+end_src
 
 Now, in order to work with structured text, such as source code, we want to be able to directly manipulate "expressions" rather than lines or words. This is why we use the following packages, as they provide a lot of functionalities to navigate and edit those expressions.
