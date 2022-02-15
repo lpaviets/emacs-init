@@ -214,6 +214,8 @@
   (hscroll-margin 10)
   (hscroll-step 10)
   (auto-hscroll-mode 'current-line)
+  (display-line-numbers-width 3)
+  (display-line-numbers-grow-only t)
   :hook
   ((prog-mode LaTeX-mode) . display-line-numbers-mode)
   ((text-mode org-mode LaTeX-mode comint-mode) . visual-line-mode))
