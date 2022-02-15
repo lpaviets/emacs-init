@@ -15,6 +15,7 @@
         c-indent-line-or-region
         cdlatex-pbb
         counsel-M-x
+        end-of-buffer
         end-of-visual-line
         forward-sentence
         forward-sexp
