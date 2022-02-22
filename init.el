@@ -60,6 +60,45 @@
 ;; Uncomment the folllowing line to have a detailed startup log
 ;; (setq use-package-verbose t)
 
+(defmacro system-case (&rest cases)
+  "Light wrapper around `cl-case' on `system-type'"
+  `(cl-case system-type
+     ,@cases))
+
+(defmacro ensure-version (version &rest body)
+  (declare (indent 1))
+  `(when (version<= ,version emacs-version)
+     ,@body))
+
+(defun lps/versionify (version)
+  (cl-etypecase version
+    (string version)
+    (number (number-to-string version))
+    (list (string-join (mapcar #'number-to-string version) "."))
+    (symbol (if (eq version t)
+                "0"
+                (error "Can't understand this version number: %s " version)))))
+
+(defmacro version-case (&rest cases)
+  "CASES is a list of (VERSION BODY) where version is a version
+number or a string. The macro expands to the code associated the
+latest possible version.
+As a special case, the version T is considered to be smaller than
+all the other versions"
+  (let ((versions (sort cases (lambda (v1 v2)
+                                (version<= (lps/versionify (car v1))
+                                           (lps/versionify (car v2))))))
+        (gver (make-symbol "version"))
+        version-conds)
+    (dolist (ver versions)
+      (let ((v-num (car ver))
+            (v-body (cdr ver)))
+        (push (cons `(version<= ,(lps/versionify v-num) ,gver) v-body)
+              version-conds)))
+    `(let ((,gver emacs-version))
+       (cond
+        ,@version-conds))))
+
 (use-package benchmark-init
   :disabled t
   :config
@@ -142,6 +181,7 @@
 (use-package emacs
   :custom
   (locale-coding-system 'utf-8)
+  (display-raw-bytes-as-hex t)
   :init
   (prefer-coding-system 'utf-8)
   (set-language-environment 'utf-8)
@@ -885,9 +925,9 @@ If called with a prefix argument, also kills the current buffer"
   (keycast-mode-line-format "%10s%k%c%r%10s"))
 
 ;; Type "y" instead of "yes RET" for confirmation
-(if (version< emacs-version "28.0") ; ) parsing bug
-    (defalias 'yes-or-no-p 'y-or-n-p)
-  (setq use-short-answers t))
+(version-case
+ (28 (setq use-short-answers t))
+ (t (defalias 'yes-or-no-p 'y-or-n-p)))
 
 (use-package consult
   :defer t
@@ -931,7 +971,7 @@ If called with a prefix argument, also kills the current buffer"
 (use-package embark-consult
   :after (consult embark))
 
-(when (version< "28.0" emacs-version)
+(ensure-version "28.0"
   (use-package repeat
     :bind
     (:map lps/quick-edit-map
@@ -1701,7 +1741,7 @@ Breaks if region or line spans multiple visual lines"
 
 ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
 (use-package rainbow-delimiters
-  :hook ((prog-mode comint-mode fundamental-mode) . rainbow-delimiters-mode))
+  :hook ((prog-mode comint-mode) . rainbow-delimiters-mode))
 
 (use-package paredit
   :init

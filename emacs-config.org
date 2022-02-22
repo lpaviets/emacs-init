@@ -116,6 +116,49 @@ It makes both installation and customization easier, and the code is also simple
 
 #+end_src
 
+Although ~use-package~ is extensible and we could add some keywords to it, it is rather cumbersome and I prefer to define personal macros to deal with various operating systems and versions.
+
+#+begin_src emacs-lisp
+  (defmacro system-case (&rest cases)
+    "Light wrapper around `cl-case' on `system-type'"
+    `(cl-case system-type
+       ,@cases))
+
+  (defmacro ensure-version (version &rest body)
+    (declare (indent 1))
+    `(when (version<= ,version emacs-version)
+       ,@body))
+
+  (defun lps/versionify (version)
+    (cl-etypecase version
+      (string version)
+      (number (number-to-string version))
+      (list (string-join (mapcar #'number-to-string version) "."))
+      (symbol (if (eq version t)
+                  "0"
+                  (error "Can't understand this version number: %s " version)))))
+
+  (defmacro version-case (&rest cases)
+    "CASES is a list of (VERSION BODY) where version is a version
+  number or a string. The macro expands to the code associated the
+  latest possible version.
+  As a special case, the version T is considered to be smaller than
+  all the other versions"
+    (let ((versions (sort cases (lambda (v1 v2)
+                                  (version<= (lps/versionify (car v1))
+                                             (lps/versionify (car v2))))))
+          (gver (make-symbol "version"))
+          version-conds)
+      (dolist (ver versions)
+        (let ((v-num (car ver))
+              (v-body (cdr ver)))
+          (push (cons `(version<= ,(lps/versionify v-num) ,gver) v-body)
+                version-conds)))
+      `(let ((,gver emacs-version))
+         (cond
+          ,@version-conds))))
+#+end_src
+
 In order to benchmark the package loading, we use [[https://github.com/dholm/benchmark-init-el][benchmark-init.el]]
 
 #+begin_src emacs-lisp
@@ -1267,9 +1310,9 @@ Typing "yes" and "no" might be a bit too tiring
 
 #+begin_src emacs-lisp
   ;; Type "y" instead of "yes RET" for confirmation
-  (if (version< emacs-version "28.0") ; ) parsing bug
-      (defalias 'yes-or-no-p 'y-or-n-p)
-    (setq use-short-answers t))
+  (version-case
+   (28 (setq use-short-answers t))
+   (t (defalias 'yes-or-no-p 'y-or-n-p)))
 #+end_src
 
 ** Utilities
@@ -1328,7 +1371,7 @@ Some commands are usually invoked several times in succession. For example, if y
 If we need to define repeat maps, we will do it in the corresponding package rather than here.
 
 #+begin_src emacs-lisp
-  (when (version< "28.0" emacs-version)
+  (ensure-version "28.0"
     (use-package repeat
       :bind
       (:map lps/quick-edit-map
