@@ -65,11 +65,6 @@
   `(cl-case system-type
      ,@cases))
 
-(defmacro ensure-version (version &rest body)
-  (declare (indent 1))
-  `(when (version<= ,version emacs-version)
-     ,@body))
-
 (defun lps/versionify (version)
   (cl-etypecase version
     (string version)
@@ -78,6 +73,11 @@
     (symbol (if (eq version t)
                 "0"
                 (error "Can't understand this version number: %s " version)))))
+
+(defmacro ensure-version (version &rest body)
+  (declare (indent 1))
+  `(when (version<= ,(lps/versionify version) emacs-version)
+     ,@body))
 
 (defmacro version-case (&rest cases)
   "CASES is a list of (VERSION BODY) where version is a version
@@ -122,43 +122,45 @@ all the other versions"
         ("P i" . package-install)
         ("P l" . package-list-packages)))
 
-(use-package password-cache
-  :ensure nil
-  :custom
-  (password-cache t)
-  (password-cache-expiry 300))
+(system-case
+ (gnu/linux
+  (use-package password-cache
+    :ensure nil
+    :custom
+    (password-cache t)
+    (password-cache-expiry 300))
 
-(use-package pinentry
-  :custom
-  (epg-pinentry-mode 'loopback)
-  :config
-  (pinentry-start))
+  (use-package pinentry
+    :custom
+    (epg-pinentry-mode 'loopback)
+    :config
+    (pinentry-start))
 
-(use-package auth-source
-  :ensure nil
-  :custom
-  (auth-sources (remove "~/.authinfo" auth-sources))
-  (auth-source-cache-expiry 86400);; All day
+  (use-package auth-source
+    :ensure nil
+    :custom
+    (auth-sources (remove "~/.authinfo" auth-sources))
+    (auth-source-cache-expiry 86400) ;; All day
 
-  :config
-  (defvar lps/--auth-cache-expiry-setup-p nil)
+    :config
+    (defvar lps/--auth-cache-expiry-setup-p nil)
 
-  (defun lps/auth-source-define-cache-expiry ()
-    (interactive)
-    (unless lps/--auth-cache-expiry-setup-p
-      (setq lps/--auth-cache-expiry-setup-p t)
-      (when (y-or-n-p (concat "Change default auth-cache-expiry value "
-                              "(default "
-                              (number-to-string auth-source-cache-expiry)
-                              ") ?"))
-        (setq auth-source-cache-expiry (read-number "New cache expiry value in seconds: " auth-source-cache-expiry)))))
+    (defun lps/auth-source-define-cache-expiry ()
+      (interactive)
+      (unless lps/--auth-cache-expiry-setup-p
+        (setq lps/--auth-cache-expiry-setup-p t)
+        (when (y-or-n-p (concat "Change default auth-cache-expiry value "
+                                "(default "
+                                (number-to-string auth-source-cache-expiry)
+                                ") ?"))
+          (setq auth-source-cache-expiry (read-number "New cache expiry value in seconds: " auth-source-cache-expiry)))))
 
-  (defun lps/force-forget-all-passwords ()
-    (interactive)
-    (auth-source-forget-all-cached)
-    (shell-command "gpgconf --kill gpg-agent")
-    ;; (shell-command "gpgconf -- reload gpg-agent")
-    (setq lps/--auth-cache-expiry-setup-p nil)))
+    (defun lps/force-forget-all-passwords ()
+      (interactive)
+      (auth-source-forget-all-cached)
+      (shell-command "gpgconf --kill gpg-agent")
+      ;; (shell-command "gpgconf -- reload gpg-agent")
+      (setq lps/--auth-cache-expiry-setup-p nil)))))
 
 (use-package restart-emacs
   :commands
@@ -174,9 +176,10 @@ all the other versions"
 (setq custom-file (concat user-emacs-directory "custom-file.el"))
 (load custom-file 'noerror)
 
-(use-package emacs
-  :custom
-  (native-comp-async-report-warnings-errors 'silent))
+(ensure-version 28
+ (use-package emacs
+   :custom
+   (native-comp-async-report-warnings-errors 'silent)))
 
 (use-package emacs
   :custom
@@ -200,19 +203,31 @@ all the other versions"
 (use-package emacs
   :init
   ;; Use the right font according to what is installed on the system
+  (defvar lps/default-font
+    (system-case
+     (gnu/linux "DejaVu Sans Mono")))
+
+  (defvar lps/fixed-font
+    (system-case
+     (gnu/linux "DejaVu Sans Mono")))
+
+  (defvar lps/variable-font
+    (system-case
+     (gnu/linux "Cantarell")))
+
   (defun lps/set-default-fonts ()
     ;; Variable pitch
     (let ((font-list (font-family-list)))
-      (when (member "Cantarell" font-list)
-        (set-face-font 'variable-pitch "Cantarell"))
+      (when (member lps/variable-font font-list)
+        (set-face-font 'variable-pitch lps/variable-font))
 
       ;; Default fixed-pitch
-      (when (member "DejaVu Sans Mono" font-list)
-        (set-face-font 'fixed-pitch "DejaVu Sans Mono"))
+      (when (member lps/fixed-font font-list)
+        (set-face-font 'fixed-pitch lps/fixed-font))
 
       ;; Default (not used in the same place as fixed-pitch)
-      (when (member "DejaVu Sans Mono" font-list)
-        (set-face-font 'default "DejaVu Sans Mono"))))
+      (when (member lps/default-font font-list)
+        (set-face-font 'default lps/default-font))))
 
   (if (daemonp)
       (add-hook 'after-make-frame-functions
@@ -971,7 +986,7 @@ If called with a prefix argument, also kills the current buffer"
 (use-package embark-consult
   :after (consult embark))
 
-(ensure-version "28.0"
+(ensure-version 28.0
   (use-package repeat
     :bind
     (:map lps/quick-edit-map
@@ -2618,39 +2633,41 @@ trigger the scrolling."
 
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
-(use-package pdf-tools
-  :magic ("%PDF" . pdf-view-mode)
-  :bind (:map pdf-view-mode-map
-              ("C-s" . isearch-forward)
-              ("C-c ?" . lps/pdf-maybe-goto-index))
-  :custom
-  (pdf-links-read-link-convert-commands '("-font" "FreeMono"
-                                          "-pointsize" "%P"
-                                          "-undercolor" "%f"
-                                          "-fill" "%b"
-                                          "-draw" "text %X,%Y '%c'"))
-  (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
-  (pdf-view-display-size 'fit-page)
-  :config
-  (pdf-tools-install :no-query)
-  ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
-  (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode)
+(system-case
+ (gnu/linux
+  (use-package pdf-tools
+    :magic ("%PDF" . pdf-view-mode)
+    :bind (:map pdf-view-mode-map
+                ("C-s" . isearch-forward)
+                ("C-c ?" . lps/pdf-maybe-goto-index))
+    :custom
+    (pdf-links-read-link-convert-commands '("-font" "FreeMono"
+                                            "-pointsize" "%P"
+                                            "-undercolor" "%f"
+                                            "-fill" "%b"
+                                            "-draw" "text %X,%Y '%c'"))
+    (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
+    (pdf-view-display-size 'fit-page)
+    :config
+    (pdf-tools-install :no-query)
+    ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
+    (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode)
 
-  (defun lps/pdf-maybe-goto-index ()
-    "Tries to guess where the index of the document is,
+    (defun lps/pdf-maybe-goto-index ()
+      "Tries to guess where the index of the document is,
 and ask for a keyword to find from there. If no Index is found,
 move to the end of the document, and search backward instead."
-    (interactive)
-    (if (ignore-errors (pdf-outline (current-buffer)))
-        (progn
-          (goto-char (point-max))
-          (let ((case-fold-search t))
-            (if (search-backward "Index" nil t)
-                (pdf-outline-follow-link-and-quit)
-              (pdf-outline-quit)))
-          (isearch-forward))
-      (pdf-view-goto-page (pdf-cache-number-of-pages))
-      (isearch-backward))))
+      (interactive)
+      (if (ignore-errors (pdf-outline (current-buffer)))
+          (progn
+            (goto-char (point-max))
+            (let ((case-fold-search t))
+              (if (search-backward "Index" nil t)
+                  (pdf-outline-follow-link-and-quit)
+                (pdf-outline-quit)))
+            (isearch-forward))
+        (pdf-view-goto-page (pdf-cache-number-of-pages))
+        (isearch-backward))))))
 
 (use-package pdf-view-restore
   :custom
@@ -3214,20 +3231,22 @@ PWD is not in a git repo (or the git command is not found)."
 ;; (use-package eshell-git-prompt
 ;;   :config (eshell-git-prompt-use-theme 'powerline)) ;; Visually buggy
 
-(use-package bash-completion
-  :disabled t
-  :hook (eshell-mode . bash-completion-setup))
+(system-case
+ (gnu/linux
+  (use-package bash-completion
+    :disabled t
+    :hook (eshell-mode . bash-completion-setup))
 
-(use-package fish-completion
-  :defer t
-  :hook (eshell-mode . lps/start-fish-completion)
-  :config
-  (defun lps/start-fish-completion ()
-    (when (executable-find "fish")
-      (setq-local company-backends '(company-capf))
-      (define-key eshell-mode-map (kbd "TAB") 'company-manual-begin)
-      (fish-completion-mode 1)
-      (setq fish-completion-fallback-on-bash-p t))))
+  (use-package fish-completion
+    :defer t
+    :hook (eshell-mode . lps/start-fish-completion)
+    :config
+    (defun lps/start-fish-completion ()
+      (when (executable-find "fish")
+        (setq-local company-backends '(company-capf))
+        (define-key eshell-mode-map (kbd "TAB") 'company-manual-begin)
+        (fish-completion-mode 1)
+        (setq fish-completion-fallback-on-bash-p t))))))
 
 ;; Straight from Centaur Emacs
 (use-package esh-autosuggest
@@ -3272,7 +3291,9 @@ PWD is not in a git repo (or the git command is not found)."
                   (eshell/alias alias-name (eshell-flatten-and-stringify alias-definition-trimmed)))))))
       (message "File ~/.bashrc not found, no aliases were loaded"))))
 
-(add-hook 'eshell-mode-hook 'lps/eshell-load-bash-aliases)
+(system-case
+ (gnu/linux
+  (add-hook 'eshell-mode-hook 'lps/eshell-load-bash-aliases)))
 
 (use-package em-alias
   :ensure nil
