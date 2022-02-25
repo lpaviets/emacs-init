@@ -142,6 +142,7 @@
 (use-package emacs
   :custom
   (locale-coding-system 'utf-8)
+  (display-raw-bytes-as-hex t)
   :init
   (prefer-coding-system 'utf-8)
   (set-language-environment 'utf-8)
@@ -1701,7 +1702,7 @@ Breaks if region or line spans multiple visual lines"
 
 ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
 (use-package rainbow-delimiters
-  :hook ((prog-mode comint-mode fundamental-mode) . rainbow-delimiters-mode))
+  :hook ((prog-mode comint-mode) . rainbow-delimiters-mode))
 
 (use-package paredit
   :init
@@ -1729,7 +1730,20 @@ Breaks if region or line spans multiple visual lines"
         ("M-s M-s" . paredit-splice-sexp)
         ("C-M-," . paredit-convolute-sexp)
         ([remap newline] . paredit-newline)
-        ("<C-backspace>" . paredit-delete-region)))
+        ("<C-backspace>" . paredit-delete-region)
+        ("M-<left>" . lps/transpose-sexp-backward)
+        ("M-<right>" . lps/transpose-sexp-forward))
+  :config
+  (defun lps/transpose-sexp-backward ()
+    (interactive)
+    (transpose-sexps 1 t)
+    (backward-sexp 2 t))
+
+  (defun lps/transpose-sexp-forward ()
+    (interactive)
+    (forward-sexp 1 t)
+    (transpose-sexps 1 t)
+    (backward-sexp 1 t)))
 
 (use-package elec-pair
   :hook ((prog-mode

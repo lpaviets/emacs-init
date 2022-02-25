@@ -2313,7 +2313,20 @@ Now, in order to work with structured text, such as source code, we want to be a
           ("M-s M-s" . paredit-splice-sexp)
           ("C-M-," . paredit-convolute-sexp)
           ([remap newline] . paredit-newline)
-          ("<C-backspace>" . paredit-delete-region)))
+          ("<C-backspace>" . paredit-delete-region)
+          ("M-<left>" . lps/transpose-sexp-backward)
+          ("M-<right>" . lps/transpose-sexp-forward))
+    :config
+    (defun lps/transpose-sexp-backward ()
+      (interactive)
+      (transpose-sexps 1 t)
+      (backward-sexp 2 t))
+
+    (defun lps/transpose-sexp-forward ()
+      (interactive)
+      (forward-sexp 1 t)
+      (transpose-sexps 1 t)
+      (backward-sexp 1 t)))
 
   (use-package elec-pair
     :hook ((prog-mode
