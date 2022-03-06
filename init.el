@@ -1790,14 +1790,14 @@ Breaks if region or line spans multiple visual lines"
   :config
   (defun lps/transpose-sexp-backward ()
     (interactive)
-    (transpose-sexps 1 t)
-    (backward-sexp 2 t))
+    (transpose-sexps 1)
+    (backward-sexp 2))
 
   (defun lps/transpose-sexp-forward ()
     (interactive)
-    (forward-sexp 1 t)
-    (transpose-sexps 1 t)
-    (backward-sexp 1 t)))
+    (forward-sexp 1)
+    (transpose-sexps 1)
+    (backward-sexp 1)))
 
 (use-package elec-pair
   :hook ((prog-mode
