@@ -1996,6 +1996,7 @@ It can act as a small, local version control system due to how Undos are managed
     (undo-tree-visualizer-timestamps t)
     (undo-tree-enable-undo-in-region t)
     (undo-tree-visualizer-diff t)
+    (undo-tree-auto-save-history nil)
     :config
     (global-undo-tree-mode))
 
