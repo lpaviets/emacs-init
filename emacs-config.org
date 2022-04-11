@@ -793,8 +793,8 @@ Emacs is sometimes all over the place, opening buffers at seemingly random place
     (display-buffer-base-action
      '((display-buffer-reuse-window)
        (display-buffer-reuse-mode-window)
-       (display-buffer-same-window)
-       (display-buffer-in-previous-window)))
+       (display-buffer-in-previous-window)
+       (display-buffer-same-window)))
     (uniquify-buffer-name-style 'forward)
     (uniquify-after-kill-buffer-p t)
     (global-auto-revert-ignore-modes '(pdf-view-mode))
