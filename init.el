@@ -546,8 +546,8 @@ Avoid toggling several times, just use it once if possible"
   (display-buffer-base-action
    '((display-buffer-reuse-window)
      (display-buffer-reuse-mode-window)
-     (display-buffer-same-window)
-     (display-buffer-in-previous-window)))
+     (display-buffer-in-previous-window)
+     (display-buffer-same-window)))
   (uniquify-buffer-name-style 'forward)
   (uniquify-after-kill-buffer-p t)
   (global-auto-revert-ignore-modes '(pdf-view-mode))
@@ -1482,6 +1482,7 @@ Move point in the last duplicated string (line or region)."
   (undo-tree-visualizer-timestamps t)
   (undo-tree-enable-undo-in-region t)
   (undo-tree-visualizer-diff t)
+  (undo-tree-auto-save-history nil)
   :config
   (global-undo-tree-mode))
 
@@ -1784,7 +1785,20 @@ Breaks if region or line spans multiple visual lines"
         ("M-s M-s" . paredit-splice-sexp)
         ("C-M-," . paredit-convolute-sexp)
         ([remap newline] . paredit-newline)
-        ("<C-backspace>" . paredit-delete-region)))
+        ("<C-backspace>" . paredit-delete-region)
+        ("M-<left>" . lps/transpose-sexp-backward)
+        ("M-<right>" . lps/transpose-sexp-forward))
+  :config
+  (defun lps/transpose-sexp-backward ()
+    (interactive)
+    (transpose-sexps 1 t)
+    (backward-sexp 2 t))
+
+  (defun lps/transpose-sexp-forward ()
+    (interactive)
+    (forward-sexp 1 t)
+    (transpose-sexps 1 t)
+    (backward-sexp 1 t)))
 
 (use-package elec-pair
   :hook ((prog-mode
@@ -2144,8 +2158,8 @@ call the associated function interactively. Otherwise, call the
 
   ;; View HyperSpec within Emacs using EWW
   (setq browse-url-handlers
-    '(("hyperspec" . eww-browse-url)
-      ("." . browse-url-default-browser)))
+        '(("hyperspec" . eww-browse-url)
+          ("." . browse-url-default-browser)))
 
   ;; Fast inspection. Might be buggy.
   (defun sly-inspect-no-eval (symbol &optional inspector-name)
@@ -2154,7 +2168,28 @@ call the associated function interactively. Otherwise, call the
     (when (not symbol)
       (error "No symbol given"))
     (sly-eval-for-inspector `(slynk:init-inspector ,(concat "'" symbol))
-                            :inspector-name inspector-name)))
+                            :inspector-name inspector-name))
+
+  ;; Pop debugger *below* current window.
+  ;; Intended to have a setup like this:
+  ;; +------+------+
+  ;; |      |      |
+  ;; |      | repl |
+  ;; |      |      |
+  ;; | file +------+
+  ;; |      |      |
+  ;; |      |  db  |
+  ;; |      |      |
+  ;; +------+------+
+  ;;
+  ;; When REPL triggers an error, pop create debugger below it
+  ;; Otherwise, pop to the window
+
+  (add-to-list 'display-buffer-alist
+               '("*sly-db" . ((display-buffer-reuse-mode-window
+                               display-buffer-below-selected)
+                              . ((inhibit-same-window . nil)
+                                 (mode . sly-db-mode))))))
 
 (use-package sly-mrepl
   :ensure nil
@@ -2209,9 +2244,9 @@ call the associated function interactively. Otherwise, call the
   ;; Allow paredit to scroll to bottom on input when insert a parenthesis
   (defun lps/sly-mrepl-paredit-open-scroll-to-bottom (&rest args)
     "Fix to also scroll to the bottom of the SLY REPL when inserting a parenthesis.
-This is needed, as `comint-preinput-scroll-to-bottom' does not
-recognize `paredit-open-round' as a command susceptible to
-trigger the scrolling."
+  This is needed, as `comint-preinput-scroll-to-bottom' does not
+  recognize `paredit-open-round' as a command susceptible to
+  trigger the scrolling."
     (if (and (derived-mode-p major-mode 'comint-mode)
              comint-scroll-to-bottom-on-input)
         (let* ((current (current-buffer))
@@ -3620,6 +3655,7 @@ PWD is not in a git repo (or the git command is not found)."
 
 (use-package mu4e-alert
   :after mu4e
+  :disabled t
   :config
   ;; Temporary fix: mu4e and mu4e-alert are out of sync
   ;; while mu4e changes its naming conventions from the

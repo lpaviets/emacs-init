@@ -33,6 +33,7 @@
         mark-sexp
         org-beginning-of-line
         org-delete-char
+        org-emphasize
         org-end-of-line
         org-self-insert-command
         org-yank
@@ -59,6 +60,7 @@
         paredit-wrap-round
         reftex-label
         reindent-then-newline-and-indent
+        transpose-sexps
         zap-up-to-char
         ))
 
