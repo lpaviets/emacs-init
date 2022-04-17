@@ -1798,7 +1798,19 @@ Breaks if region or line spans multiple visual lines"
     (interactive)
     (forward-sexp 1 t)
     (transpose-sexps 1 t)
-    (backward-sexp 1 t)))
+    (backward-sexp 1 t))
+
+  (defun lps/paredit-no-space-insert-after-sharp-dispatch (endp delimiter)
+    "Always return T, unless we are right after a #<form> where form is only made of
+characters of WORD syntax
+This ensures that no space is inserted after e.g. #2A or #C"
+    (not (and (/= (point) (line-beginning-position))
+              (= delimiter ?\()
+              (not endp)
+              (or (looking-back "#\\w+")
+                  (looking-back ",@")))))
+
+  (add-to-list 'paredit-space-for-delimiter-predicates 'lps/paredit-no-space-insert-after-sharp-dispatch))
 
 (use-package elec-pair
   :hook ((prog-mode
