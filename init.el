@@ -2030,7 +2030,13 @@ call the associated function interactively. Otherwise, call the
 
 (use-package python-mls
   :config
-  (python-mls-setup))
+  (python-mls-setup)
+
+  (defun lps/python-mls-prompt-fix (fun &rest args)
+    (when python-mls-mode
+      (apply fun args)))
+
+  (advice-add 'python-mls-check-prompt :around 'lps/python-mls-prompt-fix))
 
 ;; Tuareg (for OCaml and ML like languages)
 (use-package tuareg

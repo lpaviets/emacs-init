@@ -2714,7 +2714,13 @@ Finally, we can improve the interpreter by allowing it to handle multi-line stat
 #+begin_src emacs-lisp
   (use-package python-mls
     :config
-    (python-mls-setup))
+    (python-mls-setup)
+
+    (defun lps/python-mls-prompt-fix (fun &rest args)
+      (when python-mls-mode
+        (apply fun args)))
+
+    (advice-add 'python-mls-check-prompt :around 'lps/python-mls-prompt-fix))
 #+end_src
 
 *** OCaml
