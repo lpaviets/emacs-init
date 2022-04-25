@@ -870,7 +870,12 @@ We also improve the appearance (and functionalities) of the buffer that we get w
                        (mode . image-mode)))
         ("Programming" (and
                         (derived-mode . prog-mode)
-                        (not (mode . fundamental-mode)))))))
+                        (not (mode . fundamental-mode))))
+        ("Mail" (or
+                 (name . "^\\*mm\\*.*$") ; heuristic for attachments
+                 (derived-mode . gnus-article-mode)
+                 (mode . mu4e-headers-mode)
+                 (mode . mu4e-main-mode))))))
     :config
     (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode)
 
@@ -4684,7 +4689,39 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
       ;; Update mail and index when leaving
       (unless (and (buffer-live-p mu4e--update-buffer)
                    (process-live-p (get-buffer-process mu4e--update-buffer)))
-        (mu4e-update-mail-and-index t))))
+        (mu4e-update-mail-and-index t)))
+
+    ;; Override this function to have a more friendly name
+    ;; for viewed message
+    (defun mu4e-view (msg)
+      "Display the message MSG in a new buffer, and keep in sync with HDRSBUF.
+  'In sync' here means that moving to the next/previous message in
+  the the message view affects HDRSBUF, as does marking etc.
+
+  As a side-effect, a message that is being viewed loses its 'unread'
+  marking if it still had that."
+
+      (mu4e~headers-update-handler msg nil nil) ;; update headers, if necessary.
+
+      (when (get-buffer gnus-article-buffer) ; modify: BUFFERP to GET-BUFFER
+        (kill-buffer gnus-article-buffer))
+      ;; add this expression compared to the original function
+      (setq gnus-article-buffer (let* ((subj (mu4e-msg-field msg :subject))
+                                       (subj (unless (and subj (string-match "^[:blank:]*$" subj)) subj))
+                                       (str (or subj
+                                                "*Article*")))
+                                  (generate-new-buffer-name
+                                   (truncate-string-to-width str mu4e~compose-buffer-max-name-length)
+                                   gnus-article-buffer)))
+      (with-current-buffer (get-buffer-create gnus-article-buffer)
+        (let ((inhibit-read-only t))
+          (remove-overlays (point-min)(point-max) 'mu4e-overlay t)
+          (erase-buffer)
+          (insert-file-contents-literally
+           (mu4e-message-field msg :path) nil nil nil t)))
+      (switch-to-buffer gnus-article-buffer)
+      (setq mu4e~view-message msg)
+      (mu4e~view-render-buffer msg)))
 #+end_src
 
 Because it might be a bit tedious to constantly open and quit the ~mu4e~ buffers to check for incoming messages, we use another package to get notifications informing us when we receive a new message.
