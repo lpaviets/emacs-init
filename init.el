@@ -1848,6 +1848,10 @@ Does not insert a space before the inserted opening parenthesis"
   ([remap insert-parentheses] . lps/insert-parentheses)
   ("M-\"" . lps/insert-quotes))
 
+(use-package dabbrev
+  :defer t
+  :bind ("<backtab>" . dabbrev-expand))
+
 ;;YASnippet
 (use-package yasnippet
   :diminish
@@ -2166,7 +2170,7 @@ call the associated function interactively. Otherwise, call the
 
   (defun lps/sly-company-setup ()
     (setq-local company-prescient-sort-length-enable nil)
-    (setq-local company-backends '(company-capf)))
+    (setq-local company-backends '((company-capf :with company-yasnippet))))
 
   (defun lps/sly-start-repl ()
     (unless (sly-connected-p)

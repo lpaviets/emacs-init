@@ -2444,6 +2444,15 @@ Finally, we also remap one built-in command to a (usually) more useful variant, 
 
 The previous Auto-completion section was about the general editing experience. Here, we add extra tools that will be particularly interesting when editing some kind of source code, which is by nature much more repetitive and rigid.
 
+*** Dynamic Abbreviations
+One of the default facilities provided by Emacs for auto-completion is ~dabbrev~. In short, it is a way to complete what you are currently typing using "stuff" with the same prefix, in some open buffer of your emacs session. You can restrict the source buffers in various ways, but this is the basic idea.
+
+#+begin_src emacs-lisp
+  (use-package dabbrev
+    :defer t
+    :bind ("<backtab>" . dabbrev-expand))
+#+end_src
+
 *** YASnippet
 
      A first useful package is YASnippet, which makes it easy to define and automatically insert snippets of code in various languages.
@@ -2913,7 +2922,7 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
 
     (defun lps/sly-company-setup ()
       (setq-local company-prescient-sort-length-enable nil)
-      (setq-local company-backends '(company-capf)))
+      (setq-local company-backends '((company-capf :with company-yasnippet))))
 
     (defun lps/sly-start-repl ()
       (unless (sly-connected-p)
