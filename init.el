@@ -3105,7 +3105,37 @@ Return a list of regular expressions."
         ("C-c ?" . biblio-lookup))
   :custom
   (biblio-arxiv-bibtex-header "article")
-  (biblio-download-directory "~/Documents/Other/articles/"))
+  (biblio-download-directory "~/Documents/Other/articles/")
+  :config
+  (defun biblio-download--action (record)
+    "Retrieve a RECORD from Dissemin, and display it.
+RECORD is a formatted record as expected by `biblio-insert-result'.
+The default filename is of the form \"[AUTHORS]TITLE.pdf\" where
+AUTHORS is a list of the authors surnames, separated by underscores,
+and TITLE is the result of `lps/make-filename-from-sentence' on the
+article's title"
+    (let-alist record
+      (if .direct-url
+          (let* ((fname (with-temp-buffer
+                          (insert .title)
+                          (lps/make-filename-from-sentence)
+                          (insert ".pdf")
+                          (goto-char (point-min))
+                          (insert "[")
+                          (seq-doseq (name .authors)
+                            (let ((split-name (split-string name)))
+                              (if (cdr split-name)
+                                  (dolist (subname (cdr split-name))
+                                    (insert subname))
+                                (insert name)))
+                            (insert "_"))
+                          (delete-backward-char 1)
+                          (insert "]")
+                          (buffer-substring (point-min) (point-max))))
+                 (target (read-file-name "Save as (see also biblio-download-directory): "
+                                         biblio-download-directory fname nil fname)))
+            (url-copy-file .direct-url (expand-file-name target biblio-download-directory)))
+        (user-error "This record does not contain a direct URL (try arXiv or HAL)")))))
 
 (use-package preview
   :ensure nil ;; Comes with AUCTeX
