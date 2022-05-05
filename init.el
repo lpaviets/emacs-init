@@ -2300,7 +2300,8 @@ call the associated function interactively. Otherwise, call the
     (lps/sly-company-setup)
     ;; Why does SLY disable it ???
     (setq-local comint-scroll-to-bottom-on-input t)
-    (sly-switch-to-most-recent 'lisp-mode)))
+    ;; (sly-switch-to-most-recent 'lisp-mode)
+    ))
 
 (use-package sly-stickers
   :ensure nil
@@ -3910,6 +3911,35 @@ is handled appropriately."
   :custom
   (guess-language-languages '(en fr))
   (guess-language-after-detection-functions '(guess-language-switch-flyspell-function)))
+
+(use-package artist
+  :ensure nil
+  :defer t
+  :bind
+  (:map artist-mode-map
+        ([remap artist-next-line] . lps/artist-next-line))
+  :config
+  (defun lps/artist-next-line (&optional n)
+    "Move cursor down N lines (default is 1), updating current shape.
+If N is negative, move cursor up.
+If N is greater than the number of remaining lines in the buffer,
+insert as many blank lines as necessary."
+    (interactive "p")
+    (let* ((col (artist-current-column))
+           (max-line (save-excursion
+                       (goto-char (point-max))
+                       (artist-current-line)))
+           (current-line (artist-current-line))
+           (diff (- max-line current-line)))
+      (when (>= n diff)
+        (save-excursion
+          (goto-char (point-max))
+          (open-line (- n diff))))
+      (forward-line n)
+      (move-to-column col t))
+
+    (when artist-key-is-drawing
+      (artist-key-do-continously-common))))
 
 (use-package xkcd
   :defer t)
