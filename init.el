@@ -1791,8 +1791,8 @@ Breaks if region or line spans multiple visual lines"
         ("C-M-," . paredit-convolute-sexp)
         ([remap newline] . paredit-newline)
         ("<C-backspace>" . paredit-delete-region)
-        ("M-<left>" . lps/transpose-sexp-backward)
-        ("M-<right>" . lps/transpose-sexp-forward))
+        ("M-S-<left>" . lps/transpose-sexp-backward)
+        ("M-S-<right>" . lps/transpose-sexp-forward))
   :config
   (defun lps/transpose-sexp-backward ()
     (interactive)
@@ -1822,6 +1822,28 @@ This ensures that no space is inserted after e.g. #2A or #C"
           org-mode
           inferior-python-mode)
          . electric-pair-local-mode)) ;; needed for org-babel
+
+(use-package adjust-parens
+  :after paredit
+  :hook (paredit-mode . adjust-parens-mode)
+  :bind
+  (:map adjust-parens-mode-map
+        ("TAB" . nil)
+        ("<backtab>" . nil)
+        ("M-<left>" . lps/lisp-dedent-adjust-parens)
+        ("M-<right>" . lps/lisp-indent-adjust-parens))
+  :config
+  (defun lps/lisp-dedent-adjust-parens ()
+    (interactive)
+    (save-excursion
+      (back-to-indentation)
+      (call-interactively 'lisp-dedent-adjust-parens)))
+
+  (defun lps/lisp-indent-adjust-parens ()
+    (interactive)
+    (save-excursion
+      (back-to-indentation)
+      (call-interactively 'lisp-indent-adjust-parens))))
 
 (use-package emacs
   :ensure nil

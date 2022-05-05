@@ -2378,8 +2378,8 @@ Now, in order to work with structured text, such as source code, we want to be a
           ("C-M-," . paredit-convolute-sexp)
           ([remap newline] . paredit-newline)
           ("<C-backspace>" . paredit-delete-region)
-          ("M-<left>" . lps/transpose-sexp-backward)
-          ("M-<right>" . lps/transpose-sexp-forward))
+          ("M-S-<left>" . lps/transpose-sexp-backward)
+          ("M-S-<right>" . lps/transpose-sexp-forward))
     :config
     (defun lps/transpose-sexp-backward ()
       (interactive)
@@ -2409,6 +2409,28 @@ Now, in order to work with structured text, such as source code, we want to be a
             org-mode
             inferior-python-mode)
            . electric-pair-local-mode)) ;; needed for org-babel
+
+  (use-package adjust-parens
+    :after paredit
+    :hook (paredit-mode . adjust-parens-mode)
+    :bind
+    (:map adjust-parens-mode-map
+          ("TAB" . nil)
+          ("<backtab>" . nil)
+          ("M-<left>" . lps/lisp-dedent-adjust-parens)
+          ("M-<right>" . lps/lisp-indent-adjust-parens))
+    :config
+    (defun lps/lisp-dedent-adjust-parens ()
+      (interactive)
+      (save-excursion
+        (back-to-indentation)
+        (call-interactively 'lisp-dedent-adjust-parens)))
+
+    (defun lps/lisp-indent-adjust-parens ()
+      (interactive)
+      (save-excursion
+        (back-to-indentation)
+        (call-interactively 'lisp-indent-adjust-parens))))
 #+end_src
 
 Finally, we also remap one built-in command to a (usually) more useful variant, which has the same behaviour as the paredit one.
