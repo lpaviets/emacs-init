@@ -4400,7 +4400,6 @@ Now, we try to add things on top of the built-in file manager, Dired.
     :defer t
     :bind
     (:map dired-mode-map
-          ("RET" . dired-find-alternate-file)
           ("F" . find-name-dired))
     :custom
     ;; Delete and copy directories recursively
@@ -4409,7 +4408,6 @@ Now, we try to add things on top of the built-in file manager, Dired.
     (dired-auto-revert-buffer t)
     (dired-listing-switches "-alFh")
     (dired-isearch-filenames 'dwim)
-    (dired-kill-when-opening-new-dired-buffer t)
     (dired-listing-switches "-AlFh --group-directories-first"))
 
   ;; Make things prettier

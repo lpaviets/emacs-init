@@ -3427,7 +3427,6 @@ PWD is not in a git repo (or the git command is not found)."
   :defer t
   :bind
   (:map dired-mode-map
-        ("RET" . dired-find-alternate-file)
         ("F" . find-name-dired))
   :custom
   ;; Delete and copy directories recursively
@@ -3436,7 +3435,6 @@ PWD is not in a git repo (or the git command is not found)."
   (dired-auto-revert-buffer t)
   (dired-listing-switches "-alFh")
   (dired-isearch-filenames 'dwim)
-  (dired-kill-when-opening-new-dired-buffer t)
   (dired-listing-switches "-AlFh --group-directories-first"))
 
 ;; Make things prettier
