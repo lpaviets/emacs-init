@@ -4033,7 +4033,7 @@ Finally, we also want a way to do everything from Emacs, and it starts with /fin
       completing-read-function))
 
   (use-package biblio
-    :defer t
+    :after biblio-core
     :bind
     (:map bibtex-mode-map
           ("C-c ?" . biblio-lookup))
@@ -4057,12 +4057,13 @@ Finally, we also want a way to do everything from Emacs, and it starts with /fin
                             (goto-char (point-min))
                             (insert "[")
                             (seq-doseq (name .authors)
-                              (let ((split-name (split-string name)))
-                                (if (cdr split-name)
-                                    (dolist (subname (cdr split-name))
-                                      (insert subname))
-                                  (insert name)))
-                              (insert "_"))
+                              (when (and name (stringp name))
+                                (let ((split-name (split-string name)))
+                                  (if (cdr split-name)
+                                      (dolist (subname (cdr split-name))
+                                        (insert subname))
+                                    (insert name)))
+                                (insert "_")))
                             (delete-backward-char 1)
                             (insert "]")
                             (buffer-substring (point-min) (point-max))))

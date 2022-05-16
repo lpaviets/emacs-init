@@ -3122,7 +3122,7 @@ Return a list of regular expressions."
     completing-read-function))
 
 (use-package biblio
-  :defer t
+  :after biblio-core
   :bind
   (:map bibtex-mode-map
         ("C-c ?" . biblio-lookup))
@@ -3146,12 +3146,13 @@ article's title"
                           (goto-char (point-min))
                           (insert "[")
                           (seq-doseq (name .authors)
-                            (let ((split-name (split-string name)))
-                              (if (cdr split-name)
-                                  (dolist (subname (cdr split-name))
-                                    (insert subname))
-                                (insert name)))
-                            (insert "_"))
+                            (when (and name (stringp name))
+                              (let ((split-name (split-string name)))
+                                (if (cdr split-name)
+                                    (dolist (subname (cdr split-name))
+                                      (insert subname))
+                                  (insert name)))
+                              (insert "_")))
                           (delete-backward-char 1)
                           (insert "]")
                           (buffer-substring (point-min) (point-max))))
