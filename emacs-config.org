@@ -3609,7 +3609,8 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
       :magic ("%PDF" . pdf-view-mode)
       :bind (:map pdf-view-mode-map
                   ("C-s" . isearch-forward)
-                  ("C-c ?" . lps/pdf-maybe-goto-index))
+                  ("C-c ?" . lps/pdf-maybe-goto-index)
+                  ("s t" . lps/pdf-view-toggle-auto-slice))
       :custom
       (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                               "-pointsize" "%P"
@@ -3618,10 +3619,26 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
                                               "-draw" "text %X,%Y '%c'"))
       (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
       (pdf-view-display-size 'fit-page)
+      :init
+      (defvar-local lps/pdf-view-auto-slice-from-bounding-box t)
       :config
       (pdf-tools-install :no-query)
       ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
       (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode)
+
+      (defun lps/pdf-view-toggle-auto-slice ()
+        (interactive)
+        (setq-local lps/pdf-view-auto-slice-from-bounding-box
+                    (not lps/pdf-view-auto-slice-from-bounding-box))
+        (message "Automatic slicing is now %s"
+                 (if lps/pdf-view-auto-slice-from-bounding-box "on" "off")))
+
+      (defun lps/pdf-view-auto-slice ()
+        (when lps/pdf-view-auto-slice-from-bounding-box
+          (pdf-view-set-slice-from-bounding-box)))
+
+      (add-hook 'pdf-view-mode-hook 'lps/pdf-view-auto-slice)
+      (add-hook 'pdf-view-change-page-hook 'lps/pdf-view-auto-slice)
 
       (defun lps/pdf-maybe-goto-index ()
         "Tries to guess where the index of the document is,
