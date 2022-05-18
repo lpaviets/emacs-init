@@ -1896,9 +1896,8 @@ Does not insert a space before the inserted opening parenthesis"
   ([remap insert-parentheses] . lps/insert-parentheses)
   ("M-\"" . lps/insert-quotes))
 
-(use-package dabbrev
-  :defer t
-  :bind ("<backtab>" . dabbrev-expand))
+(use-package hippie-exp
+  :bind ([remap dabbrev-expand] . hippie-expand))
 
 ;;YASnippet
 (use-package yasnippet

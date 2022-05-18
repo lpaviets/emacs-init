@@ -2498,12 +2498,11 @@ Finally, we also remap one built-in command to a (usually) more useful variant, 
 The previous Auto-completion section was about the general editing experience. Here, we add extra tools that will be particularly interesting when editing some kind of source code, which is by nature much more repetitive and rigid.
 
 *** Dynamic Abbreviations
-One of the default facilities provided by Emacs for auto-completion is ~dabbrev~. In short, it is a way to complete what you are currently typing using "stuff" with the same prefix, in some open buffer of your emacs session. You can restrict the source buffers in various ways, but this is the basic idea.
+One of the default facilities provided by Emacs for auto-completion is ~dabbrev~. In short, it is a way to complete what you are currently typing using "stuff" with the same prefix, in some open buffer of your emacs session. You can restrict the source buffers in various ways, but this is the basic idea. It can be (conceptually) further improved by taking possible completions from other sources (such as filenames); the result is the built-in function ~hippie-expand~.
 
 #+begin_src emacs-lisp
-  (use-package dabbrev
-    :defer t
-    :bind ("<backtab>" . dabbrev-expand))
+  (use-package hippie-exp
+    :bind ([remap dabbrev-expand] . hippie-expand))
 #+end_src
 
 *** YASnippet
