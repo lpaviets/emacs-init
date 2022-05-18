@@ -75,6 +75,7 @@
                 (error "Can't understand this version number: %s " version)))))
 
 (defmacro ensure-version (version &rest body)
+  "Execute BODY when the current Emacs version is larger than VERSION"
   (declare (indent 1))
   `(when (version<= ,(lps/versionify version) emacs-version)
      ,@body))
@@ -99,11 +100,26 @@ all the other versions"
        (cond
         ,@version-conds))))
 
-(use-package benchmark-init
-  :disabled t
-  :config
-  ;; To disable collection of benchmark data after init is done.
-  (add-hook 'after-init-hook 'benchmark-init/deactivate))
+(defmacro ensure-defun (name args-or-version &rest body)
+  "Define the function NAME if it not already defined.
+If ARGS-OR-VERSION is a list, it is considered to be the lambda-list of
+the function NAME, and BODY is its body.
+If it is a string or an integer, it is the version number before which
+the function NAME will unconditionnally be defined, even it is already
+fboundp."
+  (declare (indent defun))
+  (let (args version)
+    (if (or (stringp args-or-version)
+            (integerp args-or-version))
+        (progn
+          (setq args (car body))
+          (setq version (lps/versionify args-or-version))
+          (setq body (cdr body)))
+      (setq args args-or-version))
+    `(when (or (and ,version (version<= emacs-version ,version))
+               (not (fboundp ',name)))
+       (defun ,name ,args
+         ,@body))))
 
 (use-package emacs
   :ensure nil
