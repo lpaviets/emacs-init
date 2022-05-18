@@ -60,6 +60,12 @@
 ;; Uncomment the folllowing line to have a detailed startup log
 ;; (setq use-package-verbose t)
 
+(use-package benchmark-init
+  :disabled t
+  :config
+  ;; To disable collection of benchmark data after init is done.
+  (add-hook 'after-init-hook 'benchmark-init/deactivate))
+
 (defmacro system-case (&rest cases)
   "Light wrapper around `cl-case' on `system-type'"
   `(cl-case system-type
@@ -987,7 +993,11 @@ If called with a prefix argument, also kills the current buffer"
   (defun lps/consult-line-strict-match (&optional initial start)
     (interactive (list nil (not (not current-prefix-arg))))
     (let ((orderless-matching-styles '(orderless-literal)))
-      (consult-line initial start))))
+      (consult-line initial start)))
+
+  ;; Fix a bug in earlier version of Emacs
+  (ensure-defun ensure-list "28.1" (x)
+    (if (listp x) x (list x))))
 
 (use-package embark
   :defer t

@@ -1387,7 +1387,11 @@ Typing "yes" and "no" might be a bit too tiring
     (defun lps/consult-line-strict-match (&optional initial start)
       (interactive (list nil (not (not current-prefix-arg))))
       (let ((orderless-matching-styles '(orderless-literal)))
-        (consult-line initial start))))
+        (consult-line initial start)))
+
+    ;; Fix a bug in earlier version of Emacs
+    (ensure-defun ensure-list "28.1" (x)
+      (if (listp x) x (list x))))
 #+end_src
 
 Another package that tries to give contextual actions to act on "things" (files, buffers ...) is ~embark~. It also integrates very well with the default API, and is easily enhanced by packages such as ~marginalia~
