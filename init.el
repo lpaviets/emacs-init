@@ -3477,7 +3477,8 @@ PWD is not in a git repo (or the git command is not found)."
   (dired-auto-revert-buffer t)
   (dired-listing-switches "-alFh")
   (dired-isearch-filenames 'dwim)
-  (dired-listing-switches "-AlFh --group-directories-first"))
+  (dired-listing-switches "-AlFh --group-directories-first")
+  (wdired-allow-to-change-permissions t))
 
 ;; Make things prettier
 (use-package all-the-icons-dired
@@ -4021,7 +4022,7 @@ insert as many blank lines as necessary."
   (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
   (elfeed-search-title-max-width 110)
   :config
-  (setq-default elfeed-search-filter "@1-week-ago +unread "))
+  (setq-default elfeed-search-filter "@1-week-ago +unread -compsci"))
 
 (use-package elfeed-org
   :after elfeed

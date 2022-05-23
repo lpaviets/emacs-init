@@ -4455,7 +4455,8 @@ Now, we try to add things on top of the built-in file manager, Dired.
     (dired-auto-revert-buffer t)
     (dired-listing-switches "-alFh")
     (dired-isearch-filenames 'dwim)
-    (dired-listing-switches "-AlFh --group-directories-first"))
+    (dired-listing-switches "-AlFh --group-directories-first")
+    (wdired-allow-to-change-permissions t))
 
   ;; Make things prettier
   (use-package all-the-icons-dired
@@ -5135,7 +5136,7 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
     (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
     (elfeed-search-title-max-width 110)
     :config
-    (setq-default elfeed-search-filter "@1-week-ago +unread "))
+    (setq-default elfeed-search-filter "@1-week-ago +unread -compsci"))
 #+end_src
 
 As the default syntax to manage and organize the various RSS feeds is a bit tedious, we use another package which this whole process painless.
