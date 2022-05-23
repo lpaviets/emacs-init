@@ -67,7 +67,8 @@ Another thing that might be of interest is to know how long it took for Emacs to
 
 #+end_src
 
-** Package management
+** Configuration management
+*** Packages
 
 Then, we need to configure how we will install packages. We use another package manager that the default one: =use-package=.
 
@@ -116,6 +117,20 @@ It makes both installation and customization easier, and the code is also simple
 
 #+end_src
 
+In order to benchmark the package loading, we use [[https://github.com/dholm/benchmark-init-el][benchmark-init.el]]
+
+#+begin_src emacs-lisp
+  (use-package benchmark-init
+    :disabled t
+    :config
+    ;; To disable collection of benchmark data after init is done.
+    (add-hook 'after-init-hook 'benchmark-init/deactivate))
+#+end_src
+
+Because we will customize bindings, functions and so on, some variables are defined there so they are available in the following sections of this file.
+
+*** Some macros and utilities
+
 Although ~use-package~ is extensible and we could add some keywords to it, it is rather cumbersome and I prefer to define personal macros to deal with various operating systems and versions.
 
 #+begin_src emacs-lisp
@@ -134,6 +149,7 @@ Although ~use-package~ is extensible and we could add some keywords to it, it is
                   (error "Can't understand this version number: %s " version)))))
 
   (defmacro ensure-version (version &rest body)
+    "Execute BODY when the current Emacs version is larger than VERSION"
     (declare (indent 1))
     `(when (version<= ,(lps/versionify version) emacs-version)
        ,@body))
@@ -157,19 +173,30 @@ Although ~use-package~ is extensible and we could add some keywords to it, it is
       `(let ((,gver emacs-version))
          (cond
           ,@version-conds))))
+
+  (defmacro ensure-defun (name args-or-version &rest body)
+    "Define the function NAME if it not already defined.
+  If ARGS-OR-VERSION is a list, it is considered to be the lambda-list of
+  the function NAME, and BODY is its body.
+  If it is a string or an integer, it is the version number before which
+  the function NAME will unconditionnally be defined, even it is already
+  fboundp."
+    (declare (indent defun))
+    (let (args version)
+      (if (or (stringp args-or-version)
+              (integerp args-or-version))
+          (progn
+            (setq args (car body))
+            (setq version (lps/versionify args-or-version))
+            (setq body (cdr body)))
+        (setq args args-or-version))
+      `(when (or (and ,version (version<= emacs-version ,version))
+                 (not (fboundp ',name)))
+         (defun ,name ,args
+           ,@body))))
 #+end_src
 
-In order to benchmark the package loading, we use [[https://github.com/dholm/benchmark-init-el][benchmark-init.el]]
-
-#+begin_src emacs-lisp
-  (use-package benchmark-init
-    :disabled t
-    :config
-    ;; To disable collection of benchmark data after init is done.
-    (add-hook 'after-init-hook 'benchmark-init/deactivate))
-#+end_src
-
-Because we will customize bindings, functions and so on, some variables are defined there so they are available in the following sections of this file.
+*** Personal keymaps
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -793,8 +820,8 @@ Emacs is sometimes all over the place, opening buffers at seemingly random place
     (display-buffer-base-action
      '((display-buffer-reuse-window)
        (display-buffer-reuse-mode-window)
-       (display-buffer-same-window)
-       (display-buffer-in-previous-window)))
+       (display-buffer-in-previous-window)
+       (display-buffer-same-window)))
     (uniquify-buffer-name-style 'forward)
     (uniquify-after-kill-buffer-p t)
     (global-auto-revert-ignore-modes '(pdf-view-mode))
@@ -870,7 +897,12 @@ We also improve the appearance (and functionalities) of the buffer that we get w
                        (mode . image-mode)))
         ("Programming" (and
                         (derived-mode . prog-mode)
-                        (not (mode . fundamental-mode)))))))
+                        (not (mode . fundamental-mode))))
+        ("Mail" (or
+                 (name . "^\\*mm\\*.*$") ; heuristic for attachments
+                 (derived-mode . gnus-article-mode)
+                 (mode . mu4e-headers-mode)
+                 (mode . mu4e-main-mode))))))
     :config
     (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode)
 
@@ -1355,7 +1387,11 @@ Typing "yes" and "no" might be a bit too tiring
     (defun lps/consult-line-strict-match (&optional initial start)
       (interactive (list nil (not (not current-prefix-arg))))
       (let ((orderless-matching-styles '(orderless-literal)))
-        (consult-line initial start))))
+        (consult-line initial start)))
+
+    ;; Fix a bug in earlier version of Emacs
+    (ensure-defun ensure-list "28.1" (x)
+      (if (listp x) x (list x))))
 #+end_src
 
 Another package that tries to give contextual actions to act on "things" (files, buffers ...) is ~embark~. It also integrates very well with the default API, and is easily enhanced by packages such as ~marginalia~
@@ -1996,6 +2032,7 @@ It can act as a small, local version control system due to how Undos are managed
     (undo-tree-visualizer-timestamps t)
     (undo-tree-enable-undo-in-region t)
     (undo-tree-visualizer-diff t)
+    (undo-tree-auto-save-history nil)
     :config
     (global-undo-tree-mode))
 
@@ -2372,8 +2409,8 @@ Now, in order to work with structured text, such as source code, we want to be a
           ("C-M-," . paredit-convolute-sexp)
           ([remap newline] . paredit-newline)
           ("<C-backspace>" . paredit-delete-region)
-          ("M-<left>" . lps/transpose-sexp-backward)
-          ("M-<right>" . lps/transpose-sexp-forward))
+          ("M-S-<left>" . lps/transpose-sexp-backward)
+          ("M-S-<right>" . lps/transpose-sexp-forward))
     :config
     (defun lps/transpose-sexp-backward ()
       (interactive)
@@ -2384,13 +2421,48 @@ Now, in order to work with structured text, such as source code, we want to be a
       (interactive)
       (forward-sexp 1)
       (transpose-sexps 1)
-      (backward-sexp 1)))
+      (backward-sexp 1))
+
+    (defun lps/paredit-no-space-insert-after-sharp-dispatch (endp delimiter)
+      "Always return T, unless we are right after a #<form> where form is only made of
+  characters of WORD syntax
+  This ensures that no space is inserted after e.g. #2A or #C"
+      (not (and (/= (point) (line-beginning-position))
+                (= delimiter ?\()
+                (not endp)
+                (or (looking-back "#\\w+")
+                    (looking-back ",@")))))
+
+    (add-to-list 'paredit-space-for-delimiter-predicates
+    'lps/paredit-no-space-insert-after-sharp-dispatch))
 
   (use-package elec-pair
     :hook ((prog-mode
             org-mode
             inferior-python-mode)
            . electric-pair-local-mode)) ;; needed for org-babel
+
+  (use-package adjust-parens
+    :after paredit
+    :hook (paredit-mode . adjust-parens-mode)
+    :bind
+    (:map adjust-parens-mode-map
+          ("TAB" . nil)
+          ("<backtab>" . nil)
+          ("M-<left>" . lps/lisp-dedent-adjust-parens)
+          ("M-<right>" . lps/lisp-indent-adjust-parens))
+    :config
+    (defun lps/lisp-dedent-adjust-parens ()
+      (interactive)
+      (save-excursion
+        (back-to-indentation)
+        (call-interactively 'lisp-dedent-adjust-parens)))
+
+    (defun lps/lisp-indent-adjust-parens ()
+      (interactive)
+      (save-excursion
+        (back-to-indentation)
+        (call-interactively 'lisp-indent-adjust-parens))))
 #+end_src
 
 Finally, we also remap one built-in command to a (usually) more useful variant, which has the same behaviour as the paredit one.
@@ -2425,6 +2497,14 @@ Finally, we also remap one built-in command to a (usually) more useful variant, 
 ** Better auto-completion
 
 The previous Auto-completion section was about the general editing experience. Here, we add extra tools that will be particularly interesting when editing some kind of source code, which is by nature much more repetitive and rigid.
+
+*** Dynamic Abbreviations
+One of the default facilities provided by Emacs for auto-completion is ~dabbrev~. In short, it is a way to complete what you are currently typing using "stuff" with the same prefix, in some open buffer of your emacs session. You can restrict the source buffers in various ways, but this is the basic idea. It can be (conceptually) further improved by taking possible completions from other sources (such as filenames); the result is the built-in function ~hippie-expand~.
+
+#+begin_src emacs-lisp
+  (use-package hippie-exp
+    :bind ([remap dabbrev-expand] . hippie-expand))
+#+end_src
 
 *** YASnippet
 
@@ -2701,7 +2781,13 @@ Finally, we can improve the interpreter by allowing it to handle multi-line stat
 #+begin_src emacs-lisp
   (use-package python-mls
     :config
-    (python-mls-setup))
+    (python-mls-setup)
+
+    (defun lps/python-mls-prompt-fix (fun &rest args)
+      (when python-mls-mode
+        (apply fun args)))
+
+    (advice-add 'python-mls-check-prompt :around 'lps/python-mls-prompt-fix))
 #+end_src
 
 *** OCaml
@@ -2889,7 +2975,7 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
 
     (defun lps/sly-company-setup ()
       (setq-local company-prescient-sort-length-enable nil)
-      (setq-local company-backends '(company-capf)))
+      (setq-local company-backends '((company-capf :with company-yasnippet))))
 
     (defun lps/sly-start-repl ()
       (unless (sly-connected-p)
@@ -2903,9 +2989,8 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
     (defalias 'sly-completing-read completing-read-function)
 
     ;; View HyperSpec within Emacs using EWW
-    (setq browse-url-handlers
-      '(("hyperspec" . eww-browse-url)
-        ("." . browse-url-default-browser)))
+    (add-to-list 'browse-url-handlers
+                 '("hyperspec" . eww-browse-url))
 
     ;; Fast inspection. Might be buggy.
     (defun sly-inspect-no-eval (symbol &optional inspector-name)
@@ -2914,7 +2999,28 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
       (when (not symbol)
         (error "No symbol given"))
       (sly-eval-for-inspector `(slynk:init-inspector ,(concat "'" symbol))
-                              :inspector-name inspector-name)))
+                              :inspector-name inspector-name))
+
+    ;; Pop debugger *below* current window.
+    ;; Intended to have a setup like this:
+    ;; +------+------+
+    ;; |      |      |
+    ;; |      | repl |
+    ;; |      |      |
+    ;; | file +------+
+    ;; |      |      |
+    ;; |      |  db  |
+    ;; |      |      |
+    ;; +------+------+
+    ;;
+    ;; When REPL triggers an error, pop create debugger below it
+    ;; Otherwise, pop to the window
+
+    (add-to-list 'display-buffer-alist
+                 '("*sly-db" . ((display-buffer-reuse-mode-window
+                                 display-buffer-below-selected)
+                                . ((inhibit-same-window . nil)
+                                   (mode . sly-db-mode))))))
 
   (use-package sly-mrepl
     :ensure nil
@@ -2969,9 +3075,9 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
     ;; Allow paredit to scroll to bottom on input when insert a parenthesis
     (defun lps/sly-mrepl-paredit-open-scroll-to-bottom (&rest args)
       "Fix to also scroll to the bottom of the SLY REPL when inserting a parenthesis.
-  This is needed, as `comint-preinput-scroll-to-bottom' does not
-  recognize `paredit-open-round' as a command susceptible to
-  trigger the scrolling."
+    This is needed, as `comint-preinput-scroll-to-bottom' does not
+    recognize `paredit-open-round' as a command susceptible to
+    trigger the scrolling."
       (if (and (derived-mode-p major-mode 'comint-mode)
                comint-scroll-to-bottom-on-input)
           (let* ((current (current-buffer))
@@ -2998,7 +3104,8 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
       (lps/sly-company-setup)
       ;; Why does SLY disable it ???
       (setq-local comint-scroll-to-bottom-on-input t)
-      (sly-switch-to-most-recent 'lisp-mode)))
+      ;; (sly-switch-to-most-recent 'lisp-mode)
+      ))
 
   (use-package sly-stickers
     :ensure nil
@@ -3532,7 +3639,8 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
       :magic ("%PDF" . pdf-view-mode)
       :bind (:map pdf-view-mode-map
                   ("C-s" . isearch-forward)
-                  ("C-c ?" . lps/pdf-maybe-goto-index))
+                  ("C-c ?" . lps/pdf-maybe-goto-index)
+                  ("s t" . lps/pdf-view-toggle-auto-slice))
       :custom
       (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                               "-pointsize" "%P"
@@ -3541,10 +3649,25 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
                                               "-draw" "text %X,%Y '%c'"))
       (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
       (pdf-view-display-size 'fit-page)
+      :init
+      (defvar-local lps/pdf-view-auto-slice-from-bounding-box t)
       :config
       (pdf-tools-install :no-query)
       ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
       (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode)
+
+      (defun lps/pdf-view-toggle-auto-slice ()
+        (interactive)
+        (setq-local lps/pdf-view-auto-slice-from-bounding-box
+                    (not lps/pdf-view-auto-slice-from-bounding-box))
+        (message "Automatic slicing is now %s"
+                 (if lps/pdf-view-auto-slice-from-bounding-box "on" "off")))
+
+      (defun lps/pdf-view-auto-slice ()
+        (when lps/pdf-view-auto-slice-from-bounding-box
+          (pdf-view-set-slice-from-bounding-box)))
+
+      (add-hook 'pdf-view-change-page-hook 'lps/pdf-view-auto-slice)
 
       (defun lps/pdf-maybe-goto-index ()
         "Tries to guess where the index of the document is,
@@ -3567,6 +3690,7 @@ We also add the (generally useful) feature of remembering where we left a PDF wh
 
 #+begin_src emacs-lisp
   (use-package pdf-view-restore
+    :disabled t ; buggy ...
     :custom
     (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
     (use-file-base-name-flag nil)
@@ -3956,13 +4080,44 @@ Finally, we also want a way to do everything from Emacs, and it starts with /fin
       completing-read-function))
 
   (use-package biblio
-    :defer t
+    :after biblio-core
     :bind
     (:map bibtex-mode-map
           ("C-c ?" . biblio-lookup))
     :custom
     (biblio-arxiv-bibtex-header "article")
-    (biblio-download-directory "~/Documents/Other/articles/"))
+    (biblio-download-directory "~/Documents/Other/articles/")
+    :config
+    (defun biblio-download--action (record)
+      "Retrieve a RECORD from Dissemin, and display it.
+  RECORD is a formatted record as expected by `biblio-insert-result'.
+  The default filename is of the form \"[AUTHORS]TITLE.pdf\" where
+  AUTHORS is a list of the authors surnames, separated by underscores,
+  and TITLE is the result of `lps/make-filename-from-sentence' on the
+  article's title"
+      (let-alist record
+        (if .direct-url
+            (let* ((fname (with-temp-buffer
+                            (insert .title)
+                            (lps/make-filename-from-sentence)
+                            (insert ".pdf")
+                            (goto-char (point-min))
+                            (insert "[")
+                            (seq-doseq (name .authors)
+                              (when (and name (stringp name))
+                                (let ((split-name (split-string name)))
+                                  (if (cdr split-name)
+                                      (dolist (subname (cdr split-name))
+                                        (insert subname))
+                                    (insert name)))
+                                (insert "_")))
+                            (delete-backward-char 1)
+                            (insert "]")
+                            (buffer-substring (point-min) (point-max))))
+                   (target (read-file-name "Save as (see also biblio-download-directory): "
+                                           biblio-download-directory fname nil fname)))
+              (url-copy-file .direct-url (expand-file-name target biblio-download-directory)))
+          (user-error "This record does not contain a direct URL (try arXiv or HAL)")))))
 #+end_src
 
 **** Preview
@@ -4293,7 +4448,6 @@ Now, we try to add things on top of the built-in file manager, Dired.
     :defer t
     :bind
     (:map dired-mode-map
-          ("RET" . dired-find-alternate-file)
           ("F" . find-name-dired))
     :custom
     ;; Delete and copy directories recursively
@@ -4302,8 +4456,8 @@ Now, we try to add things on top of the built-in file manager, Dired.
     (dired-auto-revert-buffer t)
     (dired-listing-switches "-alFh")
     (dired-isearch-filenames 'dwim)
-    (dired-kill-when-opening-new-dired-buffer t)
-    (dired-listing-switches "-AlFh --group-directories-first"))
+    (dired-listing-switches "-AlFh --group-directories-first")
+    (wdired-allow-to-change-permissions t))
 
   ;; Make things prettier
   (use-package all-the-icons-dired
@@ -4644,7 +4798,39 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
       ;; Update mail and index when leaving
       (unless (and (buffer-live-p mu4e--update-buffer)
                    (process-live-p (get-buffer-process mu4e--update-buffer)))
-        (mu4e-update-mail-and-index t))))
+        (mu4e-update-mail-and-index t)))
+
+    ;; Override this function to have a more friendly name
+    ;; for viewed message
+    (defun mu4e-view (msg)
+      "Display the message MSG in a new buffer, and keep in sync with HDRSBUF.
+  'In sync' here means that moving to the next/previous message in
+  the the message view affects HDRSBUF, as does marking etc.
+
+  As a side-effect, a message that is being viewed loses its 'unread'
+  marking if it still had that."
+
+      (mu4e~headers-update-handler msg nil nil) ;; update headers, if necessary.
+
+      (when (get-buffer gnus-article-buffer) ; modify: BUFFERP to GET-BUFFER
+        (kill-buffer gnus-article-buffer))
+      ;; add this expression compared to the original function
+      (setq gnus-article-buffer (let* ((subj (mu4e-msg-field msg :subject))
+                                       (subj (unless (and subj (string-match "^[:blank:]*$" subj)) subj))
+                                       (str (or subj
+                                                "*Article*")))
+                                  (generate-new-buffer-name
+                                   (truncate-string-to-width str mu4e~compose-buffer-max-name-length)
+                                   gnus-article-buffer)))
+      (with-current-buffer (get-buffer-create gnus-article-buffer)
+        (let ((inhibit-read-only t))
+          (remove-overlays (point-min)(point-max) 'mu4e-overlay t)
+          (erase-buffer)
+          (insert-file-contents-literally
+           (mu4e-message-field msg :path) nil nil nil t)))
+      (switch-to-buffer gnus-article-buffer)
+      (setq mu4e~view-message msg)
+      (mu4e~view-render-buffer msg)))
 #+end_src
 
 Because it might be a bit tedious to constantly open and quit the ~mu4e~ buffers to check for incoming messages, we use another package to get notifications informing us when we receive a new message.
@@ -4653,6 +4839,7 @@ This package might also be used to generate desktop notifications, although I do
 #+begin_src emacs-lisp
   (use-package mu4e-alert
     :after mu4e
+    :disabled t
     :config
     ;; Temporary fix: mu4e and mu4e-alert are out of sync
     ;; while mu4e changes its naming conventions from the
@@ -4874,6 +5061,42 @@ Depending on the context, we tend to write in different languages. It might be u
 
 * Fun
 As we tend to spend a lot of time in Emacs, isn't it natural to install fun and distracting packages ?
+** Artist and picture modes
+
+Although listed in my "Fun" section, those are actually useful tools. They can be used to comment, or simply illustrate, some ideas, pretty much regardless of the current (major) mode.
+Those modes allow you to draw geometric shapes, such as lines (non-necessarily horizontal or vertical), rectangles, ellipsis ... using the mouse or even the keyboard.
+
+#+begin_src emacs-lisp
+  (use-package artist
+    :ensure nil
+    :defer t
+    :bind
+    (:map artist-mode-map
+          ([remap artist-next-line] . lps/artist-next-line))
+    :config
+    (defun lps/artist-next-line (&optional n)
+      "Move cursor down N lines (default is 1), updating current shape.
+  If N is negative, move cursor up.
+  If N is greater than the number of remaining lines in the buffer,
+  insert as many blank lines as necessary."
+      (interactive "p")
+      (let* ((col (artist-current-column))
+             (max-line (save-excursion
+                         (goto-char (point-max))
+                         (artist-current-line)))
+             (current-line (artist-current-line))
+             (diff (- max-line current-line)))
+        (when (>= n diff)
+          (save-excursion
+            (goto-char (point-max))
+            (open-line (- n diff))))
+        (forward-line n)
+        (move-to-column col t))
+
+      (when artist-key-is-drawing
+        (artist-key-do-continously-common))))
+#+end_src
+
 ** XKCD
 We /love/ [[https://xkcd.com][XKCD]], and so do most of Emacs users. Hence, someone has written a package to read his favourite web-comic directly within Emacs !
 
@@ -4914,7 +5137,7 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
     (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
     (elfeed-search-title-max-width 110)
     :config
-    (setq-default elfeed-search-filter "@1-week-ago +unread "))
+    (setq-default elfeed-search-filter "@1-week-ago +unread -compsci"))
 #+end_src
 
 As the default syntax to manage and organize the various RSS feeds is a bit tedious, we use another package which this whole process painless.

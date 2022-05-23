@@ -60,6 +60,12 @@
 ;; Uncomment the folllowing line to have a detailed startup log
 ;; (setq use-package-verbose t)
 
+(use-package benchmark-init
+  :disabled t
+  :config
+  ;; To disable collection of benchmark data after init is done.
+  (add-hook 'after-init-hook 'benchmark-init/deactivate))
+
 (defmacro system-case (&rest cases)
   "Light wrapper around `cl-case' on `system-type'"
   `(cl-case system-type
@@ -75,6 +81,7 @@
                 (error "Can't understand this version number: %s " version)))))
 
 (defmacro ensure-version (version &rest body)
+  "Execute BODY when the current Emacs version is larger than VERSION"
   (declare (indent 1))
   `(when (version<= ,(lps/versionify version) emacs-version)
      ,@body))
@@ -99,11 +106,26 @@ all the other versions"
        (cond
         ,@version-conds))))
 
-(use-package benchmark-init
-  :disabled t
-  :config
-  ;; To disable collection of benchmark data after init is done.
-  (add-hook 'after-init-hook 'benchmark-init/deactivate))
+(defmacro ensure-defun (name args-or-version &rest body)
+  "Define the function NAME if it not already defined.
+If ARGS-OR-VERSION is a list, it is considered to be the lambda-list of
+the function NAME, and BODY is its body.
+If it is a string or an integer, it is the version number before which
+the function NAME will unconditionnally be defined, even it is already
+fboundp."
+  (declare (indent defun))
+  (let (args version)
+    (if (or (stringp args-or-version)
+            (integerp args-or-version))
+        (progn
+          (setq args (car body))
+          (setq version (lps/versionify args-or-version))
+          (setq body (cdr body)))
+      (setq args args-or-version))
+    `(when (or (and ,version (version<= emacs-version ,version))
+               (not (fboundp ',name)))
+       (defun ,name ,args
+         ,@body))))
 
 (use-package emacs
   :ensure nil
@@ -546,8 +568,8 @@ Avoid toggling several times, just use it once if possible"
   (display-buffer-base-action
    '((display-buffer-reuse-window)
      (display-buffer-reuse-mode-window)
-     (display-buffer-same-window)
-     (display-buffer-in-previous-window)))
+     (display-buffer-in-previous-window)
+     (display-buffer-same-window)))
   (uniquify-buffer-name-style 'forward)
   (uniquify-after-kill-buffer-p t)
   (global-auto-revert-ignore-modes '(pdf-view-mode))
@@ -619,7 +641,12 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
                      (mode . image-mode)))
       ("Programming" (and
                       (derived-mode . prog-mode)
-                      (not (mode . fundamental-mode)))))))
+                      (not (mode . fundamental-mode))))
+      ("Mail" (or
+               (name . "^\\*mm\\*.*$") ; heuristic for attachments
+               (derived-mode . gnus-article-mode)
+               (mode . mu4e-headers-mode)
+               (mode . mu4e-main-mode))))))
   :config
   (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode)
 
@@ -966,7 +993,11 @@ If called with a prefix argument, also kills the current buffer"
   (defun lps/consult-line-strict-match (&optional initial start)
     (interactive (list nil (not (not current-prefix-arg))))
     (let ((orderless-matching-styles '(orderless-literal)))
-      (consult-line initial start))))
+      (consult-line initial start)))
+
+  ;; Fix a bug in earlier version of Emacs
+  (ensure-defun ensure-list "28.1" (x)
+    (if (listp x) x (list x))))
 
 (use-package embark
   :defer t
@@ -1482,6 +1513,7 @@ Move point in the last duplicated string (line or region)."
   (undo-tree-visualizer-timestamps t)
   (undo-tree-enable-undo-in-region t)
   (undo-tree-visualizer-diff t)
+  (undo-tree-auto-save-history nil)
   :config
   (global-undo-tree-mode))
 
@@ -1785,8 +1817,8 @@ Breaks if region or line spans multiple visual lines"
         ("C-M-," . paredit-convolute-sexp)
         ([remap newline] . paredit-newline)
         ("<C-backspace>" . paredit-delete-region)
-        ("M-<left>" . lps/transpose-sexp-backward)
-        ("M-<right>" . lps/transpose-sexp-forward))
+        ("M-S-<left>" . lps/transpose-sexp-backward)
+        ("M-S-<right>" . lps/transpose-sexp-forward))
   :config
   (defun lps/transpose-sexp-backward ()
     (interactive)
@@ -1797,13 +1829,48 @@ Breaks if region or line spans multiple visual lines"
     (interactive)
     (forward-sexp 1)
     (transpose-sexps 1)
-    (backward-sexp 1)))
+    (backward-sexp 1))
+
+  (defun lps/paredit-no-space-insert-after-sharp-dispatch (endp delimiter)
+    "Always return T, unless we are right after a #<form> where form is only made of
+characters of WORD syntax
+This ensures that no space is inserted after e.g. #2A or #C"
+    (not (and (/= (point) (line-beginning-position))
+              (= delimiter ?\()
+              (not endp)
+              (or (looking-back "#\\w+")
+                  (looking-back ",@")))))
+
+  (add-to-list 'paredit-space-for-delimiter-predicates
+  'lps/paredit-no-space-insert-after-sharp-dispatch))
 
 (use-package elec-pair
   :hook ((prog-mode
           org-mode
           inferior-python-mode)
          . electric-pair-local-mode)) ;; needed for org-babel
+
+(use-package adjust-parens
+  :after paredit
+  :hook (paredit-mode . adjust-parens-mode)
+  :bind
+  (:map adjust-parens-mode-map
+        ("TAB" . nil)
+        ("<backtab>" . nil)
+        ("M-<left>" . lps/lisp-dedent-adjust-parens)
+        ("M-<right>" . lps/lisp-indent-adjust-parens))
+  :config
+  (defun lps/lisp-dedent-adjust-parens ()
+    (interactive)
+    (save-excursion
+      (back-to-indentation)
+      (call-interactively 'lisp-dedent-adjust-parens)))
+
+  (defun lps/lisp-indent-adjust-parens ()
+    (interactive)
+    (save-excursion
+      (back-to-indentation)
+      (call-interactively 'lisp-indent-adjust-parens))))
 
 (use-package emacs
   :ensure nil
@@ -1829,6 +1896,9 @@ Does not insert a space before the inserted opening parenthesis"
   :bind
   ([remap insert-parentheses] . lps/insert-parentheses)
   ("M-\"" . lps/insert-quotes))
+
+(use-package hippie-exp
+  :bind ([remap dabbrev-expand] . hippie-expand))
 
 ;;YASnippet
 (use-package yasnippet
@@ -2017,7 +2087,13 @@ call the associated function interactively. Otherwise, call the
 
 (use-package python-mls
   :config
-  (python-mls-setup))
+  (python-mls-setup)
+
+  (defun lps/python-mls-prompt-fix (fun &rest args)
+    (when python-mls-mode
+      (apply fun args)))
+
+  (advice-add 'python-mls-check-prompt :around 'lps/python-mls-prompt-fix))
 
 ;; Tuareg (for OCaml and ML like languages)
 (use-package tuareg
@@ -2142,7 +2218,7 @@ call the associated function interactively. Otherwise, call the
 
   (defun lps/sly-company-setup ()
     (setq-local company-prescient-sort-length-enable nil)
-    (setq-local company-backends '(company-capf)))
+    (setq-local company-backends '((company-capf :with company-yasnippet))))
 
   (defun lps/sly-start-repl ()
     (unless (sly-connected-p)
@@ -2156,9 +2232,8 @@ call the associated function interactively. Otherwise, call the
   (defalias 'sly-completing-read completing-read-function)
 
   ;; View HyperSpec within Emacs using EWW
-  (setq browse-url-handlers
-    '(("hyperspec" . eww-browse-url)
-      ("." . browse-url-default-browser)))
+  (add-to-list 'browse-url-handlers
+               '("hyperspec" . eww-browse-url))
 
   ;; Fast inspection. Might be buggy.
   (defun sly-inspect-no-eval (symbol &optional inspector-name)
@@ -2167,7 +2242,28 @@ call the associated function interactively. Otherwise, call the
     (when (not symbol)
       (error "No symbol given"))
     (sly-eval-for-inspector `(slynk:init-inspector ,(concat "'" symbol))
-                            :inspector-name inspector-name)))
+                            :inspector-name inspector-name))
+
+  ;; Pop debugger *below* current window.
+  ;; Intended to have a setup like this:
+  ;; +------+------+
+  ;; |      |      |
+  ;; |      | repl |
+  ;; |      |      |
+  ;; | file +------+
+  ;; |      |      |
+  ;; |      |  db  |
+  ;; |      |      |
+  ;; +------+------+
+  ;;
+  ;; When REPL triggers an error, pop create debugger below it
+  ;; Otherwise, pop to the window
+
+  (add-to-list 'display-buffer-alist
+               '("*sly-db" . ((display-buffer-reuse-mode-window
+                               display-buffer-below-selected)
+                              . ((inhibit-same-window . nil)
+                                 (mode . sly-db-mode))))))
 
 (use-package sly-mrepl
   :ensure nil
@@ -2222,9 +2318,9 @@ call the associated function interactively. Otherwise, call the
   ;; Allow paredit to scroll to bottom on input when insert a parenthesis
   (defun lps/sly-mrepl-paredit-open-scroll-to-bottom (&rest args)
     "Fix to also scroll to the bottom of the SLY REPL when inserting a parenthesis.
-This is needed, as `comint-preinput-scroll-to-bottom' does not
-recognize `paredit-open-round' as a command susceptible to
-trigger the scrolling."
+  This is needed, as `comint-preinput-scroll-to-bottom' does not
+  recognize `paredit-open-round' as a command susceptible to
+  trigger the scrolling."
     (if (and (derived-mode-p major-mode 'comint-mode)
              comint-scroll-to-bottom-on-input)
         (let* ((current (current-buffer))
@@ -2251,7 +2347,8 @@ trigger the scrolling."
     (lps/sly-company-setup)
     ;; Why does SLY disable it ???
     (setq-local comint-scroll-to-bottom-on-input t)
-    (sly-switch-to-most-recent 'lisp-mode)))
+    ;; (sly-switch-to-most-recent 'lisp-mode)
+    ))
 
 (use-package sly-stickers
   :ensure nil
@@ -2652,7 +2749,8 @@ trigger the scrolling."
     :magic ("%PDF" . pdf-view-mode)
     :bind (:map pdf-view-mode-map
                 ("C-s" . isearch-forward)
-                ("C-c ?" . lps/pdf-maybe-goto-index))
+                ("C-c ?" . lps/pdf-maybe-goto-index)
+                ("s t" . lps/pdf-view-toggle-auto-slice))
     :custom
     (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                             "-pointsize" "%P"
@@ -2661,10 +2759,25 @@ trigger the scrolling."
                                             "-draw" "text %X,%Y '%c'"))
     (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
     (pdf-view-display-size 'fit-page)
+    :init
+    (defvar-local lps/pdf-view-auto-slice-from-bounding-box t)
     :config
     (pdf-tools-install :no-query)
     ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
     (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode)
+
+    (defun lps/pdf-view-toggle-auto-slice ()
+      (interactive)
+      (setq-local lps/pdf-view-auto-slice-from-bounding-box
+                  (not lps/pdf-view-auto-slice-from-bounding-box))
+      (message "Automatic slicing is now %s"
+               (if lps/pdf-view-auto-slice-from-bounding-box "on" "off")))
+
+    (defun lps/pdf-view-auto-slice ()
+      (when lps/pdf-view-auto-slice-from-bounding-box
+        (pdf-view-set-slice-from-bounding-box)))
+
+    (add-hook 'pdf-view-change-page-hook 'lps/pdf-view-auto-slice)
 
     (defun lps/pdf-maybe-goto-index ()
       "Tries to guess where the index of the document is,
@@ -2683,6 +2796,7 @@ move to the end of the document, and search backward instead."
         (isearch-backward))))))
 
 (use-package pdf-view-restore
+  :disabled t ; buggy ...
   :custom
   (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
   (use-file-base-name-flag nil)
@@ -3050,13 +3164,44 @@ Return a list of regular expressions."
     completing-read-function))
 
 (use-package biblio
-  :defer t
+  :after biblio-core
   :bind
   (:map bibtex-mode-map
         ("C-c ?" . biblio-lookup))
   :custom
   (biblio-arxiv-bibtex-header "article")
-  (biblio-download-directory "~/Documents/Other/articles/"))
+  (biblio-download-directory "~/Documents/Other/articles/")
+  :config
+  (defun biblio-download--action (record)
+    "Retrieve a RECORD from Dissemin, and display it.
+RECORD is a formatted record as expected by `biblio-insert-result'.
+The default filename is of the form \"[AUTHORS]TITLE.pdf\" where
+AUTHORS is a list of the authors surnames, separated by underscores,
+and TITLE is the result of `lps/make-filename-from-sentence' on the
+article's title"
+    (let-alist record
+      (if .direct-url
+          (let* ((fname (with-temp-buffer
+                          (insert .title)
+                          (lps/make-filename-from-sentence)
+                          (insert ".pdf")
+                          (goto-char (point-min))
+                          (insert "[")
+                          (seq-doseq (name .authors)
+                            (when (and name (stringp name))
+                              (let ((split-name (split-string name)))
+                                (if (cdr split-name)
+                                    (dolist (subname (cdr split-name))
+                                      (insert subname))
+                                  (insert name)))
+                              (insert "_")))
+                          (delete-backward-char 1)
+                          (insert "]")
+                          (buffer-substring (point-min) (point-max))))
+                 (target (read-file-name "Save as (see also biblio-download-directory): "
+                                         biblio-download-directory fname nil fname)))
+            (url-copy-file .direct-url (expand-file-name target biblio-download-directory)))
+        (user-error "This record does not contain a direct URL (try arXiv or HAL)")))))
 
 (use-package preview
   :ensure nil ;; Comes with AUCTeX
@@ -3325,7 +3470,6 @@ PWD is not in a git repo (or the git command is not found)."
   :defer t
   :bind
   (:map dired-mode-map
-        ("RET" . dired-find-alternate-file)
         ("F" . find-name-dired))
   :custom
   ;; Delete and copy directories recursively
@@ -3334,8 +3478,8 @@ PWD is not in a git repo (or the git command is not found)."
   (dired-auto-revert-buffer t)
   (dired-listing-switches "-alFh")
   (dired-isearch-filenames 'dwim)
-  (dired-kill-when-opening-new-dired-buffer t)
-  (dired-listing-switches "-AlFh --group-directories-first"))
+  (dired-listing-switches "-AlFh --group-directories-first")
+  (wdired-allow-to-change-permissions t))
 
 ;; Make things prettier
 (use-package all-the-icons-dired
@@ -3629,10 +3773,43 @@ PWD is not in a git repo (or the git command is not found)."
     ;; Update mail and index when leaving
     (unless (and (buffer-live-p mu4e--update-buffer)
                  (process-live-p (get-buffer-process mu4e--update-buffer)))
-      (mu4e-update-mail-and-index t))))
+      (mu4e-update-mail-and-index t)))
+
+  ;; Override this function to have a more friendly name
+  ;; for viewed message
+  (defun mu4e-view (msg)
+    "Display the message MSG in a new buffer, and keep in sync with HDRSBUF.
+'In sync' here means that moving to the next/previous message in
+the the message view affects HDRSBUF, as does marking etc.
+
+As a side-effect, a message that is being viewed loses its 'unread'
+marking if it still had that."
+
+    (mu4e~headers-update-handler msg nil nil) ;; update headers, if necessary.
+
+    (when (get-buffer gnus-article-buffer) ; modify: BUFFERP to GET-BUFFER
+      (kill-buffer gnus-article-buffer))
+    ;; add this expression compared to the original function
+    (setq gnus-article-buffer (let* ((subj (mu4e-msg-field msg :subject))
+                                     (subj (unless (and subj (string-match "^[:blank:]*$" subj)) subj))
+                                     (str (or subj
+                                              "*Article*")))
+                                (generate-new-buffer-name
+                                 (truncate-string-to-width str mu4e~compose-buffer-max-name-length)
+                                 gnus-article-buffer)))
+    (with-current-buffer (get-buffer-create gnus-article-buffer)
+      (let ((inhibit-read-only t))
+        (remove-overlays (point-min)(point-max) 'mu4e-overlay t)
+        (erase-buffer)
+        (insert-file-contents-literally
+         (mu4e-message-field msg :path) nil nil nil t)))
+    (switch-to-buffer gnus-article-buffer)
+    (setq mu4e~view-message msg)
+    (mu4e~view-render-buffer msg)))
 
 (use-package mu4e-alert
   :after mu4e
+  :disabled t
   :config
   ;; Temporary fix: mu4e and mu4e-alert are out of sync
   ;; while mu4e changes its naming conventions from the
@@ -3799,6 +3976,35 @@ is handled appropriately."
   (guess-language-languages '(en fr))
   (guess-language-after-detection-functions '(guess-language-switch-flyspell-function)))
 
+(use-package artist
+  :ensure nil
+  :defer t
+  :bind
+  (:map artist-mode-map
+        ([remap artist-next-line] . lps/artist-next-line))
+  :config
+  (defun lps/artist-next-line (&optional n)
+    "Move cursor down N lines (default is 1), updating current shape.
+If N is negative, move cursor up.
+If N is greater than the number of remaining lines in the buffer,
+insert as many blank lines as necessary."
+    (interactive "p")
+    (let* ((col (artist-current-column))
+           (max-line (save-excursion
+                       (goto-char (point-max))
+                       (artist-current-line)))
+           (current-line (artist-current-line))
+           (diff (- max-line current-line)))
+      (when (>= n diff)
+        (save-excursion
+          (goto-char (point-max))
+          (open-line (- n diff))))
+      (forward-line n)
+      (move-to-column col t))
+
+    (when artist-key-is-drawing
+      (artist-key-do-continously-common))))
+
 (use-package xkcd
   :defer t)
 
@@ -3817,7 +4023,7 @@ is handled appropriately."
   (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
   (elfeed-search-title-max-width 110)
   :config
-  (setq-default elfeed-search-filter "@1-week-ago +unread "))
+  (setq-default elfeed-search-filter "@1-week-ago +unread -compsci"))
 
 (use-package elfeed-org
   :after elfeed
