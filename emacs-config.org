@@ -3667,7 +3667,6 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
         (when lps/pdf-view-auto-slice-from-bounding-box
           (pdf-view-set-slice-from-bounding-box)))
 
-      (add-hook 'pdf-view-mode-hook 'lps/pdf-view-auto-slice)
       (add-hook 'pdf-view-change-page-hook 'lps/pdf-view-auto-slice)
 
       (defun lps/pdf-maybe-goto-index ()
@@ -3691,6 +3690,7 @@ We also add the (generally useful) feature of remembering where we left a PDF wh
 
 #+begin_src emacs-lisp
   (use-package pdf-view-restore
+    :disabled t ; buggy ...
     :custom
     (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
     (use-file-base-name-flag nil)

@@ -2777,7 +2777,6 @@ call the associated function interactively. Otherwise, call the
       (when lps/pdf-view-auto-slice-from-bounding-box
         (pdf-view-set-slice-from-bounding-box)))
 
-    (add-hook 'pdf-view-mode-hook 'lps/pdf-view-auto-slice)
     (add-hook 'pdf-view-change-page-hook 'lps/pdf-view-auto-slice)
 
     (defun lps/pdf-maybe-goto-index ()
@@ -2797,6 +2796,7 @@ move to the end of the document, and search backward instead."
         (isearch-backward))))))
 
 (use-package pdf-view-restore
+  :disabled t ; buggy ...
   :custom
   (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
   (use-file-base-name-flag nil)
