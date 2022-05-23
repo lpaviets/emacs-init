@@ -2231,9 +2231,8 @@ call the associated function interactively. Otherwise, call the
   (defalias 'sly-completing-read completing-read-function)
 
   ;; View HyperSpec within Emacs using EWW
-  (setq browse-url-handlers
-        '(("hyperspec" . eww-browse-url)
-          ("." . browse-url-default-browser)))
+  (add-to-list 'browse-url-handlers
+               '("hyperspec" . eww-browse-url))
 
   ;; Fast inspection. Might be buggy.
   (defun sly-inspect-no-eval (symbol &optional inspector-name)
