@@ -1822,14 +1822,14 @@ Breaks if region or line spans multiple visual lines"
   :config
   (defun lps/transpose-sexp-backward ()
     (interactive)
-    (transpose-sexps 1 t)
-    (backward-sexp 2 t))
+    (transpose-sexps 1)
+    (backward-sexp 2))
 
   (defun lps/transpose-sexp-forward ()
     (interactive)
-    (forward-sexp 1 t)
-    (transpose-sexps 1 t)
-    (backward-sexp 1 t))
+    (forward-sexp 1)
+    (transpose-sexps 1)
+    (backward-sexp 1))
 
   (defun lps/paredit-no-space-insert-after-sharp-dispatch (endp delimiter)
     "Always return T, unless we are right after a #<form> where form is only made of
@@ -1841,7 +1841,8 @@ This ensures that no space is inserted after e.g. #2A or #C"
               (or (looking-back "#\\w+")
                   (looking-back ",@")))))
 
-  (add-to-list 'paredit-space-for-delimiter-predicates 'lps/paredit-no-space-insert-after-sharp-dispatch))
+  (add-to-list 'paredit-space-for-delimiter-predicates
+  'lps/paredit-no-space-insert-after-sharp-dispatch))
 
 (use-package elec-pair
   :hook ((prog-mode
