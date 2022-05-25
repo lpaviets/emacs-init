@@ -4629,6 +4629,8 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
 
     ;; ASCII-only time is over
     (setq mu4e-use-fancy-chars t)
+    ;; and fix alignment !
+    (setq mu4e-headers-precise-alignment t)
 
     ;; Unless we want to send mail to very old clients
     (setq mu4e-compose-format-flowed t)

@@ -3604,6 +3604,8 @@ PWD is not in a git repo (or the git command is not found)."
 
   ;; ASCII-only time is over
   (setq mu4e-use-fancy-chars t)
+  ;; and fix alignment !
+  (setq mu4e-headers-precise-alignment t)
 
   ;; Unless we want to send mail to very old clients
   (setq mu4e-compose-format-flowed t)
