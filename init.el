@@ -1877,12 +1877,22 @@ Does not insert a space before the inserted opening parenthesis"
 ;;YASnippet
 (use-package yasnippet
   :diminish
-  :config
-  (setq yas-verbosity 1)
+  :init
+  (defvar lps/snippets-dir-root (expand-file-name "snippets" user-emacs-directory))
+  :custom
+  (yas-verbosity 1)
   :hook ((prog-mode LaTeX-mode) . yas-minor-mode)
   :bind (:map yas-minor-mode-map
               ("TAB" . nil)
-              ("<tab>" . nil)))
+              ("<tab>" . nil))
+  :config
+  (defun lps/snippets-initialize ()
+    "Initialize personnal snippets, so Yasnippet can see them."
+    (when (boundp 'yas-snippet-dirs)
+      (add-to-list 'yas-snippet-dirs lps/snippets-dir-root t))
+    (yas-load-directory lps/snippets-dir-root))
+
+  (lps/snippets-initialize))
 
 (use-package yasnippet-snippets
   :after yasnippet)
@@ -2192,7 +2202,7 @@ call the associated function interactively. Otherwise, call the
 
   (defun lps/sly-company-setup ()
     (setq-local company-prescient-sort-length-enable nil)
-    (setq-local company-backends '((company-capf :with company-yasnippet))))
+    (setq-local company-backends '(company-capf)))
 
   (defun lps/sly-start-repl ()
     (unless (sly-connected-p)
@@ -2421,7 +2431,14 @@ call the associated function interactively. Otherwise, call the
       (multi-isearch-files files))))
 
 (use-package common-lisp-snippets
-  :after yasnippet sly)
+  :after yasnippet sly
+  :config
+  (let ((modifier "M-"))
+    (dolist (bind '(("L" . "lambda")))
+      (define-key sly-editing-mode-map (kbd (concat modifier (car bind)))
+        (lambda ()
+          (interactive)
+          (yas-expand-snippet (yas-lookup-snippet (cdr bind))))))))
 
 (use-package cider
   :defer t)
