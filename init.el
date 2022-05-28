@@ -60,6 +60,12 @@
 ;; Uncomment the folllowing line to have a detailed startup log
 ;; (setq use-package-verbose t)
 
+(use-package benchmark-init
+  :disabled t
+  :config
+  ;; To disable collection of benchmark data after init is done.
+  (add-hook 'after-init-hook 'benchmark-init/deactivate))
+
 (defmacro system-case (&rest cases)
   "Light wrapper around `cl-case' on `system-type'"
   `(cl-case system-type
@@ -75,6 +81,7 @@
                 (error "Can't understand this version number: %s " version)))))
 
 (defmacro ensure-version (version &rest body)
+  "Execute BODY when the current Emacs version is larger than VERSION"
   (declare (indent 1))
   `(when (version<= ,(lps/versionify version) emacs-version)
      ,@body))
@@ -99,11 +106,26 @@ all the other versions"
        (cond
         ,@version-conds))))
 
-(use-package benchmark-init
-  :disabled t
-  :config
-  ;; To disable collection of benchmark data after init is done.
-  (add-hook 'after-init-hook 'benchmark-init/deactivate))
+(defmacro ensure-defun (name args-or-version &rest body)
+  "Define the function NAME if it not already defined.
+If ARGS-OR-VERSION is a list, it is considered to be the lambda-list of
+the function NAME, and BODY is its body.
+If it is a string or an integer, it is the version number before which
+the function NAME will unconditionnally be defined, even it is already
+fboundp."
+  (declare (indent defun))
+  (let (args version)
+    (if (or (stringp args-or-version)
+            (integerp args-or-version))
+        (progn
+          (setq args (car body))
+          (setq version (lps/versionify args-or-version))
+          (setq body (cdr body)))
+      (setq args args-or-version))
+    `(when (or (and ,version (version<= emacs-version ,version))
+               (not (fboundp ',name)))
+       (defun ,name ,args
+         ,@body))))
 
 (use-package emacs
   :ensure nil
@@ -844,9 +866,12 @@ If called with a prefix argument, also kills the current buffer"
 (use-package outline
   :ensure nil
   :defer t
+  :hook (prog-mode . outline-minor-mode)
   :custom
   (outline-minor-mode-prefix "\C-o")
-  (outline-minor-mode-cycle t))
+  :config
+  ;; Problems with TAB -> completely override cycle keymap
+  (setq outline-mode-cycle-map (make-sparse-keymap)))
 
 (use-package emacs
   :ensure nil
@@ -971,7 +996,11 @@ If called with a prefix argument, also kills the current buffer"
   (defun lps/consult-line-strict-match (&optional initial start)
     (interactive (list nil (not (not current-prefix-arg))))
     (let ((orderless-matching-styles '(orderless-literal)))
-      (consult-line initial start))))
+      (consult-line initial start)))
+
+  ;; Fix a bug in earlier version of Emacs
+  (ensure-defun ensure-list "28.1" (x)
+    (if (listp x) x (list x))))
 
 (use-package embark
   :defer t
@@ -1645,10 +1674,10 @@ Breaks if region or line spans multiple visual lines"
                      (cons (line-beginning-position)
                            (line-end-position))))
            (start (car bounds))
-           (end (cdr bounds)))
+           (end (set-marker (make-marker) (cdr bounds))))
       (goto-char start)
       (capitalize-word 1)
-      (while (< (point) end)
+      (while (< (point) (marker-position end))
         (let ((num-spaces (skip-chars-forward "[:punct:][:space:]")))
           (if (> num-spaces 0)
               (progn
@@ -1796,14 +1825,14 @@ Breaks if region or line spans multiple visual lines"
   :config
   (defun lps/transpose-sexp-backward ()
     (interactive)
-    (transpose-sexps 1 t)
-    (backward-sexp 2 t))
+    (transpose-sexps 1)
+    (backward-sexp 2))
 
   (defun lps/transpose-sexp-forward ()
     (interactive)
-    (forward-sexp 1 t)
-    (transpose-sexps 1 t)
-    (backward-sexp 1 t))
+    (forward-sexp 1)
+    (transpose-sexps 1)
+    (backward-sexp 1))
 
   (defun lps/paredit-no-space-insert-after-sharp-dispatch (endp delimiter)
     "Always return T, unless we are right after a #<form> where form is only made of
@@ -1815,7 +1844,8 @@ This ensures that no space is inserted after e.g. #2A or #C"
               (or (looking-back "#\\w+")
                   (looking-back ",@")))))
 
-  (add-to-list 'paredit-space-for-delimiter-predicates 'lps/paredit-no-space-insert-after-sharp-dispatch))
+  (add-to-list 'paredit-space-for-delimiter-predicates
+  'lps/paredit-no-space-insert-after-sharp-dispatch))
 
 (use-package elec-pair
   :hook ((prog-mode
@@ -1870,9 +1900,8 @@ Does not insert a space before the inserted opening parenthesis"
   ([remap insert-parentheses] . lps/insert-parentheses)
   ("M-\"" . lps/insert-quotes))
 
-(use-package dabbrev
-  :defer t
-  :bind ("<backtab>" . dabbrev-expand))
+(use-package hippie-exp
+  :bind ([remap dabbrev-expand] . hippie-expand))
 
 ;;YASnippet
 (use-package yasnippet
@@ -2216,9 +2245,8 @@ call the associated function interactively. Otherwise, call the
   (defalias 'sly-completing-read completing-read-function)
 
   ;; View HyperSpec within Emacs using EWW
-  (setq browse-url-handlers
-        '(("hyperspec" . eww-browse-url)
-          ("." . browse-url-default-browser)))
+  (add-to-list 'browse-url-handlers
+               '("hyperspec" . eww-browse-url))
 
   ;; Fast inspection. Might be buggy.
   (defun sly-inspect-no-eval (symbol &optional inspector-name)
@@ -2741,7 +2769,8 @@ call the associated function interactively. Otherwise, call the
     :magic ("%PDF" . pdf-view-mode)
     :bind (:map pdf-view-mode-map
                 ("C-s" . isearch-forward)
-                ("C-c ?" . lps/pdf-maybe-goto-index))
+                ("C-c ?" . lps/pdf-maybe-goto-index)
+                ("s t" . lps/pdf-view-toggle-auto-slice))
     :custom
     (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                             "-pointsize" "%P"
@@ -2750,10 +2779,25 @@ call the associated function interactively. Otherwise, call the
                                             "-draw" "text %X,%Y '%c'"))
     (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
     (pdf-view-display-size 'fit-page)
+    :init
+    (defvar-local lps/pdf-view-auto-slice-from-bounding-box t)
     :config
     (pdf-tools-install :no-query)
     ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
     (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode)
+
+    (defun lps/pdf-view-toggle-auto-slice ()
+      (interactive)
+      (setq-local lps/pdf-view-auto-slice-from-bounding-box
+                  (not lps/pdf-view-auto-slice-from-bounding-box))
+      (message "Automatic slicing is now %s"
+               (if lps/pdf-view-auto-slice-from-bounding-box "on" "off")))
+
+    (defun lps/pdf-view-auto-slice ()
+      (when lps/pdf-view-auto-slice-from-bounding-box
+        (pdf-view-set-slice-from-bounding-box)))
+
+    (add-hook 'pdf-view-change-page-hook 'lps/pdf-view-auto-slice)
 
     (defun lps/pdf-maybe-goto-index ()
       "Tries to guess where the index of the document is,
@@ -2772,10 +2816,10 @@ move to the end of the document, and search backward instead."
         (isearch-backward))))))
 
 (use-package pdf-view-restore
+  :disabled t ; buggy ...
   :custom
   (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
-  (use-file-base-name-flag nil)
-  :hook (pdf-view-mode . pdf-view-restore-mode))
+  (use-file-base-name-flag nil))
 
 ;; AUCTeX initialization
 (use-package tex-site
@@ -3139,7 +3183,7 @@ Return a list of regular expressions."
     completing-read-function))
 
 (use-package biblio
-  :defer t
+  :after biblio-core
   :bind
   (:map bibtex-mode-map
         ("C-c ?" . biblio-lookup))
@@ -3158,20 +3202,24 @@ article's title"
       (if .direct-url
           (let* ((fname (with-temp-buffer
                           (insert .title)
-                          (lps/make-filename-from-sentence)
-                          (insert ".pdf")
                           (goto-char (point-min))
+                          (lps/make-filename-from-sentence)
+                          (goto-char)
+                          (insert ".pdf")
+                           (goto-char (point-min))
                           (insert "[")
+
                           (seq-doseq (name .authors)
-                            (let ((split-name (split-string name)))
-                              (if (cdr split-name)
-                                  (dolist (subname (cdr split-name))
-                                    (insert subname))
-                                (insert name)))
-                            (insert "_"))
+                            (when (and name (stringp name))
+                              (let ((split-name (split-string name)))
+                                (if (cdr split-name)
+                                    (dolist (subname (cdr split-name))
+                                      (insert subname))
+                                  (insert name)))
+                              (insert "_")))
                           (delete-backward-char 1)
                           (insert "]")
-                          (buffer-substring (point-min) (point-max))))
+                          (buffer-substring-no-properties (point-min) (point-max))))
                  (target (read-file-name "Save as (see also biblio-download-directory): "
                                          biblio-download-directory fname nil fname)))
             (url-copy-file .direct-url (expand-file-name target biblio-download-directory)))
@@ -3452,7 +3500,8 @@ PWD is not in a git repo (or the git command is not found)."
   (dired-auto-revert-buffer t)
   (dired-listing-switches "-alFh")
   (dired-isearch-filenames 'dwim)
-  (dired-listing-switches "-AlFh --group-directories-first"))
+  (dired-listing-switches "-AlFh --group-directories-first")
+  (wdired-allow-to-change-permissions t))
 
 ;; Make things prettier
 (use-package all-the-icons-dired
@@ -3578,6 +3627,8 @@ PWD is not in a git repo (or the git command is not found)."
 
   ;; ASCII-only time is over
   (setq mu4e-use-fancy-chars t)
+  ;; and fix alignment !
+  (setq mu4e-headers-precise-alignment t)
 
   ;; Unless we want to send mail to very old clients
   (setq mu4e-compose-format-flowed t)
@@ -3996,7 +4047,7 @@ insert as many blank lines as necessary."
   (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
   (elfeed-search-title-max-width 110)
   :config
-  (setq-default elfeed-search-filter "@1-week-ago +unread "))
+  (setq-default elfeed-search-filter "@1-week-ago +unread -compsci"))
 
 (use-package elfeed-org
   :after elfeed
