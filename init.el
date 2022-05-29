@@ -2797,10 +2797,10 @@ move to the end of the document, and search backward instead."
         (isearch-backward))))))
 
 (use-package pdf-view-restore
+  ;; :hook (pdf-view-mode . pdf-view-restore-mode)
   :custom
   (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
-  (use-file-base-name-flag nil)
-  :hook (pdf-view-mode . pdf-view-restore-mode))
+  (use-file-base-name-flag nil))
 
 ;; AUCTeX initialization
 (use-package tex-site
