@@ -14,7 +14,9 @@
         beginning-of-visual-line
         c-indent-line-or-region
         cdlatex-pbb
+        company-indent-or-complete-common
         counsel-M-x
+        delete-indentation
         end-of-buffer
         end-of-visual-line
         forward-sentence

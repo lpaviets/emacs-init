@@ -2414,14 +2414,14 @@ Now, in order to work with structured text, such as source code, we want to be a
     :config
     (defun lps/transpose-sexp-backward ()
       (interactive)
-      (transpose-sexps 1 t)
-      (backward-sexp 2 t))
+      (transpose-sexps 1)
+      (backward-sexp 2))
 
     (defun lps/transpose-sexp-forward ()
       (interactive)
-      (forward-sexp 1 t)
-      (transpose-sexps 1 t)
-      (backward-sexp 1 t))
+      (forward-sexp 1)
+      (transpose-sexps 1)
+      (backward-sexp 1))
 
     (defun lps/paredit-no-space-insert-after-sharp-dispatch (endp delimiter)
       "Always return T, unless we are right after a #<form> where form is only made of
@@ -2433,7 +2433,8 @@ Now, in order to work with structured text, such as source code, we want to be a
                 (or (looking-back "#\\w+")
                     (looking-back ",@")))))
 
-    (add-to-list 'paredit-space-for-delimiter-predicates 'lps/paredit-no-space-insert-after-sharp-dispatch))
+    (add-to-list 'paredit-space-for-delimiter-predicates
+    'lps/paredit-no-space-insert-after-sharp-dispatch))
 
   (use-package elec-pair
     :hook ((prog-mode
@@ -2498,12 +2499,11 @@ Finally, we also remap one built-in command to a (usually) more useful variant, 
 The previous Auto-completion section was about the general editing experience. Here, we add extra tools that will be particularly interesting when editing some kind of source code, which is by nature much more repetitive and rigid.
 
 *** Dynamic Abbreviations
-One of the default facilities provided by Emacs for auto-completion is ~dabbrev~. In short, it is a way to complete what you are currently typing using "stuff" with the same prefix, in some open buffer of your emacs session. You can restrict the source buffers in various ways, but this is the basic idea.
+One of the default facilities provided by Emacs for auto-completion is ~dabbrev~. In short, it is a way to complete what you are currently typing using "stuff" with the same prefix, in some open buffer of your emacs session. You can restrict the source buffers in various ways, but this is the basic idea. It can be (conceptually) further improved by taking possible completions from other sources (such as filenames); the result is the built-in function ~hippie-expand~.
 
 #+begin_src emacs-lisp
-  (use-package dabbrev
-    :defer t
-    :bind ("<backtab>" . dabbrev-expand))
+  (use-package hippie-exp
+    :bind ([remap dabbrev-expand] . hippie-expand))
 #+end_src
 
 *** YASnippet
@@ -3667,7 +3667,6 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
         (when lps/pdf-view-auto-slice-from-bounding-box
           (pdf-view-set-slice-from-bounding-box)))
 
-      (add-hook 'pdf-view-mode-hook 'lps/pdf-view-auto-slice)
       (add-hook 'pdf-view-change-page-hook 'lps/pdf-view-auto-slice)
 
       (defun lps/pdf-maybe-goto-index ()
@@ -3691,7 +3690,7 @@ We also add the (generally useful) feature of remembering where we left a PDF wh
 
 #+begin_src emacs-lisp
   (use-package pdf-view-restore
-    ;; :hook (pdf-view-mode . pdf-view-restore-mode)
+    :disabled t ; buggy ...
     :custom
     (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
     (use-file-base-name-flag nil))
@@ -4456,7 +4455,8 @@ Now, we try to add things on top of the built-in file manager, Dired.
     (dired-auto-revert-buffer t)
     (dired-listing-switches "-alFh")
     (dired-isearch-filenames 'dwim)
-    (dired-listing-switches "-AlFh --group-directories-first"))
+    (dired-listing-switches "-AlFh --group-directories-first")
+    (wdired-allow-to-change-permissions t))
 
   ;; Make things prettier
   (use-package all-the-icons-dired
@@ -4629,6 +4629,8 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
 
     ;; ASCII-only time is over
     (setq mu4e-use-fancy-chars t)
+    ;; and fix alignment !
+    (setq mu4e-headers-precise-alignment t)
 
     ;; Unless we want to send mail to very old clients
     (setq mu4e-compose-format-flowed t)
@@ -5136,7 +5138,7 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
     (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
     (elfeed-search-title-max-width 110)
     :config
-    (setq-default elfeed-search-filter "@1-week-ago +unread "))
+    (setq-default elfeed-search-filter "@1-week-ago +unread -compsci"))
 #+end_src
 
 As the default syntax to manage and organize the various RSS feeds is a bit tedious, we use another package which this whole process painless.

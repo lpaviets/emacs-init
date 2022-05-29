@@ -1822,14 +1822,14 @@ Breaks if region or line spans multiple visual lines"
   :config
   (defun lps/transpose-sexp-backward ()
     (interactive)
-    (transpose-sexps 1 t)
-    (backward-sexp 2 t))
+    (transpose-sexps 1)
+    (backward-sexp 2))
 
   (defun lps/transpose-sexp-forward ()
     (interactive)
-    (forward-sexp 1 t)
-    (transpose-sexps 1 t)
-    (backward-sexp 1 t))
+    (forward-sexp 1)
+    (transpose-sexps 1)
+    (backward-sexp 1))
 
   (defun lps/paredit-no-space-insert-after-sharp-dispatch (endp delimiter)
     "Always return T, unless we are right after a #<form> where form is only made of
@@ -1841,7 +1841,8 @@ This ensures that no space is inserted after e.g. #2A or #C"
               (or (looking-back "#\\w+")
                   (looking-back ",@")))))
 
-  (add-to-list 'paredit-space-for-delimiter-predicates 'lps/paredit-no-space-insert-after-sharp-dispatch))
+  (add-to-list 'paredit-space-for-delimiter-predicates
+  'lps/paredit-no-space-insert-after-sharp-dispatch))
 
 (use-package elec-pair
   :hook ((prog-mode
@@ -1896,9 +1897,8 @@ Does not insert a space before the inserted opening parenthesis"
   ([remap insert-parentheses] . lps/insert-parentheses)
   ("M-\"" . lps/insert-quotes))
 
-(use-package dabbrev
-  :defer t
-  :bind ("<backtab>" . dabbrev-expand))
+(use-package hippie-exp
+  :bind ([remap dabbrev-expand] . hippie-expand))
 
 ;;YASnippet
 (use-package yasnippet
@@ -2777,7 +2777,6 @@ call the associated function interactively. Otherwise, call the
       (when lps/pdf-view-auto-slice-from-bounding-box
         (pdf-view-set-slice-from-bounding-box)))
 
-    (add-hook 'pdf-view-mode-hook 'lps/pdf-view-auto-slice)
     (add-hook 'pdf-view-change-page-hook 'lps/pdf-view-auto-slice)
 
     (defun lps/pdf-maybe-goto-index ()
@@ -2797,7 +2796,7 @@ move to the end of the document, and search backward instead."
         (isearch-backward))))))
 
 (use-package pdf-view-restore
-  ;; :hook (pdf-view-mode . pdf-view-restore-mode)
+  :disabled t ; buggy ...
   :custom
   (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
   (use-file-base-name-flag nil))
@@ -3478,7 +3477,8 @@ PWD is not in a git repo (or the git command is not found)."
   (dired-auto-revert-buffer t)
   (dired-listing-switches "-alFh")
   (dired-isearch-filenames 'dwim)
-  (dired-listing-switches "-AlFh --group-directories-first"))
+  (dired-listing-switches "-AlFh --group-directories-first")
+  (wdired-allow-to-change-permissions t))
 
 ;; Make things prettier
 (use-package all-the-icons-dired
@@ -3604,6 +3604,8 @@ PWD is not in a git repo (or the git command is not found)."
 
   ;; ASCII-only time is over
   (setq mu4e-use-fancy-chars t)
+  ;; and fix alignment !
+  (setq mu4e-headers-precise-alignment t)
 
   ;; Unless we want to send mail to very old clients
   (setq mu4e-compose-format-flowed t)
@@ -4022,7 +4024,7 @@ insert as many blank lines as necessary."
   (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
   (elfeed-search-title-max-width 110)
   :config
-  (setq-default elfeed-search-filter "@1-week-ago +unread "))
+  (setq-default elfeed-search-filter "@1-week-ago +unread -compsci"))
 
 (use-package elfeed-org
   :after elfeed
