@@ -1674,10 +1674,10 @@ Breaks if region or line spans multiple visual lines"
                      (cons (line-beginning-position)
                            (line-end-position))))
            (start (car bounds))
-           (end (cdr bounds)))
+           (end (set-marker (make-marker) (cdr bounds))))
       (goto-char start)
       (capitalize-word 1)
-      (while (< (point) end)
+      (while (< (point) (marker-position end))
         (let ((num-spaces (skip-chars-forward "[:punct:][:space:]")))
           (if (> num-spaces 0)
               (progn
@@ -3185,10 +3185,13 @@ article's title"
       (if .direct-url
           (let* ((fname (with-temp-buffer
                           (insert .title)
-                          (lps/make-filename-from-sentence)
-                          (insert ".pdf")
                           (goto-char (point-min))
+                          (lps/make-filename-from-sentence)
+                          (goto-char)
+                          (insert ".pdf")
+                           (goto-char (point-min))
                           (insert "[")
+
                           (seq-doseq (name .authors)
                             (when (and name (stringp name))
                               (let ((split-name (split-string name)))
@@ -3199,7 +3202,7 @@ article's title"
                               (insert "_")))
                           (delete-backward-char 1)
                           (insert "]")
-                          (buffer-substring (point-min) (point-max))))
+                          (buffer-substring-no-properties (point-min) (point-max))))
                  (target (read-file-name "Save as (see also biblio-download-directory): "
                                          biblio-download-directory fname nil fname)))
             (url-copy-file .direct-url (expand-file-name target biblio-download-directory)))
