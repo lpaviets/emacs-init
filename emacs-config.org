@@ -1168,9 +1168,12 @@ Sometimes, when documents get bigger and bigger, it is useful to be able to temp
   (use-package outline
     :ensure nil
     :defer t
+    :hook (prog-mode . outline-minor-mode)
     :custom
     (outline-minor-mode-prefix "\C-o")
-    (outline-minor-mode-cycle t))
+    :config
+    ;; Problems with TAB -> completely override cycle keymap
+    (setq outline-mode-cycle-map (make-sparse-keymap)))
 #+end_src
 
 ** Scroll

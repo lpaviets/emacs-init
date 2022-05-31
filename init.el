@@ -866,9 +866,12 @@ If called with a prefix argument, also kills the current buffer"
 (use-package outline
   :ensure nil
   :defer t
+  :hook (prog-mode . outline-minor-mode)
   :custom
   (outline-minor-mode-prefix "\C-o")
-  (outline-minor-mode-cycle t))
+  :config
+  ;; Problems with TAB -> completely override cycle keymap
+  (setq outline-mode-cycle-map (make-sparse-keymap)))
 
 (use-package emacs
   :ensure nil
