@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# contributor: Léo Paviet Salomon
+# name: lambda
+# key: lambda
+# --
+(lambda (${1:args}) $0)

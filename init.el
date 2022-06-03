@@ -866,9 +866,12 @@ If called with a prefix argument, also kills the current buffer"
 (use-package outline
   :ensure nil
   :defer t
+  :hook (prog-mode . outline-minor-mode)
   :custom
   (outline-minor-mode-prefix "\C-o")
-  (outline-minor-mode-cycle t))
+  :config
+  ;; Problems with TAB -> completely override cycle keymap
+  (setq outline-mode-cycle-map (make-sparse-keymap)))
 
 (use-package emacs
   :ensure nil
@@ -1671,10 +1674,10 @@ Breaks if region or line spans multiple visual lines"
                      (cons (line-beginning-position)
                            (line-end-position))))
            (start (car bounds))
-           (end (cdr bounds)))
+           (end (set-marker (make-marker) (cdr bounds))))
       (goto-char start)
       (capitalize-word 1)
-      (while (< (point) end)
+      (while (< (point) (marker-position end))
         (let ((num-spaces (skip-chars-forward "[:punct:][:space:]")))
           (if (> num-spaces 0)
               (progn
@@ -1903,12 +1906,22 @@ Does not insert a space before the inserted opening parenthesis"
 ;;YASnippet
 (use-package yasnippet
   :diminish
-  :config
-  (setq yas-verbosity 1)
+  :init
+  (defvar lps/snippets-dir-root (expand-file-name "snippets" user-emacs-directory))
+  :custom
+  (yas-verbosity 1)
   :hook ((prog-mode LaTeX-mode) . yas-minor-mode)
   :bind (:map yas-minor-mode-map
               ("TAB" . nil)
-              ("<tab>" . nil)))
+              ("<tab>" . nil))
+  :config
+  (defun lps/snippets-initialize ()
+    "Initialize personnal snippets, so Yasnippet can see them."
+    (when (boundp 'yas-snippet-dirs)
+      (add-to-list 'yas-snippet-dirs lps/snippets-dir-root t))
+    (yas-load-directory lps/snippets-dir-root))
+
+  (lps/snippets-initialize))
 
 (use-package yasnippet-snippets
   :after yasnippet)
@@ -2231,7 +2244,7 @@ call the associated function interactively. Otherwise, call the
 
   (defun lps/sly-company-setup ()
     (setq-local company-prescient-sort-length-enable nil)
-    (setq-local company-backends '((company-capf :with company-yasnippet))))
+    (setq-local company-backends '(company-capf)))
 
   (defun lps/sly-start-repl ()
     (unless (sly-connected-p)
@@ -2459,7 +2472,14 @@ call the associated function interactively. Otherwise, call the
       (multi-isearch-files files))))
 
 (use-package common-lisp-snippets
-  :after yasnippet sly)
+  :after yasnippet sly
+  :config
+  (let ((modifier "M-"))
+    (dolist (bind '(("L" . "lambda")))
+      (define-key sly-editing-mode-map (kbd (concat modifier (car bind)))
+        (lambda ()
+          (interactive)
+          (yas-expand-snippet (yas-lookup-snippet (cdr bind))))))))
 
 (use-package cider
   :defer t)
@@ -2812,8 +2832,7 @@ move to the end of the document, and search backward instead."
   :disabled t ; buggy ...
   :custom
   (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
-  (use-file-base-name-flag nil)
-  :hook (pdf-view-mode . pdf-view-restore-mode))
+  (use-file-base-name-flag nil))
 
 ;; AUCTeX initialization
 (use-package tex-site
@@ -3196,10 +3215,13 @@ article's title"
       (if .direct-url
           (let* ((fname (with-temp-buffer
                           (insert .title)
-                          (lps/make-filename-from-sentence)
-                          (insert ".pdf")
                           (goto-char (point-min))
+                          (lps/make-filename-from-sentence)
+                          (goto-char)
+                          (insert ".pdf")
+                           (goto-char (point-min))
                           (insert "[")
+
                           (seq-doseq (name .authors)
                             (when (and name (stringp name))
                               (let ((split-name (split-string name)))
@@ -3210,7 +3232,7 @@ article's title"
                               (insert "_")))
                           (delete-backward-char 1)
                           (insert "]")
-                          (buffer-substring (point-min) (point-max))))
+                          (buffer-substring-no-properties (point-min) (point-max))))
                  (target (read-file-name "Save as (see also biblio-download-directory): "
                                          biblio-download-directory fname nil fname)))
             (url-copy-file .direct-url (expand-file-name target biblio-download-directory)))
@@ -3618,6 +3640,8 @@ PWD is not in a git repo (or the git command is not found)."
 
   ;; ASCII-only time is over
   (setq mu4e-use-fancy-chars t)
+  ;; and fix alignment !
+  (setq mu4e-headers-precise-alignment t)
 
   ;; Unless we want to send mail to very old clients
   (setq mu4e-compose-format-flowed t)
