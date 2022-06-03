@@ -1946,50 +1946,61 @@ Does not insert a space before the inserted opening parenthesis"
     (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev company-shell)))
     (push 'elisp-completion-at-point completion-at-point-functions)))
 
-;; LSP mode. Useful IDE-like features
-(use-package lsp-mode
-  :commands (lsp lsp-deferred)
+(use-package emacs
+  :ensure nil
+  :hook ((python-mode
+          c-mode
+          c++-mode
+          haskell-mode)
+         . lps/lsp-by-default-in-session)
   :init
-  ;; Sometimes, we don't want to start a full server just to check a file
-  ;; or make a few edits to it. In my use, this mostly depends on the session:
-  ;; In a quick session, I might not want to start a server for one or two files,
-  ;; however, once I start using LSP, there is no reason not to assume that I
-  ;; also want to use it by default for other files in the same session
+  ;; Abstract away the client used: lsp-mode or eglot
+  (defvar lps/language-server-client 'eglot)
+
+  (defun lps/start-language-server ()
+    (interactive)
+    (call-interactively lps/language-server-client))
+
+  ;; Sometimes, we don't want to start a full server just to check a
+  ;; file or make a few edits to it. In my use, this mostly depends
+  ;; on the session: In a quick session, I might not want to start a
+  ;; server for one or two files, however, once I start using LSP,
+  ;; there is no reason not to assume that I also want to use it by
+  ;; default for other files in the same session
   (defvar lps/--default-lsp-mode 0)
+
   (defun lps/lsp-by-default-in-session ()
     (if (> lps/--default-lsp-mode 0)
-        (lsp-deferred)
+        (lps/start-language-server)
       (if (and (= lps/--default-lsp-mode 0)
                (y-or-n-p "Automatically use lsp-mode in the current session ?"))
           (progn
             (setq lps/--default-lsp-mode 1)
-            (lsp))
-        (setq lps/--default-lsp-mode -1))))
-
-  (defun lps/--no-lsp-here (fun &rest args)
-    (let ((lps/--default-lsp-mode -1))
-      (apply fun args)))
-
-  (advice-add 'helpful-update :around 'lps/--no-lsp-here)
-
-  :custom
-  (lsp-diagnostics-provider :flycheck)  ;:none if none wanted
-
-  :config
-  (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
-  (lsp-enable-which-key-integration t)
-  (setq lsp-prefer-flymake nil)
-  (setq lsp-enable-on-type-formatting nil)
+            (lps/start-language-server)))
+      (setq lps/--default-lsp-mode -1)))
 
   (defun lps/toggle-lsp-by-default-in-session ()
     (interactive)
     (setq lps/--default-lsp-mode (not lps/--default-lsp-mode)))
 
-  :hook ((python-mode
-          c-mode
-          c++-mode
-          haskell-mode)
-         . lps/lsp-by-default-in-session))
+  ;; Fix documentation: don't want to start a server to view some
+  ;; C code in helpful buffers !
+  (defun lps/--no-lsp-here (fun &rest args)
+    (let ((lps/--default-lsp-mode -1))
+      (apply fun args)))
+
+  (advice-add 'helpful-update :around 'lps/--no-lsp-here))
+
+;; LSP mode. Useful IDE-like features
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :custom
+  (lsp-diagnostics-provider :flycheck)  ; :none if none wanted
+  :config
+  (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
+  (lsp-enable-which-key-integration t)
+  (setq lsp-prefer-flymake nil)
+  (setq lsp-enable-on-type-formatting nil))
 
 (use-package lsp-ui
   :after lsp-mode
@@ -2011,7 +2022,9 @@ Does not insert a space before the inserted opening parenthesis"
               ("r" . eglot-rename)
               ("g g" . xref-find-definitions)
               ("g r" . xref-find-references)
-              ("h" . eldoc)))
+              ("h" . eldoc))
+  :custom
+  (eglot-ignored-server-capabilities '(:documentHighlightProvider)))
 
 ;; Flycheck
 (use-package flycheck
