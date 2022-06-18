@@ -308,48 +308,69 @@ fboundp."
   (kaolin-themes-hl-line-colored t))
 
 (use-package modus-themes)
-
 (use-package doom-themes)
 
-(defvar lps/default-theme 'kaolin-ocean)
-(defvar lps/default-light-theme 'modus-operandi)
-(defvar lps/live-presentation-p nil)
+(use-package emacs
+  :after kaolin-themes
+  :init
+  (defvar lps/default-theme 'kaolin-ocean)
+  (defvar lps/default-light-theme 'modus-operandi)
+  (defvar lps/live-presentation-p nil)
 
-(load-theme lps/default-theme t)
+  (load-theme lps/default-theme t)
 
-(let ((custom--inhibit-theme-enable nil))
-  (custom-theme-set-faces
-   lps/default-theme
-   '(hl-line ((t (:background "#39424D"))) t)))
+  :bind
+  (:map lps/quick-edit-map
+        ("c" . lps/resize-and-color-region))
 
-(defun lps/toggle-live-code-presentation-settings ()
-  "Various useful settings for live coding sessions
+  :config
+  (let ((custom--inhibit-theme-enable nil))
+    (custom-theme-set-faces
+     lps/default-theme
+     '(hl-line ((t (:background "#39424D"))) t)))
+
+  (defun lps/toggle-live-code-presentation-settings ()
+    "Various useful settings for live coding sessions
 Still very buggy, but this should not matter in a live presentation
 setting.
 Avoid toggling several times, just use it once if possible"
-  (interactive)
-  (if lps/live-presentation-p
+    (interactive)
+    (if lps/live-presentation-p
+        (progn
+          (unless (equal custom-enabled-themes (list lps/default-theme))
+            (disable-theme (car custom-enabled-themes))
+            (load-theme lps/default-theme t))
+          (global-hl-line-mode -1)
+          (text-scale-set 0)
+          (setq-default cursor-type 'box))
+
       (progn
-        (unless (equal custom-enabled-themes (list lps/default-theme))
-          (disable-theme (car custom-enabled-themes))
-          (load-theme lps/default-theme t))
-        (global-hl-line-mode -1)
-        (text-scale-set 0)
-        (setq-default cursor-type 'box))
+        (unless (y-or-n-p "Keep current theme ?")
+          (disable-theme custom-enabled-themes)
+          (load-theme lps/default-light-theme t)
+          (custom-theme-set-faces
+           lps/default-light-theme
+           '(hl-line ((t (:background "#DFD8EE"))) t)))
+        (global-display-line-numbers-mode 1)
+        (global-hl-line-mode 1)
+        (text-scale-increase 2)
+        (setq-default cursor-type 'bar)))
 
-    (progn
-      (unless (y-or-n-p "Keep current theme ?")
-        (disable-theme custom-enabled-themes)
-        (load-theme lps/default-light-theme t)
-        (custom-theme-set-faces
-         lps/default-light-theme
-         '(hl-line ((t (:background "#DFD8EE"))) t)))
-      (global-display-line-numbers-mode 1)
-      (global-hl-line-mode 1)
-      (text-scale-increase 2)
-      (setq-default cursor-type 'bar)))
+    (setq lps/live-presentation-p (not lps/live-presentation-p)))
 
-  (setq lps/live-presentation-p (not lps/live-presentation-p)))
+  ;;; Inspired from https://www.reddit.com/r/emacs/comments/vb05co/resizerecolour_text_onthefly/
+  (defun lps/resize-and-color-region (beg end)
+    "Resize/recolour selected region;defaulting to blue at size 300,for titles.
+Note gray80 at size 10 is useful for side remarks."
+    (interactive "r")
+    (let ((contents (buffer-substring beg end))
+          (color (read-color "Colour: "))
+          (size (read-number "Size: ")))
+      (when contents
+        (delete-region beg end)
+        (insert (propertize contents
+                            'font-lock-face
+                            `(:foreground ,color :height ,size)))))))
 
 ;; First time used: run M-x all-the-icons-install-fonts
 (use-package all-the-icons
@@ -881,6 +902,8 @@ If called with a prefix argument, also kills the current buffer"
 
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
+  :custom
+  (describe-char-unidata-list t)
   :bind
   ([remap describe-function] . helpful-callable)
   ([remap describe-variable] . helpful-variable)
