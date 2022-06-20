@@ -4086,6 +4086,8 @@ Finally, we also want a way to do everything from Emacs, and it starts with /fin
     :bind
     (:map bibtex-mode-map
           ("C-c ?" . biblio-lookup))
+    (:map pdf-view-mode-map
+          ("d" . biblio-lookup))
     :custom
     (biblio-arxiv-bibtex-header "article")
     (biblio-download-directory "~/Documents/Other/articles/")

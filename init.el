@@ -3170,6 +3170,8 @@ Return a list of regular expressions."
   :bind
   (:map bibtex-mode-map
         ("C-c ?" . biblio-lookup))
+  (:map pdf-view-mode-map
+        ("d" . biblio-lookup))
   :custom
   (biblio-arxiv-bibtex-header "article")
   (biblio-download-directory "~/Documents/Other/articles/")
