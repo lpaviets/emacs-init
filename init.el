@@ -308,48 +308,69 @@ fboundp."
   (kaolin-themes-hl-line-colored t))
 
 (use-package modus-themes)
-
 (use-package doom-themes)
 
-(defvar lps/default-theme 'kaolin-ocean)
-(defvar lps/default-light-theme 'modus-operandi)
-(defvar lps/live-presentation-p nil)
+(use-package emacs
+  :after kaolin-themes
+  :init
+  (defvar lps/default-theme 'kaolin-ocean)
+  (defvar lps/default-light-theme 'modus-operandi)
+  (defvar lps/live-presentation-p nil)
 
-(load-theme lps/default-theme t)
+  (load-theme lps/default-theme t)
 
-(let ((custom--inhibit-theme-enable nil))
-  (custom-theme-set-faces
-   lps/default-theme
-   '(hl-line ((t (:background "#39424D"))) t)))
+  :bind
+  (:map lps/quick-edit-map
+        ("c" . lps/resize-and-color-region))
 
-(defun lps/toggle-live-code-presentation-settings ()
-  "Various useful settings for live coding sessions
+  :config
+  (let ((custom--inhibit-theme-enable nil))
+    (custom-theme-set-faces
+     lps/default-theme
+     '(hl-line ((t (:background "#39424D"))) t)))
+
+  (defun lps/toggle-live-code-presentation-settings ()
+    "Various useful settings for live coding sessions
 Still very buggy, but this should not matter in a live presentation
 setting.
 Avoid toggling several times, just use it once if possible"
-  (interactive)
-  (if lps/live-presentation-p
+    (interactive)
+    (if lps/live-presentation-p
+        (progn
+          (unless (equal custom-enabled-themes (list lps/default-theme))
+            (disable-theme (car custom-enabled-themes))
+            (load-theme lps/default-theme t))
+          (global-hl-line-mode -1)
+          (text-scale-set 0)
+          (setq-default cursor-type 'box))
+
       (progn
-        (unless (equal custom-enabled-themes (list lps/default-theme))
-          (disable-theme (car custom-enabled-themes))
-          (load-theme lps/default-theme t))
-        (global-hl-line-mode -1)
-        (text-scale-set 0)
-        (setq-default cursor-type 'box))
+        (unless (y-or-n-p "Keep current theme ?")
+          (disable-theme custom-enabled-themes)
+          (load-theme lps/default-light-theme t)
+          (custom-theme-set-faces
+           lps/default-light-theme
+           '(hl-line ((t (:background "#DFD8EE"))) t)))
+        (global-display-line-numbers-mode 1)
+        (global-hl-line-mode 1)
+        (text-scale-increase 2)
+        (setq-default cursor-type 'bar)))
 
-    (progn
-      (unless (y-or-n-p "Keep current theme ?")
-        (disable-theme custom-enabled-themes)
-        (load-theme lps/default-light-theme t)
-        (custom-theme-set-faces
-         lps/default-light-theme
-         '(hl-line ((t (:background "#DFD8EE"))) t)))
-      (global-display-line-numbers-mode 1)
-      (global-hl-line-mode 1)
-      (text-scale-increase 2)
-      (setq-default cursor-type 'bar)))
+    (setq lps/live-presentation-p (not lps/live-presentation-p)))
 
-  (setq lps/live-presentation-p (not lps/live-presentation-p)))
+  ;;; Inspired from https://www.reddit.com/r/emacs/comments/vb05co/resizerecolour_text_onthefly/
+  (defun lps/resize-and-color-region (beg end)
+    "Resize/recolour selected region;defaulting to blue at size 300,for titles.
+Note gray80 at size 10 is useful for side remarks."
+    (interactive "r")
+    (let ((contents (buffer-substring beg end))
+          (color (read-color "Colour: "))
+          (size (read-number "Size: ")))
+      (when contents
+        (delete-region beg end)
+        (insert (propertize contents
+                            'font-lock-face
+                            `(:foreground ,color :height ,size)))))))
 
 ;; First time used: run M-x all-the-icons-install-fonts
 (use-package all-the-icons
@@ -881,6 +902,8 @@ If called with a prefix argument, also kills the current buffer"
 
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
+  :custom
+  (describe-char-unidata-list t)
   :bind
   ([remap describe-function] . helpful-callable)
   ([remap describe-variable] . helpful-variable)
@@ -1906,12 +1929,22 @@ Does not insert a space before the inserted opening parenthesis"
 ;;YASnippet
 (use-package yasnippet
   :diminish
-  :config
-  (setq yas-verbosity 1)
+  :init
+  (defvar lps/snippets-dir-root (expand-file-name "snippets" user-emacs-directory))
+  :custom
+  (yas-verbosity 1)
   :hook ((prog-mode LaTeX-mode) . yas-minor-mode)
   :bind (:map yas-minor-mode-map
               ("TAB" . nil)
-              ("<tab>" . nil)))
+              ("<tab>" . nil))
+  :config
+  (defun lps/snippets-initialize ()
+    "Initialize personnal snippets, so Yasnippet can see them."
+    (when (boundp 'yas-snippet-dirs)
+      (add-to-list 'yas-snippet-dirs lps/snippets-dir-root t))
+    (yas-load-directory lps/snippets-dir-root))
+
+  (lps/snippets-initialize))
 
 (use-package yasnippet-snippets
   :after yasnippet)
@@ -1949,50 +1982,61 @@ Does not insert a space before the inserted opening parenthesis"
     (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev company-shell)))
     (push 'elisp-completion-at-point completion-at-point-functions)))
 
-;; LSP mode. Useful IDE-like features
-(use-package lsp-mode
-  :commands (lsp lsp-deferred)
+(use-package emacs
+  :ensure nil
+  :hook ((python-mode
+          c-mode
+          c++-mode
+          haskell-mode)
+         . lps/lsp-by-default-in-session)
   :init
-  ;; Sometimes, we don't want to start a full server just to check a file
-  ;; or make a few edits to it. In my use, this mostly depends on the session:
-  ;; In a quick session, I might not want to start a server for one or two files,
-  ;; however, once I start using LSP, there is no reason not to assume that I
-  ;; also want to use it by default for other files in the same session
+  ;; Abstract away the client used: lsp-mode or eglot
+  (defvar lps/language-server-client 'eglot)
+
+  (defun lps/start-language-server ()
+    (interactive)
+    (call-interactively lps/language-server-client))
+
+  ;; Sometimes, we don't want to start a full server just to check a
+  ;; file or make a few edits to it. In my use, this mostly depends
+  ;; on the session: In a quick session, I might not want to start a
+  ;; server for one or two files, however, once I start using LSP,
+  ;; there is no reason not to assume that I also want to use it by
+  ;; default for other files in the same session
   (defvar lps/--default-lsp-mode 0)
+
   (defun lps/lsp-by-default-in-session ()
     (if (> lps/--default-lsp-mode 0)
-        (lsp-deferred)
+        (lps/start-language-server)
       (if (and (= lps/--default-lsp-mode 0)
                (y-or-n-p "Automatically use lsp-mode in the current session ?"))
           (progn
             (setq lps/--default-lsp-mode 1)
-            (lsp))
-        (setq lps/--default-lsp-mode -1))))
-
-  (defun lps/--no-lsp-here (fun &rest args)
-    (let ((lps/--default-lsp-mode -1))
-      (apply fun args)))
-
-  (advice-add 'helpful-update :around 'lps/--no-lsp-here)
-
-  :custom
-  (lsp-diagnostics-provider :flycheck)  ;:none if none wanted
-
-  :config
-  (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
-  (lsp-enable-which-key-integration t)
-  (setq lsp-prefer-flymake nil)
-  (setq lsp-enable-on-type-formatting nil)
+            (lps/start-language-server)))
+      (setq lps/--default-lsp-mode -1)))
 
   (defun lps/toggle-lsp-by-default-in-session ()
     (interactive)
     (setq lps/--default-lsp-mode (not lps/--default-lsp-mode)))
 
-  :hook ((python-mode
-          c-mode
-          c++-mode
-          haskell-mode)
-         . lps/lsp-by-default-in-session))
+  ;; Fix documentation: don't want to start a server to view some
+  ;; C code in helpful buffers !
+  (defun lps/--no-lsp-here (fun &rest args)
+    (let ((lps/--default-lsp-mode -1))
+      (apply fun args)))
+
+  (advice-add 'helpful-update :around 'lps/--no-lsp-here))
+
+;; LSP mode. Useful IDE-like features
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :custom
+  (lsp-diagnostics-provider :flycheck)  ; :none if none wanted
+  :config
+  (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
+  (lsp-enable-which-key-integration t)
+  (setq lsp-prefer-flymake nil)
+  (setq lsp-enable-on-type-formatting nil))
 
 (use-package lsp-ui
   :after lsp-mode
@@ -2014,7 +2058,9 @@ Does not insert a space before the inserted opening parenthesis"
               ("r" . eglot-rename)
               ("g g" . xref-find-definitions)
               ("g r" . xref-find-references)
-              ("h" . eldoc)))
+              ("h" . eldoc))
+  :custom
+  (eglot-ignored-server-capabilities '(:documentHighlightProvider)))
 
 ;; Flycheck
 (use-package flycheck
@@ -2221,7 +2267,7 @@ call the associated function interactively. Otherwise, call the
 
   (defun lps/sly-company-setup ()
     (setq-local company-prescient-sort-length-enable nil)
-    (setq-local company-backends '((company-capf :with company-yasnippet))))
+    (setq-local company-backends '(company-capf)))
 
   (defun lps/sly-start-repl ()
     (unless (sly-connected-p)
@@ -2449,7 +2495,14 @@ call the associated function interactively. Otherwise, call the
       (multi-isearch-files files))))
 
 (use-package common-lisp-snippets
-  :after yasnippet sly)
+  :after yasnippet sly
+  :config
+  (let ((modifier "M-"))
+    (dolist (bind '(("L" . "lambda")))
+      (define-key sly-editing-mode-map (kbd (concat modifier (car bind)))
+        (lambda ()
+          (interactive)
+          (yas-expand-snippet (yas-lookup-snippet (cdr bind))))))))
 
 (use-package cider
   :defer t)
