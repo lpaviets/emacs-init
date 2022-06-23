@@ -1349,6 +1349,8 @@ If called with a prefix argument, also kills the current buffer"
 (use-package isearch
   :ensure nil
   :bind
+  (:map isearch-mode-map
+        ("M-." . isearch-forward-thing-at-point))
   (:map search-map
         ("s" . isearch-forward)
         ("M-s" . isearch-forward) ;; avoids early/late release of Meta

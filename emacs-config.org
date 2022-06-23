@@ -1815,6 +1815,8 @@ Hence, we add a few bindings to an already existing keymap, to make them easily 
   (use-package isearch
     :ensure nil
     :bind
+    (:map isearch-mode-map
+          ("M-." . isearch-forward-thing-at-point))
     (:map search-map
           ("s" . isearch-forward)
           ("M-s" . isearch-forward) ;; avoids early/late release of Meta
