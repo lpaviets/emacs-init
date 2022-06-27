@@ -3210,7 +3210,7 @@ Return a list of regular expressions."
      "[ \t]*&&[ \t]*")))
 
 (use-package biblio-core
-  :defer t
+  :after pdf-view
   :config
   ;; We just override this function, to use our own completion
   ;; system.
@@ -3229,39 +3229,40 @@ Return a list of regular expressions."
   (biblio-arxiv-bibtex-header "article")
   (biblio-download-directory "~/Documents/Other/articles/")
   :config
-  (defun biblio-download--action (record)
-    "Retrieve a RECORD from Dissemin, and display it.
+  (with-eval-after-load 'biblio-download
+   (defun biblio-download--action (record)
+     "Retrieve a RECORD from Dissemin, and display it.
 RECORD is a formatted record as expected by `biblio-insert-result'.
 The default filename is of the form \"[AUTHORS]TITLE.pdf\" where
 AUTHORS is a list of the authors surnames, separated by underscores,
 and TITLE is the result of `lps/make-filename-from-sentence' on the
 article's title"
-    (let-alist record
-      (if .direct-url
-          (let* ((fname (with-temp-buffer
-                          (insert .title)
-                          (goto-char (point-min))
-                          (lps/make-filename-from-sentence)
-                          (goto-char)
-                          (insert ".pdf")
+     (let-alist record
+       (if .direct-url
+           (let* ((fname (with-temp-buffer
+                           (insert .title)
                            (goto-char (point-min))
-                          (insert "[")
+                           (lps/make-filename-from-sentence)
+                           (goto-char (point-max))
+                           (insert ".pdf")
+                           (goto-char (point-min))
+                           (insert "[")
 
-                          (seq-doseq (name .authors)
-                            (when (and name (stringp name))
-                              (let ((split-name (split-string name)))
-                                (if (cdr split-name)
-                                    (dolist (subname (cdr split-name))
-                                      (insert subname))
-                                  (insert name)))
-                              (insert "_")))
-                          (delete-backward-char 1)
-                          (insert "]")
-                          (buffer-substring-no-properties (point-min) (point-max))))
-                 (target (read-file-name "Save as (see also biblio-download-directory): "
-                                         biblio-download-directory fname nil fname)))
-            (url-copy-file .direct-url (expand-file-name target biblio-download-directory)))
-        (user-error "This record does not contain a direct URL (try arXiv or HAL)")))))
+                           (seq-doseq (name .authors)
+                             (when (and name (stringp name))
+                               (let ((split-name (split-string name)))
+                                 (if (cdr split-name)
+                                     (dolist (subname (cdr split-name))
+                                       (insert subname))
+                                   (insert name)))
+                               (insert "_")))
+                           (delete-backward-char 1)
+                           (insert "]")
+                           (buffer-substring-no-properties (point-min) (point-max))))
+                  (target (read-file-name "Save as (see also biblio-download-directory): "
+                                          biblio-download-directory fname nil fname)))
+             (url-copy-file .direct-url (expand-file-name target biblio-download-directory)))
+         (user-error "This record does not contain a direct URL (try arXiv or HAL)"))))))
 
 (use-package preview
   :ensure nil ;; Comes with AUCTeX
