@@ -120,3 +120,4 @@ flycheck_*.el
 /.org-id-locations
 /pyhist-python3
 /devdocs/
+/share/
