@@ -2799,6 +2799,34 @@ call the associated function interactively. Otherwise, call the
 
 (setq org-capture-bookmark nil))
 
+(use-package org-roam
+  :after org
+  :custom
+  (org-roam-directory (file-truename
+                       (expand-file-name "RoamNotes/" org-directory)))
+  (org-roam-node-display-template (concat "${title:*} "
+                                          (propertize "${tags}"
+                                                      'face
+                                                      'org-tag)))
+  :bind (("C-c n t" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n g" . org-roam-graph)
+         ("C-c n i" . org-roam-node-insert)
+         ("C-c n c" . org-roam-capture))
+  :config
+  (org-roam-db-autosync-mode))
+
+(use-package consult-org-roam
+  :after consult org-roam
+  :bind
+  ("C-c n F" . consult-org-roam-file-find)
+  ("C-c n b" . consult-org-roam-backlinks)
+  ("C-c n s" . consult-org-roam-search)
+  :custom
+  (consult-org-roam-grep-func #'consult-grep)
+  :config
+  (consult-org-roam-mode))
+
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
 (system-case
