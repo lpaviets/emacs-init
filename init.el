@@ -2845,25 +2845,9 @@ call the associated function interactively. Otherwise, call the
                                             "-draw" "text %X,%Y '%c'"))
     (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
     (pdf-view-display-size 'fit-page)
-    :init
-    (defvar-local lps/pdf-view-auto-slice-from-bounding-box t)
     :config
     (pdf-tools-install :no-query)
-    ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
-    (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode)
-
-    (defun lps/pdf-view-toggle-auto-slice ()
-      (interactive)
-      (setq-local lps/pdf-view-auto-slice-from-bounding-box
-                  (not lps/pdf-view-auto-slice-from-bounding-box))
-      (message "Automatic slicing is now %s"
-               (if lps/pdf-view-auto-slice-from-bounding-box "on" "off")))
-
-    (defun lps/pdf-view-auto-slice ()
-      (when lps/pdf-view-auto-slice-from-bounding-box
-        (pdf-view-set-slice-from-bounding-box)))
-
-    (add-hook 'pdf-view-change-page-hook 'lps/pdf-view-auto-slice)
+    (add-to-list 'pdf-tools-enabled-modes 'pdf-view-auto-slice-minor-mode)
 
     (defun lps/pdf-maybe-goto-index ()
       "Tries to guess where the index of the document is,
@@ -3240,7 +3224,6 @@ Return a list of regular expressions."
      "[ \t]*&&[ \t]*")))
 
 (use-package biblio-core
-  :after pdf-view
   :config
   ;; We just override this function, to use our own completion
   ;; system.
@@ -3249,7 +3232,6 @@ Return a list of regular expressions."
     completing-read-function))
 
 (use-package biblio
-  :after biblio-core
   :bind
   (:map bibtex-mode-map
         ("C-c ?" . biblio-lookup))
@@ -3259,9 +3241,9 @@ Return a list of regular expressions."
   (biblio-arxiv-bibtex-header "article")
   (biblio-download-directory "~/Documents/Other/articles/")
   (biblio-selection-mode-actions-alist
-   (("Dissemin (find open access copies of this article)" . biblio-dissemin--lookup-record)
-    ("Download this article" . lps/biblio-download--action)))
-  :config
+   '(("Dissemin (find open access copies of this article)" . biblio-dissemin--lookup-record)
+     ("Download this article and format its name" . lps/biblio-download--action)))
+  :init
   (defun lps/biblio-download--action (record)
     "Retrieve a RECORD from Dissemin, and display it.
 RECORD is a formatted record as expected by `biblio-insert-result'.

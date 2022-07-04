@@ -41,6 +41,8 @@ dist/
 
 # LSP
 /.lsp-session-v1
+/eclipse.jdt.ls/
+/workspace/
 
 # Flycheck
 flycheck_*.el
