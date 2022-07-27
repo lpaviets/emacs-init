@@ -4077,10 +4077,36 @@ insert as many blank lines as necessary."
   (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
   (elfeed-search-title-max-width 110)
   :config
-  (setq-default elfeed-search-filter "@1-week-ago +unread -compsci"))
+  (setq-default elfeed-search-filter "@1-week-ago +unread -compsci -youtube"))
 
 (use-package elfeed-org
   :after elfeed
   :config
   (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org"))
   (elfeed-org))
+
+(use-package elfeed-tube
+  :after elfeed
+  :custom
+  (elfeed-tube-auto-save-p nil)
+  (elfeed-tube-auto-fetch-p t)
+  (elfeed-tube-captions-languages '("fr" "french"
+                                    "en" "english"
+                                    "english (auto generated)"
+                                    "french (auto generated)"))
+  :bind
+  (:map elfeed-show-mode-map
+        ("F" . elfeed-tube-fetch)
+        ([remap save-buffer] . elfeed-tube-save)
+        :map elfeed-search-mode-map
+        ("F" . elfeed-tube-fetch)
+        ([remap save-buffer] . elfeed-tube-save))
+  :config
+  (elfeed-tube-setup))
+
+(use-package elfeed-tube-mpv
+  :after elfeed-tube
+  :bind
+  (:map elfeed-show-mode-map
+        ("C-c C-f" . elfeed-tube-mpv-follow-mode)
+        ("C-c C-w" . elfeed-tube-mpv-where)))

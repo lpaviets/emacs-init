@@ -5195,7 +5195,7 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
     (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
     (elfeed-search-title-max-width 110)
     :config
-    (setq-default elfeed-search-filter "@1-week-ago +unread -compsci"))
+    (setq-default elfeed-search-filter "@1-week-ago +unread -compsci -youtube"))
 #+end_src
 
 As the default syntax to manage and organize the various RSS feeds is a bit tedious, we use another package which this whole process painless.
@@ -5206,6 +5206,38 @@ As the default syntax to manage and organize the various RSS feeds is a bit tedi
     :config
     (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org"))
     (elfeed-org))
+#+end_src
+
+*** Elfeed-tube
+
+Elfeed can also be used as a Youtube "viewer" - and much more, /i.e./ it is incredible to read subtitles, archive stuff and so on.
+
+#+begin_src emacs-lisp
+  (use-package elfeed-tube
+    :after elfeed
+    :custom
+    (elfeed-tube-auto-save-p nil)
+    (elfeed-tube-auto-fetch-p t)
+    (elfeed-tube-captions-languages '("fr" "french"
+                                      "en" "english"
+                                      "english (auto generated)"
+                                      "french (auto generated)"))
+    :bind
+    (:map elfeed-show-mode-map
+          ("F" . elfeed-tube-fetch)
+          ([remap save-buffer] . elfeed-tube-save)
+          :map elfeed-search-mode-map
+          ("F" . elfeed-tube-fetch)
+          ([remap save-buffer] . elfeed-tube-save))
+    :config
+    (elfeed-tube-setup))
+
+  (use-package elfeed-tube-mpv
+    :after elfeed-tube
+    :bind
+    (:map elfeed-show-mode-map
+          ("C-c C-f" . elfeed-tube-mpv-follow-mode)
+          ("C-c C-w" . elfeed-tube-mpv-where)))
 #+end_src
 
 * TODO Small things to do or to fix
