@@ -22,6 +22,7 @@ dist/
 
 # Magit
 /transient/
+/forge-database-*
 
 # Eshell aliases, history & so on
 /eshell/
