@@ -13,6 +13,7 @@
         backward-up-list
         beginning-of-visual-line
         c-indent-line-or-region
+        capitalize-dwim
         cdlatex-pbb
         company-indent-or-complete-common
         counsel-M-x
@@ -89,6 +90,7 @@
         lps/duplicate-line-or-region-down
         next-buffer
         org-shiftright
+        previous-buffer
         sly-compile-defun
         swiper-mc
         wdired-finish-edit

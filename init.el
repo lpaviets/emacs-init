@@ -3958,7 +3958,8 @@ marking if it still had that."
 (use-package mu4e-column-faces
   :after mu4e
   :config
-  (mu4e-column-faces-mode))
+  (when (version<= "1.8.0" mu4e-mu-version)
+    (mu4e-column-faces-mode)))
 
 (use-package elpher)
 
@@ -4106,7 +4107,57 @@ insert as many blank lines as necessary."
 
 (use-package elfeed-tube-mpv
   :after elfeed-tube
+  :hook
+  (elfeed-tube-mpv . elfeed-tube-mpv-follow-mode)
   :bind
   (:map elfeed-show-mode-map
         ("C-c C-f" . elfeed-tube-mpv-follow-mode)
-        ("C-c C-w" . elfeed-tube-mpv-where)))
+        ("C-c C-w" . elfeed-tube-mpv-where)
+        ("C-c C-y" . elfeed-tube-mpv)))
+
+(use-package mpv
+  :defer t
+  :init
+  ;; Used to be 0.5 in the initial mpv.el package
+  ;; Not a customizable option: need to redefine some functions ...
+  (defvar lps/mpv-on-start-timeout 5)
+  :config
+  ;; Redefine it to use a custom timeout duration
+  (defun mpv-start (&rest args)
+    "Start an mpv process with the specified ARGS.
+
+If there already is an mpv process controlled by this Emacs
+instance, it will be killed. Options specified in
+`mpv-default-options' will be prepended to ARGS."
+    (mpv-kill)
+    (let ((socket (make-temp-name
+                   (expand-file-name "mpv-" temporary-file-directory))))
+      (setq mpv--process
+            (apply #'start-process "mpv-player" nil mpv-executable
+                   "--no-terminal"
+                   (concat "--input-unix-socket=" socket)
+                   (append mpv-default-options args)))
+      (set-process-query-on-exit-flag mpv--process nil)
+      (set-process-sentinel
+       mpv--process
+       (lambda (process _event)
+         (when (memq (process-status process) '(exit signal))
+           (mpv-kill)
+           (when (file-exists-p socket)
+             (with-demoted-errors (delete-file socket)))
+           (run-hooks 'mpv-on-exit-hook))))
+      (with-timeout
+          (lps/mpv-on-start-timeout (mpv-kill)
+                                    (error "Failed to connect to mpv"))
+        (while (not (file-exists-p socket))
+          (sleep-for 0.05)))
+      (setq mpv--queue (tq-create
+                        (make-network-process :name "mpv-socket"
+                                              :family 'local
+                                              :service socket)))
+      (set-process-filter
+       (tq-process mpv--queue)
+       (lambda (_proc string)
+         (mpv--tq-filter mpv--queue string)))
+      (run-hook-with-args 'mpv-on-start-hook args)
+      t)))
