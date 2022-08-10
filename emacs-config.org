@@ -5192,6 +5192,8 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
     :defer t
     :bind
     ("C-c f" . elfeed)
+    (:map elfeed-search-mode-map
+          ("w" . elfeed-search-browse-url))
     :custom
     (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
     (elfeed-search-title-max-width 110)
@@ -5204,9 +5206,55 @@ As the default syntax to manage and organize the various RSS feeds is a bit tedi
 #+begin_src emacs-lisp
   (use-package elfeed-org
     :after elfeed
+    :init
+    (defvar lps/elfeed-default-days-range 7
+      "Range of days to filter by default in elfeed search queries")
+    :bind (:map elfeed-search-mode-map
+                ("s" . lps/elfeed-search-filter-interactive))
     :config
     (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org"))
-    (elfeed-org))
+    (elfeed-org)
+
+    (defun lps/elfeed-search-filter-prompt-time-range ()
+      (let* ((default-time (time-subtract (current-time)
+                                          (days-to-time lps/elfeed-default-days-range)))
+             (from (org-read-date nil nil nil nil default-time)))
+        (concat "@" from)))
+
+    (defun lps/elfeed--org-tags ()
+      (let* ((elfeed-org-buffers (cl-loop for file in rmh-elfeed-org-files
+                                          for buffer = (get-file-buffer file)
+                                          when buffer
+                                          collect buffer))
+             (tags (cl-loop for buffer in elfeed-org-buffers
+                            append (with-current-buffer buffer
+                                     (org-get-buffer-tags)))))
+        (cl-remove-duplicates (mapcar #'car tags))))
+
+    (defun lps/elfeed-search-filter-add-tags ()
+      (let ((with-tags (completing-read-multiple "Add tags: " (lps/elfeed--org-tags))))
+        (if with-tags
+            (concat "+" (mapconcat #'identity with-tags " +"))
+          "")))
+
+    (defun lps/elfeed-search-filter-remove-tags ()
+      (let ((without-tags (completing-read-multiple "Remove tags: " (lps/elfeed--org-tags))))
+        (if without-tags
+            (concat "-" (mapconcat #'identity without-tags " -"))
+          "")))
+
+    (defun lps/elfeed-search-filter-interactive ()
+      (interactive)
+      (let ((time (lps/elfeed-search-filter-prompt-time-range))
+            (with-tags (lps/elfeed-search-filter-add-tags))
+            (without-tags (lps/elfeed-search-filter-remove-tags)))
+        (let ((filter (concat time " " with-tags " " without-tags ))
+              (elfeed-search-filter-active :non-interactive))
+          (elfeed-search--prompt filter)
+          (with-current-buffer (elfeed-search-buffer)
+            (setf elfeed-search-filter
+                  (or filter (default-value 'elfeed-search-filter)))
+            (elfeed-search-update :force))))))
 #+end_src
 
 *** Elfeed-tube

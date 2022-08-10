@@ -47,6 +47,7 @@
         paredit-close-round
         paredit-copy-as-kill
         paredit-delete-region
+        paredit-doublequote
         paredit-forward
         paredit-forward-delete
         paredit-forward-down
