@@ -125,3 +125,4 @@ flycheck_*.el
 /devdocs/
 /share/
 /org-roam.db
+/pyhist-Python

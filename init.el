@@ -904,13 +904,13 @@ If called with a prefix argument, also kills the current buffer"
 (use-package helpful
   :custom
   (describe-char-unidata-list t)
-  :bind
-  ([remap describe-function] . helpful-callable)
-  ([remap describe-variable] . helpful-variable)
-  ([remap describe-symbol]   . helpful-symbol)
-  ([remap describe-key]      . helpful-key)
   (:map help-map
-        (";" . helpful-at-point)))
+        (";" . helpful-at-point))
+  :config
+  (setf (symbol-function 'describe-function) #'helpful-callable)
+  (setf (symbol-function 'describe-variable) #'helpful-variable)
+  (setf (symbol-function 'describe-symbol) #'helpful-symbol)
+  (setf (symbol-function 'describe-key) #'helpful-key))
 
 (use-package emacs
   :ensure nil
