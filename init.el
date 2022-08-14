@@ -904,13 +904,14 @@ If called with a prefix argument, also kills the current buffer"
 (use-package helpful
   :custom
   (describe-char-unidata-list t)
-  (:map help-map
-        (";" . helpful-at-point))
-  :config
-  (setf (symbol-function 'describe-function) #'helpful-callable)
-  (setf (symbol-function 'describe-variable) #'helpful-variable)
-  (setf (symbol-function 'describe-symbol) #'helpful-symbol)
-  (setf (symbol-function 'describe-key) #'helpful-key))
+  :bind (:map help-map
+              (";" . helpful-at-point))
+  :init
+  (require 'helpful) ;; somewhat hacky, would like to autoload ...
+  (defalias 'describe-function 'helpful-callable)
+  (defalias 'describe-variable 'helpful-variable)
+  (defalias 'describe-symbol 'helpful-symbol)
+  (defalias 'describe-key 'helpful-key))
 
 (use-package emacs
   :ensure nil
@@ -3995,6 +3996,8 @@ marking if it still had that."
   ("<f8>" . ispell)
   ("S-<f8>" . ispell-change-dictionary)
   ("C-S-<f8>" . lps/flyspell-toggle)
+  :custom
+  (ispell-quietly t)
   :config
   (add-to-list 'ispell-skip-region-alist '("^#+BEGIN_SRC" . "^#+END_SRC"))
 
