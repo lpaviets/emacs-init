@@ -2637,6 +2637,8 @@ call the associated function interactively. Otherwise, call the
   (org-use-speed-commands t)
   (org-directory "~/Documents/OrgFiles/")
   (org-special-ctrl-a/e t) ;; Not enough with visual-line-mode, need to bind C-a/C-e too
+  (org-return-follows-link t)
+  (org-catch-invisible-edits 'show)
   :config
   (defun lps/org-mode-setup ()
     (lps/org-font-setup)
@@ -2814,10 +2816,26 @@ call the associated function interactively. Otherwise, call the
  (gnu/linux
   (use-package pdf-tools
     :magic ("%PDF" . pdf-view-mode)
+    :init
+    ;; For some reason it doesn't work when put in the :custom section ?!
+    (setq pdf-tools-enabled-modes '(pdf-history-minor-mode
+                                    pdf-isearch-minor-mode
+                                    pdf-links-minor-mode
+                                    pdf-misc-minor-mode
+                                    pdf-outline-minor-mode
+                                    pdf-misc-size-indication-minor-mode
+                                    pdf-misc-menu-bar-minor-mode
+                                    pdf-annot-minor-mode
+                                    pdf-sync-minor-mode
+                                    pdf-misc-context-menu-minor-mode
+                                    pdf-cache-prefetch-minor-mode
+                                    ;; pdf-occur-global-minor-mode ;; bugged autoload
+                                    pdf-view-auto-slice-minor-mode ; add to defaults
+                                    ;; pdf-virtual-global-minor-mode
+                                    ))
     :bind (:map pdf-view-mode-map
                 ("C-s" . isearch-forward)
-                ("C-c ?" . lps/pdf-maybe-goto-index)
-                ("s t" . lps/pdf-view-toggle-auto-slice))
+                ("C-c ?" . lps/pdf-maybe-goto-index))
     :custom
     (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                             "-pointsize" "%P"
@@ -2828,7 +2846,6 @@ call the associated function interactively. Otherwise, call the
     (pdf-view-display-size 'fit-page)
     :config
     (pdf-tools-install :no-query)
-    (add-to-list 'pdf-tools-enabled-modes 'pdf-view-auto-slice-minor-mode)
 
     (defun lps/pdf-maybe-goto-index ()
       "Tries to guess where the index of the document is,
@@ -2907,11 +2924,16 @@ move to the end of the document, and search backward instead."
   (TeX-view-program-selection '((output-pdf "PDF tools")))
 
   ;; Compilation
-  (TeX-debug-bad-boxes t)
+  ;; Automatically open the error buffer if errors happened
+  ;; But don't collect bad-boxes by default
+  ;; If needed, you can still show them with <C-c '> (TeX-error-overview)
+  (TeX-debug-bad-boxes nil)
+  (TeX-debug-warnings nil)
+  (TeX-error-overview-open-after-TeX-run t)
 
   :config
   (add-to-list 'lps/auto-compile-command-alist
-               (cons 'latex-mode 'TeX-command-run-all))
+               (cons 'latex-mode 'lps/TeX-recompile-all))
 
   ;; Auto-insert
   (with-eval-after-load 'autoinsert
@@ -3123,7 +3145,16 @@ return `nil'."
                       (TeX-find-opening-brace))))
         (delete-region (1- (cdr bounds)) (cdr bounds))
         (delete-region (car bounds) (1+ brace)))
-      t)))
+      t))
+
+  (defun lps/TeX-recompile-all ()
+    ;; Clean everything
+    (TeX-clean t)
+    ;; Recompile everything
+    (let ((TeX-debug-bad-boxes t)
+          (TeX-debug-warnings t)
+          (TeX-error-overview-open-after-TeX-run t))
+     (TeX-command-sequence t t))))
 
 (use-package bibtex
   :defer t

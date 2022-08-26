@@ -44,6 +44,7 @@ dist/
 /.lsp-session-v1
 /eclipse.jdt.ls/
 /workspace/
+/.dap-breakpoints
 
 # Flycheck
 flycheck_*.el
@@ -116,6 +117,9 @@ flycheck_*.el
 /sandbox/*
 !/sandbox/init.el
 
+# Desktop save path
+/desktop-saves/
+
 # Other random stuff
 /network-security.data
 *.sqlite
@@ -126,5 +130,3 @@ flycheck_*.el
 /share/
 /org-roam.db
 /pyhist-Python
-/desktop-saves/
-/.dap-breakpoints
