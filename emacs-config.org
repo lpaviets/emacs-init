@@ -284,6 +284,20 @@ In order to test things more rapidly and to be able to apply configuration chang
           ("r" . restart-emacs)))
 #+end_src
 
+** Saving the session
+
+Emacs is generally meant to be started once and stay up for long period of times. Even when using "emacs server" with =emacs --daemon= and emacsclient, although you can quickly create emacs frames and frequently quit them, the actual server is a long-running process. Nevertheless, you sometimes have to close it for whatever reason, and at those times it is nice if you can immediately start working from where you were the last time you quitted Emacs !
+
+#+begin_src emacs-lisp
+  (use-package desktop
+    :init
+    (desktop-save-mode 1)
+    :custom
+    (desktop-restore-frames nil) ;; Otherwise buggy with daemon-mode
+    (desktop-path (list (expand-file-name "desktop-saves/" user-emacs-directory)))
+    (desktop-restore-eager 10))
+#+end_src
+
 ** Server mode and emacsclient
 
 For various reasons, we might want to use Emacs in "server-mode": although it is not completely correct, the idea is that we start a daemon running "the real Emacs process" as a server, and we will simply connect clients to it to work with.

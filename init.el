@@ -191,6 +191,14 @@ fboundp."
   (:map lps/system-tools-map
         ("r" . restart-emacs)))
 
+(use-package desktop
+  :init
+  (desktop-save-mode 1)
+  :custom
+  (desktop-restore-frames nil) ;; Otherwise buggy with daemon-mode
+  (desktop-path (list (expand-file-name "desktop-saves/" user-emacs-directory)))
+  (desktop-restore-eager 10))
+
 (use-package server
   :custom
   (server-client-instructions nil))

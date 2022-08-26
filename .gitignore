@@ -126,3 +126,5 @@ flycheck_*.el
 /share/
 /org-roam.db
 /pyhist-Python
+/desktop-saves/
+/.dap-breakpoints
