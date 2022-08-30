@@ -1446,12 +1446,17 @@ If called with a prefix argument, also kills the current buffer"
 
 (use-package emacs
   :ensure nil
+  :init
+  (defvar lps/yank-indent-modes '(prog-mode latex-mode))
   :bind
   ("M-k" . lps/copy-line-at-point)
-  ("M-à" . lps/select-line)
+  ("M-à" . lps/mark-line)
   ("<C-backspace>" . delete-region)
+  ([remap yank] . lps/yank-indent)
   :custom
   (kill-read-only-ok t)
+  (kill-ring-max 100)
+  (kill-do-not-save-duplicates t)
   :config
   (defun lps/copy-line-at-point (arg)
     "Copy lines in the kill ring, starting from the line at point.
@@ -1466,7 +1471,7 @@ If ARG > 1, copy subsequent lines and indentation."
           (end (line-end-position arg)))
       (copy-region-as-kill beg end)))
 
-  (defun lps/select-line ()
+  (defun lps/mark-line ()
     "Select the current line. If the region is already active, extends the current selection by line."
     (interactive)
     (if (region-active-p)
@@ -1475,7 +1480,14 @@ If ARG > 1, copy subsequent lines and indentation."
           (end-of-line))
       (progn
         (end-of-line)
-        (set-mark (line-beginning-position))))))
+        (set-mark (line-beginning-position)))))
+
+  (defun lps/yank-indent (arg)
+    (interactive "*P")
+    (let ((point (point)))
+      (yank arg)
+      (when (-some 'derived-mode-p lps/yank-indent-modes)
+        (indent-region point (point))))))
 
 (use-package emacs
   :ensure nil
@@ -1572,8 +1584,7 @@ Move point in the last duplicated string (line or region)."
   If SPLIT is provided, it will be inserted before each match, including the first one.
   The initial strings are destroyed, and the kill-ring is not modified"
   (save-excursion
-    (let ((matches (lps/find-delete-forward-all-regexp re beg)))
-      (prin1 matches)
+    (let ((matches (nreverse (lps/find-delete-forward-all-regexp re beg))))
       (goto-char (or move (point-max)))
       (while matches
         (insert (or split ""))
