@@ -467,6 +467,17 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
   (use-package emacs
     :init
     (column-number-mode t)
+
+    (defun lps/activate-truncate-lines ()
+      (toggle-truncate-lines 1))
+
+    (defvar lps/truncate-lines-modes-hook '(dired-mode-hook
+                                            outline-mode-hook
+                                            tabulated-list-mode-hook)
+      "Modes in which `truncate-lines' will be set to `t' automatically")
+
+    (dolist (hook lps/truncate-lines-modes-hook)
+      (add-hook hook 'lps/activate-truncate-lines))
     :custom
     (hscroll-margin 10)
     (hscroll-step 10)
@@ -3601,6 +3612,7 @@ Not only is Org Mode great to write structured documents that can be exported to
   (setq org-log-into-drawer t)
   (setq org-log-done 'time)
   (setq org-agenda-start-with-log-mode t)
+  (setq org-agenda-show-inherited-tags nil)
 
   (setq org-tag-alist
         '((:startgroup)
@@ -3614,6 +3626,15 @@ Not only is Org Mode great to write structured documents that can be exported to
           ("idea" . ?i)
           ("read" . ?r)))
 
+  (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
+                          ("Conference" ,(all-the-icons-faicon "users"))
+                          ("Talk" ,(all-the-icons-faicon "volume-up"))
+                          ("Exam" ,(all-the-icons-faicon "pencil"))))
+    (push (list (car tag-and-icon)
+                (cdr tag-and-icon)
+                nil nil
+                :ascent 'center)
+          org-agenda-category-icon-alist))
 #+end_src
 
 ** Org Capture

@@ -295,6 +295,17 @@ fboundp."
 (use-package emacs
   :init
   (column-number-mode t)
+
+  (defun lps/activate-truncate-lines ()
+    (toggle-truncate-lines 1))
+
+  (defvar lps/truncate-lines-modes-hook '(dired-mode-hook
+                                          outline-mode-hook
+                                          tabulated-list-mode-hook)
+    "Modes in which `truncate-lines' will be set to `t' automatically")
+
+  (dolist (hook lps/truncate-lines-modes-hook)
+    (add-hook hook 'lps/activate-truncate-lines))
   :custom
   (hscroll-margin 10)
   (hscroll-step 10)
@@ -2724,6 +2735,7 @@ call the associated function interactively. Otherwise, call the
 (setq org-log-into-drawer t)
 (setq org-log-done 'time)
 (setq org-agenda-start-with-log-mode t)
+(setq org-agenda-show-inherited-tags nil)
 
 (setq org-tag-alist
       '((:startgroup)
@@ -2736,6 +2748,16 @@ call the associated function interactively. Otherwise, call the
         ("note" . ?n)
         ("idea" . ?i)
         ("read" . ?r)))
+
+(dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
+                        ("Conference" ,(all-the-icons-faicon "users"))
+                        ("Talk" ,(all-the-icons-faicon "volume-up"))
+                        ("Exam" ,(all-the-icons-faicon "pencil"))))
+  (push (list (car tag-and-icon)
+              (cdr tag-and-icon)
+              nil nil
+              :ascent 'center)
+        org-agenda-category-icon-alist))
 
 ;; From https://stackoverflow.com/questions/9005843/interactively-enter-headline-under-which-to-place-an-entry-using-capture
 (defun lps/org-ask-location ()
