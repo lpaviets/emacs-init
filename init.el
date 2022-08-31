@@ -4064,12 +4064,18 @@ marking if it still had that."
 
 (use-package ispell
   :defer t
+  :init
+  (defvar lps/ispell-personal-dictionaries-dir
+    (expand-file-name "ispell-dicts/"
+                      user-emacs-directory)
+    "Directory where ispell personal dictionaries are stored")
   :bind
   ("<f8>" . ispell)
-  ("S-<f8>" . ispell-change-dictionary)
+  ("S-<f8>" . lps/ispell-change-dictionary)
   ("C-S-<f8>" . lps/flyspell-toggle)
   :custom
   (ispell-quietly t)
+  (ispell-program-name (executable-find "aspell"))
   :config
   (add-to-list 'ispell-skip-region-alist '("^#+BEGIN_SRC" . "^#+END_SRC"))
 
@@ -4080,7 +4086,7 @@ buffer. Uses `flyspell-prog-mode' for modes derived from `prog-mode', so
 only strings and comments get checked. All other buffers get `flyspell-mode'
 to check all text. If flyspell is already enabled, does nothing."
     (interactive)
-    (when flyspell-mode ; if not already on
+    (when flyspell-mode                 ; if not already on
       (if (derived-mode-p 'prog-mode)
           (progn
             (message "Flyspell on (code)")
@@ -4089,16 +4095,34 @@ to check all text. If flyspell is already enabled, does nothing."
           (message "Flyspell on (text)")
           (flyspell-mode 1)))))
 
-    (defun lps/flyspell-toggle ()
-      "Turn Flyspell on if it is off, or off if it is on.
+  (defun lps/flyspell-toggle ()
+    "Turn Flyspell on if it is off, or off if it is on.
 When turning on, it uses `lps/flyspell-on-for-buffer-type' so code-vs-text
 is handled appropriately."
-      (interactive)
-      (if flyspell-mode
-          (progn
-            (message "Flyspell off")
-            (flyspell-mode -1))
-        (lps/flyspell-on-for-buffer-type))))
+    (interactive)
+    (if flyspell-mode
+        (progn
+          (message "Flyspell off")
+          (flyspell-mode -1))
+      (lps/flyspell-on-for-buffer-type)))
+
+  (defun lps/ispell-change-personal-dictionary (code &optional kill-ispell)
+    (setq ispell-personal-dictionary
+          (expand-file-name code lps/ispell-personal-dictionaries))
+    (when (and ispell-process kill-ispell)
+      (ispell-kill-ispell)))
+
+  (defun lps/ispell-change-dictionary (dict)
+    (interactive
+     (list
+      (completing-read
+       "Use new dictionary (RET for current, SPC to complete): "
+       (and (fboundp 'ispell-valid-dictionary-list)
+            (mapcar #'list (ispell-valid-dictionary-list)))
+       nil t)))
+    (when (member dict (directory-files lps/ispell-personal-dictionaries-dir))
+      (lps/ispell-change-personal-dictionary dict)
+      (ispell-change-dictionary dict))))
 
 (use-package guess-language
   ;;:hook (text-mode . guess-language-mode)
