@@ -2715,15 +2715,16 @@ call the associated function interactively. Otherwise, call the
         ("idea" . ?i)
         ("read" . ?r)))
 
-(dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
-                        ("Conference" ,(all-the-icons-faicon "users"))
-                        ("Talk" ,(all-the-icons-faicon "volume-up"))
-                        ("Exam" ,(all-the-icons-faicon "pencil"))))
-  (push (list (car tag-and-icon)
-              (cdr tag-and-icon)
-              nil nil
-              :ascent 'center)
-        org-agenda-category-icon-alist))
+(with-eval-after-load "org-agenda"
+    (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
+                            ("Conference" ,(all-the-icons-faicon "users"))
+                            ("Talk" ,(all-the-icons-faicon "volume-up"))
+                            ("Exam" ,(all-the-icons-faicon "pencil"))))
+      (push (list (car tag-and-icon)
+                  (cdr tag-and-icon)
+                  nil nil
+                  :ascent 'center)
+            org-agenda-category-icon-alist)))
 
 ;; From https://stackoverflow.com/questions/9005843/interactively-enter-headline-under-which-to-place-an-entry-using-capture
 (defun lps/org-ask-location ()

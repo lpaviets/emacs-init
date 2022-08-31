@@ -3592,15 +3592,16 @@ Not only is Org Mode great to write structured documents that can be exported to
           ("idea" . ?i)
           ("read" . ?r)))
 
-  (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
-                          ("Conference" ,(all-the-icons-faicon "users"))
-                          ("Talk" ,(all-the-icons-faicon "volume-up"))
-                          ("Exam" ,(all-the-icons-faicon "pencil"))))
-    (push (list (car tag-and-icon)
-                (cdr tag-and-icon)
-                nil nil
-                :ascent 'center)
-          org-agenda-category-icon-alist))
+  (with-eval-after-load "org-agenda"
+      (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
+                              ("Conference" ,(all-the-icons-faicon "users"))
+                              ("Talk" ,(all-the-icons-faicon "volume-up"))
+                              ("Exam" ,(all-the-icons-faicon "pencil"))))
+        (push (list (car tag-and-icon)
+                    (cdr tag-and-icon)
+                    nil nil
+                    :ascent 'center)
+              org-agenda-category-icon-alist)))
 #+end_src
 
 ** Org Capture
