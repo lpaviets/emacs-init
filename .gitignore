@@ -110,9 +110,6 @@ flycheck_*.el
 #Cider
 /.nrepl-port
 
-# Personal packages, machine dependent
-/extra-packages/*
-
 # Sandbox stuff: only interested in init.el
 /sandbox/*
 !/sandbox/init.el
@@ -130,3 +127,4 @@ flycheck_*.el
 /share/
 /org-roam.db
 /pyhist-Python
+/extra-packages/private/*
