@@ -126,6 +126,21 @@ BORROWED FROM `pdf-links-read-link-action'. See
                         (error "No char selected")))))
     (car (alist-get 'edges (car coords)))))
 
+;; Awful hack: this computation is undone immediately by
+;; pdf-sync-backward-search
+(defun pdf-select--coordinates-to-xy (coords)
+  (let ((size (pdf-view-image-size)))
+    (list (* (car coords) (float (car size)))
+          (* (cadr coords) (float (cdr size))))))
+
+(defun pdf-select-sync-backward-search ()
+  (interactive)
+  (if (pdf-view-active-region-p)
+      (let ((beg-region (cl-subseq (car (pdf-view-active-region)) 0 2)))
+        (apply 'pdf-sync-backward-search (pdf-select--coordinates-to-xy beg-region)))
+    (let ((dest (pdf-select-get-coordinates nil)))
+      (apply 'pdf-sync-backward-search (pdf-select--coordinates-to-xy dest)))))
+
 
 ;; * ================================================================== *
 ;; * Minor Mode
@@ -134,6 +149,7 @@ BORROWED FROM `pdf-links-read-link-action'. See
 (defvar pdf-select-minor-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map (kbd "M-é") 'pdf-select-ask-bounds)
+    (define-key map (kbd "j") 'pdf-select-sync-backward-search)
     map))
 
 ;;;###autoload
