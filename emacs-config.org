@@ -5136,6 +5136,8 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
     :custom
     (ispell-quietly t)
     (ispell-program-name (executable-find "aspell"))
+    (ispell-personal-dictionary (expand-file-name "fr"
+                                 lps/ispell-personal-dictionaries-dir))
     :config
     (add-to-list 'ispell-skip-region-alist '("^#+BEGIN_SRC" . "^#+END_SRC"))
 

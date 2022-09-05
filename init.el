@@ -4049,6 +4049,8 @@ marking if it still had that."
   :custom
   (ispell-quietly t)
   (ispell-program-name (executable-find "aspell"))
+  (ispell-personal-dictionary (expand-file-name "fr"
+                               lps/ispell-personal-dictionaries-dir))
   :config
   (add-to-list 'ispell-skip-region-alist '("^#+BEGIN_SRC" . "^#+END_SRC"))
 
