@@ -42,16 +42,22 @@
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
 
-;; Symlink (or directly place) your personal packages in this directory.
-;; Simple way to add personal packages
-;; Need to use `update-file-autoloads' or `update-directory-autoloads' in this dir
-;; regularly and place the autoloads in the personal-autoloads.el file
-(let* ((extra-package-dir (concat (expand-file-name user-emacs-directory)
-                                 "extra-packages"))
-       (extra-autoloads (concat extra-package-dir "/personal-autoloads.el")))
+;; Symlink (or directly place) your personal packages in this
+;; directory. Simple way to add personal packages Need to use
+;; `update-file-autoloads' or `update-directory-autoloads' in this dir
+;; and regularly and place the autoloads in the
+;; personal-<private-shared>autoloads.el file
+(let* ((extra-package-dir (expand-file-name "extra-packages" user-emacs-directory))
+       (extra-package-dir-shared (expand-file-name "shared" extra-package-dir))
+       (extra-package-dir-private (expand-file-name "private" extra-package-dir))
+       (extra-autoloads (list (expand-file-name "personal-private-autoloads.el"
+                                                extra-package-dir-private)
+                              (expand-file-name "personal-shared-autoloads.el"
+                                                extra-package-dir-shared))))
   (add-to-list 'load-path extra-package-dir)
-  (when (file-exists-p extra-autoloads)
-    (load extra-autoloads)))
+  (dolist (file extra-autoloads)
+    (when (file-exists-p file)
+      (load file))))
 
 (require 'use-package)
 ;; Comment this line if you don't want to automatically install
@@ -4043,6 +4049,8 @@ marking if it still had that."
   :custom
   (ispell-quietly t)
   (ispell-program-name (executable-find "aspell"))
+  (ispell-personal-dictionary (expand-file-name "fr"
+                               lps/ispell-personal-dictionaries-dir))
   :config
   (add-to-list 'ispell-skip-region-alist '("^#+BEGIN_SRC" . "^#+END_SRC"))
 
