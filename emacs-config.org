@@ -297,7 +297,12 @@ Emacs is generally meant to be started once and stay up for long period of times
 #+begin_src emacs-lisp
   (use-package desktop
     :init
-    (desktop-save-mode 1)
+    (add-hook 'server-after-make-frame-hook
+              (lambda ()
+                (desktop-save-mode 1)
+                (desktop-read desktop-path)))
+    (unless (daemonp)
+      (desktop-save-mode 1))
     :custom
     (desktop-restore-frames nil) ;; Otherwise buggy with daemon-mode
     (desktop-path (list (expand-file-name "desktop-saves/" user-emacs-directory)))
@@ -5129,6 +5134,8 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
       (expand-file-name "ispell-dicts/"
                         user-emacs-directory)
       "Directory where ispell personal dictionaries are stored")
+    (setq ispell-personal-dictionary
+          (expand-file-name "fr" lps/ispell-personal-dictionaries-dir))
     :bind
     ("<f8>" . ispell)
     ("S-<f8>" . lps/ispell-change-dictionary)
@@ -5137,8 +5144,6 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
     :custom
     (ispell-quietly t)
     (ispell-program-name (executable-find "aspell"))
-    (ispell-personal-dictionary (expand-file-name "fr"
-                                 lps/ispell-personal-dictionaries-dir))
     :config
     (add-to-list 'ispell-skip-region-alist '("^#+BEGIN_SRC" . "^#+END_SRC"))
 

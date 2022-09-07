@@ -199,7 +199,12 @@ fboundp."
 
 (use-package desktop
   :init
-  (desktop-save-mode 1)
+  (add-hook 'server-after-make-frame-hook
+            (lambda ()
+              (desktop-save-mode 1)
+              (desktop-read desktop-path)))
+  (unless (daemonp)
+    (desktop-save-mode 1))
   :custom
   (desktop-restore-frames nil) ;; Otherwise buggy with daemon-mode
   (desktop-path (list (expand-file-name "desktop-saves/" user-emacs-directory)))
@@ -4042,15 +4047,16 @@ marking if it still had that."
     (expand-file-name "ispell-dicts/"
                       user-emacs-directory)
     "Directory where ispell personal dictionaries are stored")
+  (setq ispell-personal-dictionary
+        (expand-file-name "fr" lps/ispell-personal-dictionaries-dir))
   :bind
   ("<f8>" . ispell)
   ("S-<f8>" . lps/ispell-change-dictionary)
   ("C-S-<f8>" . lps/flyspell-toggle)
+  :hook (message-send . ispell-message)
   :custom
   (ispell-quietly t)
   (ispell-program-name (executable-find "aspell"))
-  (ispell-personal-dictionary (expand-file-name "fr"
-                               lps/ispell-personal-dictionaries-dir))
   :config
   (add-to-list 'ispell-skip-region-alist '("^#+BEGIN_SRC" . "^#+END_SRC"))
 
@@ -4083,7 +4089,7 @@ is handled appropriately."
 
   (defun lps/ispell-change-personal-dictionary (code &optional kill-ispell)
     (setq ispell-personal-dictionary
-          (expand-file-name code lps/ispell-personal-dictionaries))
+          (expand-file-name code lps/ispell-personal-dictionaries-dir))
     (when (and ispell-process kill-ispell)
       (ispell-kill-ispell)))
 
