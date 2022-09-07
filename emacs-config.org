@@ -5127,6 +5127,7 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
     ("<f8>" . ispell)
     ("S-<f8>" . lps/ispell-change-dictionary)
     ("C-S-<f8>" . lps/flyspell-toggle)
+    :hook (message-send . ispell-message)
     :custom
     (ispell-quietly t)
     (ispell-program-name (executable-find "aspell"))
@@ -5162,7 +5163,7 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
 
     (defun lps/ispell-change-personal-dictionary (code &optional kill-ispell)
       (setq ispell-personal-dictionary
-            (expand-file-name code lps/ispell-personal-dictionaries))
+            (expand-file-name code lps/ispell-personal-dictionaries-dir))
       (when (and ispell-process kill-ispell)
         (ispell-kill-ispell)))
 
