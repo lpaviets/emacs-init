@@ -2642,7 +2642,7 @@ call the associated function interactively. Otherwise, call the
   (defun lps/org-mode-setup ()
     (lps/org-font-setup)
     (org-indent-mode 1)
-    (variable-pitch-mode 1)
+    ;; (variable-pitch-mode 1)
     (visual-line-mode 1))
 
   (setq org-imenu-depth 4)
@@ -2666,7 +2666,7 @@ call the associated function interactively. Otherwise, call the
                   (org-level-6 . 1.0)
                   (org-level-7 . 1.0)
                   (org-level-8 . 1.0)))
-    (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'variable-pitch))
+    (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'fixed-pitch))
 
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way
   (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch :extend t)
@@ -4067,7 +4067,7 @@ buffer. Uses `flyspell-prog-mode' for modes derived from `prog-mode', so
 only strings and comments get checked. All other buffers get `flyspell-mode'
 to check all text. If flyspell is already enabled, does nothing."
     (interactive)
-    (when flyspell-mode                 ; if not already on
+    (unless flyspell-mode                 ; if not already on
       (if (derived-mode-p 'prog-mode)
           (progn
             (message "Flyspell on (code)")
