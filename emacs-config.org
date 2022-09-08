@@ -109,7 +109,8 @@ It makes both installation and customization easier, and the code is also simple
                                                   extra-package-dir-private)
                                 (expand-file-name "personal-shared-autoloads.el"
                                                   extra-package-dir-shared))))
-    (add-to-list 'load-path extra-package-dir)
+    (add-to-list 'load-path extra-package-dir-shared)
+    (add-to-list 'load-path extra-package-dir-private)
     (dolist (file extra-autoloads)
       (when (file-exists-p file)
         (load file))))

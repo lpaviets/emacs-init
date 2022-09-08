@@ -133,14 +133,6 @@ BORROWED FROM `pdf-links-read-link-action'. See
     (list (* (car coords) (float (car size)))
           (* (cadr coords) (float (cdr size))))))
 
-(defun pdf-select-sync-backward-search ()
-  (interactive)
-  (if (pdf-view-active-region-p)
-      (let ((beg-region (cl-subseq (car (pdf-view-active-region)) 0 2)))
-        (apply 'pdf-sync-backward-search (pdf-select--coordinates-to-xy beg-region)))
-    (let ((dest (pdf-select-get-coordinates nil)))
-      (apply 'pdf-sync-backward-search (pdf-select--coordinates-to-xy dest)))))
-
 
 ;; * ================================================================== *
 ;; * Minor Mode
@@ -151,6 +143,15 @@ BORROWED FROM `pdf-links-read-link-action'. See
     (define-key map (kbd "M-é") 'pdf-select-ask-bounds)
     (define-key map (kbd "j") 'pdf-select-sync-backward-search)
     map))
+
+;;;###autoload
+(defun pdf-select-sync-backward-search ()
+  (interactive)
+  (if (pdf-view-active-region-p)
+      (let ((beg-region (cl-subseq (car (pdf-view-active-region)) 0 2)))
+        (apply 'pdf-sync-backward-search (pdf-select--coordinates-to-xy beg-region)))
+    (let ((dest (pdf-select-get-coordinates nil)))
+      (apply 'pdf-sync-backward-search (pdf-select--coordinates-to-xy dest)))))
 
 ;;;###autoload
 (defun pdf-select-ask-bounds ()

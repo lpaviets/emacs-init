@@ -6,6 +6,8 @@
 ;;;### (autoloads nil "pdf-select" "pdf-select.el" (0 0 0 0))
 ;;; Generated autoloads from pdf-select.el
 
+(autoload 'pdf-select-sync-backward-search "pdf-select" nil t nil)
+
 (autoload 'pdf-select-ask-bounds "pdf-select" nil t nil)
 
 (autoload 'pdf-select-minor-mode "pdf-select" "\
