@@ -199,7 +199,12 @@ fboundp."
 
 (use-package desktop
   :init
-  (desktop-save-mode 1)
+  (add-hook 'server-after-make-frame-hook
+            (lambda ()
+              (desktop-save-mode 1)
+              (desktop-read desktop-path)))
+  (unless (daemonp)
+    (desktop-save-mode 1))
   :custom
   (desktop-restore-frames nil) ;; Otherwise buggy with daemon-mode
   (desktop-path (list (expand-file-name "desktop-saves/" user-emacs-directory)))
@@ -2637,7 +2642,7 @@ call the associated function interactively. Otherwise, call the
   (defun lps/org-mode-setup ()
     (lps/org-font-setup)
     (org-indent-mode 1)
-    (variable-pitch-mode 1)
+    ;; (variable-pitch-mode 1)
     (visual-line-mode 1))
 
   (setq org-imenu-depth 4)
@@ -2661,7 +2666,7 @@ call the associated function interactively. Otherwise, call the
                   (org-level-6 . 1.0)
                   (org-level-7 . 1.0)
                   (org-level-8 . 1.0)))
-    (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'variable-pitch))
+    (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'fixed-pitch))
 
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way
   (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch :extend t)
@@ -4042,15 +4047,16 @@ marking if it still had that."
     (expand-file-name "ispell-dicts/"
                       user-emacs-directory)
     "Directory where ispell personal dictionaries are stored")
+  (setq ispell-personal-dictionary
+        (expand-file-name "fr" lps/ispell-personal-dictionaries-dir))
   :bind
   ("<f8>" . ispell)
   ("S-<f8>" . lps/ispell-change-dictionary)
   ("C-S-<f8>" . lps/flyspell-toggle)
+  :hook (message-send . ispell-message)
   :custom
   (ispell-quietly t)
   (ispell-program-name (executable-find "aspell"))
-  (ispell-personal-dictionary (expand-file-name "fr"
-                               lps/ispell-personal-dictionaries-dir))
   :config
   (add-to-list 'ispell-skip-region-alist '("^#+BEGIN_SRC" . "^#+END_SRC"))
 
@@ -4061,7 +4067,7 @@ buffer. Uses `flyspell-prog-mode' for modes derived from `prog-mode', so
 only strings and comments get checked. All other buffers get `flyspell-mode'
 to check all text. If flyspell is already enabled, does nothing."
     (interactive)
-    (when flyspell-mode                 ; if not already on
+    (unless flyspell-mode                 ; if not already on
       (if (derived-mode-p 'prog-mode)
           (progn
             (message "Flyspell on (code)")
@@ -4083,7 +4089,7 @@ is handled appropriately."
 
   (defun lps/ispell-change-personal-dictionary (code &optional kill-ispell)
     (setq ispell-personal-dictionary
-          (expand-file-name code lps/ispell-personal-dictionaries))
+          (expand-file-name code lps/ispell-personal-dictionaries-dir))
     (when (and ispell-process kill-ispell)
       (ispell-kill-ispell)))
 
