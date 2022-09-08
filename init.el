@@ -54,7 +54,8 @@
                                                 extra-package-dir-private)
                               (expand-file-name "personal-shared-autoloads.el"
                                                 extra-package-dir-shared))))
-  (add-to-list 'load-path extra-package-dir)
+  (add-to-list 'load-path extra-package-dir-shared)
+  (add-to-list 'load-path extra-package-dir-private)
   (dolist (file extra-autoloads)
     (when (file-exists-p file)
       (load file))))
@@ -201,14 +202,16 @@ fboundp."
   :init
   (add-hook 'server-after-make-frame-hook
             (lambda ()
-              (desktop-save-mode 1)
-              (desktop-read desktop-path)))
+              (let ((desktop-load-locked-desktop t))
+                (desktop-save-mode 1)
+                (desktop-read (car desktop-path)))))
   (unless (daemonp)
     (desktop-save-mode 1))
   :custom
   (desktop-restore-frames nil) ;; Otherwise buggy with daemon-mode
   (desktop-path (list (expand-file-name "desktop-saves/" user-emacs-directory)))
-  (desktop-restore-eager 10))
+  (desktop-restore-eager 10)
+  (desktop-lazy-verbose nil))
 
 (use-package server
   :custom

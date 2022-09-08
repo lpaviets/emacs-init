@@ -300,14 +300,16 @@ Emacs is generally meant to be started once and stay up for long period of times
     :init
     (add-hook 'server-after-make-frame-hook
               (lambda ()
-                (desktop-save-mode 1)
-                (desktop-read desktop-path)))
+                (let ((desktop-load-locked-desktop t))
+                  (desktop-save-mode 1)
+                  (desktop-read (car desktop-path)))))
     (unless (daemonp)
       (desktop-save-mode 1))
     :custom
     (desktop-restore-frames nil) ;; Otherwise buggy with daemon-mode
     (desktop-path (list (expand-file-name "desktop-saves/" user-emacs-directory)))
-    (desktop-restore-eager 10))
+    (desktop-restore-eager 10)
+    (desktop-lazy-verbose nil))
 #+end_src
 
 ** Server mode and emacsclient
