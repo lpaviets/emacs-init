@@ -1834,7 +1834,10 @@ Hence, we add a few bindings to an already existing keymap, to make them easily 
     (isearch-regexp-lax-whitespace t)
     (isearch-yank-on-move t)
     (isearch-allow-motion t)
-    (isearch-allow-scroll t))
+    (isearch-allow-scroll t)
+    :config
+    ;; Change this face to distinguish between current match and other ones
+    (set-face-foreground 'isearch "#98f5ff"))
 
   (use-package replace
     :ensure nil
@@ -3490,11 +3493,25 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
     (org-return-follows-link t)
     (org-catch-invisible-edits 'show)
     :config
+    (defun lps/windmove-mode-local-off ()
+      ;; Hack to disable windmove locally
+      (setq-local windmove-mode nil))
+
+    (defun lps/windmove-mode-local-off-around (fun &rest args)
+      (unwind-protect
+          (progn
+            (add-hook 'minibuffer-setup-hook 'lps/windmove-mode-local-off)
+            (apply fun args))
+        (remove-hook 'minibuffer-setup-hook 'lps/windmove-mode-local-off)))
+
+    (advice-add 'org-time-stamp :around 'lps/windmove-mode-local-off-around)
+
     (defun lps/org-mode-setup ()
       (lps/org-font-setup)
       (org-indent-mode 1)
       ;; (variable-pitch-mode 1)
-      (visual-line-mode 1))
+      (visual-line-mode 1)
+      (lps/windmove-mode-local-off))
 
     (setq org-imenu-depth 4)
 
