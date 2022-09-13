@@ -3624,15 +3624,16 @@ Not only is Org Mode great to write structured documents that can be exported to
           ("read" . ?r)))
 
   (with-eval-after-load "org-agenda"
-      (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
-                              ("Conference" ,(all-the-icons-faicon "users"))
-                              ("Talk" ,(all-the-icons-faicon "volume-up"))
-                              ("Exam" ,(all-the-icons-faicon "pencil"))))
-        (push (list (car tag-and-icon)
-                    (cdr tag-and-icon)
-                    nil nil
-                    :ascent 'center)
-              org-agenda-category-icon-alist)))
+    (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
+                            ("Conference" ,(all-the-icons-faicon "users"))
+                            ("Talk" ,(all-the-icons-faicon "volume-up"))
+                            ("Exam" ,(all-the-icons-faicon "pencil"))
+                            ("Seminar" ,(all-the-icons-octicon "mortar-board"))))
+      (cl-pushnew (list (car tag-and-icon)
+                        (cdr tag-and-icon)
+                        nil nil
+                        :ascent 'center)
+                  org-agenda-category-icon-alist)))
 #+end_src
 
 ** Org Capture
@@ -3874,6 +3875,8 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (TeX-error-overview-open-after-TeX-run t)
 
     :config
+    (add-to-list 'LaTeX-indent-environment-list '("tikzpicture"))
+
     (add-to-list 'lps/auto-compile-command-alist
                  (cons 'latex-mode 'lps/TeX-recompile-all))
 
@@ -3883,7 +3886,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
                    '(latex-mode
                      nil
                      (LaTeX-environment-menu "document")
-                     '(if (y-or-n-p "Insert default packages and custom commands ?")
+                     '(if (y-or-n-p "Insert default packages and commands ?")
                           (save-excursion
                             (forward-line -2)
                             (insert "\n\\usepackage[T1]{fontenc}\n"
@@ -3964,7 +3967,8 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
                 (while (re-search-forward
                         ;; XXX: XEmacs doesn't support character classes in
                         ;; regexps, like "[:alnum:]".
-                        "^ *\\([0-9]+\\) +\\([-~/a-zA-Z0-9_.${}#%,:\\ ()]+\\)" nil t)
+                        "^ *\\([0-9]+\\) +\\([-~/a-zA-Z0-9_.${}#%,:\\ ()]+\\)"
+                        nil t)
                   (push (cons (match-string 1) (match-string 2)) list))))
             (unwind-protect
                 (cond
@@ -4575,30 +4579,32 @@ Some of our aliases will come from =.bashrc=. However, we still want to add alia
 Now, we try to add things on top of the built-in file manager, Dired.
 
 #+begin_src emacs-lisp
-  (use-package dired
-    :ensure nil
-    :defer t
-    :bind
-    (:map dired-mode-map
-          ("F" . find-name-dired))
-    :custom
-    ;; Delete and copy directories recursively
-    (dired-recursive-deletes 'top)
-    (dired-recursive-copies 'always)
-    (dired-auto-revert-buffer t)
-    (dired-listing-switches "-alFh")
-    (dired-isearch-filenames 'dwim)
-    (dired-listing-switches "-AlFh --group-directories-first")
-    (wdired-allow-to-change-permissions t))
+    (use-package dired
+      :ensure nil
+      :defer t
+      :bind
+      (:map dired-mode-map
+            ("F" . find-name-dired))
+      :custom
+      ;; Delete and copy directories recursively
+      (dired-recursive-deletes 'top)
+      (dired-recursive-copies 'always)
+      (dired-auto-revert-buffer t)
+      (dired-listing-switches "-alFh")
+      (dired-isearch-filenames 'dwim)
+      (dired-listing-switches "-AlFh --group-directories-first")
+      (wdired-allow-to-change-permissions t))
 
-  ;; Make things prettier
-  (use-package all-the-icons-dired
-    :diminish
-    :hook (dired-mode . all-the-icons-dired-mode))
+    ;; Make things prettier
+    (use-package all-the-icons-dired
+      :diminish
+      :hook (dired-mode . all-the-icons-dired-mode)
+      :custom
+      (all-the-icons-dired-monochrome nil))
 
-  (use-package dired-x
-    :ensure nil
-    :after dired)
+    (use-package dired-x
+      :ensure nil
+      :after dired)
 #+end_src
 
 Dired can also be used to search for files, using their names or their content.

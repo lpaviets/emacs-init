@@ -2747,15 +2747,16 @@ call the associated function interactively. Otherwise, call the
         ("read" . ?r)))
 
 (with-eval-after-load "org-agenda"
-    (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
-                            ("Conference" ,(all-the-icons-faicon "users"))
-                            ("Talk" ,(all-the-icons-faicon "volume-up"))
-                            ("Exam" ,(all-the-icons-faicon "pencil"))))
-      (push (list (car tag-and-icon)
-                  (cdr tag-and-icon)
-                  nil nil
-                  :ascent 'center)
-            org-agenda-category-icon-alist)))
+  (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
+                          ("Conference" ,(all-the-icons-faicon "users"))
+                          ("Talk" ,(all-the-icons-faicon "volume-up"))
+                          ("Exam" ,(all-the-icons-faicon "pencil"))
+                          ("Seminar" ,(all-the-icons-octicon "mortar-board"))))
+    (cl-pushnew (list (car tag-and-icon)
+                      (cdr tag-and-icon)
+                      nil nil
+                      :ascent 'center)
+                org-agenda-category-icon-alist)))
 
 ;; From https://stackoverflow.com/questions/9005843/interactively-enter-headline-under-which-to-place-an-entry-using-capture
 (defun lps/org-ask-location ()
@@ -2963,6 +2964,8 @@ move to the end of the document, and search backward instead."
   (TeX-error-overview-open-after-TeX-run t)
 
   :config
+  (add-to-list 'LaTeX-indent-environment-list '("tikzpicture"))
+
   (add-to-list 'lps/auto-compile-command-alist
                (cons 'latex-mode 'lps/TeX-recompile-all))
 
@@ -2972,7 +2975,7 @@ move to the end of the document, and search backward instead."
                  '(latex-mode
                    nil
                    (LaTeX-environment-menu "document")
-                   '(if (y-or-n-p "Insert default packages and custom commands ?")
+                   '(if (y-or-n-p "Insert default packages and commands ?")
                         (save-excursion
                           (forward-line -2)
                           (insert "\n\\usepackage[T1]{fontenc}\n"
@@ -3053,7 +3056,8 @@ show."
               (while (re-search-forward
                       ;; XXX: XEmacs doesn't support character classes in
                       ;; regexps, like "[:alnum:]".
-                      "^ *\\([0-9]+\\) +\\([-~/a-zA-Z0-9_.${}#%,:\\ ()]+\\)" nil t)
+                      "^ *\\([0-9]+\\) +\\([-~/a-zA-Z0-9_.${}#%,:\\ ()]+\\)"
+                      nil t)
                 (push (cons (match-string 1) (match-string 2)) list))))
           (unwind-protect
               (cond
@@ -3607,7 +3611,9 @@ PWD is not in a git repo (or the git command is not found)."
 ;; Make things prettier
 (use-package all-the-icons-dired
   :diminish
-  :hook (dired-mode . all-the-icons-dired-mode))
+  :hook (dired-mode . all-the-icons-dired-mode)
+  :custom
+  (all-the-icons-dired-monochrome nil))
 
 (use-package dired-x
   :ensure nil
