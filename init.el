@@ -2964,8 +2964,6 @@ move to the end of the document, and search backward instead."
   (TeX-error-overview-open-after-TeX-run t)
 
   :config
-  (add-to-list 'LaTeX-indent-environment-list '("tikzpicture"))
-
   (add-to-list 'lps/auto-compile-command-alist
                (cons 'latex-mode 'lps/TeX-recompile-all))
 
@@ -3133,10 +3131,12 @@ The return value is the string as entered in the minibuffer."
         (and def (string-equal input "") (setq input def))
         input)))
 
-  ;; Add environment for auto. insertion with C-c C-e
+  ;; Add environment for auto. insertion with C-c C-e, and some env. specific
+  ;; configuration such as indentation, etc
   (defun lps/latex-add-environments ()
-    ;;(LaTeX-add-environments '("tikzpicture" LaTeX-env-label)) ; Should be done by auctex's tikz.el file
-    )
+    ;; Should be done by auctex's tikz.el FILE
+    ;; (LaTeX-add-environments '("tikzpicture" LaTeX-env-label))
+    (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")))
 
   ;; Better completion functions
   (defun lps/latex-company-setup () ;; TO FIX !
