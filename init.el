@@ -3358,7 +3358,7 @@ article's title"
         ("<C-return>" . nil))
   :custom
   (cdlatex-paired-parens "$([{")
-  (cdlatex-make-sub-superscript-roman-if-pressed-twice nil)
+  (cdlatex-make-sub-superscript-roman-if-pressed-twice t)
   (cdlatex-simplify-sub-super-scripts nil)
   (cdlatex-math-modify-prefix "C-^")
   (cdlatex-takeover-dollar nil)
@@ -3366,10 +3366,10 @@ article's title"
   (cdlatex-takeover-parenthesis nil)
   (cdlatex-math-symbol-prefix ?°)
   (cdlatex-math-symbol-alist
-   '((?< ("\\leq" "\\Leftarrow" "\\longleftarrow" "\\Longleftarrow"))
-     (?> ("\\geq" "\\Rightarrow" "\\longrightarrow" "\\Longrightarrow"))
-     (?\[ ("\\subseteq" "\\leftarrow"))
-     (?\] ("\\supseteq" "\\rightarrow"))
+   '((?< ("\\leq"))
+     (?> ("\\geq"))
+     (?\[ ("\\subseteq" "\\sqsubseteq" "\\sqsubset"))
+     (?\] ("\\supseteq" "\\sqsupseteq" "\\sqsupset"))
      (?: ("\\colon"))
      (?- ("\\cap" "\\bigcap"))
      (?+ ("\\cup" "\\bigcup"))
@@ -3377,10 +3377,14 @@ article's title"
      (?c ("\\mathcal{?}" "\\mathbb{?}" "\\mathfrak{?}"))
      (?\( ("\\langle ?\\rangle" "\\left"))
      (?N ("\\mathbb{N}" "\\mathbb{N}^{2}"))
-     (?Z ("\\mathbb{Z}" "\\mathbb{Z}^{2}"))
+     (?Z ("\\mathbb{Z}" "\\mathbb{Z}^{2}" "\\Zeta"))
      (?R ("\\mathbb{R}" "\\mathbb{R}^{2}"))
      (?1 ("^{-1}"))
-     (?\; ("\\dots" "\\vdots" "\\ddots" "\\ldots"))))
+     (?\; ("\\dots" "\\vdots" "\\ddots" "\\ldots"))
+     (?\C-f ("\\to" "\\Rightarrow" "\\longrightarrow" "\\Longrightarrow"))
+     (?\C-b ("\\leftarrow" "\\Leftarrow" "\\longleftarrow" "\\Longleftarrow"))
+     (?\C-p ("\\uparrow" "\\Uparrow" "\\longuparrow" "\\Longuparrow"))
+     (?\C-n ("\\downarrow" "\\Downarrow" "\\longdownarrow" "\\Longdownarrow"))))
   (cdlatex-command-alist
    '(("prodl"       "Insert \\prod\\limits_{}^{}"
       "\\prod\\limits_{?}^{}" cdlatex-position-cursor nil nil t)
@@ -3404,7 +3408,20 @@ article's title"
       (apply fun args)
       (indent-region beg end)))
 
-  (advice-add 'cdlatex-environment :around #'lps/cdlatex-indent-after-expand))
+  (advice-add 'cdlatex-environment :around #'lps/cdlatex-indent-after-expand)
+
+  (defun lps/cdlatex-sub-superscript-wrap-region (fun &rest args)
+    (if (region-active-p)
+        (let* ((beg  (region-beginning))
+               (end (region-end))
+               (region-string (buffer-substring beg end)))
+          (delete-region beg end)
+          (apply fun args)
+          (insert region-string))
+      (apply fun args)))
+
+  (advice-add 'cdlatex-sub-superscript
+              :around #'lps/cdlatex-sub-superscript-wrap-region))
 
 ;; eshell
 (use-package eshell-did-you-mean
