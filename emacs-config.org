@@ -1605,7 +1605,8 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
     (completion-styles '(basic partial-completion orderless))
     (completion-auto-help t)
     (orderless-component-separator #'orderless-escapable-split-on-space)
-    (orderless-matching-styles '(orderless-literal orderless-regexp))
+    (orderless-matching-styles '(orderless-literal
+                                 orderless-regexp))
     (orderless-style-dispatchers '(lps/orderless-initialism-if-semicolon
                                    lps/orderless-substring-if-equal
                                    lps/orderless-flex-if-twiddle
@@ -1661,9 +1662,14 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
 
       (add-to-list
        'completion-styles-alist
-       '(basic-remote basic-remote-try-completion basic-remote-all-completions nil))
+       '(basic-remote basic-remote-try-completion
+                      basic-remote-all-completions
+                      nil))
 
-      (setq completion-category-overrides '((file (styles basic-remote partial-completion))))))
+      (setq completion-category-overrides '((file
+                                             (styles
+                                              basic-remote
+                                              partial-completion))))))
 #+end_src
 
 *** Company
@@ -3627,13 +3633,15 @@ Not only is Org Mode great to write structured documents that can be exported to
     (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
                             ("Conference" ,(all-the-icons-faicon "users"))
                             ("Talk" ,(all-the-icons-faicon "volume-up"))
-                            ("Exam" ,(all-the-icons-faicon "pencil"))
-                            ("Seminar" ,(all-the-icons-octicon "mortar-board"))))
+                            ("Exam" ,(all-the-icons-octicon "mortar-board"))
+                            ("Seminar" ,(all-the-icons-faicon "pencil"))
+                            ("Workshop" ,(all-the-icons-material "group_work"))))
       (cl-pushnew (list (car tag-and-icon)
                         (cdr tag-and-icon)
                         nil nil
                         :ascent 'center)
-                  org-agenda-category-icon-alist)))
+                  org-agenda-category-icon-alist
+                  :test 'equal)))
 #+end_src
 
 ** Org Capture
@@ -4309,7 +4317,7 @@ AucTeX already includes a lot of shortcuts and ways to be more efficient when ty
        (?\] ("\\supseteq" "\\sqsupseteq" "\\sqsupset"))
        (?: ("\\colon"))
        (?- ("\\cap" "\\bigcap"))
-       (?+ ("\\cup" "\\bigcup"))
+       (?+ ("\\cup" "\\bigcup" "\\sqcup" "\\bigsqcup"))
        (?L ("\\Lambda" "\\limits"))
        (?c ("\\mathcal{?}" "\\mathbb{?}" "\\mathfrak{?}"))
        (?\( ("\\langle ?\\rangle" "\\left"))
@@ -5183,11 +5191,162 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
     ("<f8>" . ispell)
     ("S-<f8>" . lps/ispell-change-dictionary)
     ("C-S-<f8>" . lps/flyspell-toggle)
-    :hook (message-send . ispell-message)
+    :hook (message-send . lps/ispell-message-ask)
     :custom
     (ispell-quietly t)
     (ispell-program-name (executable-find "aspell"))
     :config
+    (defun lps/ispell-message-ask ()
+      (when (y-or-n-p "Check spelling ?")
+        (ispell-message)))
+
+    ;;; Redefinition of ispell-message to work with mu4e
+    (defun ispell-message ()
+      "Check the spelling of a mail message or news post.
+  Don't check spelling of message headers except the Subject field.
+  Don't check included messages.
+
+  To abort spell checking of a message region and send the message anyway,
+  use the `x' command.  (Any subsequent regions will be checked.)
+  The `X' command aborts sending the message so that you can edit the buffer.
+
+  To spell-check whenever a message is sent, include the appropriate lines
+  in your init file:
+     (add-hook \\='message-send-hook #\\='ispell-message)  ;; GNUS 5
+     (add-hook \\='news-inews-hook #\\='ispell-message)    ;; GNUS 4
+     (add-hook \\='mail-send-hook  #\\='ispell-message)
+     (add-hook \\='mh-before-send-letter-hook #\\='ispell-message)
+
+  You can bind this to the key C-c i in GNUS or mail by adding to
+  `news-reply-mode-hook' or `mail-mode-hook' the following lambda expression:
+     (lambda () (local-set-key \"\\C-ci\" \\='ispell-message))"
+      (interactive)
+      (save-excursion
+        (goto-char (point-min))
+        (let* (boundary mimep
+                        (ispell-skip-region-alist-save ispell-skip-region-alist)
+                        ;; Nil when message came from outside (eg calling Emacs as editor)
+                        ;; Non-nil marker of end of headers.
+                        (internal-messagep
+                         (re-search-forward
+                          (concat "^" (regexp-quote mail-header-separator) "$") nil t))
+                        (end-of-headers   ; Start of body.
+                         (copy-marker
+                          (or internal-messagep
+                              (re-search-forward "^$" nil t)
+                              (point-min))))
+                        (limit (copy-marker ; End of region we will spell check.
+                                (cond
+                                 ((not ispell-message-text-end) (point-max))
+                                 ((char-or-string-p ispell-message-text-end)
+                                  (if (re-search-forward ispell-message-text-end nil t)
+                                      (match-beginning 0)
+                                    (point-max)))
+                                 (t (min (point-max)
+                                         (funcall ispell-message-text-end))))))
+                        (default-prefix ; Vanilla cite prefix used for cite-regexp)
+                          (if (ispell-non-empty-string mail-yank-prefix)
+                              "   \\|\t"))
+                        (cite-regexp      ;Prefix of quoted text
+                         (cond
+                          ((functionp 'sc-cite-regexp) ; supercite >= 3.0
+                           (with-no-warnings
+                             (concat "\\(" (sc-cite-regexp) "\\)" "\\|"
+                                     (ispell-non-empty-string
+                                      sc-reference-tag-string))))
+                          ((member major-mode '(message-mode
+                                                mu4e-compose-mode)) ; GNUS >= 5
+                           (concat "In article <" "\\|"
+                                   "[^,;&+=\n]+ <[^,;&+=]+> writes:" "\\|"
+                                   (with-no-warnings message-cite-prefix-regexp)
+                                   "\\|"
+                                   default-prefix))
+                          ((equal major-mode 'mh-letter-mode) ; mh mail message
+                           (concat "[^,;&+=\n]+ writes:" "\\|"
+                                   (with-no-warnings
+                                     (ispell-non-empty-string mh-ins-buf-prefix))))
+                          ((not internal-messagep) ; Assume nn sent us this message.
+                           (concat "In [a-zA-Z.]+ you write:" "\\|"
+                                   "In <[^,;&+=]+> [^,;&+=]+ writes:" "\\|"
+                                   " *> *"))
+                          ((boundp 'vm-included-text-prefix) ; VM mail message
+                           (concat "[^,;&+=\n]+ writes:" "\\|"
+                                   (ispell-non-empty-string vm-included-text-prefix)))
+                          (t default-prefix)))
+                        (ispell-skip-region-alist
+                         (cons (list (ispell--make-filename-or-URL-re))
+                               (cons (list (concat "^\\(" cite-regexp "\\)")
+                                           (function forward-line))
+                                     ispell-skip-region-alist)))
+                        (old-case-fold-search case-fold-search)
+                        (dictionary-alist ispell-message-dictionary-alist)
+                        (ispell-checking-message t))
+
+          ;; Select dictionary for message
+          (or (local-variable-p 'ispell-local-dictionary (current-buffer))
+              (while dictionary-alist
+                (goto-char (point-min))
+                (if (re-search-forward (car (car dictionary-alist))
+                                       end-of-headers t)
+                    (setq ispell-local-dictionary (cdr (car dictionary-alist))
+                          dictionary-alist nil)
+                  (setq dictionary-alist (cdr dictionary-alist)))))
+
+          (unwind-protect
+              (progn
+                ;; Spell check any original Subject:
+                (goto-char (point-min))
+                (setq case-fold-search t
+                      mimep (re-search-forward "MIME-Version:" end-of-headers t))
+                (goto-char (point-min))
+                (if (re-search-forward "^Subject: *" end-of-headers t)
+                    (progn
+                      (goto-char (match-end 0))
+                      (if (and (not (looking-at ".*Re\\>"))
+                               (not (looking-at "\\[")))
+                          (progn
+                            (setq case-fold-search old-case-fold-search)
+                            (ispell-region (point)
+                                           (progn ;Tab-initiated continuation lns.
+                                             (end-of-line)
+                                             (while (looking-at "\n[ \t]")
+                                               (end-of-line 2))
+                                             (point)))))))
+                (if mimep
+                    (progn
+                      (goto-char (point-min))
+                      (setq boundary (ispell-mime-multipartp end-of-headers))))
+                ;; Adjust message limit to MIME message if necessary.
+                (and boundary
+                     (re-search-forward (concat boundary "--") nil t)
+                     (re-search-backward boundary nil t)
+                     (< (point) (marker-position limit))
+                     (set-marker limit (point)))
+                (goto-char (point-min))
+                ;; Select type or skip checking if this is a non-multipart message
+                ;; Point moved to end of buffer if region is encoded.
+                (when (and mimep (not boundary))
+                  (goto-char (point-min))
+                  (re-search-forward "Content-[^ \t]*:" end-of-headers t)
+                  (forward-line -1) ; following fn starts one line above
+                  (ispell-mime-skip-part nil)
+                  ;; if message-text-end region, limit may be less than point.
+                  (if (> (point) limit)
+                      (set-marker limit (point))))
+                (goto-char (max end-of-headers (point)))
+                (forward-line 1)
+                (setq case-fold-search old-case-fold-search)
+                ;; Define MIME regions to skip.
+                (if boundary
+                    (setq ispell-checking-message
+                          (list (list boundary 'ispell-mime-skip-part boundary))))
+                (ispell-region (point) limit))
+            (set-marker end-of-headers nil)
+            (set-marker limit nil)
+            (setq ispell-skip-region-alist ispell-skip-region-alist-save
+                  ispell-skip-html nil
+                  case-fold-search old-case-fold-search)))))
+
     (add-to-list 'ispell-skip-region-alist '("^#+BEGIN_SRC" . "^#+END_SRC"))
 
     ;; From https://www.emacswiki.org/emacs/FlySpell
@@ -5197,7 +5356,7 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
   only strings and comments get checked. All other buffers get `flyspell-mode'
   to check all text. If flyspell is already enabled, does nothing."
       (interactive)
-      (unless flyspell-mode                 ; if not already on
+      (unless flyspell-mode               ; if not already on
         (if (derived-mode-p 'prog-mode)
             (progn
               (message "Flyspell on (code)")
