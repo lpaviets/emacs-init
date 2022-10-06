@@ -3203,38 +3203,22 @@ return `nil'."
   :defer t
   :bind
   (:map bibtex-mode-map
-        ("C-c C-?" . bibtex-print-help-message))
-  :config
-  ;; Use a modern BibTeX dialect
-                                        ; (bibtex-set-dialect 'biblatex) ; Useful esp. in social sci.
-  )
+        ("C-c C-?" . bibtex-print-help-message)))
 
 (use-package reftex
-  :diminish
   :hook (LaTeX-mode . reftex-mode)
   :custom
+  (reftex-plug-into-AUCTeX t)
+  (reftex-toc-split-windows-horizontally t)
   (reftex-label-alist
-   '(("theorem" ?T "thm:" "~\\ref{%s}" (nil . 1) ("theorem" "th.") -3)
-     ("lemma" ?T "thm:lemma-" "~\\ref{%s}" (nil . 1) ("lemma") -4)
-     ("proposition" ?T "thm:prop-" "~\\ref{%s}" (nil . 1) ("proposition" "prop.") -4)
-     ("definition" ?T "thm:def-" "~\\ref{%s}" (nil . 1) ("definition" "def."))))
-  :config
-  ;; Plug into AUCTeX
-  (setq reftex-plug-into-AUCTeX t
-        ;; Provide basic RefTeX support for biblatex
-        ;; (unless (assq 'biblatex reftex-cite-format-builtin)
-        ;;   (add-to-list 'reftex-cite-format-builtin
-        ;;                '(biblatex "The biblatex package"
-        ;;                           ((?\C-m . "\\cite[]{%l}")
-        ;;                            (?t . "\\textcite{%l}")
-        ;;                            (?a . "\\autocite[]{%l}")
-        ;;                            (?p . "\\parencite{%l}")
-        ;;                            (?f . "\\footcite[][]{%l}")
-        ;;                            (?F . "\\fullcite[]{%l}")
-        ;;                            (?x . "[]{%l}")
-        ;;                            (?X . "{%l}"))))
-        ;;   (setq reftex-cite-format 'biblatex))
-        ))
+   '(("section"     ?s "sec:"  "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"       ))
+     ("definition"  ?d "def:"  "~\\ref{%s}" t (regexp "[Dd]efinition\\(s\\)?"    ))
+     ("example"     ?x "ex:"   "~\\ref{%s}" t (regexp "[Ee]xample\\(s\\)?"       ))
+     ("lemma"       ?l "lem:"  "~\\ref{%s}" t (regexp "[Ll]emma\\(s\\|ta\\)?"    ))
+     ("proposition" ?p "prop:" "~\\ref{%s}" t (regexp "[Pp]roposition\\(s\\)?"   ))
+     ("theorem"     ?h "thm:"  "~\\ref{%s}" t (regexp "[Tt]heorem\\(s\\)?"       ))
+     ("remark"      ?r "rem:"  "~\\ref{%s}" t (regexp "[Rr]emark\\(s\\)?"        ))
+     ("corollary"   ?c "cor:"  "~\\ref{%s}" t (regexp "[Cc]orollar\\(y\\|ies\\)")))))
 
 (use-package reftex-cite
   :diminish
