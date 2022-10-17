@@ -1043,6 +1043,8 @@ If called with a prefix argument, also kills the current buffer"
         ("C-f" . consult-file-externally))
   :custom
   (consult-narrow-key "<")
+  (xref-show-definitions-function 'consult-xref)
+  (xref-show-xrefs-function 'consult-xref)
   :config
   (defun lps/consult-imenu-or-org-heading ()
     (interactive)
@@ -2662,7 +2664,7 @@ call the associated function interactively. Otherwise, call the
           (apply fun args))
       (remove-hook 'minibuffer-setup-hook 'lps/windmove-mode-local-off)))
 
-  (advice-add 'org-time-stamp :around 'lps/windmove-mode-local-off-around)
+  (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
 
   (defun lps/org-mode-setup ()
     (lps/org-font-setup)
@@ -3714,7 +3716,9 @@ PWD is not in a git repo (or the git command is not found)."
          ("C-c h" . lps/org-mime-htmlize-preserve-secure-and-attach)
          (:map mu4e-main-mode-map
                ("q" . lps/mu4e-kill-buffers)
-               ("Q" . mu4e-quit)))
+               ("Q" . mu4e-quit))
+         (:map mu4e-search-minor-mode-map
+               ("C-S-s" . lps/mu4e-build-query)))
   :init
   (setq mail-user-agent 'mu4e-user-agent)
   (set-variable 'read-mail-command 'mu4e)
@@ -3945,7 +3949,80 @@ marking if it still had that."
          (mu4e-message-field msg :path) nil nil nil t)))
     (switch-to-buffer gnus-article-buffer)
     (setq mu4e~view-message msg)
-    (mu4e~view-render-buffer msg)))
+    (mu4e~view-render-buffer msg))
+
+  (defun lps/--mu4e-read-date (&optional prompt)
+    (let ((time (decode-time (org-read-date nil t))))
+      (format "%04d%02d%02d"
+              (decoded-time-year time)
+              (decoded-time-month time)
+              (decoded-time-day time))))
+
+  (defun lps/--mu4e-read-date-range (&optional prompt)
+    (concat (lps/--mu4e-read-date "Mail ranging from ...")
+            ".."
+            (lps/--mu4e-read-date "... to ...")))
+
+  (defun lps/--mu4e-read-mime-type (&optional prompt)
+    (require 'mailcap)
+    (mailcap-parse-mimetypes)
+    (completing-read (or prompt "Mime type: ") (mailcap-mime-types)))
+
+  (defvar lps/--mu4e-build-query-alist
+    '((?q "quit" "quit")
+      (?\  "" "" read-string)
+      (?f "from" "from:" read-string)
+      (?t "to" "to:" read-string)
+      (?d "date" "date:" ((?d "date" "" lps/--mu4e-read-date)
+                          (?r "range" "" lps/--mu4e-read-date-range)))
+      (?F "Flag" "flag:" ((?u "unread" "unread")
+                          (?d "draft" "draft")
+                          (?f "flagged" "flagged")
+                          (?n "new" "new")
+                          (?p "passed" "passed")
+                          (?r "replied" "replied")
+                          (?s "seen" "seen")
+                          (?t "trashed" "trashed")
+                          (?a "attach" "attach")
+                          (?e "encrypted" "encrypted")
+                          (?S "Signed" "signed")))
+      (?s "subject" "subject:" read-string)
+      (?m "mime" "mime:" lps/--mu4e-read-mime-type)))
+
+  (defun lps/--mu4e-parse-query (choices)
+    (let* ((choice (read-multiple-choice "Test: " choices))
+           (rest (cddr choice))
+           (str (car rest))
+           (read-fun-or-continue (cadr rest)))
+      (cond
+       ((char-equal (car choice) ?q)
+        :quit)
+       ((functionp read-fun-or-continue)
+        (concat str (funcall read-fun-or-continue (concat str " "))))
+       ((consp read-fun-or-continue)
+        (concat str (lps/--mu4e-parse-query read-fun-or-continue)))
+       (t str))))
+
+  (defun lps/mu4e-build-query (&optional start-query)
+    "Provides a simpler interface to build mu4e search queries.
+A caveat is that it does not insert logical separators (NOT, AND,
+OR ...) between expressions, so the expression has to be modified
+by hand if needed"
+    (interactive "P")
+    (let ((choices lps/--mu4e-build-query-alist)
+          (query-list (if start-query
+                          (list (completing-read "Search for: "
+                                                 mu4e--search-hist
+                                                 nil
+                                                 nil
+                                                 nil
+                                                 'mu4e--search-hist))
+                        nil))
+          (choice nil))
+      (while (not (eq (setq choice (lps/--mu4e-parse-query choices)) :quit))
+        (push choice query-list))
+      (let ((query (mapconcat 'identity (reverse query-list) " ")))
+        (mu4e-search query "Search for: " t)))))
 
 (use-package mu4e-alert
   :after mu4e
