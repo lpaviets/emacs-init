@@ -973,27 +973,6 @@ If called with a prefix argument, also kills the current buffer"
   (help-at-pt-display-when-idle t)
   (help-at-pt-timer-delay 0.5))
 
-;; Inspired from https://emacs.stackexchange.com/questions/2777/how-to-get-the-function-help-without-typing
-
-(use-package popup
-  :init
-  (defun lps/describe-thing-in-popup ()
-    (interactive)
-    (let* ((thing (symbol-at-point))
-           (help-xref-following t)
-           (description (save-window-excursion
-                          (with-temp-buffer
-                            (help-mode)
-                            (help-xref-interned thing)
-                            (buffer-string)))))
-      (popup-tip description
-                 :point (point)
-                 :around t
-                 :margin t
-                 :height 20)))
-
-  (global-set-key (kbd "C-&") #'lps/describe-thing-in-popup))
-
 ;; Don't disable any command
 ;; BE CAREFUL
 ;; If you are a new user, you might to comment out this line

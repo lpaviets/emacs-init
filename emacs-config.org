@@ -1323,31 +1323,6 @@ However, we tend not to use the mouse at all, and in particular having to use th
     (help-at-pt-timer-delay 0.5))
 #+end_src
 
-Finally, we use a custom function to look at the documentation of pretty much anything in a popup, rather than in a separate buffer.
-
-#+begin_src emacs-lisp
-  ;; Inspired from https://emacs.stackexchange.com/questions/2777/how-to-get-the-function-help-without-typing
-
-  (use-package popup
-    :init
-    (defun lps/describe-thing-in-popup ()
-      (interactive)
-      (let* ((thing (symbol-at-point))
-             (help-xref-following t)
-             (description (save-window-excursion
-                            (with-temp-buffer
-                              (help-mode)
-                              (help-xref-interned thing)
-                              (buffer-string)))))
-        (popup-tip description
-                   :point (point)
-                   :around t
-                   :margin t
-                   :height 20)))
-
-    (global-set-key (kbd "C-&") #'lps/describe-thing-in-popup))
-#+end_src
-
 * Commands
 ** Disabled commands
 
