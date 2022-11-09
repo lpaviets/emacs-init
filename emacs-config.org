@@ -414,17 +414,6 @@ In this section, we configure the default fonts.
       (lps/set-default-fonts)))
 #+end_src
 
-*** International
-
-Another thing that is technically more a stylistic choice rather than a real encoding problem is how dates are formatted. I decide to use the European style
-
-#+begin_src emacs-lisp
-  (use-package calendar
-    :ensure nil
-    :config
-    (calendar-set-date-style 'european))
-#+end_src
-
 ** Visual interface changes
 
 We remove all the unnecessary elements from the interface, /e.g./ menus, scroll bar and so on.
@@ -5440,8 +5429,7 @@ Depending on the context, we tend to write in different languages. It might be u
     (guess-language-after-detection-functions '(guess-language-switch-flyspell-function)))
 #+end_src
 
-* Fun
-As we tend to spend a lot of time in Emacs, isn't it natural to install fun and distracting packages ?
+* Other
 ** Artist and picture modes
 
 Although listed in my "Fun" section, those are actually useful tools. They can be used to comment, or simply illustrate, some ideas, pretty much regardless of the current (major) mode.
@@ -5478,31 +5466,56 @@ Those modes allow you to draw geometric shapes, such as lines (non-necessarily h
         (artist-key-do-continously-common))))
 #+end_src
 
-** XKCD
-We /love/ [[https://xkcd.com][XKCD]], and so do most of Emacs users. Hence, someone has written a package to read his favourite web-comic directly within Emacs !
+** Calendar
+
+Emacs comes with a builtin calendar. Being French, I decide to format dates using an european style, and to use "French holidays"
 
 #+begin_src emacs-lisp
-  (use-package xkcd
-    :defer t)
-#+end_src
+  (use-package calendar
+    :ensure nil
+    :custom
+    (calendar-view-holidays-initially-flag t)
+    (calendar-mark-holidays-flag t)
+    :config
+    (calendar-set-date-style 'european)
 
-** Keyboard games
-*** Speed-typing
-This package can help you benchmark how fast you are able to write text within Emacs, by using random text samples that you have to copy. It is even possible to add some other books from which to generate those samples.
+    (defvar holiday-french-holidays
+      `((holiday-fixed 1 1 "Jour de l'an")
+        (holiday-fixed 1 6 "Épiphanie")
+        (holiday-fixed 2 2 "Chandeleur")
+        (holiday-fixed 2 14 "Saint Valentin")
+        (holiday-fixed 5 1 "Fête du travail")
+        (holiday-fixed 5 8 "Commémoration de la capitulation de l'Allemagne en 1945")
+        (holiday-fixed 6 21 "Fête de la musique")
+        (holiday-fixed 7 14 "Fête nationale - Prise de la Bastille")
+        (holiday-fixed 8 15 "Assomption (Religieux)")
+        (holiday-fixed 11 11 "Armistice de 1918")
+        (holiday-fixed 11 1 "Toussaint")
+        (holiday-fixed 11 2 "Commémoration des fidèles défunts")
+        (holiday-fixed 12 25 "Noël")
+        ;; Not fixed
+        (holiday-easter-etc 0 "Pâques")
+        (holiday-easter-etc 1 "Lundi de Pâques")
+        (holiday-easter-etc 39 "Ascension")
+        (holiday-easter-etc 49 "Pentecôte")
+        (holiday-easter-etc -47 "Mardi gras")
+        (holiday-float 5 0 4 "Fête des mères")
+        (holiday-float 6 0 3 "Fête des pères")) ;; June's third Sunday
+      "French holidays")
 
-#+begin_src emacs-lisp
-  (use-package speed-type
-    :defer t
-    :custom (speed-type-default-lang 'French)) ; Todo: fix bad behaviour !
-#+end_src
+    (setq holiday-local-holidays holiday-french-holidays)
 
-*** Key Quiz
-
-Another cool thing to do if you want to learn keybindings in a very inefficient way is to simply pick a command at random and try to remember the associated keybinding ! This is exactly what the following package tries to do
-
-#+begin_src emacs-lisp
-  (use-package key-quiz
-    :defer t)
+    (setq calendar-holidays
+          (append holiday-general-holidays
+                  holiday-local-holidays
+                  holiday-other-holidays
+                  ;; holiday-christian-holidays
+                  ;; holiday-hebrew-holidays
+                  ;; holiday-islamic-holidays
+                  ;; holiday-bahai-holidays
+                  ;; holiday-oriental-holidays
+                  ;; holiday-solar-holidays
+                  )))
 #+end_src
 
 * News and RSS feed
@@ -5663,6 +5676,35 @@ Finally, and because we might use this on old computers or with bad network, we 
            (mpv--tq-filter mpv--queue string)))
         (run-hook-with-args 'mpv-on-start-hook args)
         t)))
+#+end_src
+
+* Fun
+As we tend to spend a lot of time in Emacs, isn't it natural to install fun and distracting packages ?
+** XKCD
+We /love/ [[https://xkcd.com][XKCD]], and so do most of Emacs users. Hence, someone has written a package to read his favourite web-comic directly within Emacs !
+
+#+begin_src emacs-lisp
+  (use-package xkcd
+    :defer t)
+#+end_src
+
+** Keyboard games
+*** Speed-typing
+This package can help you benchmark how fast you are able to write text within Emacs, by using random text samples that you have to copy. It is even possible to add some other books from which to generate those samples.
+
+#+begin_src emacs-lisp
+  (use-package speed-type
+    :defer t
+    :custom (speed-type-default-lang 'French)) ; Todo: fix bad behaviour !
+#+end_src
+
+*** Key Quiz
+
+Another cool thing to do if you want to learn keybindings in a very inefficient way is to simply pick a command at random and try to remember the associated keybinding ! This is exactly what the following package tries to do
+
+#+begin_src emacs-lisp
+  (use-package key-quiz
+    :defer t)
 #+end_src
 
 * TODO Small things to do or to fix

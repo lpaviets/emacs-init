@@ -280,11 +280,6 @@ fboundp."
                     (lps/set-default-fonts))))
     (lps/set-default-fonts)))
 
-(use-package calendar
-  :ensure nil
-  :config
-  (calendar-set-date-style 'european))
-
 ;; Disable the annoying startup message and Emacs logo
 (setq inhibit-startup-message t)
 
@@ -4382,15 +4377,51 @@ insert as many blank lines as necessary."
     (when artist-key-is-drawing
       (artist-key-do-continously-common))))
 
-(use-package xkcd
-  :defer t)
+(use-package calendar
+  :ensure nil
+  :custom
+  (calendar-view-holidays-initially-flag t)
+  (calendar-mark-holidays-flag t)
+  :config
+  (calendar-set-date-style 'european)
 
-(use-package speed-type
-  :defer t
-  :custom (speed-type-default-lang 'French)) ; Todo: fix bad behaviour !
+  (defvar holiday-french-holidays
+    `((holiday-fixed 1 1 "Jour de l'an")
+      (holiday-fixed 1 6 "Épiphanie")
+      (holiday-fixed 2 2 "Chandeleur")
+      (holiday-fixed 2 14 "Saint Valentin")
+      (holiday-fixed 5 1 "Fête du travail")
+      (holiday-fixed 5 8 "Commémoration de la capitulation de l'Allemagne en 1945")
+      (holiday-fixed 6 21 "Fête de la musique")
+      (holiday-fixed 7 14 "Fête nationale - Prise de la Bastille")
+      (holiday-fixed 8 15 "Assomption (Religieux)")
+      (holiday-fixed 11 11 "Armistice de 1918")
+      (holiday-fixed 11 1 "Toussaint")
+      (holiday-fixed 11 2 "Commémoration des fidèles défunts")
+      (holiday-fixed 12 25 "Noël")
+      ;; Not fixed
+      (holiday-easter-etc 0 "Pâques")
+      (holiday-easter-etc 1 "Lundi de Pâques")
+      (holiday-easter-etc 39 "Ascension")
+      (holiday-easter-etc 49 "Pentecôte")
+      (holiday-easter-etc -47 "Mardi gras")
+      (holiday-float 5 0 4 "Fête des mères")
+      (holiday-float 6 0 3 "Fête des pères")) ;; June's third Sunday
+    "French holidays")
 
-(use-package key-quiz
-  :defer t)
+  (setq holiday-local-holidays holiday-french-holidays)
+
+  (setq calendar-holidays
+        (append holiday-general-holidays
+                holiday-local-holidays
+                holiday-other-holidays
+                ;; holiday-christian-holidays
+                ;; holiday-hebrew-holidays
+                ;; holiday-islamic-holidays
+                ;; holiday-bahai-holidays
+                ;; holiday-oriental-holidays
+                ;; holiday-solar-holidays
+                )))
 
 (use-package elfeed
   :defer t
@@ -4531,3 +4562,13 @@ instance, it will be killed. Options specified in
          (mpv--tq-filter mpv--queue string)))
       (run-hook-with-args 'mpv-on-start-hook args)
       t)))
+
+(use-package xkcd
+  :defer t)
+
+(use-package speed-type
+  :defer t
+  :custom (speed-type-default-lang 'French)) ; Todo: fix bad behaviour !
+
+(use-package key-quiz
+  :defer t)
