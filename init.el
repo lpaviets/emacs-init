@@ -598,7 +598,12 @@ Note gray80 at size 10 is useful for side remarks."
           (progn
             (delete-minibuffer-contents)
             (insert directory))
-        (backward-kill-word arg)))))
+        (backward-kill-word arg))))
+
+  (defun lps/disable-minibuffer-completion-help (fun &rest args)
+    (cl-letf (((symbol-function #'minibuffer-completion-help)
+               #'ignore))
+      (apply fun args))))
 
 (use-package marginalia
   :after vertico
@@ -836,6 +841,7 @@ buffer in current window."
 
 (use-package ffap
   :ensure nil
+  :bind ("C-c C-f" . ffap-menu)
   :init
   (ffap-bindings)
   :custom
@@ -845,7 +851,9 @@ buffer in current window."
     "Switch to a buffer visiting the file FILENAME as root, creating
 one if none exists."
     (interactive "P")
-    (find-file (concat "/sudo:root@localhost:" filename))))
+    (find-file (concat "/sudo:root@localhost:" filename)))
+
+  (advice-add #'ffap-menu-ask :around 'lps/disable-minibuffer-completion-help))
 
 (use-package recentf
   :ensure nil

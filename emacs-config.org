@@ -838,7 +838,12 @@ For this reason, we might want to take a look at some lightweight alternatives, 
             (progn
               (delete-minibuffer-contents)
               (insert directory))
-          (backward-kill-word arg)))))
+          (backward-kill-word arg))))
+
+    (defun lps/disable-minibuffer-completion-help (fun &rest args)
+      (cl-letf (((symbol-function #'minibuffer-completion-help)
+                 #'ignore))
+        (apply fun args))))
 #+end_src
 
 Emacs uses metadata to differentiate between several types of things for completion. For example, when using ~find-file~, Emacs attachs to each suggestion a bit of data to tell that they are actually files.
@@ -1123,6 +1128,7 @@ We often want to visit links. If the point is on a file path, for example, it is
 #+begin_src emacs-lisp
   (use-package ffap
     :ensure nil
+    :bind ("C-c C-f" . ffap-menu)
     :init
     (ffap-bindings)
     :custom
@@ -1132,7 +1138,9 @@ We often want to visit links. If the point is on a file path, for example, it is
       "Switch to a buffer visiting the file FILENAME as root, creating
   one if none exists."
       (interactive "P")
-      (find-file (concat "/sudo:root@localhost:" filename))))
+      (find-file (concat "/sudo:root@localhost:" filename)))
+
+    (advice-add #'ffap-menu-ask :around 'lps/disable-minibuffer-completion-help))
 
   (use-package recentf
     :ensure nil
