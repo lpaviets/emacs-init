@@ -3945,9 +3945,9 @@ marking if it still had that."
               (decoded-time-day time))))
 
   (defun lps/--mu4e-read-date-range (&optional prompt)
-    (concat (lps/--mu4e-read-date "Mail ranging from ...")
+    (concat (lps/--mu4e-read-date "Mail received or sent between ...")
             ".."
-            (lps/--mu4e-read-date "... to ...")))
+            (lps/--mu4e-read-date "... and ...")))
 
   (defun lps/--mu4e-read-mime-type (&optional prompt)
     (require 'mailcap)
@@ -3955,8 +3955,8 @@ marking if it still had that."
     (completing-read (or prompt "Mime type: ") (mailcap-mime-types)))
 
   (defvar lps/--mu4e-build-query-alist
-    '((?q "quit" "quit")
-      (?\  "" "" read-string)
+    '((?\C-m "confirm" "confirm")
+      (?\  " anything" "" read-string)
       (?f "from" "from:" read-string)
       (?t "to" "to:" read-string)
       (?d "date" "date:" ((?d "date" "" lps/--mu4e-read-date)
@@ -3976,12 +3976,12 @@ marking if it still had that."
       (?m "mime" "mime:" lps/--mu4e-read-mime-type)))
 
   (defun lps/--mu4e-parse-query (choices)
-    (let* ((choice (read-multiple-choice "Test: " choices))
+    (let* ((choice (read-multiple-choice "Query element: " choices))
            (rest (cddr choice))
            (str (car rest))
            (read-fun-or-continue (cadr rest)))
       (cond
-       ((char-equal (car choice) ?q)
+       ((char-equal (car choice) ?\n)
         :quit)
        ((functionp read-fun-or-continue)
         (concat str (funcall read-fun-or-continue (concat str " "))))
