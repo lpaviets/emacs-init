@@ -88,6 +88,7 @@
         hydra-multiple-cursors/mc/unmark-next-like-this
         hydra-multiple-cursors/mc/unmark-previous-like-this
         hydra-multiple-cursors/nil
+        iedit-switch-to-mc-mode
         lps/duplicate-line-or-region-down
         next-buffer
         org-shiftright

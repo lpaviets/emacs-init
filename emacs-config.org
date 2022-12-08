@@ -1664,9 +1664,6 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
     (:map company-active-map
           ("<tab>" . company-complete)
           ("TAB" . company-complete)
-          ("RET" . nil)
-          ("<return>" . nil)
-          ("<C-return>" . company-complete-selection)
           ("C-n" . nil)
           ("C-p" . nil)
           ("M-n" . company-select-next)
@@ -1812,8 +1809,7 @@ Hence, we add a few bindings to an already existing keymap, to make them easily 
     ;; Interpret whitespaces as "anything but a newline"
     (search-whitespace-regexp "[-\\/_ \\t.]+")
     (isearch-regexp-lax-whitespace t)
-    (isearch-yank-on-move t)
-    (isearch-allow-motion t)
+    (isearch-yank-on-move 'shift)
     (isearch-allow-scroll t)
     :config
     ;; Change this face to distinguish between current match and other ones
