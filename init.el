@@ -42,16 +42,23 @@
 (unless (package-installed-p 'use-package)
   (package-install 'use-package))
 
-;; Symlink (or directly place) your personal packages in this directory.
-;; Simple way to add personal packages
-;; Need to use `update-file-autoloads' or `update-directory-autoloads' in this dir
-;; regularly and place the autoloads in the personal-autoloads.el file
-(let* ((extra-package-dir (concat (expand-file-name user-emacs-directory)
-                                 "extra-packages"))
-       (extra-autoloads (concat extra-package-dir "/personal-autoloads.el")))
-  (add-to-list 'load-path extra-package-dir)
-  (when (file-exists-p extra-autoloads)
-    (load extra-autoloads)))
+;; Symlink (or directly place) your personal packages in this
+;; directory. Simple way to add personal packages Need to use
+;; `update-file-autoloads' or `update-directory-autoloads' in this dir
+;; and regularly and place the autoloads in the
+;; personal-<private-shared>autoloads.el file
+(let* ((extra-package-dir (expand-file-name "extra-packages" user-emacs-directory))
+       (extra-package-dir-shared (expand-file-name "shared" extra-package-dir))
+       (extra-package-dir-private (expand-file-name "private" extra-package-dir))
+       (extra-autoloads (list (expand-file-name "personal-private-autoloads.el"
+                                                extra-package-dir-private)
+                              (expand-file-name "personal-shared-autoloads.el"
+                                                extra-package-dir-shared))))
+  (add-to-list 'load-path extra-package-dir-shared)
+  (add-to-list 'load-path extra-package-dir-private)
+  (dolist (file extra-autoloads)
+    (when (file-exists-p file)
+      (load file))))
 
 (require 'use-package)
 ;; Comment this line if you don't want to automatically install
@@ -191,6 +198,21 @@ fboundp."
   (:map lps/system-tools-map
         ("r" . restart-emacs)))
 
+(use-package desktop
+  :init
+  (add-hook 'server-after-make-frame-hook
+            (lambda ()
+              (let ((desktop-load-locked-desktop t))
+                (desktop-save-mode 1)
+                (desktop-read (car desktop-path)))))
+  (unless (daemonp)
+    (desktop-save-mode 1))
+  :custom
+  (desktop-restore-frames nil) ;; Otherwise buggy with daemon-mode
+  (desktop-path (list (expand-file-name "desktop-saves/" user-emacs-directory)))
+  (desktop-restore-eager 10)
+  (desktop-lazy-verbose nil))
+
 (use-package server
   :custom
   (server-client-instructions nil))
@@ -258,11 +280,6 @@ fboundp."
                     (lps/set-default-fonts))))
     (lps/set-default-fonts)))
 
-(use-package calendar
-  :ensure nil
-  :config
-  (calendar-set-date-style 'european))
-
 ;; Disable the annoying startup message and Emacs logo
 (setq inhibit-startup-message t)
 
@@ -287,6 +304,17 @@ fboundp."
 (use-package emacs
   :init
   (column-number-mode t)
+
+  (defun lps/activate-truncate-lines ()
+    (toggle-truncate-lines 1))
+
+  (defvar lps/truncate-lines-modes-hook '(dired-mode-hook
+                                          outline-mode-hook
+                                          tabulated-list-mode-hook)
+    "Modes in which `truncate-lines' will be set to `t' automatically")
+
+  (dolist (hook lps/truncate-lines-modes-hook)
+    (add-hook hook 'lps/activate-truncate-lines))
   :custom
   (hscroll-margin 10)
   (hscroll-step 10)
@@ -308,48 +336,69 @@ fboundp."
   (kaolin-themes-hl-line-colored t))
 
 (use-package modus-themes)
-
 (use-package doom-themes)
 
-(defvar lps/default-theme 'kaolin-ocean)
-(defvar lps/default-light-theme 'modus-operandi)
-(defvar lps/live-presentation-p nil)
+(use-package emacs
+  :after kaolin-themes
+  :init
+  (defvar lps/default-theme 'kaolin-ocean)
+  (defvar lps/default-light-theme 'modus-operandi)
+  (defvar lps/live-presentation-p nil)
 
-(load-theme lps/default-theme t)
+  (load-theme lps/default-theme t)
 
-(let ((custom--inhibit-theme-enable nil))
-  (custom-theme-set-faces
-   lps/default-theme
-   '(hl-line ((t (:background "#39424D"))) t)))
+  :bind
+  (:map lps/quick-edit-map
+        ("c" . lps/resize-and-color-region))
 
-(defun lps/toggle-live-code-presentation-settings ()
-  "Various useful settings for live coding sessions
+  :config
+  (let ((custom--inhibit-theme-enable nil))
+    (custom-theme-set-faces
+     lps/default-theme
+     '(hl-line ((t (:background "#39424D"))) t)))
+
+  (defun lps/toggle-live-code-presentation-settings ()
+    "Various useful settings for live coding sessions
 Still very buggy, but this should not matter in a live presentation
 setting.
 Avoid toggling several times, just use it once if possible"
-  (interactive)
-  (if lps/live-presentation-p
+    (interactive)
+    (if lps/live-presentation-p
+        (progn
+          (unless (equal custom-enabled-themes (list lps/default-theme))
+            (disable-theme (car custom-enabled-themes))
+            (load-theme lps/default-theme t))
+          (global-hl-line-mode -1)
+          (text-scale-set 0)
+          (setq-default cursor-type 'box))
+
       (progn
-        (unless (equal custom-enabled-themes (list lps/default-theme))
-          (disable-theme (car custom-enabled-themes))
-          (load-theme lps/default-theme t))
-        (global-hl-line-mode -1)
-        (text-scale-set 0)
-        (setq-default cursor-type 'box))
+        (unless (y-or-n-p "Keep current theme ?")
+          (disable-theme custom-enabled-themes)
+          (load-theme lps/default-light-theme t)
+          (custom-theme-set-faces
+           lps/default-light-theme
+           '(hl-line ((t (:background "#DFD8EE"))) t)))
+        (global-display-line-numbers-mode 1)
+        (global-hl-line-mode 1)
+        (text-scale-increase 2)
+        (setq-default cursor-type 'bar)))
 
-    (progn
-      (unless (y-or-n-p "Keep current theme ?")
-        (disable-theme custom-enabled-themes)
-        (load-theme lps/default-light-theme t)
-        (custom-theme-set-faces
-         lps/default-light-theme
-         '(hl-line ((t (:background "#DFD8EE"))) t)))
-      (global-display-line-numbers-mode 1)
-      (global-hl-line-mode 1)
-      (text-scale-increase 2)
-      (setq-default cursor-type 'bar)))
+    (setq lps/live-presentation-p (not lps/live-presentation-p)))
 
-  (setq lps/live-presentation-p (not lps/live-presentation-p)))
+  ;;; Inspired from https://www.reddit.com/r/emacs/comments/vb05co/resizerecolour_text_onthefly/
+  (defun lps/resize-and-color-region (beg end)
+    "Resize/recolour selected region;defaulting to blue at size 300,for titles.
+Note gray80 at size 10 is useful for side remarks."
+    (interactive "r")
+    (let ((contents (buffer-substring beg end))
+          (color (read-color "Colour: "))
+          (size (read-number "Size: ")))
+      (when contents
+        (delete-region beg end)
+        (insert (propertize contents
+                            'font-lock-face
+                            `(:foreground ,color :height ,size)))))))
 
 ;; First time used: run M-x all-the-icons-install-fonts
 (use-package all-the-icons
@@ -549,7 +598,12 @@ Avoid toggling several times, just use it once if possible"
           (progn
             (delete-minibuffer-contents)
             (insert directory))
-        (backward-kill-word arg)))))
+        (backward-kill-word arg))))
+
+  (defun lps/disable-minibuffer-completion-help (fun &rest args)
+    (cl-letf (((symbol-function #'minibuffer-completion-help)
+               #'ignore))
+      (apply fun args))))
 
 (use-package marginalia
   :after vertico
@@ -787,6 +841,7 @@ buffer in current window."
 
 (use-package ffap
   :ensure nil
+  :bind ("C-c C-f" . ffap-menu)
   :init
   (ffap-bindings)
   :custom
@@ -796,7 +851,9 @@ buffer in current window."
     "Switch to a buffer visiting the file FILENAME as root, creating
 one if none exists."
     (interactive "P")
-    (find-file (concat "/sudo:root@localhost:" filename))))
+    (find-file (concat "/sudo:root@localhost:" filename)))
+
+  (advice-add #'ffap-menu-ask :around 'lps/disable-minibuffer-completion-help))
 
 (use-package recentf
   :ensure nil
@@ -881,13 +938,16 @@ If called with a prefix argument, also kills the current buffer"
 
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
-  :bind
-  ([remap describe-function] . helpful-callable)
-  ([remap describe-variable] . helpful-variable)
-  ([remap describe-symbol]   . helpful-symbol)
-  ([remap describe-key]      . helpful-key)
-  (:map help-map
-        (";" . helpful-at-point)))
+  :custom
+  (describe-char-unidata-list t)
+  :bind (:map help-map
+              (";" . helpful-at-point))
+  :init
+  (require 'helpful) ;; somewhat hacky, would like to autoload ...
+  (defalias 'describe-function 'helpful-callable)
+  (defalias 'describe-variable 'helpful-variable)
+  (defalias 'describe-symbol 'helpful-symbol)
+  (defalias 'describe-key 'helpful-key))
 
 (use-package emacs
   :ensure nil
@@ -915,27 +975,6 @@ If called with a prefix argument, also kills the current buffer"
   :custom
   (help-at-pt-display-when-idle t)
   (help-at-pt-timer-delay 0.5))
-
-;; Inspired from https://emacs.stackexchange.com/questions/2777/how-to-get-the-function-help-without-typing
-
-(use-package popup
-  :init
-  (defun lps/describe-thing-in-popup ()
-    (interactive)
-    (let* ((thing (symbol-at-point))
-           (help-xref-following t)
-           (description (save-window-excursion
-                          (with-temp-buffer
-                            (help-mode)
-                            (help-xref-interned thing)
-                            (buffer-string)))))
-      (popup-tip description
-                 :point (point)
-                 :around t
-                 :margin t
-                 :height 20)))
-
-  (global-set-key (kbd "C-&") #'lps/describe-thing-in-popup))
 
 ;; Don't disable any command
 ;; BE CAREFUL
@@ -986,6 +1025,8 @@ If called with a prefix argument, also kills the current buffer"
         ("C-f" . consult-file-externally))
   :custom
   (consult-narrow-key "<")
+  (xref-show-definitions-function 'consult-xref)
+  (xref-show-xrefs-function 'consult-xref)
   :config
   (defun lps/consult-imenu-or-org-heading ()
     (interactive)
@@ -1106,7 +1147,8 @@ If called with a prefix argument, also kills the current buffer"
   (completion-styles '(basic partial-completion orderless))
   (completion-auto-help t)
   (orderless-component-separator #'orderless-escapable-split-on-space)
-  (orderless-matching-styles '(orderless-literal orderless-regexp))
+  (orderless-matching-styles '(orderless-literal
+                               orderless-regexp))
   (orderless-style-dispatchers '(lps/orderless-initialism-if-semicolon
                                  lps/orderless-substring-if-equal
                                  lps/orderless-flex-if-twiddle
@@ -1162,9 +1204,14 @@ If called with a prefix argument, also kills the current buffer"
 
     (add-to-list
      'completion-styles-alist
-     '(basic-remote basic-remote-try-completion basic-remote-all-completions nil))
+     '(basic-remote basic-remote-try-completion
+                    basic-remote-all-completions
+                    nil))
 
-    (setq completion-category-overrides '((file (styles basic-remote partial-completion))))))
+    (setq completion-category-overrides '((file
+                                           (styles
+                                            basic-remote
+                                            partial-completion))))))
 
 ;; Company. Auto-completion package
 (use-package company
@@ -1240,41 +1287,7 @@ If called with a prefix argument, also kills the current buffer"
                         (8 . ?_)
                         (9 . ?ç)))
       (define-key map (kbd (format "M-%c" (cdr key-char)))
-        `(lambda () (interactive) (company-complete-number ,(car key-char))))))
-
-  ;; Experimental support for multi-backend 'keep-prefix behaviour
-  ;; I simply deleted a test from the original function, which
-  ;; used to set to t a value when I wanted it to be keep-prefix
-  ;; If something breaks, just delete this from the config
-  (defun company--multi-backend-adapter (backends command &rest args)
-    (let ((backends (cl-loop for b in backends
-                             when (or (keywordp b)
-                                      (company--maybe-init-backend b))
-                             collect b))
-          (separate (memq :separate backends)))
-
-      (when (eq command 'prefix)
-        (setq backends (butlast backends (length (member :with backends)))))
-
-      (setq backends (cl-delete-if #'keywordp backends))
-
-      (pcase command
-        (`candidates
-         (company--multi-backend-adapter-candidates backends (car args) separate))
-        (`sorted separate)
-        (`duplicates (not separate))
-        ((or `prefix `ignore-case `no-cache `require-match)
-         (let (value)
-           (cl-dolist (backend backends)
-             (when (setq value (company--force-sync
-                                backend (cons command args) backend))
-               (cl-return value)))))
-        (_
-         (let ((arg (car args)))
-           (when (> (length arg) 0)
-             (let ((backend (or (get-text-property 0 'company-backend arg)
-                                (car backends))))
-               (apply backend command args)))))))))
+        `(lambda () (interactive) (company-complete-number ,(car key-char)))))))
 
 (use-package company-box
   :after company
@@ -1326,6 +1339,8 @@ If called with a prefix argument, also kills the current buffer"
 (use-package isearch
   :ensure nil
   :bind
+  (:map isearch-mode-map
+        ("M-." . isearch-forward-thing-at-point))
   (:map search-map
         ("s" . isearch-forward)
         ("M-s" . isearch-forward) ;; avoids early/late release of Meta
@@ -1337,7 +1352,10 @@ If called with a prefix argument, also kills the current buffer"
   (isearch-regexp-lax-whitespace t)
   (isearch-yank-on-move t)
   (isearch-allow-motion t)
-  (isearch-allow-scroll t))
+  (isearch-allow-scroll t)
+  :config
+  ;; Change this face to distinguish between current match and other ones
+  (set-face-foreground 'isearch "#98f5ff"))
 
 (use-package replace
   :ensure nil
@@ -1412,12 +1430,17 @@ If called with a prefix argument, also kills the current buffer"
 
 (use-package emacs
   :ensure nil
+  :init
+  (defvar lps/yank-indent-modes '(prog-mode latex-mode))
   :bind
   ("M-k" . lps/copy-line-at-point)
-  ("M-à" . lps/select-line)
+  ("M-à" . lps/mark-line)
   ("<C-backspace>" . delete-region)
+  ([remap yank] . lps/yank-indent)
   :custom
   (kill-read-only-ok t)
+  (kill-ring-max 100)
+  (kill-do-not-save-duplicates t)
   :config
   (defun lps/copy-line-at-point (arg)
     "Copy lines in the kill ring, starting from the line at point.
@@ -1432,7 +1455,7 @@ If ARG > 1, copy subsequent lines and indentation."
           (end (line-end-position arg)))
       (copy-region-as-kill beg end)))
 
-  (defun lps/select-line ()
+  (defun lps/mark-line ()
     "Select the current line. If the region is already active, extends the current selection by line."
     (interactive)
     (if (region-active-p)
@@ -1441,7 +1464,14 @@ If ARG > 1, copy subsequent lines and indentation."
           (end-of-line))
       (progn
         (end-of-line)
-        (set-mark (line-beginning-position))))))
+        (set-mark (line-beginning-position)))))
+
+  (defun lps/yank-indent (arg)
+    (interactive "*P")
+    (let ((point (point)))
+      (yank arg)
+      (when (-some 'derived-mode-p lps/yank-indent-modes)
+        (indent-region point (point))))))
 
 (use-package emacs
   :ensure nil
@@ -1538,8 +1568,7 @@ Move point in the last duplicated string (line or region)."
   If SPLIT is provided, it will be inserted before each match, including the first one.
   The initial strings are destroyed, and the kill-ring is not modified"
   (save-excursion
-    (let ((matches (lps/find-delete-forward-all-regexp re beg)))
-      (prin1 matches)
+    (let ((matches (nreverse (lps/find-delete-forward-all-regexp re beg))))
       (goto-char (or move (point-max)))
       (while matches
         (insert (or split ""))
@@ -1959,50 +1988,61 @@ Does not insert a space before the inserted opening parenthesis"
     (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev company-shell)))
     (push 'elisp-completion-at-point completion-at-point-functions)))
 
-;; LSP mode. Useful IDE-like features
-(use-package lsp-mode
-  :commands (lsp lsp-deferred)
+(use-package emacs
+  :ensure nil
+  :hook ((python-mode
+          c-mode
+          c++-mode
+          haskell-mode)
+         . lps/lsp-by-default-in-session)
   :init
-  ;; Sometimes, we don't want to start a full server just to check a file
-  ;; or make a few edits to it. In my use, this mostly depends on the session:
-  ;; In a quick session, I might not want to start a server for one or two files,
-  ;; however, once I start using LSP, there is no reason not to assume that I
-  ;; also want to use it by default for other files in the same session
+  ;; Abstract away the client used: lsp-mode or eglot
+  (defvar lps/language-server-client 'eglot)
+
+  (defun lps/start-language-server ()
+    (interactive)
+    (call-interactively lps/language-server-client))
+
+  ;; Sometimes, we don't want to start a full server just to check a
+  ;; file or make a few edits to it. In my use, this mostly depends
+  ;; on the session: In a quick session, I might not want to start a
+  ;; server for one or two files, however, once I start using LSP,
+  ;; there is no reason not to assume that I also want to use it by
+  ;; default for other files in the same session
   (defvar lps/--default-lsp-mode 0)
+
   (defun lps/lsp-by-default-in-session ()
     (if (> lps/--default-lsp-mode 0)
-        (lsp-deferred)
+        (lps/start-language-server)
       (if (and (= lps/--default-lsp-mode 0)
                (y-or-n-p "Automatically use lsp-mode in the current session ?"))
           (progn
             (setq lps/--default-lsp-mode 1)
-            (lsp))
-        (setq lps/--default-lsp-mode -1))))
-
-  (defun lps/--no-lsp-here (fun &rest args)
-    (let ((lps/--default-lsp-mode -1))
-      (apply fun args)))
-
-  (advice-add 'helpful-update :around 'lps/--no-lsp-here)
-
-  :custom
-  (lsp-diagnostics-provider :flycheck)  ;:none if none wanted
-
-  :config
-  (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
-  (lsp-enable-which-key-integration t)
-  (setq lsp-prefer-flymake nil)
-  (setq lsp-enable-on-type-formatting nil)
+            (lps/start-language-server)))
+      (setq lps/--default-lsp-mode -1)))
 
   (defun lps/toggle-lsp-by-default-in-session ()
     (interactive)
     (setq lps/--default-lsp-mode (not lps/--default-lsp-mode)))
 
-  :hook ((python-mode
-          c-mode
-          c++-mode
-          haskell-mode)
-         . lps/lsp-by-default-in-session))
+  ;; Fix documentation: don't want to start a server to view some
+  ;; C code in helpful buffers !
+  (defun lps/--no-lsp-here (fun &rest args)
+    (let ((lps/--default-lsp-mode -1))
+      (apply fun args)))
+
+  (advice-add 'helpful-update :around 'lps/--no-lsp-here))
+
+;; LSP mode. Useful IDE-like features
+(use-package lsp-mode
+  :commands (lsp lsp-deferred)
+  :custom
+  (lsp-diagnostics-provider :flycheck)  ; :none if none wanted
+  :config
+  (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
+  (lsp-enable-which-key-integration t)
+  (setq lsp-prefer-flymake nil)
+  (setq lsp-enable-on-type-formatting nil))
 
 (use-package lsp-ui
   :after lsp-mode
@@ -2024,7 +2064,9 @@ Does not insert a space before the inserted opening parenthesis"
               ("r" . eglot-rename)
               ("g g" . xref-find-definitions)
               ("g r" . xref-find-references)
-              ("h" . eldoc)))
+              ("h" . eldoc))
+  :custom
+  (eglot-ignored-server-capabilities '(:documentHighlightProvider)))
 
 ;; Flycheck
 (use-package flycheck
@@ -2590,12 +2632,28 @@ call the associated function interactively. Otherwise, call the
   (org-use-speed-commands t)
   (org-directory "~/Documents/OrgFiles/")
   (org-special-ctrl-a/e t) ;; Not enough with visual-line-mode, need to bind C-a/C-e too
+  (org-return-follows-link t)
+  (org-catch-invisible-edits 'show)
   :config
+  (defun lps/windmove-mode-local-off ()
+    ;; Hack to disable windmove locally
+    (setq-local windmove-mode nil))
+
+  (defun lps/windmove-mode-local-off-around (fun &rest args)
+    (unwind-protect
+        (progn
+          (add-hook 'minibuffer-setup-hook 'lps/windmove-mode-local-off)
+          (apply fun args))
+      (remove-hook 'minibuffer-setup-hook 'lps/windmove-mode-local-off)))
+
+  (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
+
   (defun lps/org-mode-setup ()
     (lps/org-font-setup)
     (org-indent-mode 1)
-    (variable-pitch-mode 1)
-    (visual-line-mode 1))
+    ;; (variable-pitch-mode 1)
+    (visual-line-mode 1)
+    (lps/windmove-mode-local-off))
 
   (setq org-imenu-depth 4)
 
@@ -2618,7 +2676,7 @@ call the associated function interactively. Otherwise, call the
                   (org-level-6 . 1.0)
                   (org-level-7 . 1.0)
                   (org-level-8 . 1.0)))
-    (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'variable-pitch))
+    (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'fixed-pitch))
 
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way
   (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch :extend t)
@@ -2660,38 +2718,11 @@ call the associated function interactively. Otherwise, call the
               (member (car key-template) bound-key-templates)
             (push key-template org-structure-template-alist))))))
 
-;; Automatically tangles this emacs-config config file
-;; We do not tangle after each save, but we rather do this:
-;; When we save a file, if this file is a config file, we add a hook to
-;; `kill-emacs-hook' that will tangle it when we end our session
-;; This way, the `init.el' file is only ever overidden once, at the end,
-;; and we don't lose time tangling a thousands line-long .org file after
-;; each small modification
-
-(defun lps/org-babel-tangle-config ()
-  (interactive)
-  (find-file (expand-file-name (concat user-emacs-directory "emacs-config.org")))
-  (let ((org-confirm-babel-evaluate nil))
-    (org-babel-tangle)))
-
-(defun lps/set-literate-config-modified ()
-  (when (string-equal (buffer-file-name)
-                      (expand-file-name (concat user-emacs-directory "emacs-config.org")))
-    (add-hook 'kill-emacs-hook 'lps/org-babel-tangle-config)))
-
-(add-hook 'after-save-hook 'lps/set-literate-config-modified)
-
-(defun lps/elisp-completion-in-user-init ()
-  (when (string-equal (buffer-file-name)
-                      (expand-file-name (concat user-emacs-directory "emacs-config.org")))
-    (setq-local completion-at-point-functions '(pcomplete-completions-at-point elisp-completion-at-point t))))
-
-(add-hook 'org-mode-hook #'lps/elisp-completion-in-user-init)
-
 (setq org-agenda-files (list (concat org-directory "agenda/")))
 (setq org-log-into-drawer t)
 (setq org-log-done 'time)
 (setq org-agenda-start-with-log-mode t)
+(setq org-agenda-show-inherited-tags nil)
 
 (setq org-tag-alist
       '((:startgroup)
@@ -2704,6 +2735,20 @@ call the associated function interactively. Otherwise, call the
         ("note" . ?n)
         ("idea" . ?i)
         ("read" . ?r)))
+
+(with-eval-after-load "org-agenda"
+  (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
+                          ("Conference" ,(all-the-icons-faicon "users"))
+                          ("Talk" ,(all-the-icons-faicon "volume-up"))
+                          ("Exam" ,(all-the-icons-octicon "mortar-board"))
+                          ("Seminar" ,(all-the-icons-faicon "pencil"))
+                          ("Workshop" ,(all-the-icons-material "group_work"))))
+    (cl-pushnew (list (car tag-and-icon)
+                      (cdr tag-and-icon)
+                      nil nil
+                      :ascent 'center)
+                org-agenda-category-icon-alist
+                :test 'equal)))
 
 ;; From https://stackoverflow.com/questions/9005843/interactively-enter-headline-under-which-to-place-an-entry-using-capture
 (defun lps/org-ask-location ()
@@ -2761,16 +2806,64 @@ call the associated function interactively. Otherwise, call the
 
 (setq org-capture-bookmark nil))
 
+(use-package org-roam
+  :after org
+  :custom
+  (org-roam-directory (file-truename
+                       (expand-file-name "RoamNotes/" org-directory)))
+  (org-roam-node-display-template (concat "${title:*} "
+                                          (propertize "${tags}"
+                                                      'face
+                                                      'org-tag)))
+  :bind (("C-c n t" . org-roam-buffer-toggle)
+         ("C-c n f" . org-roam-node-find)
+         ("C-c n g" . org-roam-graph)
+         ("C-c n i" . org-roam-node-insert)
+         ("C-c n c" . org-roam-capture))
+  :config
+  (org-roam-db-autosync-mode))
+
+(use-package consult-org-roam
+  :after consult org-roam
+  :bind
+  ("C-c n F" . consult-org-roam-file-find)
+  ("C-c n b" . consult-org-roam-backlinks)
+  ("C-c n s" . consult-org-roam-search)
+  :custom
+  (consult-org-roam-grep-func #'consult-grep)
+  :config
+  (consult-org-roam-mode))
+
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
 (system-case
  (gnu/linux
   (use-package pdf-tools
     :magic ("%PDF" . pdf-view-mode)
+    :init
+    ;; For some reason it doesn't work when put in the :custom section ?!
+    (setq pdf-tools-enabled-modes '(pdf-history-minor-mode
+                                    pdf-isearch-minor-mode
+                                    pdf-links-minor-mode
+                                    pdf-misc-minor-mode
+                                    pdf-outline-minor-mode
+                                    pdf-misc-size-indication-minor-mode
+                                    pdf-misc-menu-bar-minor-mode
+                                    pdf-annot-minor-mode
+                                    pdf-sync-minor-mode
+                                    pdf-misc-context-menu-minor-mode
+                                    pdf-cache-prefetch-minor-mode
+                                    ;; pdf-occur-global-minor-mode ;; bugged autoload
+                                    pdf-view-auto-slice-minor-mode ; add to defaults
+                                    ;; pdf-virtual-global-minor-mode
+                                    ))
     :bind (:map pdf-view-mode-map
                 ("C-s" . isearch-forward)
                 ("C-c ?" . lps/pdf-maybe-goto-index)
-                ("s t" . lps/pdf-view-toggle-auto-slice))
+                ("<C-down>" . pdf-view-scroll-up-or-next-page)
+                ("<C-up>" . pdf-view-scroll-down-or-previous-page)
+                ("<C-left>" . image-scroll-right)
+                ("<C-right>" . image-scroll-left))
     :custom
     (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                             "-pointsize" "%P"
@@ -2779,25 +2872,8 @@ call the associated function interactively. Otherwise, call the
                                             "-draw" "text %X,%Y '%c'"))
     (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
     (pdf-view-display-size 'fit-page)
-    :init
-    (defvar-local lps/pdf-view-auto-slice-from-bounding-box t)
     :config
     (pdf-tools-install :no-query)
-    ;;(add-hook 'pdf-view-mode-hook 'pdf-view-midnight-minor-mode)
-    (add-hook 'pdf-view-mode-hook 'pdf-history-minor-mode)
-
-    (defun lps/pdf-view-toggle-auto-slice ()
-      (interactive)
-      (setq-local lps/pdf-view-auto-slice-from-bounding-box
-                  (not lps/pdf-view-auto-slice-from-bounding-box))
-      (message "Automatic slicing is now %s"
-               (if lps/pdf-view-auto-slice-from-bounding-box "on" "off")))
-
-    (defun lps/pdf-view-auto-slice ()
-      (when lps/pdf-view-auto-slice-from-bounding-box
-        (pdf-view-set-slice-from-bounding-box)))
-
-    (add-hook 'pdf-view-change-page-hook 'lps/pdf-view-auto-slice)
 
     (defun lps/pdf-maybe-goto-index ()
       "Tries to guess where the index of the document is,
@@ -2876,11 +2952,16 @@ move to the end of the document, and search backward instead."
   (TeX-view-program-selection '((output-pdf "PDF tools")))
 
   ;; Compilation
-  (TeX-debug-bad-boxes t)
+  ;; Automatically open the error buffer if errors happened
+  ;; But don't collect bad-boxes by default
+  ;; If needed, you can still show them with <C-c '> (TeX-error-overview)
+  (TeX-debug-bad-boxes nil)
+  (TeX-debug-warnings nil)
+  (TeX-error-overview-open-after-TeX-run t)
 
   :config
   (add-to-list 'lps/auto-compile-command-alist
-               (cons 'latex-mode 'TeX-command-run-all))
+               (cons 'latex-mode 'lps/TeX-recompile-all))
 
   ;; Auto-insert
   (with-eval-after-load 'autoinsert
@@ -2888,7 +2969,7 @@ move to the end of the document, and search backward instead."
                  '(latex-mode
                    nil
                    (LaTeX-environment-menu "document")
-                   '(if (y-or-n-p "Insert default packages and custom commands ?")
+                   '(if (y-or-n-p "Insert default packages and commands ?")
                         (save-excursion
                           (forward-line -2)
                           (insert "\n\\usepackage[T1]{fontenc}\n"
@@ -2897,18 +2978,20 @@ move to the end of the document, and search backward instead."
                                   "\\usepackage{amsmath, amssymb, amsthm}\n"
                                   "\\usepackage{thm-restate}\n"
                                   "\\usepackage{hyperref}\n"
-                                  "\\usepackage{autoref}\n"
+                                  ;; "\\usepackage{autoref}\n"
                                   "\\usepackage{cleveref}\n"
                                   "\\usepackage{url}\n\n"
                                   "\\newcommand\\NN{\\mathbb N}\n"
                                   "\\newcommand\\ZZ{\\mathbb Z}\n"
                                   "\\newcommand\\RR{\\mathbb R}\n\n"
-                                  "\\newtheorem{conj}{Conjecture}\n"
-                                  "\\newtheorem{prop}{Proposition}\n"
+                                  "\\newtheorem{conjecture}{Conjecture}\n"
+                                  "\\newtheorem{proposition}{Proposition}\n"
                                   "\\newtheorem{definition}{Definition}\n"
-                                  "\\newtheorem{cor}{Corollary}\n"
+                                  "\\newtheorem{corollary}{Corollary}\n"
                                   "\\newtheorem{lemma}{Lemma}\n"
                                   "\\newtheorem{theorem}{Theorem}\n"
+                                  "\\newtheorem*{example}{Example}\n"
+                                  "\\newtheorem*{notation}{Notation}\n"
                                   "\\newtheorem*{remark}{Remark}\n\n"
                                   "\\crefname{lemma}{Lemma}{Lemmas}\n"
                                   "\\crefname{theorem}{Theorem}{Theorems}\n\n")))
@@ -2969,7 +3052,8 @@ show."
               (while (re-search-forward
                       ;; XXX: XEmacs doesn't support character classes in
                       ;; regexps, like "[:alnum:]".
-                      "^ *\\([0-9]+\\) +\\([-~/a-zA-Z0-9_.${}#%,:\\ ()]+\\)" nil t)
+                      "^ *\\([0-9]+\\) +\\([-~/a-zA-Z0-9_.${}#%,:\\ ()]+\\)"
+                      nil t)
                 (push (cons (match-string 1) (match-string 2)) list))))
           (unwind-protect
               (cond
@@ -3045,10 +3129,12 @@ The return value is the string as entered in the minibuffer."
         (and def (string-equal input "") (setq input def))
         input)))
 
-  ;; Add environment for auto. insertion with C-c C-e
+  ;; Add environment for auto. insertion with C-c C-e, and some env. specific
+  ;; configuration such as indentation, etc
   (defun lps/latex-add-environments ()
-    ;;(LaTeX-add-environments '("tikzpicture" LaTeX-env-label)) ; Should be done by auctex's tikz.el file
-    )
+    ;; Should be done by auctex's tikz.el FILE
+    ;; (LaTeX-add-environments '("tikzpicture" LaTeX-env-label))
+    (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")))
 
   ;; Better completion functions
   (defun lps/latex-company-setup () ;; TO FIX !
@@ -3092,44 +3178,37 @@ return `nil'."
                       (TeX-find-opening-brace))))
         (delete-region (1- (cdr bounds)) (cdr bounds))
         (delete-region (car bounds) (1+ brace)))
-      t)))
+      t))
+
+  (defun lps/TeX-recompile-all ()
+    ;; Clean everything
+    (TeX-clean t)
+    ;; Recompile everything
+    (let ((TeX-debug-bad-boxes t)
+          (TeX-debug-warnings t)
+          (TeX-error-overview-open-after-TeX-run t))
+     (TeX-command-sequence t t))))
 
 (use-package bibtex
   :defer t
   :bind
   (:map bibtex-mode-map
-        ("C-c C-?" . bibtex-print-help-message))
-  :config
-  ;; Use a modern BibTeX dialect
-                                        ; (bibtex-set-dialect 'biblatex) ; Useful esp. in social sci.
-  )
+        ("C-c C-?" . bibtex-print-help-message)))
 
 (use-package reftex
-  :diminish
   :hook (LaTeX-mode . reftex-mode)
   :custom
+  (reftex-plug-into-AUCTeX t)
+  (reftex-toc-split-windows-horizontally t)
   (reftex-label-alist
-   '(("theorem" ?T "thm:" "~\\ref{%s}" (nil . 1) ("theorem" "th.") -3)
-     ("lemma" ?T "thm:lemma-" "~\\ref{%s}" (nil . 1) ("lemma") -4)
-     ("proposition" ?T "thm:prop-" "~\\ref{%s}" (nil . 1) ("proposition" "prop.") -4)
-     ("definition" ?T "thm:def-" "~\\ref{%s}" (nil . 1) ("definition" "def."))))
-  :config
-  ;; Plug into AUCTeX
-  (setq reftex-plug-into-AUCTeX t
-        ;; Provide basic RefTeX support for biblatex
-        ;; (unless (assq 'biblatex reftex-cite-format-builtin)
-        ;;   (add-to-list 'reftex-cite-format-builtin
-        ;;                '(biblatex "The biblatex package"
-        ;;                           ((?\C-m . "\\cite[]{%l}")
-        ;;                            (?t . "\\textcite{%l}")
-        ;;                            (?a . "\\autocite[]{%l}")
-        ;;                            (?p . "\\parencite{%l}")
-        ;;                            (?f . "\\footcite[][]{%l}")
-        ;;                            (?F . "\\fullcite[]{%l}")
-        ;;                            (?x . "[]{%l}")
-        ;;                            (?X . "{%l}"))))
-        ;;   (setq reftex-cite-format 'biblatex))
-        ))
+   '(("section"     ?s "sec:"  "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"       ))
+     ("definition"  ?d "def:"  "~\\ref{%s}" t (regexp "[Dd]efinition\\(s\\)?"    ))
+     ("example"     ?x "ex:"   "~\\ref{%s}" t (regexp "[Ee]xample\\(s\\)?"       ))
+     ("lemma"       ?l "lem:"  "~\\ref{%s}" t (regexp "[Ll]emma\\(s\\|ta\\)?"    ))
+     ("proposition" ?p "prop:" "~\\ref{%s}" t (regexp "[Pp]roposition\\(s\\)?"   ))
+     ("theorem"     ?h "thm:"  "~\\ref{%s}" t (regexp "[Tt]heorem\\(s\\)?"       ))
+     ("remark"      ?r "rem:"  "~\\ref{%s}" t (regexp "[Rr]emark\\(s\\)?"        ))
+     ("corollary"   ?c "cor:"  "~\\ref{%s}" t (regexp "[Cc]orollar\\(y\\|ies\\)")))))
 
 (use-package reftex-cite
   :diminish
@@ -3174,7 +3253,6 @@ Return a list of regular expressions."
      "[ \t]*&&[ \t]*")))
 
 (use-package biblio-core
-  :defer t
   :config
   ;; We just override this function, to use our own completion
   ;; system.
@@ -3183,15 +3261,19 @@ Return a list of regular expressions."
     completing-read-function))
 
 (use-package biblio
-  :after biblio-core
   :bind
   (:map bibtex-mode-map
         ("C-c ?" . biblio-lookup))
+  (:map pdf-view-mode-map
+        ("d" . biblio-lookup))
   :custom
   (biblio-arxiv-bibtex-header "article")
   (biblio-download-directory "~/Documents/Other/articles/")
-  :config
-  (defun biblio-download--action (record)
+  (biblio-selection-mode-actions-alist
+   '(("Dissemin (find open access copies of this article)" . biblio-dissemin--lookup-record)
+     ("Download this article and format its name" . lps/biblio-download--action)))
+  :init
+  (defun lps/biblio-download--action (record)
     "Retrieve a RECORD from Dissemin, and display it.
 RECORD is a formatted record as expected by `biblio-insert-result'.
 The default filename is of the form \"[AUTHORS]TITLE.pdf\" where
@@ -3204,9 +3286,9 @@ article's title"
                           (insert .title)
                           (goto-char (point-min))
                           (lps/make-filename-from-sentence)
-                          (goto-char)
+                          (goto-char (point-max))
                           (insert ".pdf")
-                           (goto-char (point-min))
+                          (goto-char (point-min))
                           (insert "[")
 
                           (seq-doseq (name .authors)
@@ -3220,10 +3302,15 @@ article's title"
                           (delete-backward-char 1)
                           (insert "]")
                           (buffer-substring-no-properties (point-min) (point-max))))
-                 (target (read-file-name "Save as (see also biblio-download-directory): "
-                                         biblio-download-directory fname nil fname)))
-            (url-copy-file .direct-url (expand-file-name target biblio-download-directory)))
-        (user-error "This record does not contain a direct URL (try arXiv or HAL)")))))
+                 (target (read-file-name "Save as: "
+                                         biblio-download-directory
+                                         fname
+                                         nil
+                                         fname)))
+            (url-copy-file .direct-url
+                           (expand-file-name target
+                                             biblio-download-directory)))
+        (user-error "This record does not contain a direct URL")))))
 
 (use-package preview
   :ensure nil ;; Comes with AUCTeX
@@ -3253,7 +3340,7 @@ article's title"
         ("<C-return>" . nil))
   :custom
   (cdlatex-paired-parens "$([{")
-  (cdlatex-make-sub-superscript-roman-if-pressed-twice nil)
+  (cdlatex-make-sub-superscript-roman-if-pressed-twice t)
   (cdlatex-simplify-sub-super-scripts nil)
   (cdlatex-math-modify-prefix "C-^")
   (cdlatex-takeover-dollar nil)
@@ -3261,21 +3348,25 @@ article's title"
   (cdlatex-takeover-parenthesis nil)
   (cdlatex-math-symbol-prefix ?°)
   (cdlatex-math-symbol-alist
-   '((?< ("\\leq" "\\Leftarrow" "\\longleftarrow" "\\Longleftarrow"))
-     (?> ("\\geq" "\\Rightarrow" "\\longrightarrow" "\\Longrightarrow"))
-     (?\[ ("\\subseteq" "\\leftarrow"))
-     (?\] ("\\supseteq" "\\rightarrow"))
+   '((?< ("\\leq"))
+     (?> ("\\geq"))
+     (?\[ ("\\subseteq" "\\sqsubseteq" "\\sqsubset"))
+     (?\] ("\\supseteq" "\\sqsupseteq" "\\sqsupset"))
      (?: ("\\colon"))
      (?- ("\\cap" "\\bigcap"))
-     (?+ ("\\cup" "\\bigcup"))
+     (?+ ("\\cup" "\\bigcup" "\\sqcup" "\\bigsqcup"))
      (?L ("\\Lambda" "\\limits"))
      (?c ("\\mathcal{?}" "\\mathbb{?}" "\\mathfrak{?}"))
      (?\( ("\\langle ?\\rangle" "\\left"))
      (?N ("\\mathbb{N}" "\\mathbb{N}^{2}"))
-     (?Z ("\\mathbb{Z}" "\\mathbb{Z}^{2}"))
+     (?Z ("\\mathbb{Z}" "\\mathbb{Z}^{2}" "\\Zeta"))
      (?R ("\\mathbb{R}" "\\mathbb{R}^{2}"))
      (?1 ("^{-1}"))
-     (?\; ("\\dots" "\\vdots" "\\ddots" "\\ldots"))))
+     (?\; ("\\dots" "\\vdots" "\\ddots" "\\ldots"))
+     (?\C-f ("\\to" "\\Rightarrow" "\\longrightarrow" "\\Longrightarrow"))
+     (?\C-b ("\\leftarrow" "\\Leftarrow" "\\longleftarrow" "\\Longleftarrow"))
+     (?\C-p ("\\uparrow" "\\Uparrow" "\\longuparrow" "\\Longuparrow"))
+     (?\C-n ("\\downarrow" "\\Downarrow" "\\longdownarrow" "\\Longdownarrow"))))
   (cdlatex-command-alist
    '(("prodl"       "Insert \\prod\\limits_{}^{}"
       "\\prod\\limits_{?}^{}" cdlatex-position-cursor nil nil t)
@@ -3299,7 +3390,20 @@ article's title"
       (apply fun args)
       (indent-region beg end)))
 
-  (advice-add 'cdlatex-environment :around #'lps/cdlatex-indent-after-expand))
+  (advice-add 'cdlatex-environment :around #'lps/cdlatex-indent-after-expand)
+
+  (defun lps/cdlatex-sub-superscript-wrap-region (fun &rest args)
+    (if (region-active-p)
+        (let* ((beg  (region-beginning))
+               (end (region-end))
+               (region-string (buffer-substring beg end)))
+          (delete-region beg end)
+          (apply fun args)
+          (insert region-string))
+      (apply fun args)))
+
+  (advice-add 'cdlatex-sub-superscript
+              :around #'lps/cdlatex-sub-superscript-wrap-region))
 
 ;; eshell
 (use-package eshell-did-you-mean
@@ -3506,7 +3610,9 @@ PWD is not in a git repo (or the git command is not found)."
 ;; Make things prettier
 (use-package all-the-icons-dired
   :diminish
-  :hook (dired-mode . all-the-icons-dired-mode))
+  :hook (dired-mode . all-the-icons-dired-mode)
+  :custom
+  (all-the-icons-dired-monochrome nil))
 
 (use-package dired-x
   :ensure nil
@@ -3598,7 +3704,9 @@ PWD is not in a git repo (or the git command is not found)."
          ("C-c h" . lps/org-mime-htmlize-preserve-secure-and-attach)
          (:map mu4e-main-mode-map
                ("q" . lps/mu4e-kill-buffers)
-               ("Q" . mu4e-quit)))
+               ("Q" . mu4e-quit))
+         (:map mu4e-search-minor-mode-map
+               ("C-S-s" . lps/mu4e-build-query)))
   :init
   (setq mail-user-agent 'mu4e-user-agent)
   (set-variable 'read-mail-command 'mu4e)
@@ -3829,7 +3937,80 @@ marking if it still had that."
          (mu4e-message-field msg :path) nil nil nil t)))
     (switch-to-buffer gnus-article-buffer)
     (setq mu4e~view-message msg)
-    (mu4e~view-render-buffer msg)))
+    (mu4e~view-render-buffer msg))
+
+  (defun lps/--mu4e-read-date (&optional prompt)
+    (let ((time (decode-time (org-read-date nil t))))
+      (format "%04d%02d%02d"
+              (decoded-time-year time)
+              (decoded-time-month time)
+              (decoded-time-day time))))
+
+  (defun lps/--mu4e-read-date-range (&optional prompt)
+    (concat (lps/--mu4e-read-date "Mail received or sent between ...")
+            ".."
+            (lps/--mu4e-read-date "... and ...")))
+
+  (defun lps/--mu4e-read-mime-type (&optional prompt)
+    (require 'mailcap)
+    (mailcap-parse-mimetypes)
+    (completing-read (or prompt "Mime type: ") (mailcap-mime-types)))
+
+  (defvar lps/--mu4e-build-query-alist
+    '((?\C-m "confirm" "confirm")
+      (?\  " anything" "" read-string)
+      (?f "from" "from:" read-string)
+      (?t "to" "to:" read-string)
+      (?d "date" "date:" ((?d "date" "" lps/--mu4e-read-date)
+                          (?r "range" "" lps/--mu4e-read-date-range)))
+      (?F "Flag" "flag:" ((?u "unread" "unread")
+                          (?d "draft" "draft")
+                          (?f "flagged" "flagged")
+                          (?n "new" "new")
+                          (?p "passed" "passed")
+                          (?r "replied" "replied")
+                          (?s "seen" "seen")
+                          (?t "trashed" "trashed")
+                          (?a "attach" "attach")
+                          (?e "encrypted" "encrypted")
+                          (?S "Signed" "signed")))
+      (?s "subject" "subject:" read-string)
+      (?m "mime" "mime:" lps/--mu4e-read-mime-type)))
+
+  (defun lps/--mu4e-parse-query (choices)
+    (let* ((choice (read-multiple-choice "Query element: " choices))
+           (rest (cddr choice))
+           (str (car rest))
+           (read-fun-or-continue (cadr rest)))
+      (cond
+       ((char-equal (car choice) ?\n)
+        :quit)
+       ((functionp read-fun-or-continue)
+        (concat str (funcall read-fun-or-continue (concat str " "))))
+       ((consp read-fun-or-continue)
+        (concat str (lps/--mu4e-parse-query read-fun-or-continue)))
+       (t str))))
+
+  (defun lps/mu4e-build-query (&optional start-query)
+    "Provides a simpler interface to build mu4e search queries.
+A caveat is that it does not insert logical separators (NOT, AND,
+OR ...) between expressions, so the expression has to be modified
+by hand if needed"
+    (interactive "P")
+    (let ((choices lps/--mu4e-build-query-alist)
+          (query-list (if start-query
+                          (list (completing-read "Search for: "
+                                                 mu4e--search-hist
+                                                 nil
+                                                 nil
+                                                 nil
+                                                 'mu4e--search-hist))
+                        nil))
+          (choice nil))
+      (while (not (eq (setq choice (lps/--mu4e-parse-query choices)) :quit))
+        (push choice query-list))
+      (let ((query (mapconcat 'identity (reverse query-list) " ")))
+        (mu4e-search query "Search for: " t)))))
 
 (use-package mu4e-alert
   :after mu4e
@@ -3928,7 +4109,8 @@ marking if it still had that."
 (use-package mu4e-column-faces
   :after mu4e
   :config
-  (mu4e-column-faces-mode))
+  (when (version<= "1.8.0" mu4e-mu-version)
+    (mu4e-column-faces-mode)))
 
 (use-package elpher)
 
@@ -3960,11 +4142,173 @@ marking if it still had that."
 
 (use-package ispell
   :defer t
+  :init
+  (defvar lps/ispell-personal-dictionaries-dir
+    (expand-file-name "ispell-dicts/"
+                      user-emacs-directory)
+    "Directory where ispell personal dictionaries are stored")
+  (setq ispell-personal-dictionary
+        (expand-file-name "fr" lps/ispell-personal-dictionaries-dir))
   :bind
   ("<f8>" . ispell)
-  ("S-<f8>" . ispell-change-dictionary)
+  ("S-<f8>" . lps/ispell-change-dictionary)
   ("C-S-<f8>" . lps/flyspell-toggle)
+  :hook (message-send . lps/ispell-message-ask)
+  :custom
+  (ispell-quietly t)
+  (ispell-program-name (executable-find "aspell"))
   :config
+  (defun lps/ispell-message-ask ()
+    (when (y-or-n-p "Check spelling ?")
+      (ispell-message)))
+
+  ;;; Redefinition of ispell-message to work with mu4e
+  (defun ispell-message ()
+    "Check the spelling of a mail message or news post.
+Don't check spelling of message headers except the Subject field.
+Don't check included messages.
+
+To abort spell checking of a message region and send the message anyway,
+use the `x' command.  (Any subsequent regions will be checked.)
+The `X' command aborts sending the message so that you can edit the buffer.
+
+To spell-check whenever a message is sent, include the appropriate lines
+in your init file:
+   (add-hook \\='message-send-hook #\\='ispell-message)  ;; GNUS 5
+   (add-hook \\='news-inews-hook #\\='ispell-message)    ;; GNUS 4
+   (add-hook \\='mail-send-hook  #\\='ispell-message)
+   (add-hook \\='mh-before-send-letter-hook #\\='ispell-message)
+
+You can bind this to the key C-c i in GNUS or mail by adding to
+`news-reply-mode-hook' or `mail-mode-hook' the following lambda expression:
+   (lambda () (local-set-key \"\\C-ci\" \\='ispell-message))"
+    (interactive)
+    (save-excursion
+      (goto-char (point-min))
+      (let* (boundary mimep
+                      (ispell-skip-region-alist-save ispell-skip-region-alist)
+                      ;; Nil when message came from outside (eg calling Emacs as editor)
+                      ;; Non-nil marker of end of headers.
+                      (internal-messagep
+                       (re-search-forward
+                        (concat "^" (regexp-quote mail-header-separator) "$") nil t))
+                      (end-of-headers   ; Start of body.
+                       (copy-marker
+                        (or internal-messagep
+                            (re-search-forward "^$" nil t)
+                            (point-min))))
+                      (limit (copy-marker ; End of region we will spell check.
+                              (cond
+                               ((not ispell-message-text-end) (point-max))
+                               ((char-or-string-p ispell-message-text-end)
+                                (if (re-search-forward ispell-message-text-end nil t)
+                                    (match-beginning 0)
+                                  (point-max)))
+                               (t (min (point-max)
+                                       (funcall ispell-message-text-end))))))
+                      (default-prefix ; Vanilla cite prefix used for cite-regexp)
+                        (if (ispell-non-empty-string mail-yank-prefix)
+                            "   \\|\t"))
+                      (cite-regexp      ;Prefix of quoted text
+                       (cond
+                        ((functionp 'sc-cite-regexp) ; supercite >= 3.0
+                         (with-no-warnings
+                           (concat "\\(" (sc-cite-regexp) "\\)" "\\|"
+                                   (ispell-non-empty-string
+                                    sc-reference-tag-string))))
+                        ((member major-mode '(message-mode
+                                              mu4e-compose-mode)) ; GNUS >= 5
+                         (concat "In article <" "\\|"
+                                 "[^,;&+=\n]+ <[^,;&+=]+> writes:" "\\|"
+                                 (with-no-warnings message-cite-prefix-regexp)
+                                 "\\|"
+                                 default-prefix))
+                        ((equal major-mode 'mh-letter-mode) ; mh mail message
+                         (concat "[^,;&+=\n]+ writes:" "\\|"
+                                 (with-no-warnings
+                                   (ispell-non-empty-string mh-ins-buf-prefix))))
+                        ((not internal-messagep) ; Assume nn sent us this message.
+                         (concat "In [a-zA-Z.]+ you write:" "\\|"
+                                 "In <[^,;&+=]+> [^,;&+=]+ writes:" "\\|"
+                                 " *> *"))
+                        ((boundp 'vm-included-text-prefix) ; VM mail message
+                         (concat "[^,;&+=\n]+ writes:" "\\|"
+                                 (ispell-non-empty-string vm-included-text-prefix)))
+                        (t default-prefix)))
+                      (ispell-skip-region-alist
+                       (cons (list (ispell--make-filename-or-URL-re))
+                             (cons (list (concat "^\\(" cite-regexp "\\)")
+                                         (function forward-line))
+                                   ispell-skip-region-alist)))
+                      (old-case-fold-search case-fold-search)
+                      (dictionary-alist ispell-message-dictionary-alist)
+                      (ispell-checking-message t))
+
+        ;; Select dictionary for message
+        (or (local-variable-p 'ispell-local-dictionary (current-buffer))
+            (while dictionary-alist
+              (goto-char (point-min))
+              (if (re-search-forward (car (car dictionary-alist))
+                                     end-of-headers t)
+                  (setq ispell-local-dictionary (cdr (car dictionary-alist))
+                        dictionary-alist nil)
+                (setq dictionary-alist (cdr dictionary-alist)))))
+
+        (unwind-protect
+            (progn
+              ;; Spell check any original Subject:
+              (goto-char (point-min))
+              (setq case-fold-search t
+                    mimep (re-search-forward "MIME-Version:" end-of-headers t))
+              (goto-char (point-min))
+              (if (re-search-forward "^Subject: *" end-of-headers t)
+                  (progn
+                    (goto-char (match-end 0))
+                    (if (and (not (looking-at ".*Re\\>"))
+                             (not (looking-at "\\[")))
+                        (progn
+                          (setq case-fold-search old-case-fold-search)
+                          (ispell-region (point)
+                                         (progn ;Tab-initiated continuation lns.
+                                           (end-of-line)
+                                           (while (looking-at "\n[ \t]")
+                                             (end-of-line 2))
+                                           (point)))))))
+              (if mimep
+                  (progn
+                    (goto-char (point-min))
+                    (setq boundary (ispell-mime-multipartp end-of-headers))))
+              ;; Adjust message limit to MIME message if necessary.
+              (and boundary
+                   (re-search-forward (concat boundary "--") nil t)
+                   (re-search-backward boundary nil t)
+                   (< (point) (marker-position limit))
+                   (set-marker limit (point)))
+              (goto-char (point-min))
+              ;; Select type or skip checking if this is a non-multipart message
+              ;; Point moved to end of buffer if region is encoded.
+              (when (and mimep (not boundary))
+                (goto-char (point-min))
+                (re-search-forward "Content-[^ \t]*:" end-of-headers t)
+                (forward-line -1) ; following fn starts one line above
+                (ispell-mime-skip-part nil)
+                ;; if message-text-end region, limit may be less than point.
+                (if (> (point) limit)
+                    (set-marker limit (point))))
+              (goto-char (max end-of-headers (point)))
+              (forward-line 1)
+              (setq case-fold-search old-case-fold-search)
+              ;; Define MIME regions to skip.
+              (if boundary
+                  (setq ispell-checking-message
+                        (list (list boundary 'ispell-mime-skip-part boundary))))
+              (ispell-region (point) limit))
+          (set-marker end-of-headers nil)
+          (set-marker limit nil)
+          (setq ispell-skip-region-alist ispell-skip-region-alist-save
+                ispell-skip-html nil
+                case-fold-search old-case-fold-search)))))
+
   (add-to-list 'ispell-skip-region-alist '("^#+BEGIN_SRC" . "^#+END_SRC"))
 
   ;; From https://www.emacswiki.org/emacs/FlySpell
@@ -3974,7 +4318,7 @@ buffer. Uses `flyspell-prog-mode' for modes derived from `prog-mode', so
 only strings and comments get checked. All other buffers get `flyspell-mode'
 to check all text. If flyspell is already enabled, does nothing."
     (interactive)
-    (when flyspell-mode ; if not already on
+    (unless flyspell-mode               ; if not already on
       (if (derived-mode-p 'prog-mode)
           (progn
             (message "Flyspell on (code)")
@@ -3983,16 +4327,34 @@ to check all text. If flyspell is already enabled, does nothing."
           (message "Flyspell on (text)")
           (flyspell-mode 1)))))
 
-    (defun lps/flyspell-toggle ()
-      "Turn Flyspell on if it is off, or off if it is on.
+  (defun lps/flyspell-toggle ()
+    "Turn Flyspell on if it is off, or off if it is on.
 When turning on, it uses `lps/flyspell-on-for-buffer-type' so code-vs-text
 is handled appropriately."
-      (interactive)
-      (if flyspell-mode
-          (progn
-            (message "Flyspell off")
-            (flyspell-mode -1))
-        (lps/flyspell-on-for-buffer-type))))
+    (interactive)
+    (if flyspell-mode
+        (progn
+          (message "Flyspell off")
+          (flyspell-mode -1))
+      (lps/flyspell-on-for-buffer-type)))
+
+  (defun lps/ispell-change-personal-dictionary (code &optional kill-ispell)
+    (setq ispell-personal-dictionary
+          (expand-file-name code lps/ispell-personal-dictionaries-dir))
+    (when (and ispell-process kill-ispell)
+      (ispell-kill-ispell)))
+
+  (defun lps/ispell-change-dictionary (dict)
+    (interactive
+     (list
+      (completing-read
+       "Use new dictionary (RET for current, SPC to complete): "
+       (and (fboundp 'ispell-valid-dictionary-list)
+            (mapcar #'list (ispell-valid-dictionary-list)))
+       nil t)))
+    (when (member dict (directory-files lps/ispell-personal-dictionaries-dir))
+      (lps/ispell-change-personal-dictionary dict)
+      (ispell-change-dictionary dict))))
 
 (use-package guess-language
   ;;:hook (text-mode . guess-language-mode)
@@ -4029,6 +4391,192 @@ insert as many blank lines as necessary."
     (when artist-key-is-drawing
       (artist-key-do-continously-common))))
 
+(use-package calendar
+  :ensure nil
+  :custom
+  (calendar-view-holidays-initially-flag t)
+  (calendar-mark-holidays-flag t)
+  :config
+  (calendar-set-date-style 'european)
+
+  (defvar holiday-french-holidays
+    `((holiday-fixed 1 1 "Jour de l'an")
+      (holiday-fixed 1 6 "Épiphanie")
+      (holiday-fixed 2 2 "Chandeleur")
+      (holiday-fixed 2 14 "Saint Valentin")
+      (holiday-fixed 5 1 "Fête du travail")
+      (holiday-fixed 5 8 "Commémoration de la capitulation de l'Allemagne en 1945")
+      (holiday-fixed 6 21 "Fête de la musique")
+      (holiday-fixed 7 14 "Fête nationale - Prise de la Bastille")
+      (holiday-fixed 8 15 "Assomption (Religieux)")
+      (holiday-fixed 11 11 "Armistice de 1918")
+      (holiday-fixed 11 1 "Toussaint")
+      (holiday-fixed 11 2 "Commémoration des fidèles défunts")
+      (holiday-fixed 12 25 "Noël")
+      ;; Not fixed
+      (holiday-easter-etc 0 "Pâques")
+      (holiday-easter-etc 1 "Lundi de Pâques")
+      (holiday-easter-etc 39 "Ascension")
+      (holiday-easter-etc 49 "Pentecôte")
+      (holiday-easter-etc -47 "Mardi gras")
+      (holiday-float 5 0 4 "Fête des mères")
+      (holiday-float 6 0 3 "Fête des pères")) ;; June's third Sunday
+    "French holidays")
+
+  (setq holiday-local-holidays holiday-french-holidays)
+
+  (setq calendar-holidays
+        (append holiday-general-holidays
+                holiday-local-holidays
+                holiday-other-holidays
+                ;; holiday-christian-holidays
+                ;; holiday-hebrew-holidays
+                ;; holiday-islamic-holidays
+                ;; holiday-bahai-holidays
+                ;; holiday-oriental-holidays
+                ;; holiday-solar-holidays
+                )))
+
+(use-package elfeed
+  :defer t
+  :bind
+  ("C-c f" . elfeed)
+  (:map elfeed-search-mode-map
+        ("w" . elfeed-search-browse-url))
+  :custom
+  (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
+  (elfeed-search-title-max-width 110)
+  :config
+  (setq-default elfeed-search-filter "@1-week-ago +unread -compsci -youtube"))
+
+(use-package elfeed-org
+  :after elfeed
+  :init
+  (defvar lps/elfeed-default-days-range 7
+    "Range of days to filter by default in elfeed search queries")
+  :bind (:map elfeed-search-mode-map
+              ("s" . lps/elfeed-search-filter-interactive))
+  :config
+  (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org"))
+  (elfeed-org)
+
+  (defun lps/elfeed-search-filter-prompt-time-range ()
+    (let* ((default-time (time-subtract (current-time)
+                                        (days-to-time lps/elfeed-default-days-range)))
+           (from (org-read-date nil nil nil nil default-time)))
+      (concat "@" from)))
+
+  (defun lps/elfeed--org-tags ()
+    (let* ((elfeed-org-buffers (cl-loop for file in rmh-elfeed-org-files
+                                        for buffer = (get-file-buffer file)
+                                        when buffer
+                                        collect buffer))
+           (tags (cl-loop for buffer in elfeed-org-buffers
+                          append (with-current-buffer buffer
+                                   (org-get-buffer-tags)))))
+      (cl-remove-duplicates (mapcar #'car tags))))
+
+  (defun lps/elfeed-search-filter-add-tags ()
+    (let ((with-tags (completing-read-multiple "Add tags: " (lps/elfeed--org-tags))))
+      (if with-tags
+          (concat "+" (mapconcat #'identity with-tags " +"))
+        "")))
+
+  (defun lps/elfeed-search-filter-remove-tags ()
+    (let ((without-tags (completing-read-multiple "Remove tags: " (lps/elfeed--org-tags))))
+      (if without-tags
+          (concat "-" (mapconcat #'identity without-tags " -"))
+        "")))
+
+  (defun lps/elfeed-search-filter-interactive ()
+    (interactive)
+    (let ((time (lps/elfeed-search-filter-prompt-time-range))
+          (with-tags (lps/elfeed-search-filter-add-tags))
+          (without-tags (lps/elfeed-search-filter-remove-tags)))
+      (let ((filter (concat time " " with-tags " " without-tags ))
+            (elfeed-search-filter-active :non-interactive))
+        (elfeed-search--prompt filter)
+        (with-current-buffer (elfeed-search-buffer)
+          (setf elfeed-search-filter
+                (or filter (default-value 'elfeed-search-filter)))
+          (elfeed-search-update :force))))))
+
+(use-package elfeed-tube
+  :after elfeed
+  :custom
+  (elfeed-tube-auto-save-p nil)
+  (elfeed-tube-auto-fetch-p t)
+  (elfeed-tube-captions-languages '("fr" "french"
+                                    "en" "english"
+                                    "english (auto generated)"
+                                    "french (auto generated)"))
+  :bind
+  (:map elfeed-show-mode-map
+        ("F" . elfeed-tube-fetch)
+        ([remap save-buffer] . elfeed-tube-save)
+        :map elfeed-search-mode-map
+        ("F" . elfeed-tube-fetch)
+        ([remap save-buffer] . elfeed-tube-save))
+  :config
+  (elfeed-tube-setup))
+
+(use-package elfeed-tube-mpv
+  :after elfeed-tube
+  :hook
+  (elfeed-tube-mpv . elfeed-tube-mpv-follow-mode)
+  :bind
+  (:map elfeed-show-mode-map
+        ("C-c C-f" . elfeed-tube-mpv-follow-mode)
+        ("C-c C-w" . elfeed-tube-mpv-where)
+        ("C-c C-y" . elfeed-tube-mpv)))
+
+(use-package mpv
+  :defer t
+  :init
+  ;; Used to be 0.5 in the initial mpv.el package
+  ;; Not a customizable option: need to redefine some functions ...
+  (defvar lps/mpv-on-start-timeout 5)
+  :config
+  ;; Redefine it to use a custom timeout duration
+  (defun mpv-start (&rest args)
+    "Start an mpv process with the specified ARGS.
+
+If there already is an mpv process controlled by this Emacs
+instance, it will be killed. Options specified in
+`mpv-default-options' will be prepended to ARGS."
+    (mpv-kill)
+    (let ((socket (make-temp-name
+                   (expand-file-name "mpv-" temporary-file-directory))))
+      (setq mpv--process
+            (apply #'start-process "mpv-player" nil mpv-executable
+                   "--no-terminal"
+                   (concat "--input-unix-socket=" socket)
+                   (append mpv-default-options args)))
+      (set-process-query-on-exit-flag mpv--process nil)
+      (set-process-sentinel
+       mpv--process
+       (lambda (process _event)
+         (when (memq (process-status process) '(exit signal))
+           (mpv-kill)
+           (when (file-exists-p socket)
+             (with-demoted-errors (delete-file socket)))
+           (run-hooks 'mpv-on-exit-hook))))
+      (with-timeout
+          (lps/mpv-on-start-timeout (mpv-kill)
+                                    (error "Failed to connect to mpv"))
+        (while (not (file-exists-p socket))
+          (sleep-for 0.05)))
+      (setq mpv--queue (tq-create
+                        (make-network-process :name "mpv-socket"
+                                              :family 'local
+                                              :service socket)))
+      (set-process-filter
+       (tq-process mpv--queue)
+       (lambda (_proc string)
+         (mpv--tq-filter mpv--queue string)))
+      (run-hook-with-args 'mpv-on-start-hook args)
+      t)))
+
 (use-package xkcd
   :defer t)
 
@@ -4038,19 +4586,3 @@ insert as many blank lines as necessary."
 
 (use-package key-quiz
   :defer t)
-
-(use-package elfeed
-  :defer t
-  :bind
-  ("C-c f" . elfeed)
-  :custom
-  (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
-  (elfeed-search-title-max-width 110)
-  :config
-  (setq-default elfeed-search-filter "@1-week-ago +unread -compsci"))
-
-(use-package elfeed-org
-  :after elfeed
-  :config
-  (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org"))
-  (elfeed-org))

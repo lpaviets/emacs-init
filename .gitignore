@@ -22,6 +22,7 @@ dist/
 
 # Magit
 /transient/
+/forge-database-*
 
 # Eshell aliases, history & so on
 /eshell/
@@ -41,6 +42,9 @@ dist/
 
 # LSP
 /.lsp-session-v1
+/eclipse.jdt.ls/
+/workspace/
+/.dap-breakpoints
 
 # Flycheck
 flycheck_*.el
@@ -106,12 +110,12 @@ flycheck_*.el
 #Cider
 /.nrepl-port
 
-# Personal packages, machine dependent
-/extra-packages/*
-
 # Sandbox stuff: only interested in init.el
 /sandbox/*
 !/sandbox/init.el
+
+# Desktop save path
+/desktop-saves/
 
 # Other random stuff
 /network-security.data
@@ -120,3 +124,8 @@ flycheck_*.el
 /.org-id-locations
 /pyhist-python3
 /devdocs/
+/share/
+/org-roam.db
+/pyhist-Python
+/extra-packages/private/*
+/desktop/
