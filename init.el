@@ -2290,6 +2290,14 @@ call the associated function interactively. Otherwise, call the
   (add-to-list 'browse-url-handlers
                '("hyperspec" . eww-browse-url))
 
+  ;; Find package: naming  convention
+  (defun lps/lisp-search-buffer-package ()
+    (let ((package (sly-search-buffer-package)))
+      (when package
+        (string-trim-left package "#?:"))))
+
+  (setq sly-find-buffer-package-function 'lps/lisp-search-buffer-package)
+
   ;; Fast inspection. Might be buggy.
   (defun sly-inspect-no-eval (symbol &optional inspector-name)
     (interactive (list (sly-read-symbol-name " symbol's function: ")
