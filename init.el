@@ -1226,9 +1226,6 @@ If called with a prefix argument, also kills the current buffer"
   (:map company-active-map
         ("<tab>" . company-complete)
         ("TAB" . company-complete)
-        ("RET" . nil)
-        ("<return>" . nil)
-        ("<C-return>" . company-complete-selection)
         ("C-n" . nil)
         ("C-p" . nil)
         ("M-n" . company-select-next)
@@ -1350,8 +1347,7 @@ If called with a prefix argument, also kills the current buffer"
   ;; Interpret whitespaces as "anything but a newline"
   (search-whitespace-regexp "[-\\/_ \\t.]+")
   (isearch-regexp-lax-whitespace t)
-  (isearch-yank-on-move t)
-  (isearch-allow-motion t)
+  (isearch-yank-on-move 'shift)
   (isearch-allow-scroll t)
   :config
   ;; Change this face to distinguish between current match and other ones
