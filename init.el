@@ -1812,7 +1812,8 @@ Breaks if region or line spans multiple visual lines"
   :custom
   ;; (show-paren-style 'mixed) ; Too invasive
   (show-paren-when-point-inside-paren t)
-  (show-paren-when-point-in-periphery t))
+  (show-paren-when-point-in-periphery t)
+  (show-paren-context-when-offscreen t))
 
 ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
 (use-package rainbow-delimiters

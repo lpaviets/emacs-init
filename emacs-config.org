@@ -2396,7 +2396,8 @@ First of all, we want to easily be able to tell with a quick glance which parent
     :custom
     ;; (show-paren-style 'mixed) ; Too invasive
     (show-paren-when-point-inside-paren t)
-    (show-paren-when-point-in-periphery t))
+    (show-paren-when-point-in-periphery t)
+    (show-paren-context-when-offscreen t))
 
   ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
   (use-package rainbow-delimiters
@@ -5728,3 +5729,18 @@ Another cool thing to do if you want to learn keybindings in a very inefficient 
 * TODO Small things to do or to fix
 ** Elfeed
 Find a neat way to have bookmarks/pre-configured filters.
+** Generic
+Use functions that have been added to Emacs rather than mine, or use a macro to decide according to the version:
+- [ ] duplicate-dwim (29.1)
+- [ ] rename-visited-file (29.1)
+- [ ] Some maps defined by default repeat-mode
+- [ ] restart-emacs (29.1)
+- [ ] filename-parent-directory (29.1)
+
+Fix other things:
+- [ ] Keymaps: global/local-set-key changed to keymap-global/local-set (29.1)
+- [ ] tangle emacs-config.org now asks for confirmation ?
+
+To explore:
+- [ ] replace-regexp-function
+- [ ] defvar-keymap
