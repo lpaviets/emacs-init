@@ -47,18 +47,20 @@
 ;; `update-file-autoloads' or `update-directory-autoloads' in this dir
 ;; and regularly and place the autoloads in the
 ;; personal-<private-shared>autoloads.el file
-(let* ((extra-package-dir (expand-file-name "extra-packages" user-emacs-directory))
-       (extra-package-dir-shared (expand-file-name "shared" extra-package-dir))
-       (extra-package-dir-private (expand-file-name "private" extra-package-dir))
-       (extra-autoloads (list (expand-file-name "personal-private-autoloads.el"
-                                                extra-package-dir-private)
-                              (expand-file-name "personal-shared-autoloads.el"
-                                                extra-package-dir-shared))))
-  (add-to-list 'load-path extra-package-dir-shared)
-  (add-to-list 'load-path extra-package-dir-private)
-  (dolist (file extra-autoloads)
-    (when (file-exists-p file)
-      (load file))))
+;; TODO: fix this with new autoloads as of version 29 !
+
+;; (let* ((extra-package-dir (expand-file-name "extra-packages" user-emacs-directory))
+;;        (extra-package-dir-shared (expand-file-name "shared" extra-package-dir))
+;;        (extra-package-dir-private (expand-file-name "private" extra-package-dir))
+;;        (extra-autoloads (list (expand-file-name "personal-private-autoloads.el"
+;;                                                 extra-package-dir-private)
+;;                               (expand-file-name "personal-shared-autoloads.el"
+;;                                                 extra-package-dir-shared))))
+;;   (add-to-list 'load-path extra-package-dir-shared)
+;;   (add-to-list 'load-path extra-package-dir-private)
+;;   (dolist (file extra-autoloads)
+;;     (when (file-exists-p file)
+;;       (load file))))
 
 (require 'use-package)
 ;; Comment this line if you don't want to automatically install
@@ -1849,6 +1851,11 @@ Breaks if region or line spans multiple visual lines"
         ("M-S-<left>" . lps/transpose-sexp-backward)
         ("M-S-<right>" . lps/transpose-sexp-forward))
   :config
+  ;; Version 29 or 30 broke something ?!
+  ;; Remove paredit broken RET key
+  (when (version< "29" emacs-version)
+    (define-key paredit-mode-map (kbd "RET") nil t))
+
   (defun lps/transpose-sexp-backward ()
     (interactive)
     (transpose-sexps 1)
