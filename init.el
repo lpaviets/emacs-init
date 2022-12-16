@@ -2250,6 +2250,8 @@ call the associated function interactively. Otherwise, call the
   (:map sly-mode-map
         ("M-_" . nil)
         ("<f6>" . sly-documentation-lookup))
+  (:map sly-editing-mode-map
+        ("M-*" . lps/earmuffify))
   (:map sly-doc-map
         ("C-g" . nil)
         ("C-h" . nil)
@@ -2330,7 +2332,19 @@ call the associated function interactively. Otherwise, call the
                '("*sly-db" . ((display-buffer-reuse-mode-window
                                display-buffer-below-selected)
                               . ((inhibit-same-window . nil)
-                                 (mode . sly-db-mode))))))
+                                 (mode . sly-db-mode)))))
+
+  (defun lps/earmuffify ()
+    (interactive)
+    (let ((bounds (bounds-of-thing-at-point 'symbol)))
+      (if (not bounds)
+          (message "No symbol at point")
+        (goto-char (car bounds))
+        (unless (= (char-after) ?*)
+          (insert ?*))
+        (forward-symbol 1)
+        (unless (= (char-after) ?*)
+          (insert ?*))))))
 
 (use-package sly-mrepl
   :ensure nil
@@ -3367,6 +3381,7 @@ article's title"
      (?: ("\\colon"))
      (?- ("\\cap" "\\bigcap"))
      (?+ ("\\cup" "\\bigcup" "\\sqcup" "\\bigsqcup"))
+     (?* ("\\times" "^{\\ast}"))
      (?L ("\\Lambda" "\\limits"))
      (?c ("\\mathcal{?}" "\\mathbb{?}" "\\mathfrak{?}"))
      (?\( ("\\langle ?\\rangle" "\\left"))

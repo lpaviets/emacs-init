@@ -3008,6 +3008,8 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
     (:map sly-mode-map
           ("M-_" . nil)
           ("<f6>" . sly-documentation-lookup))
+    (:map sly-editing-mode-map
+          ("M-*" . lps/earmuffify))
     (:map sly-doc-map
           ("C-g" . nil)
           ("C-h" . nil)
@@ -3088,7 +3090,19 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
                  '("*sly-db" . ((display-buffer-reuse-mode-window
                                  display-buffer-below-selected)
                                 . ((inhibit-same-window . nil)
-                                   (mode . sly-db-mode))))))
+                                   (mode . sly-db-mode)))))
+
+    (defun lps/earmuffify ()
+      (interactive)
+      (let ((bounds (bounds-of-thing-at-point 'symbol)))
+        (if (not bounds)
+            (message "No symbol at point")
+          (goto-char (car bounds))
+          (unless (= (char-after) ?*)
+            (insert ?*))
+          (forward-symbol 1)
+          (unless (= (char-after) ?*)
+            (insert ?*))))))
 
   (use-package sly-mrepl
     :ensure nil
@@ -4293,6 +4307,7 @@ AucTeX already includes a lot of shortcuts and ways to be more efficient when ty
        (?: ("\\colon"))
        (?- ("\\cap" "\\bigcap"))
        (?+ ("\\cup" "\\bigcup" "\\sqcup" "\\bigsqcup"))
+       (?* ("\\times" "^{\\ast}"))
        (?L ("\\Lambda" "\\limits"))
        (?c ("\\mathcal{?}" "\\mathbb{?}" "\\mathfrak{?}"))
        (?\( ("\\langle ?\\rangle" "\\left"))
