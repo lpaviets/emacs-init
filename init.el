@@ -290,6 +290,9 @@ fboundp."
 
 ;; Maximize the Emacs frame at startup
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
+(ensure-version 29
+ (add-to-list 'default-frame-alist '(alpha-background . 95))
+ (set-frame-parameter nil 'alpha-background 95))
 
 (setq ring-bell-function 'ignore)
 (setq visible-bell nil)
@@ -2343,7 +2346,7 @@ call the associated function interactively. Otherwise, call the
         (unless (= (char-after) ?*)
           (insert ?*))
         (forward-symbol 1)
-        (unless (= (char-after) ?*)
+        (unless (= (char-before) ?*)
           (insert ?*))))))
 
 (use-package sly-mrepl
