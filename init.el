@@ -2892,7 +2892,8 @@ call the associated function interactively. Otherwise, call the
                 ("<C-down>" . pdf-view-scroll-up-or-next-page)
                 ("<C-up>" . pdf-view-scroll-down-or-previous-page)
                 ("<C-left>" . image-scroll-right)
-                ("<C-right>" . image-scroll-left))
+                ("<C-right>" . image-scroll-left)
+                ("s a" . pdf-view-auto-slice-minor-mode))
     :custom
     (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                             "-pointsize" "%P"

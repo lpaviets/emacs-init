@@ -65,6 +65,8 @@
         reftex-label
         reindent-then-newline-and-indent
         transpose-sexps
+        wdired--self-insert
+        wdired-capitalize-word
         zap-up-to-char
         ))
 
