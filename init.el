@@ -3383,6 +3383,7 @@ article's title"
      (?\[ ("\\subseteq" "\\sqsubseteq" "\\sqsubset"))
      (?\] ("\\supseteq" "\\sqsupseteq" "\\sqsupset"))
      (?: ("\\colon"))
+     (?  ("\\," "\\:" "\\;"))
      (?- ("\\cap" "\\bigcap"))
      (?+ ("\\cup" "\\bigcup" "\\sqcup" "\\bigsqcup"))
      (?* ("\\times" "^{\\ast}"))
@@ -3402,7 +3403,11 @@ article's title"
    '(("prodl"       "Insert \\prod\\limits_{}^{}"
       "\\prod\\limits_{?}^{}" cdlatex-position-cursor nil nil t)
      ("lim"         "Insert \\lim\\limits_{}"
-      "\\lim\\limits_{?}" cdlatex-position-cursor nil nil t)))
+      "\\lim\\limits_{?}" cdlatex-position-cursor nil nil t)
+     ("invlim"      "Insert \\varprojlim_{}{}"
+      "\\varprojlim_{?}{}" cdlatex-position-cursor nil nil t)
+     ("dirlim"      "Insert \\varinjlim_{}{}"
+      "\\varinjlim_{?}{}" cdlatex-position-cursor nil nil t)))
 
   :config
   (defun lps/LaTeX-indent ()

@@ -4309,6 +4309,7 @@ AucTeX already includes a lot of shortcuts and ways to be more efficient when ty
        (?\[ ("\\subseteq" "\\sqsubseteq" "\\sqsubset"))
        (?\] ("\\supseteq" "\\sqsupseteq" "\\sqsupset"))
        (?: ("\\colon"))
+       (?  ("\\," "\\:" "\\;"))
        (?- ("\\cap" "\\bigcap"))
        (?+ ("\\cup" "\\bigcup" "\\sqcup" "\\bigsqcup"))
        (?* ("\\times" "^{\\ast}"))
@@ -4328,7 +4329,11 @@ AucTeX already includes a lot of shortcuts and ways to be more efficient when ty
      '(("prodl"       "Insert \\prod\\limits_{}^{}"
         "\\prod\\limits_{?}^{}" cdlatex-position-cursor nil nil t)
        ("lim"         "Insert \\lim\\limits_{}"
-        "\\lim\\limits_{?}" cdlatex-position-cursor nil nil t)))
+        "\\lim\\limits_{?}" cdlatex-position-cursor nil nil t)
+       ("invlim"      "Insert \\varprojlim_{}{}"
+        "\\varprojlim_{?}{}" cdlatex-position-cursor nil nil t)
+       ("dirlim"      "Insert \\varinjlim_{}{}"
+        "\\varinjlim_{?}{}" cdlatex-position-cursor nil nil t)))
 
     :config
     (defun lps/LaTeX-indent ()
