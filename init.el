@@ -1744,6 +1744,8 @@ Breaks if region or line spans multiple visual lines"
   ("C-x g" . magit-status)
   (:map magit-section-mode-map
         ("M-^" . magit-section-up))
+  :custom
+  (magit-view-git-manual-method 'man) ; can't understand what Gitman is
   :config
   (dolist (action '(stage-all-changes unstage-all-changes))
     (add-to-list 'magit-no-confirm action)))
@@ -3006,6 +3008,7 @@ move to the end of the document, and search backward instead."
                                   "\\usepackage[utf8]{inputenc}\n\n"
                                   "\\usepackage{tikz}\n"
                                   "\\usepackage{amsmath, amssymb, amsthm}\n"
+                                  "\\usepackage{stmaryrd}\n"
                                   "\\usepackage{thm-restate}\n"
                                   "\\usepackage{hyperref}\n"
                                   ;; "\\usepackage{autoref}\n"
@@ -3229,7 +3232,7 @@ return `nil'."
   :hook (LaTeX-mode . reftex-mode)
   :custom
   (reftex-plug-into-AUCTeX t)
-  (reftex-toc-split-windows-horizontally t)
+  (reftex-toc-split-windows-horizontally nil)
   (reftex-label-alist
    '(("section"     ?s "sec:"  "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"       ))
      ("definition"  ?d "def:"  "~\\ref{%s}" t (regexp "[Dd]efinition\\(s\\)?"    ))
