@@ -1748,6 +1748,7 @@ Breaks if region or line spans multiple visual lines"
         ("M-^" . magit-section-up))
   :custom
   (magit-view-git-manual-method 'man) ; can't understand what Gitman is
+  (magit-module-sections-nested nil) ; disable if many modules in a given repo
   :config
   (dolist (action '(stage-all-changes unstage-all-changes))
     (add-to-list 'magit-no-confirm action))
