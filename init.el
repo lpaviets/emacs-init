@@ -3728,7 +3728,33 @@ PWD is not in a git repo (or the git command is not found)."
   (:map lps/system-tools-map
         ("p p" . proced))
   (:map proced-mode-map
-        ("a" . proced-toggle-auto-update)))
+        ("a" . proced-toggle-auto-update))
+  :custom
+  (proced-goal-attribute nil)
+  :config
+  (ensure-version 29.1
+    (setq proced-enable-color-flag t))
+
+  ;; Small bug in French version of %b: does not produce
+  ;; 6 characters-long time string for processes started earlier
+  ;; in the same year
+  (defun proced-format-start (start)
+    "Format time START.
+The return string is always 6 characters wide."
+    (let ((d-start (decode-time start))
+          (d-current (decode-time))
+          (colon (if proced-enable-color-flag
+                     (propertize ":" 'font-lock-face 'proced-time-colon)
+                   ":")))
+      (cond (;; process started in previous years
+             (< (decoded-time-year d-start) (decoded-time-year d-current))
+             (format-time-string "  %Y" start))
+            ;; process started today
+            ((and (= (decoded-time-day d-start) (decoded-time-day d-current))
+                  (= (decoded-time-month d-start) (decoded-time-month d-current)))
+             (string-replace ":" colon (format-time-string " %H:%M" start)))
+            (t ;; process started this year
+             (format-time-string " %e/%m" start))))))
 
 (use-package emacs
   :ensure nil

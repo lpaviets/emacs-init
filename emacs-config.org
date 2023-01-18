@@ -4726,19 +4726,45 @@ Although ~Dired~ is a powerful tool, it still lacks a neat feature, namely, it d
 There are two usual ways to interact with processes via Emacs. The first one is ~proced~, which lists all the processes running on the system, and the other is ~list-processes~, which only lists subprocesses ran by Emacs (such as a PDF server, a mail indexer, and so on)
 
 #+begin_src emacs-lisp
-    (use-package proced
-      :ensure nil
-      :bind
-      (:map lps/system-tools-map
-            ("p p" . proced))
-      (:map proced-mode-map
-            ("a" . proced-toggle-auto-update)))
+  (use-package proced
+    :ensure nil
+    :bind
+    (:map lps/system-tools-map
+          ("p p" . proced))
+    (:map proced-mode-map
+          ("a" . proced-toggle-auto-update))
+    :custom
+    (proced-goal-attribute nil)
+    :config
+    (ensure-version 29.1
+      (setq proced-enable-color-flag t))
 
-    (use-package emacs
-      :ensure nil
-      :bind
-      (:map lps/system-tools-map
-            ("p l" . list-processes)))
+    ;; Small bug in French version of %b: does not produce
+    ;; 6 characters-long time string for processes started earlier
+    ;; in the same year
+    (defun proced-format-start (start)
+      "Format time START.
+  The return string is always 6 characters wide."
+      (let ((d-start (decode-time start))
+            (d-current (decode-time))
+            (colon (if proced-enable-color-flag
+                       (propertize ":" 'font-lock-face 'proced-time-colon)
+                     ":")))
+        (cond (;; process started in previous years
+               (< (decoded-time-year d-start) (decoded-time-year d-current))
+               (format-time-string "  %Y" start))
+              ;; process started today
+              ((and (= (decoded-time-day d-start) (decoded-time-day d-current))
+                    (= (decoded-time-month d-start) (decoded-time-month d-current)))
+               (string-replace ":" colon (format-time-string " %H:%M" start)))
+              (t ;; process started this year
+               (format-time-string " %e/%m" start))))))
+
+  (use-package emacs
+    :ensure nil
+    :bind
+    (:map lps/system-tools-map
+          ("p l" . list-processes)))
 #+end_src
 
 * Email
