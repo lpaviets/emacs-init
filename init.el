@@ -939,6 +939,7 @@ If called with a prefix argument, also kills the current buffer"
   :ensure nil
   :custom
   (scroll-preserve-screen-position t)
+  (scroll-error-top-bottom t)
   (mouse-wheel-tilt-scroll t))
 
 ;; Helpful. Extra documentation when calling for help
@@ -1740,6 +1741,7 @@ Breaks if region or line spans multiple visual lines"
   ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
   ;; uncomment previous line to have magit open itself within the same buffer
   ;; instead of in another buffer
+  :hook (magit-status-sections . magit-insert-modules)
   :bind
   ("C-x g" . magit-status)
   (:map magit-section-mode-map
@@ -1748,7 +1750,18 @@ Breaks if region or line spans multiple visual lines"
   (magit-view-git-manual-method 'man) ; can't understand what Gitman is
   :config
   (dolist (action '(stage-all-changes unstage-all-changes))
-    (add-to-list 'magit-no-confirm action)))
+    (add-to-list 'magit-no-confirm action))
+
+  ;; From https://emacs.stackexchange.com/a/43975/31651
+  (transient-define-suffix magit-submodule-update-all ()
+    "Update all submodules"
+    :description "Update All     git submodule update --init --recursive"
+    (interactive)
+    (magit-with-toplevel
+      (magit-run-git-async "submodule" "update" "--init" "--recursive")))
+
+  (transient-append-suffix 'magit-submodule "u"
+    '("U" magit-submodule-update-all)))
 
 (use-package git-timemachine
   :defer t)
