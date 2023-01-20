@@ -1741,7 +1741,6 @@ Breaks if region or line spans multiple visual lines"
   ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
   ;; uncomment previous line to have magit open itself within the same buffer
   ;; instead of in another buffer
-  :hook (magit-status-sections . magit-insert-modules)
   :bind
   ("C-x g" . magit-status)
   (:map magit-section-mode-map
@@ -1762,7 +1761,10 @@ Breaks if region or line spans multiple visual lines"
       (magit-run-git-async "submodule" "update" "--init" "--recursive")))
 
   (transient-append-suffix 'magit-submodule "u"
-    '("U" magit-submodule-update-all)))
+    '("U" magit-submodule-update-all))
+
+  ;; Insert modules /after/ the other sections
+  (add-hook 'magit-status-sections-hook 'magit-insert-modules 1))
 
 (use-package git-timemachine
   :defer t)
@@ -3731,6 +3733,7 @@ PWD is not in a git repo (or the git command is not found)."
         ("a" . proced-toggle-auto-update))
   :custom
   (proced-goal-attribute nil)
+  (proced-format 'medium)
   :config
   (ensure-version 29.1
     (setq proced-enable-color-flag t))

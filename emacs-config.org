@@ -2297,7 +2297,6 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
     ;; :custom (magit-display-buffer-function #'magit-display-buffer-same-window-except-diff-v1)
     ;; uncomment previous line to have magit open itself within the same buffer
     ;; instead of in another buffer
-    :hook (magit-status-sections . magit-insert-modules)
     :bind
     ("C-x g" . magit-status)
     (:map magit-section-mode-map
@@ -2318,7 +2317,10 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
         (magit-run-git-async "submodule" "update" "--init" "--recursive")))
 
     (transient-append-suffix 'magit-submodule "u"
-      '("U" magit-submodule-update-all)))
+      '("U" magit-submodule-update-all))
+
+    ;; Insert modules /after/ the other sections
+    (add-hook 'magit-status-sections-hook 'magit-insert-modules 1))
 #+end_src
 
 *** Git-timemachine
@@ -4735,6 +4737,7 @@ There are two usual ways to interact with processes via Emacs. The first one is 
           ("a" . proced-toggle-auto-update))
     :custom
     (proced-goal-attribute nil)
+    (proced-format 'medium)
     :config
     (ensure-version 29.1
       (setq proced-enable-color-flag t))
