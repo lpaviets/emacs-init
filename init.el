@@ -424,8 +424,6 @@ Note gray80 at size 10 is useful for side remarks."
 
 (use-package doom-modeline
   :after all-the-icons
-  :init
-  (doom-modeline-mode 1)
   :custom
   (doom-modeline-height 15)
   (doom-modeline-project-detection 'project)
@@ -434,6 +432,15 @@ Note gray80 at size 10 is useful for side remarks."
   (doom-modeline-mu4e t)
   (mode-line-compact 'long)
   :config
+  ;; Fix a bug where symbol-with-pos are inserted instead of "bare symbols"
+  (ensure-version 29
+    (let ((remove-pos-from-seg (lambda (it)
+                                 (cons (remove-pos-from-symbol (car it)) (cdr it)))))
+      (setq doom-modeline-fn-alist (mapcar remove-pos-from-seg doom-modeline-fn-alist)
+            doom-modeline-var-alist (mapcar remove-pos-from-seg doom-modeline-var-alist))))
+
+  (doom-modeline-mode 1)
+
   ;; Hide encoding in modeline when UTF-8(-unix)
   (defun lps/hide-utf-8-encoding ()
     (setq-local doom-modeline-buffer-encoding
@@ -4437,6 +4444,7 @@ is handled appropriately."
 
 (use-package guess-language
   ;;:hook (text-mode . guess-language-mode)
+  :disabled t
   :custom
   (guess-language-languages '(en fr))
   (guess-language-after-detection-functions '(guess-language-switch-flyspell-function)))
