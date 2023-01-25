@@ -1873,7 +1873,7 @@ Breaks if region or line spans multiple visual lines"
         ("C-S-w" . paredit-copy-as-kill)
         ("M-s" . nil) ;; To get isearch-mode-map
         ("M-s M-s" . paredit-splice-sexp)
-        ("C-M-," . paredit-convolute-sexp)
+        ("C-M-;" . paredit-convolute-sexp)
         ([remap newline] . paredit-newline)
         ("<C-backspace>" . paredit-delete-region)
         ("M-S-<left>" . lps/transpose-sexp-backward)
@@ -3800,7 +3800,8 @@ The return string is always 6 characters wide."
   (setq mail-user-agent 'mu4e-user-agent)
   (set-variable 'read-mail-command 'mu4e)
   :config
-  (defvar lps/safe-mail-send t "If non-nil, ask for a signature, an encryption, and ask confirmation when sending a non-multipart MIME mail")
+  ;; Useless as long as I have not configured GPG properly
+  (defvar lps/safe-mail-send nil "If non-nil, ask for a signature, an encryption, and ask confirmation when sending a non-multipart MIME mail")
 
   (setq mu4e-completing-read-function 'completing-read)
 
@@ -3822,6 +3823,9 @@ The return string is always 6 characters wide."
   (when (fboundp 'imagemagick-register-types)
     (imagemagick-register-types))
 
+  ;; but prefer text compared to html
+  (add-to-list 'mm-discouraged-alternatives "text/html")
+
   ;; ASCII-only time is over
   (setq mu4e-use-fancy-chars t)
   ;; and fix alignment !
@@ -3841,6 +3845,8 @@ The return string is always 6 characters wide."
 
   ;; Always show full date and time
   (setq mu4e-headers-date-format "%d-%m-%Y %H:%M")
+  ;; Also show full message threads
+  (setq mu4e-search-threads t)
 
   ;; Less redundant information
   (setq mu4e-headers-include-related nil)
