@@ -3768,6 +3768,20 @@ As usual with those popular packages, we can enhance them using various other sm
     (consult-org-roam-mode))
 #+end_src
 
+To improve this note-taking system, we would like to be able to visualize the graph produced by all (or a part of) our notes. By default, ~org-roam~ is able to use ~graphviz~ to produce such a visual plotting, but other methods exist, and produce objects with which we can interact.
+
+#+begin_src emacs-lisp
+  (use-package org-roam-ui
+    :after org-roam
+    :bind
+    ("C-c n G" . org-roam-ui-mode)
+    :custom
+    (org-roam-ui-sync-theme t)
+    (org-roam-ui-follow nil)
+    (org-roam-ui-update-on-save t)
+    (org-roam-ui-open-on-start t))
+#+end_src
+
 * LaTeX and PDF
 *** PDF viewer
 
