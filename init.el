@@ -1771,7 +1771,8 @@ Breaks if region or line spans multiple visual lines"
     '("U" magit-submodule-update-all))
 
   ;; Insert modules /after/ the other sections
-  (add-hook 'magit-status-sections-hook 'magit-insert-modules 1))
+  (add-hook 'magit-status-sections-hook 'magit-insert-modules 1)
+  (add-hook 'magit-status-sections-hook 'magit-insert-tracked-files 1))
 
 (use-package git-timemachine
   :defer t)
@@ -2627,6 +2628,7 @@ call the associated function interactively. Otherwise, call the
 
 (use-package emmmet-mode
   :defer t
+  :disabled t
   :hook
   ((sgml-mode css-mode web-mode) . emmet-mode)
   :custom

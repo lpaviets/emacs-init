@@ -2327,7 +2327,8 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
       '("U" magit-submodule-update-all))
 
     ;; Insert modules /after/ the other sections
-    (add-hook 'magit-status-sections-hook 'magit-insert-modules 1))
+    (add-hook 'magit-status-sections-hook 'magit-insert-modules 1)
+    (add-hook 'magit-status-sections-hook 'magit-insert-tracked-files 1))
 #+end_src
 
 *** Git-timemachine
@@ -3433,6 +3434,7 @@ Because HTML tends to be very verbose, we also want to be able to quickly type t
 #+begin_src emacs-lisp
   (use-package emmmet-mode
     :defer t
+    :disabled t
     :hook
     ((sgml-mode css-mode web-mode) . emmet-mode)
     :custom
