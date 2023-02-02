@@ -5,23 +5,15 @@
 
 * Organization of this file
 
-This file contains a Emacs configuration, written in a Org Mode document. It is largely based on [[https://github.com/daviwil/emacs-from-scratch/][Emacs From Scratch]].
+This file contains the entirety of my Emacs configuration, written in a Org Mode document that gets tangled to a single =init.el= file. It was largely based on [[https://github.com/daviwil/emacs-from-scratch/][Emacs From Scratch]] originally, but has somewhat evolved past it.
 
-It is able to automatically generate a init.el file, loaded by Emacs at startup.
+Because I use a version system on those files, I don't mind conflicts with the currently loaded configuration file, and so the the generated file is actually called  =init.el=. By default, Emacs reads (and loads) file such as "~/.emacs" or "~/.emacs.d/init.el" at startup, so the output of =org-babel-tangle= is automatically replacing the previous configuration file. If you want to avoid those conflicts, you might need to rename it, and manually replace your current =init.el= with whatever file has been produced by tangling this configuration file.
 
-If this file is on the path "~/.emacs.d/emacs-config.org" then it will automatically generate an output. To modify this behaviour, see the "Org Mode/Auto-tangle configuration files" subsection and modify it as you need.
+To modify the name of the output, you can change it in the second line of this document, after the =:tangle= keyword. Note that neither this file not the tangled file are hardcoded in the Elisp code, and I use =user-emacs-directory= everywhere where one might expect an hardcoded location. it in this file. Indeed, you might want to have your configuration in a different location than =~/.emacs.d=, and as such, nothing is immediately broken !
 
-If this file is named differently on your system, or simply located in another directory, you can still generate an output without changing anything by invoking the =org-babel-tangle= command (=C-c C-v t=).
+Some commands have to be run manually whenever the generated =init.el= file is loaded for the first time, but they are always highlighted: whenever this is the case, the particular situation is explicitly signaled by the presence of the *MANUAL* keyword in front of those commands, and the necessary steps to ensure that everything is working as intended are detailed afterwards.
 
-Because I use a version system on those files, I don't mind conflicts with the currently loaded configuration file, and so the the generated file is actually called  =init.el=. By default, Emacs reads (and loads) file such as "~/.emacs" or "~/.emacs.d/init.el" at startup, so the output of =org-babel-tangle= is automatically replacing the previous configuration file. If you want to avoid those conflicts, you might need to rename it.
-
-To modify the name of the output, you can change it in the second line of this document, after the =:tangle= keyword. In this case, I do not hardcode it in this file, and let Emacs decide what the /actual/ emacs-directory is. Indeed, you might want to have your configuration in a different location than =~/.emacs.d=, and as such, nothing is broken !
-
-Some commands have to be run manually whenever the generated =init.el= file is loaded for the first time.
-
-Whenever this is the case, it is explicitly signaled by the presence of the *MANUAL* keyword in front of those commands.
-
-If the init.el cannot be properly loaded at startup, try to search for such keywords in this file and execute the corresponding commands.
+If the =init.el= file cannot be properly loaded at startup, try to search for such keywords in this file and execute the corresponding commands.
 
 * Initialization
 ** Lexical Binding
@@ -2311,6 +2303,7 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
     :custom
     (magit-view-git-manual-method 'man) ; can't understand what Gitman is
     (magit-module-sections-nested nil) ; disable if many modules in a given repo
+    (magit-clone-always-transient t)
     :config
     (dolist (action '(stage-all-changes unstage-all-changes))
       (add-to-list 'magit-no-confirm action))
@@ -2329,6 +2322,21 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
     ;; Insert modules /after/ the other sections
     (add-hook 'magit-status-sections-hook 'magit-insert-modules 1)
     (add-hook 'magit-status-sections-hook 'magit-insert-tracked-files 1))
+#+end_src
+
+**** Transient
+In fact, the UI used by Magit can be used in several other applications, and is not specific to Magit itself. Nonetheless, Magit being the most prominent package using this library, we configure it here. In particular, we don't want to hide anything, although we keep some visual information to show commands that are "intended for experts".
+
+#+begin_src emacs-lisp
+  (use-package transient
+    :custom
+    (transient-highlight-higher-levels t)
+    (transient-default-level 7)
+    :config
+    ;; Replace the underline with a slanted text, less disturbing
+    (set-face-attribute 'transient-higher-level nil
+                        :underline nil
+                        :italic t))
 #+end_src
 
 *** Git-timemachine

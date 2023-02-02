@@ -1755,6 +1755,7 @@ Breaks if region or line spans multiple visual lines"
   :custom
   (magit-view-git-manual-method 'man) ; can't understand what Gitman is
   (magit-module-sections-nested nil) ; disable if many modules in a given repo
+  (magit-clone-always-transient t)
   :config
   (dolist (action '(stage-all-changes unstage-all-changes))
     (add-to-list 'magit-no-confirm action))
@@ -1773,6 +1774,16 @@ Breaks if region or line spans multiple visual lines"
   ;; Insert modules /after/ the other sections
   (add-hook 'magit-status-sections-hook 'magit-insert-modules 1)
   (add-hook 'magit-status-sections-hook 'magit-insert-tracked-files 1))
+
+(use-package transient
+  :custom
+  (transient-highlight-higher-levels t)
+  (transient-default-level 7)
+  :config
+  ;; Replace the underline with a slanted text, less disturbing
+  (set-face-attribute 'transient-higher-level nil
+                      :underline nil
+                      :italic t))
 
 (use-package git-timemachine
   :defer t)
