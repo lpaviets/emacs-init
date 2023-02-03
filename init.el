@@ -2730,7 +2730,10 @@ call the associated function interactively. Otherwise, call the
   ;; Replace list hyphen with dot
   (font-lock-add-keywords 'org-mode
                           '(("^ *\\([-]\\) "
-                             (0 (prog1 () (compose-region (match-beginning 1) (match-end 1) "•"))))))
+                             (0 (prog1 nil
+                                  (compose-region (match-beginning 1)
+                                                  (match-end 1)
+                                                  "•"))))))
 
   ;; Set faces for heading levels
   ;; For non-headers: org-default
@@ -4678,7 +4681,8 @@ instance, it will be killed. Options specified in
          (when (memq (process-status process) '(exit signal))
            (mpv-kill)
            (when (file-exists-p socket)
-             (with-demoted-errors (delete-file socket)))
+             (with-demoted-errors "Socket does not exist: %S"
+                 (delete-file socket)))
            (run-hooks 'mpv-on-exit-hook))))
       (with-timeout
           (lps/mpv-on-start-timeout (mpv-kill)
