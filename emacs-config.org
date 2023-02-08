@@ -149,10 +149,16 @@ Although ~use-package~ is extensible and we could add some keywords to it, it is
                   "0"
                   (error "Can't understand this version number: %s " version)))))
 
-  (defmacro ensure-version (version &rest body)
-    "Execute BODY when the current Emacs version is larger than VERSION"
+  (defmacro ensure-version (package version &rest body)
+    "Execute BODY when the version of PACKAGE is larger than VERSION"
+    (declare (indent 2))
+    (let ((package-version (intern (concat (symbol-name package) "-version"))))
+      `(when (version<= ,(lps/versionify version) ,package-version)
+         ,@body)))
+
+  (defmacro ensure-emacs-version (version &rest body)
     (declare (indent 1))
-    `(when (version<= ,(lps/versionify version) emacs-version)
+    `(ensure-version emacs ,version
        ,@body))
 
   (defmacro version-case (&rest cases)
@@ -331,7 +337,7 @@ We do not want Emacs to mess with our own =init.el= file, and so we tell it wher
 In this section, we configure how Emacs byte-compiles and/or natively compiles the source code of packages that we install.
 
 #+begin_src emacs-lisp
-  (ensure-version 28
+  (ensure-emacs-version 28
    (use-package emacs
      :custom
      (native-comp-async-report-warnings-errors 'silent)))
@@ -432,7 +438,7 @@ However, we would like to see Emacs in full-screen if we are to use it
 #+begin_src emacs-lisp
   ;; Maximize the Emacs frame at startup
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
-  (ensure-version 29
+  (ensure-emacs-version 29
    (add-to-list 'default-frame-alist '(alpha-background . 95))
    (set-frame-parameter nil 'alpha-background 95))
 #+end_src
@@ -607,7 +613,7 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
     (mode-line-compact 'long)
     :config
     ;; Fix a bug where symbol-with-pos are inserted instead of "bare symbols"
-    (ensure-version 29
+    (ensure-emacs-version 29
       (let ((remove-pos-from-seg (lambda (it)
                                    (cons (remove-pos-from-symbol (car it)) (cdr it)))))
         (setq doom-modeline-fn-alist (mapcar remove-pos-from-seg doom-modeline-fn-alist)
@@ -1467,7 +1473,7 @@ Some commands are usually invoked several times in succession. For example, if y
 If we need to define repeat maps, we will do it in the corresponding package rather than here.
 
 #+begin_src emacs-lisp
-  (ensure-version 28.0
+  (ensure-emacs-version 28.0
     (use-package repeat
       :bind
       (:map lps/quick-edit-map
@@ -1795,7 +1801,7 @@ We also add more convenient bindings to move paragraph by paragraph, and to deal
 #+end_src
 
 *** Text-search
-Final touch: we often use the "search" functions to move the point around, because it is often easier than mashing the ~C-f~ and ~C-n~ keys. In a previous section we bound ~C-s~ to ~Swiper~, which provides a fancy UI but can be slow for simply moving the point to a nearby location.
+Final touch: we often use the "search" functions to move the point around, because it is often easier than mashing the ~C-f~ and ~C-n~ keys.
 
 Hence, we add a few bindings to an already existing keymap, to make them easily accessible again.
 
@@ -2478,8 +2484,7 @@ Now, in order to work with structured text, such as source code, we want to be a
     :config
     ;; Version 29 or 30 broke something ?!
     ;; Remove paredit broken RET key
-    (when (version< "29" emacs-version)
-      (define-key paredit-mode-map (kbd "RET") nil t))
+    (define-key paredit-mode-map (kbd "RET") nil t)
 
     (defun lps/transpose-sexp-backward ()
       (interactive)
@@ -3626,24 +3631,20 @@ Org babel is what allows us to write code and execute it, all within the same do
 We also add templates to insert code blocks with a few key presses
 
 #+begin_src emacs-lisp
+  (ensure-version org 9.2
+    ;; This is needed as of Org 9.2
+    (require 'org-tempo)
+    (let ((bound-key-templates
+           (mapcar #'car org-structure-template-alist)))
+      (dolist (key-template '(("sh" . "src shell")
+                              ("el" . "src emacs-lisp")
+                              ("py" . "src python")
+                              ("latex" . "src latex")
+                              ("cl" . "src lisp")))
 
-  (if (version<= "9.2" org-version) ; ) parsing bug
-      ;; This is needed as of Org 9.2
-      (progn
-        (require 'org-tempo)
-
-        (let ((bound-key-templates
-               (mapcar #'car org-structure-template-alist)))
-          (dolist (key-template '(("sh" . "src shell")
-                                  ("el" . "src emacs-lisp")
-                                  ("py" . "src python")
-                                  ("latex" . "src latex")
-                                  ("cl" . "src lisp")))
-
-            (unless
-                (member (car key-template) bound-key-templates)
-              (push key-template org-structure-template-alist))))))
-
+        (unless
+            (member (car key-template) bound-key-templates)
+          (push key-template org-structure-template-alist)))))
 #+end_src
 
 ** Org Agenda
@@ -4773,7 +4774,7 @@ There are two usual ways to interact with processes via Emacs. The first one is 
     (proced-goal-attribute nil)
     (proced-format 'medium)
     :config
-    (ensure-version 29.1
+    (ensure-emacs-version 29.1
       (setq proced-enable-color-flag t))
 
     ;; Small bug in French version of %b: does not produce
@@ -5102,7 +5103,7 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
       (completing-read (or prompt "Mime type: ") (mailcap-mime-types)))
 
     (defvar lps/--mu4e-build-query-alist
-      '((?\C-m "confirm" "confirm")
+      '((?q "confirm" "confirm")
         (?\  " anything" "" read-string)
         (?f "from" "from:" read-string)
         (?t "to" "to:" read-string)
@@ -5128,7 +5129,9 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
              (str (car rest))
              (read-fun-or-continue (cadr rest)))
         (cond
-         ((char-equal (car choice) ?\n)
+         ;; RETURN key sends 'return', and it is not a *character*, so
+         ;; we can't use it due to how read-multiple-choice is implemented ...
+         ((eq (car choice) ?q)
           :quit)
          ((functionp read-fun-or-continue)
           (concat str (funcall read-fun-or-continue (concat str " "))))
@@ -5284,7 +5287,7 @@ The headers view of ~mu4e~ is not very pretty. Why not make it colourful ?
   (use-package mu4e-column-faces
     :after mu4e
     :config
-    (when (version<= "1.8.0" mu4e-mu-version)
+    (ensure-version mu4e-mu 1.8
       (mu4e-column-faces-mode)))
 #+end_src
 

@@ -89,10 +89,16 @@
                 "0"
                 (error "Can't understand this version number: %s " version)))))
 
-(defmacro ensure-version (version &rest body)
-  "Execute BODY when the current Emacs version is larger than VERSION"
+(defmacro ensure-version (package version &rest body)
+  "Execute BODY when the version of PACKAGE is larger than VERSION"
+  (declare (indent 2))
+  (let ((package-version (intern (concat (symbol-name package) "-version"))))
+    `(when (version<= ,(lps/versionify version) ,package-version)
+       ,@body)))
+
+(defmacro ensure-emacs-version (version &rest body)
   (declare (indent 1))
-  `(when (version<= ,(lps/versionify version) emacs-version)
+  `(ensure-version emacs ,version
      ,@body))
 
 (defmacro version-case (&rest cases)
@@ -222,7 +228,7 @@ fboundp."
 (setq custom-file (concat user-emacs-directory "custom-file.el"))
 (load custom-file 'noerror)
 
-(ensure-version 28
+(ensure-emacs-version 28
  (use-package emacs
    :custom
    (native-comp-async-report-warnings-errors 'silent)))
@@ -290,7 +296,7 @@ fboundp."
 
 ;; Maximize the Emacs frame at startup
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
-(ensure-version 29
+(ensure-emacs-version 29
  (add-to-list 'default-frame-alist '(alpha-background . 95))
  (set-frame-parameter nil 'alpha-background 95))
 
@@ -433,7 +439,7 @@ Note gray80 at size 10 is useful for side remarks."
   (mode-line-compact 'long)
   :config
   ;; Fix a bug where symbol-with-pos are inserted instead of "bare symbols"
-  (ensure-version 29
+  (ensure-emacs-version 29
     (let ((remove-pos-from-seg (lambda (it)
                                  (cons (remove-pos-from-symbol (car it)) (cdr it)))))
       (setq doom-modeline-fn-alist (mapcar remove-pos-from-seg doom-modeline-fn-alist)
@@ -1074,7 +1080,7 @@ If called with a prefix argument, also kills the current buffer"
 (use-package embark-consult
   :after (consult embark))
 
-(ensure-version 28.0
+(ensure-emacs-version 28.0
   (use-package repeat
     :bind
     (:map lps/quick-edit-map
@@ -1893,8 +1899,7 @@ Breaks if region or line spans multiple visual lines"
   :config
   ;; Version 29 or 30 broke something ?!
   ;; Remove paredit broken RET key
-  (when (version< "29" emacs-version)
-    (define-key paredit-mode-map (kbd "RET") nil t))
+  (define-key paredit-mode-map (kbd "RET") nil t)
 
   (defun lps/transpose-sexp-backward ()
     (interactive)
@@ -2771,22 +2776,20 @@ call the associated function interactively. Otherwise, call the
 ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
                                          ; else code
 
-(if (version<= "9.2" org-version) ; ) parsing bug
-    ;; This is needed as of Org 9.2
-    (progn
-      (require 'org-tempo)
+(ensure-version org 9.2
+  ;; This is needed as of Org 9.2
+  (require 'org-tempo)
+  (let ((bound-key-templates
+         (mapcar #'car org-structure-template-alist)))
+    (dolist (key-template '(("sh" . "src shell")
+                            ("el" . "src emacs-lisp")
+                            ("py" . "src python")
+                            ("latex" . "src latex")
+                            ("cl" . "src lisp")))
 
-      (let ((bound-key-templates
-             (mapcar #'car org-structure-template-alist)))
-        (dolist (key-template '(("sh" . "src shell")
-                                ("el" . "src emacs-lisp")
-                                ("py" . "src python")
-                                ("latex" . "src latex")
-                                ("cl" . "src lisp")))
-
-          (unless
-              (member (car key-template) bound-key-templates)
-            (push key-template org-structure-template-alist))))))
+      (unless
+          (member (car key-template) bound-key-templates)
+        (push key-template org-structure-template-alist)))))
 
 (setq org-agenda-files (list (concat org-directory "agenda/")))
 (setq org-log-into-drawer t)
@@ -3768,7 +3771,7 @@ PWD is not in a git repo (or the git command is not found)."
   (proced-goal-attribute nil)
   (proced-format 'medium)
   :config
-  (ensure-version 29.1
+  (ensure-emacs-version 29.1
     (setq proced-enable-color-flag t))
 
   ;; Small bug in French version of %b: does not produce
@@ -4078,7 +4081,7 @@ marking if it still had that."
     (completing-read (or prompt "Mime type: ") (mailcap-mime-types)))
 
   (defvar lps/--mu4e-build-query-alist
-    '((?\C-m "confirm" "confirm")
+    '((?q "confirm" "confirm")
       (?\  " anything" "" read-string)
       (?f "from" "from:" read-string)
       (?t "to" "to:" read-string)
@@ -4104,7 +4107,9 @@ marking if it still had that."
            (str (car rest))
            (read-fun-or-continue (cadr rest)))
       (cond
-       ((char-equal (car choice) ?\n)
+       ;; RETURN key sends 'return', and it is not a *character*, so
+       ;; we can't use it due to how read-multiple-choice is implemented ...
+       ((eq (car choice) ?q)
         :quit)
        ((functionp read-fun-or-continue)
         (concat str (funcall read-fun-or-continue (concat str " "))))
@@ -4230,7 +4235,7 @@ by hand if needed"
 (use-package mu4e-column-faces
   :after mu4e
   :config
-  (when (version<= "1.8.0" mu4e-mu-version)
+  (ensure-version mu4e-mu 1.8
     (mu4e-column-faces-mode)))
 
 (use-package elpher)
