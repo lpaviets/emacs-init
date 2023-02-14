@@ -4170,7 +4170,52 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
       (let ((TeX-debug-bad-boxes t)
             (TeX-debug-warnings t)
             (TeX-error-overview-open-after-TeX-run t))
-       (TeX-command-sequence t t))))
+        (TeX-command-sequence t t))))
+#+end_src
+
+**** Beamer
+Beamer, a (the !) LaTeX document class used to produce presentations, slideshows and so on, is a beast in itself. We configure it separately in this section.
+
+#+begin_src emacs-lisp
+  (use-package tex
+    :ensure auctex
+    :defer t
+    :init
+    (defvar beamer-mode-map (make-sparse-keymap))
+    (define-minor-mode beamer-mode
+      "A minor mode for editing LaTeX document using the beamer class.
+  It defines the following commands:
+
+  \\{beamer-mode-map}")
+    :bind
+    (:map beamer-mode-map
+          ("C-M-x" . lps/LaTeX-beamer-compile-frame))
+    :hook
+    (beamer-mode . lps/LaTeX-beamer-frame-as-section)
+    :config
+    (TeX-add-style-hook "beamer" 'beamer-mode)
+
+    ;; Adapts https://mbork.pl/2016-07-04_Compiling_a_single_Beamer_frame_in_AUCTeX
+    (defun lps/LaTeX-beamer-compile-frame ()
+      "Compile the current frame"
+      (interactive)
+      (unless (member "beamer" TeX-active-styles)
+        (error "Not in a beamer document"))
+      (save-mark-and-excursion
+        (beginning-of-line)
+        (while (not (looking-at-p "\\\\begin *{frame}"))
+          (LaTeX-find-matching-begin))
+        (forward-char)
+        (LaTeX-mark-environment)
+        (TeX-command-run-all-region)))
+
+    (defun lps/LaTeX-beamer-frame-as-section ()
+      (require 'reftex)
+      (unless (assoc-string "frametitle" reftex-section-levels)
+        (setq-local reftex-section-levels
+                    (append reftex-section-levels
+                            '(("frametitle" . -2)
+                              ("framesubtitle" . -3)))))))
 #+end_src
 
 **** References
