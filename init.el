@@ -2141,6 +2141,11 @@ call the associated function interactively. Otherwise, call the
                        'compile)))
       (call-interactively command))))
 
+(use-package eldoc
+  :config
+  (with-eval-after-load 'paredit
+   (eldoc-add-command-completions "paredit-")))
+
 (use-package devdocs
   :defer t
   :bind

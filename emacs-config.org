@@ -2800,6 +2800,16 @@ We will use the built-in ~compile~ command for this, and tune it as we need.
 #+end_src
 
 ** Documentation
+
+Emacs has a built-in way to find, show, compose ... documentation: the package responsible for all of that is called ~eldoc~.
+
+#+begin_src emacs-lisp
+  (use-package eldoc
+    :config
+    (with-eval-after-load 'paredit
+     (eldoc-add-command-completions "paredit-")))
+#+end_src
+
 Many languages have features to view some kind of help, or documentation, from withing the language, such as Common Lisp's ~describe~ or Python's ~help~ functions.
 However, we sometimes need a bit more, and we do not always have access to the Internet. Solution ? Download documentation, and use a nice package to navigate it.
 
