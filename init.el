@@ -937,7 +937,7 @@ If called with a prefix argument, also kills the current buffer"
   :defer t
   :hook (prog-mode . outline-minor-mode)
   :custom
-  (outline-minor-mode-prefix "\C-o")
+  (outline-minor-mode-prefix (kbd "M-o"))
   :config
   ;; Problems with TAB -> completely override cycle keymap
   (setq outline-mode-cycle-map (make-sparse-keymap)))
@@ -2998,7 +2998,9 @@ move to the end of the document, and search backward instead."
         ("<backtab>" . indent-for-tab-command)
         ("C-c M-%" . LaTeX-replace-in-math)
         ("C-c C-M-%" . LaTeX-replace-regexp-in-math)
-        ("C-c C-d" . lps/TeX-remove-macro))
+        ("C-c C-d" . lps/TeX-remove-macro)
+        ([remap beginning-of-defun] . LaTeX-find-matching-begin)
+        ([remap end-of-defun] . LaTeX-find-matching-end))
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . lps/latex-fontification)
@@ -3045,6 +3047,10 @@ move to the end of the document, and search backward instead."
   (TeX-debug-warnings nil)
   (TeX-error-overview-open-after-TeX-run t)
 
+  ;; Folding
+  (TeX-fold-command-prefix "\C-o")
+  (TeX-fold-env-spec-list '(("[frame]" ("frame"))
+                            ("[comment]" ("comment"))))
   :config
   (add-to-list 'lps/auto-compile-command-alist
                (cons 'latex-mode 'lps/TeX-recompile-all))
@@ -3120,11 +3126,14 @@ package, prompt for selection of the manual of that package to
 show."
     (interactive "P")
     (let ((pkg (thing-at-point 'symbol))
+          (pkgs TeX-active-styles)
           buffer list doc)
       ;; Strip off properties.  XXX: XEmacs doesn't have
       ;; `substring-no-properties'.
       (set-text-properties 0 (length pkg) nil pkg)
-      (setq pkg (TeX-read-string "View documentation for: " pkg))
+      (setq pkg (completing-read "View documentation for: "
+                                 (cons pkg pkgs)
+                                 nil nil pkg nil nil t))
       (unless (zerop (length pkg))
         (progn
           ;; Create the buffer, insert the result of the command, and
@@ -3292,9 +3301,10 @@ It defines the following commands:
   :hook
   (beamer-mode . lps/LaTeX-beamer-frame-as-section)
   :config
-  (TeX-add-style-hook "beamer" 'beamer-mode)
+  ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
 
-  ;; Adapts https://mbork.pl/2016-07-04_Compiling_a_single_Beamer_frame_in_AUCTeX
+  ;; Adapted from:
+  ;; https://mbork.pl/2016-07-04_Compiling_a_single_Beamer_frame_in_AUCTeX
   (defun lps/LaTeX-beamer-compile-frame ()
     "Compile the current frame"
     (interactive)
