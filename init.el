@@ -3001,6 +3001,8 @@ move to the end of the document, and search backward instead."
         ("C-c C-d" . lps/TeX-remove-macro)
         ([remap beginning-of-defun] . LaTeX-find-matching-begin)
         ([remap end-of-defun] . LaTeX-find-matching-end))
+  (:map TeX-fold-keymap
+        ("C-a" . lps/TeX-fold-all-of-env))
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . lps/latex-fontification)
@@ -3283,7 +3285,16 @@ return `nil'."
     (let ((TeX-debug-bad-boxes t)
           (TeX-debug-warnings t)
           (TeX-error-overview-open-after-TeX-run t))
-      (TeX-command-sequence t t))))
+      (TeX-command-sequence t t)))
+
+  ;; Not very robust
+  (defun lps/TeX-fold-all-of-env (env)
+    (interactive "MFold environment: ")
+    (save-excursion
+      (goto-char (point-min))
+      (let ((env-start (format "\\begin{%s}" env)))
+        (while (search-forward env-start nil t)
+          (TeX-fold-env))))))
 
 (use-package tex
   :ensure auctex
@@ -3300,6 +3311,7 @@ It defines the following commands:
         ("C-M-x" . lps/LaTeX-beamer-compile-frame))
   :hook
   (beamer-mode . lps/LaTeX-beamer-frame-as-section)
+  (beamer-mode . lps/LaTeX-beamer-fold-all-frames)
   :config
   ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
 
@@ -3324,7 +3336,11 @@ It defines the following commands:
       (setq-local reftex-section-levels
                   (append reftex-section-levels
                           '(("frametitle" . -2)
-                            ("framesubtitle" . -3)))))))
+                            ("framesubtitle" . -3))))))
+
+  (defun lps/LaTeX-beamer-fold-all-frames ()
+    (interactive)
+    (lps/TeX-fold-all-of-env "frame")))
 
 (use-package bibtex
   :defer t

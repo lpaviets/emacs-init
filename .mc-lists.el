@@ -16,6 +16,7 @@
         c-indent-line-or-region
         capitalize-dwim
         cdlatex-pbb
+        cdlatex-sub-superscript
         company-indent-or-complete-common
         counsel-M-x
         delete-indentation
@@ -35,6 +36,7 @@
         lps/exchange-point-and-mark
         lps/insert-parentheses
         lps/select-line
+        lps/transpose-sexp-forward
         lps/yank-indent
         mark-sexp
         org-beginning-of-line
