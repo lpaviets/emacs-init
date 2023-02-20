@@ -5747,11 +5747,84 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
     ("C-c f" . elfeed)
     (:map elfeed-search-mode-map
           ("w" . elfeed-search-browse-url))
+    :init
+    (defvar lps/elfeed-search-arxiv-authors-max-width 30)
     :custom
     (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
     (elfeed-search-title-max-width 110)
     :config
-    (setq-default elfeed-search-filter "@1-week-ago +unread -compsci -youtube"))
+    (defface elfeed-search-arxiv-authors
+      '((t (:inherit message-header-to :weight normal)))
+      "Faced used in *elfeed-search* buffer to show authors of Arxiv papers"
+      :group 'elfeed)
+
+    (setq-default elfeed-search-filter "@1-week-ago +unread -arxiv -youtube")
+
+    (defun lps/elfeed-search-format-arxiv-authors (entry)
+      (let* ((authors (elfeed-meta entry :authors))
+             (formatted-authors
+              (mapconcat (lambda (author)
+                           (when-let ((auth (plist-get author :name))
+                                      (splitted (s-split-up-to " " auth 1)))
+                             (concat
+                              (substring (car splitted) 0 1)
+                              "."
+                              (cadr splitted))))
+                         authors
+                         ", "))
+             (width (length formatted-authors))
+             (max-width (- lps/elfeed-search-arxiv-authors-max-width 6)))
+        (propertize
+         (if (<  max-width width)
+             (concat "[" (substring formatted-authors 0 max-width) "...] ")
+           (elfeed-format-column
+            (concat "[" formatted-authors "] ")
+            lps/elfeed-search-arxiv-authors-max-width
+            :left))
+         'face 'elfeed-search-arxiv-authors
+         'kbd-help formatted-authors)))
+
+    (defun lps/elfeed-search-print-entry--arxiv (entry)
+      (let* ((date
+              (elfeed-search-format-date (elfeed-entry-date entry)))
+             (title (or (elfeed-meta entry :title) (elfeed-entry-title entry) ""))
+             (title-faces (elfeed-search--faces (elfeed-entry-tags entry)))
+             (feed (elfeed-entry-feed entry))
+             (feed-title
+              (when feed
+                (or (elfeed-meta feed :title) (elfeed-feed-title feed))))
+             (authors (lps/elfeed-search-format-arxiv-authors entry))
+             (tags (mapcar #'symbol-name (elfeed-entry-tags entry)))
+             (tags-str (mapconcat
+                        (lambda (s) (propertize s 'face 'elfeed-search-tag-face))
+                        tags ","))
+             (title-width (- (window-width)
+                             lps/elfeed-search-arxiv-authors-max-width
+                             10
+                             elfeed-search-trailing-width))
+             (title-column (elfeed-format-column
+                            title (elfeed-clamp
+                                   elfeed-search-title-min-width
+                                   title-width
+                                   (- elfeed-search-title-max-width
+                                      lps/elfeed-search-arxiv-authors-max-width))
+                            :left)))
+        (insert (propertize date 'face 'elfeed-search-date-face) " ")
+        (insert (propertize title-column 'face title-faces 'kbd-help title) " ")
+        (insert authors)
+        (when feed-title
+          (insert (propertize feed-title 'face 'elfeed-search-feed-face) " "))
+        (when tags
+          (insert "(" tags-str ")"))))
+
+    (defun lps/elfeed-search-show-entry-function (entry)
+      (let ((tags (elfeed-entry-tags entry)))
+        (if (member 'arxiv tags)
+            (lps/elfeed-search-print-entry--arxiv entry)
+          (elfeed-search-print-entry--default entry))))
+
+    (setq elfeed-search-print-entry-function
+          'lps/elfeed-search-show-entry-function))
 #+end_src
 
 As the default syntax to manage and organize the various RSS feeds is a bit tedious, we use another package which this whole process painless.
@@ -5763,7 +5836,7 @@ As the default syntax to manage and organize the various RSS feeds is a bit tedi
     (defvar lps/elfeed-default-days-range 7
       "Range of days to filter by default in elfeed search queries")
     :bind (:map elfeed-search-mode-map
-                ("s" . lps/elfeed-search-filter-interactive))
+                ("C-S-s" . lps/elfeed-search-filter-interactive))
     :config
     (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org"))
     (elfeed-org)
