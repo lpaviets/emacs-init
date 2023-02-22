@@ -3334,26 +3334,30 @@ It defines the following commands:
 \\{beamer-mode-map}")
   :bind
   (:map beamer-mode-map
-        ("C-M-x" . lps/LaTeX-beamer-compile-frame))
+        ("C-M-x" . lps/LaTeX-beamer-compile-frame)
+        ("C-c M-r" . lps/LaTeX-beamer-change-all-pauses))
   :hook
   (beamer-mode . lps/LaTeX-beamer-frame-as-section)
   (beamer-mode . lps/LaTeX-beamer-fold-all-frames)
   :config
   ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
 
+  (defun lps/LaTeX-beamer-mark-frame ()
+    (unless (member "beamer" TeX-active-styles)
+      (error "Not in a beamer document"))
+    (beginning-of-line)
+    (while (not (looking-at-p "\\\\begin *{frame}"))
+      (LaTeX-find-matching-begin))
+    (forward-char)
+    (LaTeX-mark-environment))
+
   ;; Adapted from:
   ;; https://mbork.pl/2016-07-04_Compiling_a_single_Beamer_frame_in_AUCTeX
   (defun lps/LaTeX-beamer-compile-frame ()
     "Compile the current frame"
     (interactive)
-    (unless (member "beamer" TeX-active-styles)
-      (error "Not in a beamer document"))
     (save-mark-and-excursion
-      (beginning-of-line)
-      (while (not (looking-at-p "\\\\begin *{frame}"))
-        (LaTeX-find-matching-begin))
-      (forward-char)
-      (LaTeX-mark-environment)
+      (lps/LaTeX-beamer-mark-frame)
       (TeX-command-run-all-region)))
 
   (defun lps/LaTeX-beamer-frame-as-section ()
@@ -3366,7 +3370,55 @@ It defines the following commands:
 
   (defun lps/LaTeX-beamer-fold-all-frames ()
     (interactive)
-    (lps/TeX-fold-all-of-env "frame")))
+    (lps/TeX-fold-all-of-env "frame"))
+
+  (defvar lps/LaTeX-beamer-pause-macros '("pause["
+                                         "only<"
+                                         "onslide<"
+                                         "alt<"
+                                         "item<")
+    "List of LaTeX macros that specifying pauses or overlays in a beamer
+frame, and whose syntax rougly follows the one used by \\onslide<...>
+
+Time specifications in those macros will be modified by the
+`lps/LaTeX-beamer-change-all-pauses' function.
+
+The character introducting the parameter list, usually [, < or {, has
+to be added to the end, e.g. if you want to recognize the overlays
+attached to items in an itemize environment, add \"item<\" to this
+variable")
+
+  (defun lps/LaTeX-beamer-change-all-pauses (n &optional from-here)
+    "Increase by N all the pauses and overlays timesteps specified by
+the macros of `lps/LaTeX-beamer-pause-macros' contained in the
+current frame.
+
+If FROM-HERE is non-nil, only change the ones after the point.
+
+If the region is active, ignore FROM-HERE and only act on the region
+instead."
+    (interactive "*nChange by steps: \nP")
+    (save-mark-and-excursion
+      (save-restriction
+        (let ((beg (cond
+                    (from-here (point))
+                    ((region-active-p) (region-beginning))
+                    (t nil))))
+          (unless (region-active-p)
+            (lps/LaTeX-beamer-mark-frame)
+            (setq beg (or beg (region-beginning))))
+          (narrow-to-region beg (region-end))
+          (goto-char (point-min))
+          (while (re-search-forward
+                  (concat "\\\\" (regexp-opt lps/LaTeX-beamer-pause-macros))
+                  nil t)
+            (let ((point (point))
+                  (end (re-search-forward "[[:space:]]*]\\|>\\|}" nil t)))
+              (when (and end (not (texmathp)))
+                (goto-char point)
+                (while (re-search-forward "[[:digit:]]+" end t)
+                  (let ((num (string-to-number (match-string 0))))
+                    (replace-match (number-to-string (+ num n)))))))))))))
 
 (use-package bibtex
   :defer t
