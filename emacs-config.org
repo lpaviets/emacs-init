@@ -3569,7 +3569,6 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
     (setq org-imenu-depth 4)
 
     (setq org-ellipsis " ▾")
-
 #+end_src
 
 Take care when copying this block of code: the ~use-package~ declaration continues.
@@ -3805,6 +3804,31 @@ To improve this note-taking system, we would like to be able to visualize the gr
     (org-roam-ui-open-on-start t))
 #+end_src
 
+** Org and LaTeX
+
+There are a few things to consider when mixing Org and LaTeX: how you can use LaTeX /inside/ Org documents, as a way to typeset maths for example; and how you want to export LaTeX fragments or embedded equations, figures, etc.
+
+#+begin_src emacs-lisp
+  (use-package org
+    :defer t
+    :bind
+    (:map org-cdlatex-mode-map
+          ("°" . cdlatex-math-symbol)
+          ("$" . cdlatex-dollar)) ; might break things ? Not here by default
+    :custom
+    (org-latex-packages-alist '(("" "amsfonts" t))
+    (org-format-latex-options '(list
+                                :foreground 'default
+                                :background 'default
+                                :scale 2.0
+                                :html-foreground "Black"
+                                :html-background "Transparent"
+                                :html-scale 1.0
+                                :matchers '("begin" "$1"
+                                            "$" "$$"
+                                            "\\(" "\\[")))))
+#+end_src
+
 * LaTeX and PDF
 *** PDF viewer
 
@@ -3907,15 +3931,12 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
           ("C-c C-d" . lps/TeX-remove-macro)
           ([remap beginning-of-defun] . LaTeX-find-matching-begin)
           ([remap end-of-defun] . LaTeX-find-matching-end))
-    (:map TeX-fold-keymap
-          ("C-a" . lps/TeX-fold-all-of-env))
     :hook
     (LaTeX-mode . outline-minor-mode)
     (LaTeX-mode . lps/latex-fontification)
     (LaTeX-mode . lps/latex-add-environments)
     (LaTeX-mode . lps/latex-company-setup)
     ;; (LaTeX-mode . LaTeX-math-mode)
-    (LaTeX-mode . TeX-fold-mode)
     (LaTeX-mode . cdlatex-mode)
     (LaTeX-mode . auto-insert)
 
@@ -3942,6 +3963,8 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (TeX-clean-confirm nil)
     ;; AucTeX doesn't search subdirectories for input/include ...
     (TeX-arg-input-file-search 'ask)
+    ;; Ask for note when inserting citations
+    (TeX-arg-cite-note-p t)
 
     (TeX-source-correlate-method 'synctex)
     (TeX-source-correlate-start-server t)
@@ -3955,10 +3978,6 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (TeX-debug-warnings nil)
     (TeX-error-overview-open-after-TeX-run t)
 
-    ;; Folding
-    (TeX-fold-command-prefix "\C-o")
-    (TeX-fold-env-spec-list '(("[frame]" ("frame"))
-                              ("[comment]" ("comment"))))
     :config
     (add-to-list 'lps/auto-compile-command-alist
                  (cons 'latex-mode 'lps/TeX-recompile-all))
@@ -4191,8 +4210,26 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
       (let ((TeX-debug-bad-boxes t)
             (TeX-debug-warnings t)
             (TeX-error-overview-open-after-TeX-run t))
-        (TeX-command-sequence t t)))
+        (TeX-command-sequence t t))))
+#+end_src
 
+**** Folding
+
+AUCTeX comes with a built-in way to temporarily hide ("fold") environments, macro, etc.
+
+#+begin_src emacs-lisp
+  (use-package tex-fold
+    :defer t
+    :hook (LaTeX-mode . TeX-fold-mode)
+    :bind
+    (:map TeX-fold-keymap
+          ("C-a" . lps/TeX-fold-all-of-env))
+    :custom
+    ;; Folding
+    (TeX-fold-command-prefix "\C-o")
+    (TeX-fold-env-spec-list '(("[frame]" ("frame"))
+                              ("[comment]" ("comment"))))
+    :config
     ;; Not very robust
     (defun lps/TeX-fold-all-of-env (env)
       (interactive "MFold environment: ")

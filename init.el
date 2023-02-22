@@ -2919,6 +2919,25 @@ call the associated function interactively. Otherwise, call the
   (org-roam-ui-update-on-save t)
   (org-roam-ui-open-on-start t))
 
+(use-package org
+  :defer t
+  :bind
+  (:map org-cdlatex-mode-map
+        ("°" . cdlatex-math-symbol)
+        ("$" . cdlatex-dollar)) ; might break things ? Not here by default
+  :custom
+  (org-latex-packages-alist '(("" "amsfonts" t))
+  (org-format-latex-options '(list
+                              :foreground 'default
+                              :background 'default
+                              :scale 2.0
+                              :html-foreground "Black"
+                              :html-background "Transparent"
+                              :html-scale 1.0
+                              :matchers '("begin" "$1"
+                                          "$" "$$"
+                                          "\\(" "\\[")))))
+
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
 (system-case
@@ -3001,15 +3020,12 @@ move to the end of the document, and search backward instead."
         ("C-c C-d" . lps/TeX-remove-macro)
         ([remap beginning-of-defun] . LaTeX-find-matching-begin)
         ([remap end-of-defun] . LaTeX-find-matching-end))
-  (:map TeX-fold-keymap
-        ("C-a" . lps/TeX-fold-all-of-env))
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . lps/latex-fontification)
   (LaTeX-mode . lps/latex-add-environments)
   (LaTeX-mode . lps/latex-company-setup)
   ;; (LaTeX-mode . LaTeX-math-mode)
-  (LaTeX-mode . TeX-fold-mode)
   (LaTeX-mode . cdlatex-mode)
   (LaTeX-mode . auto-insert)
 
@@ -3036,6 +3052,8 @@ move to the end of the document, and search backward instead."
   (TeX-clean-confirm nil)
   ;; AucTeX doesn't search subdirectories for input/include ...
   (TeX-arg-input-file-search 'ask)
+  ;; Ask for note when inserting citations
+  (TeX-arg-cite-note-p t)
 
   (TeX-source-correlate-method 'synctex)
   (TeX-source-correlate-start-server t)
@@ -3049,10 +3067,6 @@ move to the end of the document, and search backward instead."
   (TeX-debug-warnings nil)
   (TeX-error-overview-open-after-TeX-run t)
 
-  ;; Folding
-  (TeX-fold-command-prefix "\C-o")
-  (TeX-fold-env-spec-list '(("[frame]" ("frame"))
-                            ("[comment]" ("comment"))))
   :config
   (add-to-list 'lps/auto-compile-command-alist
                (cons 'latex-mode 'lps/TeX-recompile-all))
@@ -3285,8 +3299,20 @@ return `nil'."
     (let ((TeX-debug-bad-boxes t)
           (TeX-debug-warnings t)
           (TeX-error-overview-open-after-TeX-run t))
-      (TeX-command-sequence t t)))
+      (TeX-command-sequence t t))))
 
+(use-package tex-fold
+  :defer t
+  :hook (LaTeX-mode . TeX-fold-mode)
+  :bind
+  (:map TeX-fold-keymap
+        ("C-a" . lps/TeX-fold-all-of-env))
+  :custom
+  ;; Folding
+  (TeX-fold-command-prefix "\C-o")
+  (TeX-fold-env-spec-list '(("[frame]" ("frame"))
+                            ("[comment]" ("comment"))))
+  :config
   ;; Not very robust
   (defun lps/TeX-fold-all-of-env (env)
     (interactive "MFold environment: ")
