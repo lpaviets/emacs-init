@@ -3927,15 +3927,12 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
           ("<f6>" . devdocs-lookup)
           ("<backtab>" . indent-for-tab-command)
           ("C-c M-%" . LaTeX-replace-in-math)
-          ("C-c C-M-%" . LaTeX-replace-regexp-in-math)
-          ("C-c C-d" . lps/TeX-remove-macro)
           ([remap beginning-of-defun] . LaTeX-find-matching-begin)
           ([remap end-of-defun] . LaTeX-find-matching-end))
     :hook
     (LaTeX-mode . outline-minor-mode)
     (LaTeX-mode . lps/latex-fontification)
-    (LaTeX-mode . lps/latex-add-environments)
-    (LaTeX-mode . lps/latex-company-setup)
+    ;; (LaTeX-mode . lps/latex-company-setup)
     ;; (LaTeX-mode . LaTeX-math-mode)
     (LaTeX-mode . cdlatex-mode)
     (LaTeX-mode . auto-insert)
@@ -4014,7 +4011,8 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
                                     "\\newtheorem*{notation}{Notation}\n"
                                     "\\newtheorem*{remark}{Remark}\n\n"
                                     "\\crefname{lemma}{Lemma}{Lemmas}\n"
-                                    "\\crefname{theorem}{Theorem}{Theorems}\n\n")))
+                                    "\\crefname{theorem}{Theorem}{Theorems}"
+                                    "\n\n")))
                      '(indent-region (point-min) (point-max)))))
 
     ;; Improve fontification
@@ -4152,13 +4150,6 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
           (and def (string-equal input "") (setq input def))
           input)))
 
-    ;; Add environment for auto. insertion with C-c C-e, and some env. specific
-    ;; configuration such as indentation, etc
-    (defun lps/latex-add-environments ()
-      ;; Should be done by auctex's tikz.el FILE
-      ;; (LaTeX-add-environments '("tikzpicture" LaTeX-env-label))
-      (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")))
-
     ;; Better completion functions
     (defun lps/latex-company-setup () ;; TO FIX !
       (setq-local company-backends
@@ -4170,25 +4161,30 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
                      company-ispell)))
       (setq-local company-minimum-prefix-length 4))
 
-    (defun LaTeX-replace-in-math ()
-      "Call `query-replace' with `isearch-filter-predicate'set to
-  filter out matches outside LaTeX math environments."
-      (interactive)
-      (let ((isearch-filter-predicate
-             (lambda (beg end)
-               (save-excursion (save-match-data (goto-char beg) (texmathp)))))
-            (case-fold-search nil))
-        (call-interactively 'query-replace)))
+    ;; Improve isearch and query-replace (regexp or not) in math mode
+    (defun lps/safe-texmathp (beg end)
+      (unless (derived-mode-p 'tex-mode)
+        (error "Not in tex-mode"))
+      (save-excursion (save-match-data (goto-char beg) (texmathp))))
 
-    (defun LaTeX-replace-regexp-in-math ()
-      "Call `query-replace-regexp' with `isearch-filter-predicate'set
-  to filter out matches outside LaTeX math environments."
-      (interactive)
-      (let ((isearch-filter-predicate
-             (lambda (beg end)
-               (save-excursion (save-match-data (goto-char beg) (texmathp)))))
-            (case-fold-search nil))
-        (call-interactively 'query-replace-regexp)))
+    (defvar lps/isearch-old-filter-predicate nil
+      "Old predicate used in `isearch-filter-predicate'
+  Internal use.")
+
+    (defvar lps/isearch-in-mathp nil)
+
+    (isearch-define-mode-toggle latex-math "m" nil
+      "This determines whether to search only in math mode in the
+  LaTeX document"
+      (isearch--momentary-message
+       (if (setq lps/isearch-in-mathp (not lps/isearch-in-mathp))
+           (progn
+             (setq lps/isearch-old-filter-predicate isearch-filter-predicate
+                   isearch-filter-predicate 'lps/safe-texmathp)
+             "Search or replace restricted to math mode")
+         (setq isearch-filter-predicate lps/isearch-old-filter-predicate
+               lps/isearch-old-filter-predicate nil)
+         "Search or replace not restricted to math mode")))
 
     (defun lps/TeX-remove-macro ()
       "Remove current macro and return `t'.  If no macro at point,
