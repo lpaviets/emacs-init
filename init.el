@@ -4747,6 +4747,8 @@ insert as many blank lines as necessary."
         ("w" . elfeed-search-browse-url))
   :init
   (defvar lps/elfeed-search-arxiv-authors-max-width 30)
+  (defvar lps/elfeed-default-days-range 7
+    "Range of days to filter by default in elfeed search queries")
   :custom
   (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
   (elfeed-search-title-max-width 110)
@@ -4822,22 +4824,12 @@ insert as many blank lines as necessary."
         (elfeed-search-print-entry--default entry))))
 
   (setq elfeed-search-print-entry-function
-        'lps/elfeed-search-show-entry-function))
-
-(use-package elfeed-org
-  :after elfeed
-  :init
-  (defvar lps/elfeed-default-days-range 7
-    "Range of days to filter by default in elfeed search queries")
-  :bind (:map elfeed-search-mode-map
-              ("C-S-s" . lps/elfeed-search-filter-interactive))
-  :config
-  (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org"))
-  (elfeed-org)
+        'lps/elfeed-search-show-entry-function)
 
   (defun lps/elfeed-search-filter-prompt-time-range ()
-    (let* ((default-time (time-subtract (current-time)
-                                        (days-to-time lps/elfeed-default-days-range)))
+    (let* ((default-time
+            (time-subtract (current-time)
+                           (days-to-time lps/elfeed-default-days-range)))
            (from (org-read-date nil nil nil nil default-time)))
       (concat "@" from)))
 
@@ -4875,6 +4867,18 @@ insert as many blank lines as necessary."
           (setf elfeed-search-filter
                 (or filter (default-value 'elfeed-search-filter)))
           (elfeed-search-update :force))))))
+
+(use-package elfeed-org
+  :bind (:map elfeed-search-mode-map
+              ("C-S-s" . lps/elfeed-search-filter-interactive))
+  :custom
+  (rmh-elfeed-org-files (list
+                         (expand-file-name "elfeed.org"
+                                           org-directory)))
+  :init
+  ;; Do it without lazy loading: hope it doesn't cause loading time
+  ;; issues, but it's somewhat hard to do things in a lazy way ...
+  (elfeed-org))
 
 (use-package elfeed-tube
   :after elfeed
