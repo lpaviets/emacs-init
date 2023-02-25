@@ -2230,16 +2230,18 @@ We also define a bunch of functions and commands related to editing text that ar
               (indent-to col)
               (lps/--fill-width-repeat-string width str))))))
 
-    (defvar lps/do-not-capitalize-list '("the" "a" "of" "in" "on"
-                                         "no" "or" "and" "if" "for"
+    (defvar lps/do-not-capitalize-list '("the" "a" "of" "in" "on" "by"
+                                         "no" "or" "and" "if" "for" "to"
                                          "le" "la" "les" "et" "ou"
                                          "si" "un" "une" "de" "des"
                                          "du" "d" "l" "ni"))
 
-    (defun lps/make-filename-from-sentence ()
+    (defun lps/make-filename-from-sentence (&optional replace-spaces)
       "Create a title from the current line or region and add it to the
-   kill-ring"
-      (interactive)
+   kill-ring.
+  If REPLACE-SPACE is a character, replace spaces with this char.
+  If it is non-nil, replace it by an underscore _"
+      (interactive "P")
       (let* ((bounds (if (region-active-p)
                          (car (region-bounds))
                        (cons (line-beginning-position)
@@ -2249,11 +2251,14 @@ We also define a bunch of functions and commands related to editing text that ar
         (goto-char start)
         (capitalize-word 1)
         (while (< (point) (marker-position end))
-          (let ((num-spaces (skip-chars-forward "[:punct:][:space:]")))
+          (let ((num-spaces (skip-chars-forward "[:punct:][:space:][\n]")))
             (if (> num-spaces 0)
                 (progn
                   (delete-backward-char num-spaces)
-                  (insert "_"))
+                  (cond
+                   ((not replace-spaces) (insert " "))
+                   ((characterp replace-spaces) (insert replace-spaces))
+                   (t (insert "_"))))
               (forward-char 1)))
           (let ((word-at-pt (word-at-point)))
             (if (or (not word-at-pt)
@@ -4427,8 +4432,6 @@ Finally, we also want a way to do everything from Emacs, and it starts with /fin
     :bind
     (:map bibtex-mode-map
           ("C-c ?" . biblio-lookup))
-    (:map pdf-view-mode-map
-          ("d" . biblio-lookup))
     :custom
     (biblio-arxiv-bibtex-header "article")
     (biblio-download-directory "~/Documents/Other/articles/")
@@ -4443,37 +4446,75 @@ Finally, we also want a way to do everything from Emacs, and it starts with /fin
   AUTHORS is a list of the authors surnames, separated by underscores,
   and TITLE is the result of `lps/make-filename-from-sentence' on the
   article's title"
-      (let-alist record
-        (if .direct-url
-            (let* ((fname (with-temp-buffer
-                            (insert .title)
-                            (goto-char (point-min))
-                            (lps/make-filename-from-sentence)
-                            (goto-char (point-max))
-                            (insert ".pdf")
-                            (goto-char (point-min))
-                            (insert "[")
-
-                            (seq-doseq (name .authors)
-                              (when (and name (stringp name))
-                                (let ((split-name (split-string name)))
-                                  (if (cdr split-name)
-                                      (dolist (subname (cdr split-name))
-                                        (insert subname))
-                                    (insert name)))
-                                (insert "_")))
-                            (delete-backward-char 1)
-                            (insert "]")
-                            (buffer-substring-no-properties (point-min) (point-max))))
-                   (target (read-file-name "Save as: "
-                                           biblio-download-directory
-                                           fname
-                                           nil
-                                           fname)))
-              (url-copy-file .direct-url
-                             (expand-file-name target
-                                               biblio-download-directory)))
-          (user-error "This record does not contain a direct URL")))))
+      (save-window-excursion
+        (let-alist record
+          (cl-flet ((bsnp-all ()
+                      (buffer-substring-no-properties (point-min) (point-max))))
+            (if .direct-url
+                (let* (title auths target)
+                  (with-temp-buffer
+                    (insert .title)
+                    (join-line nil (point-min) (point-max))
+                    (goto-char (point-min))
+                    (lps/make-filename-from-sentence)
+                    (setq title (bsnp-all))
+                    (with-temp-buffer
+                      (insert title)
+                      (lps/make-filename-from-sentence ?_)
+                      (insert ".pdf")
+                      (setq fname (bsnp-all)))
+                    (goto-char (point-min))
+                    (insert "[")
+                    (seq-doseq (name .authors)
+                      (when (and name (stringp name))
+                        (let ((split-name (split-string name)))
+                          (if (cdr split-name)
+                              (dolist (subname (cdr split-name))
+                                (insert subname))
+                            (insert name)))
+                        (insert "_")))
+                    (delete-backward-char 1)
+                    (insert "]")
+                    (setq auths (buffer-substring-no-properties (point-min)
+                                                                (point)))
+                    (setq fname (concat auths fname))
+                    (setq target (read-file-name "Save as: "
+                                                 biblio-download-directory
+                                                 fname
+                                                 nil
+                                                 fname)))
+                  (setq target (expand-file-name target
+                                                 biblio-download-directory))
+                  (url-copy-file .direct-url target)
+                  (let* ((bib-path (expand-file-name "biblio.org"
+                                                     org-directory))
+                         (bib-file (find-file bib-path)))
+                    (with-current-buffer (get-buffer bib-file)
+                      (goto-char (point-max))
+                      (insert "\n* "
+                              auths
+                              " "
+                              title
+                              "\n\n"
+                              "[[file:"
+                              (string-replace "[" "\\["
+                                              (string-replace "]" "\\]"
+                                                              target))
+                              "]["
+                              title
+                              "]]\n\n"
+                              "#+begin_src latex\n")
+                      (let ((biblio--target-buffer (current-buffer)))
+                        (funcall .backend
+                                 'forward-bibtex
+                                 record
+                                 (lambda (bibtex)
+                                   (funcall 'biblio--selection-insert-callback
+                                            (biblio-format-bibtex bibtex)
+                                            record))))
+                      (ensure-empty-lines 0)
+                      (insert "#+end_src\n"))))
+              (user-error "This record does not contain a direct URL")))))))
 #+end_src
 
 **** Preview
