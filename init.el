@@ -2701,16 +2701,31 @@ call the associated function interactively. Otherwise, call the
         ("C-e" . org-end-of-line))
   (:map org-src-mode-map
         ("C-c C-c" . org-edit-src-exit))
-
+  (:map org-cdlatex-mode-map
+        ("°" . cdlatex-math-symbol)
+        ("'" . nil)
+        ("$" . cdlatex-dollar)) ; might break things ? Not here by default
   :custom
   ;; Coding in blocks
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
   (org-use-speed-commands t)
   (org-directory "~/Documents/OrgFiles/")
-  (org-special-ctrl-a/e t) ;; Not enough with visual-line-mode, need to bind C-a/C-e too
+  (org-special-ctrl-a/e t) ;; With visual-line-mode, need to bind C-a/C-e too
   (org-return-follows-link t)
+  (org-imenu-depth 4)
   (org-catch-invisible-edits 'show)
+  (org-latex-packages-alist '(("" "amsfonts" t)))
+  (org-format-latex-options (list
+                             :foreground 'default
+                             :background 'default
+                             :scale 1.5
+                             :html-foreground "Black"
+                             :html-background "Transparent"
+                             :html-scale 1.0
+                             :matchers '("begin" "$1"
+                                         "$" "$$"
+                                         "\\(" "\\[")))
   :config
   (defun lps/windmove-mode-local-off ()
     ;; Hack to disable windmove locally
@@ -2731,8 +2746,6 @@ call the associated function interactively. Otherwise, call the
     ;; (variable-pitch-mode 1)
     (visual-line-mode 1)
     (lps/windmove-mode-local-off))
-
-  (setq org-imenu-depth 4)
 
   (setq org-ellipsis " ▾")
 
@@ -2923,25 +2936,6 @@ call the associated function interactively. Otherwise, call the
   (org-roam-ui-follow nil)
   (org-roam-ui-update-on-save t)
   (org-roam-ui-open-on-start t))
-
-(use-package org
-  :defer t
-  :bind
-  (:map org-cdlatex-mode-map
-        ("°" . cdlatex-math-symbol)
-        ("$" . cdlatex-dollar)) ; might break things ? Not here by default
-  :custom
-  (org-latex-packages-alist '(("" "amsfonts" t))
-  (org-format-latex-options '(list
-                              :foreground 'default
-                              :background 'default
-                              :scale 2.0
-                              :html-foreground "Black"
-                              :html-background "Transparent"
-                              :html-scale 1.0
-                              :matchers '("begin" "$1"
-                                          "$" "$$"
-                                          "\\(" "\\[")))))
 
 ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
 
@@ -3257,9 +3251,9 @@ The return value is the string as entered in the minibuffer."
 
   ;; Improve isearch and query-replace (regexp or not) in math mode
   (defun lps/safe-texmathp (beg end)
-    (unless (derived-mode-p 'tex-mode)
-      (error "Not in tex-mode"))
-    (save-excursion (save-match-data (goto-char beg) (texmathp))))
+    (if (derived-mode-p 'tex-mode)
+        (save-excursion (save-match-data (goto-char beg) (texmathp)))
+      t))
 
   (defvar lps/isearch-old-filter-predicate nil
     "Old predicate used in `isearch-filter-predicate'
