@@ -174,7 +174,7 @@ fboundp."
     (auth-source-cache-expiry 86400) ;; All day
 
     :config
-    (defvar lps/--auth-cache-expiry-setup-p nil)
+    (defvar lps/--auth-cache-expiry-setup-p t) ; change it to ask for duration on startup
 
     (defun lps/auth-source-define-cache-expiry ()
       (interactive)
@@ -2058,7 +2058,7 @@ Does not insert a space before the inserted opening parenthesis"
   ;; server for one or two files, however, once I start using LSP,
   ;; there is no reason not to assume that I also want to use it by
   ;; default for other files in the same session
-  (defvar lps/--default-lsp-mode 0)
+  (defvar lps/--default-lsp-mode -1) ; change to ask for LSP on startup
 
   (defun lps/lsp-by-default-in-session ()
     (if (> lps/--default-lsp-mode 0)
@@ -2772,7 +2772,7 @@ call the associated function interactively. Otherwise, call the
     (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'fixed-pitch))
 
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch :extend t)
+  (set-face-attribute 'org-block nil :foreground 'unspecified :inherit 'fixed-pitch :extend t)
   (set-face-attribute 'org-block-begin-line nil :slant 'italic :foreground "dark gray" :background "#1d1d2b" :inherit 'fixed-pitch :height 1.0)
   (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))

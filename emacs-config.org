@@ -252,7 +252,7 @@ We explicitly fix how long passwords should be cached. A clever thing could be t
       (auth-source-cache-expiry 86400) ;; All day
 
       :config
-      (defvar lps/--auth-cache-expiry-setup-p nil)
+      (defvar lps/--auth-cache-expiry-setup-p t) ; change it to ask for duration on startup
 
       (defun lps/auth-source-define-cache-expiry ()
         (interactive)
@@ -2690,7 +2690,7 @@ We add another backend to support completion in shell and terminal-modes
     ;; server for one or two files, however, once I start using LSP,
     ;; there is no reason not to assume that I also want to use it by
     ;; default for other files in the same session
-    (defvar lps/--default-lsp-mode 0)
+    (defvar lps/--default-lsp-mode -1) ; change to ask for LSP on startup
 
     (defun lps/lsp-by-default-in-session ()
       (if (> lps/--default-lsp-mode 0)
@@ -3619,7 +3619,7 @@ Take care when copying this block of code: the ~use-package~ declaration continu
       (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'fixed-pitch))
 
     ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-    (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch :extend t)
+    (set-face-attribute 'org-block nil :foreground 'unspecified :inherit 'fixed-pitch :extend t)
     (set-face-attribute 'org-block-begin-line nil :slant 'italic :foreground "dark gray" :background "#1d1d2b" :inherit 'fixed-pitch :height 1.0)
     (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
     (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
@@ -4503,6 +4503,29 @@ Finally, we also want a way to do everything from Emacs, and it starts with /fin
                       (ensure-empty-lines 0)
                       (insert "#+end_src\n"))))
               (user-error "This record does not contain a direct URL")))))))
+#+end_src
+
+**** TODO configure Org Ref !
+
+General idea of what is wanted (may be ?):
+- Save PDF files at the same place
+- Have consistent and somewhat clear bibtex key naming scheme (e.g. no DOI, something like AuthorYEARkeyword)
+- Have a file (may be several ?) to store notes about those articles
+- Have a way to *search* the list of articles using something else than keys (e.g. authors and title)
+  - Have a way to open them
+  - or to find them/their path (e.g. to attach them to a PDF)
+- Have a way to download PDF from "some places" (may be only Arxiv for now) and format things accordingly
+  - Extra: have a way to somewhat automatically do this even when the PDF is downloaded manually
+- Useful functions to keep in mind for now: =org-ref-read-key= ...
+
+#+begin_src emacs-lisp :tangle no
+  (use-package bibtex-completion
+    :custom
+    (bibtex-completion-bibliography (expand-file-name "biblio.bib"
+                                                      org-directory))
+    (bibtex-completion-library-path "~/Documents/Other/articles/")
+    (bibtex-completion-notes-template-one-file
+     (expand-file-name "biblio-notes.org" org-directory)))
 #+end_src
 
 **** Preview
