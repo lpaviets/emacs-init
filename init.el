@@ -2749,6 +2749,12 @@ call the associated function interactively. Otherwise, call the
 
   (setq org-ellipsis " ▾")
 
+  (defun lps/org-expand-file-name (name &optional as-directory)
+    (let ((file-or-dir (expand-file-name name org-directory)))
+     (if as-directory
+         (file-name-as-directory file-or-dir)
+       file-or-dir)))
+
 (defun lps/org-font-setup ()
   ;; Replace list hyphen with dot
   (font-lock-add-keywords 'org-mode
@@ -2811,7 +2817,7 @@ call the associated function interactively. Otherwise, call the
               (member (car key-template) bound-key-templates)
             (push key-template org-structure-template-alist))))))
 
-(setq org-agenda-files (list (concat org-directory "agenda/")))
+(setq org-agenda-files (list (lps/org-expand-file-name "agenda" t)))
 (setq org-log-into-drawer t)
 (setq org-log-done 'time)
 (setq org-agenda-start-with-log-mode t)
@@ -2835,7 +2841,8 @@ call the associated function interactively. Otherwise, call the
                           ("Talk" ,(all-the-icons-faicon "volume-up"))
                           ("Exam" ,(all-the-icons-octicon "mortar-board"))
                           ("Seminar" ,(all-the-icons-faicon "pencil"))
-                          ("Workshop" ,(all-the-icons-material "group_work"))))
+                          ("Workshop" ,(all-the-icons-material "group_work"))
+                          ("Culture" ,(all-the-icons-faicon "paint-brush"))))
     (cl-pushnew (list (car tag-and-icon)
                       (cdr tag-and-icon)
                       nil nil
@@ -2902,8 +2909,7 @@ call the associated function interactively. Otherwise, call the
 (use-package org-roam
   :after org
   :custom
-  (org-roam-directory (file-truename
-                       (expand-file-name "RoamNotes/" org-directory)))
+  (org-roam-directory (lps/org-expand-file-name "RoamNotes" t))
   (org-roam-node-display-template (concat "${title:*} "
                                           (propertize "${tags}"
                                                       'face

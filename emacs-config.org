@@ -3587,6 +3587,12 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
       (lps/windmove-mode-local-off))
 
     (setq org-ellipsis " ▾")
+
+    (defun lps/org-expand-file-name (name &optional as-directory)
+      (let ((file-or-dir (expand-file-name name org-directory)))
+       (if as-directory
+           (file-name-as-directory file-or-dir)
+         file-or-dir)))
 #+end_src
 
 Take care when copying this block of code: the ~use-package~ declaration continues.
@@ -3678,7 +3684,7 @@ We also add templates to insert code blocks with a few key presses
 Not only is Org Mode great to write structured documents that can be exported to pretty much anything we want - including tangled to produce source code using literate programming -, it is also a powerful to ... *org*anize things. A built-in functionality is the agenda, where you can schedule tasks, set deadlines, configure reminders, the frequency at which you will need to repeat a given task, and so on.
 
 #+begin_src emacs-lisp
-  (setq org-agenda-files (list (concat org-directory "agenda/")))
+  (setq org-agenda-files (list (lps/org-expand-file-name "agenda" t)))
   (setq org-log-into-drawer t)
   (setq org-log-done 'time)
   (setq org-agenda-start-with-log-mode t)
@@ -3702,7 +3708,8 @@ Not only is Org Mode great to write structured documents that can be exported to
                             ("Talk" ,(all-the-icons-faicon "volume-up"))
                             ("Exam" ,(all-the-icons-octicon "mortar-board"))
                             ("Seminar" ,(all-the-icons-faicon "pencil"))
-                            ("Workshop" ,(all-the-icons-material "group_work"))))
+                            ("Workshop" ,(all-the-icons-material "group_work"))
+                            ("Culture" ,(all-the-icons-faicon "paint-brush"))))
       (cl-pushnew (list (car tag-and-icon)
                         (cdr tag-and-icon)
                         nil nil
@@ -3778,8 +3785,7 @@ Org-Roam is another *huge* package based on org-mode. It is a "plain-text [obvio
   (use-package org-roam
     :after org
     :custom
-    (org-roam-directory (file-truename
-                         (expand-file-name "RoamNotes/" org-directory)))
+    (org-roam-directory (lps/org-expand-file-name "RoamNotes" t))
     (org-roam-node-display-template (concat "${title:*} "
                                             (propertize "${tags}"
                                                         'face
@@ -4520,12 +4526,16 @@ General idea of what is wanted (may be ?):
 
 #+begin_src emacs-lisp :tangle no
   (use-package bibtex-completion
+    :init
+    (defvar lps/bib-directory (lps/org-expand-file-name "testbib" t))
     :custom
-    (bibtex-completion-bibliography (expand-file-name "biblio.bib"
-                                                      org-directory))
-    (bibtex-completion-library-path "~/Documents/Other/articles/")
+    (bibtex-completion-bibliography (list (expand-file-name "biblio.bib"
+                                                      lps/bib-directory)))
+    (bibtex-completion-library-path (file-name-as-directory
+                                     (expand-file-name "articles"
+                                                       lps/bib-directory)))
     (bibtex-completion-notes-template-one-file
-     (expand-file-name "biblio-notes.org" org-directory)))
+     (expand-file-name "notes.org" lps/bib-directory)))
 #+end_src
 
 **** Preview
