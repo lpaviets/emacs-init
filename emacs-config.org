@@ -3544,12 +3544,19 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
           ("°" . cdlatex-math-symbol)
           ("'" . nil)
           ("$" . cdlatex-dollar)) ; might break things ? Not here by default
+    :init
+    (setq org-directory "~/Documents/OrgFiles/") ; have to do it early ...
+    (defun lps/org-expand-file-name (name &optional as-directory)
+      (let ((file-or-dir (expand-file-name name org-directory)))
+        (if as-directory
+            (file-name-as-directory file-or-dir)
+          file-or-dir)))
+
     :custom
     ;; Coding in blocks
     (org-src-fontify-natively t)
     (org-src-tab-acts-natively t)
     (org-use-speed-commands t)
-    (org-directory "~/Documents/OrgFiles/")
     (org-special-ctrl-a/e t) ;; With visual-line-mode, need to bind C-a/C-e too
     (org-return-follows-link t)
     (org-imenu-depth 4)
@@ -3587,12 +3594,6 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
       (lps/windmove-mode-local-off))
 
     (setq org-ellipsis " ▾")
-
-    (defun lps/org-expand-file-name (name &optional as-directory)
-      (let ((file-or-dir (expand-file-name name org-directory)))
-       (if as-directory
-           (file-name-as-directory file-or-dir)
-         file-or-dir)))
 #+end_src
 
 Take care when copying this block of code: the ~use-package~ declaration continues.
@@ -3790,6 +3791,12 @@ Org-Roam is another *huge* package based on org-mode. It is a "plain-text [obvio
                                             (propertize "${tags}"
                                                         'face
                                                         'org-tag)))
+    (org-roam-capture-templates
+     '(("d"
+        "default" plain "%?"
+        :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                           "#+title: ${title}\n")
+        :unnarrowed t)))
     :bind (("C-c n t" . org-roam-buffer-toggle)
            ("C-c n f" . org-roam-node-find)
            ("C-c n g" . org-roam-graph)
@@ -4511,31 +4518,216 @@ Finally, we also want a way to do everything from Emacs, and it starts with /fin
               (user-error "This record does not contain a direct URL")))))))
 #+end_src
 
-**** TODO configure Org Ref !
+***** Bibliography management
 
-General idea of what is wanted (may be ?):
-- Save PDF files at the same place
-- Have consistent and somewhat clear bibtex key naming scheme (e.g. no DOI, something like AuthorYEARkeyword)
-- Have a file (may be several ?) to store notes about those articles
-- Have a way to *search* the list of articles using something else than keys (e.g. authors and title)
-  - Have a way to open them
-  - or to find them/their path (e.g. to attach them to a PDF)
-- Have a way to download PDF from "some places" (may be only Arxiv for now) and format things accordingly
-  - Extra: have a way to somewhat automatically do this even when the PDF is downloaded manually
-- Useful functions to keep in mind for now: =org-ref-read-key= ...
-
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   (use-package bibtex-completion
     :init
     (defvar lps/bib-directory (lps/org-expand-file-name "testbib" t))
     :custom
     (bibtex-completion-bibliography (list (expand-file-name "biblio.bib"
-                                                      lps/bib-directory)))
+                                                            lps/bib-directory)
+                                          (lps/org-expand-file-name "biblio.bib")))
     (bibtex-completion-library-path (file-name-as-directory
                                      (expand-file-name "articles"
-                                                       lps/bib-directory)))
-    (bibtex-completion-notes-template-one-file
-     (expand-file-name "notes.org" lps/bib-directory)))
+                                                       lps/bib-directory))))
+#+end_src
+
+Because =bibtex-completion= is mainly an interface, we use a wrapper around it to actually use its functionnalities. As I don't use Helm or Ivy, I simply use the plain ~completing-read~ interface used by default by =org-ref=.
+
+#+begin_src emacs-lisp
+  (use-package org-ref
+    :bind
+    ("C-c b" . org-ref-bibtex-hydra/body)
+    (:map lps/all-hydras-map
+          ("p" . org-ref-bibtex-hydra/body))
+    :init
+    (defvar doi-utils-pdf-url-functions-from-doi '(doi-to-arxiv-pdf
+                                                   doi-to-hal-pdf))
+    :custom
+    (doi-utils-download-pdf t)
+    (doi-utils-async-download nil)
+    (doi-utils-open-pdf-after-download t)
+    :config
+    ;; Add a few things to the default hydra
+    (defhydra+ org-ref-bibtex-hydra (:color blue :hint nil)
+      "Bibtex actions:"
+      ("B" (lambda ()
+             (interactive)
+             (bibtex-completion-show-entry (list (org-ref-read-key))))
+       "Show entry"
+       :column "Navigation"
+       :color "red")
+      ("e" org-ref-email-add-pdf "Email PDF only" :column "WWW")
+      ("E" org-ref-email-bibtex-entry "Email PDF and bib entry" :column "WWW")
+      ("]" org-ref-bibtex-next-entry "Next entry" :column "Navigation" :color red)
+      ("[" org-ref-bibtex-previous-entry "Previous entry" :column "Navigation" :color red))
+
+    (defun org-ref-email-add-pdf ()
+      (interactive)
+      (let ((bufs (gnus-dired-mail-buffers)))
+        (unless (and (not bufs)
+                     (not (and (y-or-n-p "No composition buffer. Compose new mail ?")
+                               (compose-mail)
+                               (setq bufs (gnus-dired-mail-buffers)))))
+          (let* ((key (bibtex-completion-key-at-point))
+                 (pdf (car (bibtex-completion-find-pdf key)))
+                 (buf (if (= (length bufs) 1)
+                          (get-buffer (car bufs))
+                        (gnus-completing-read "Attach to buffer"
+                                              bufs t nil nil (car bufs)))))
+            (when (or pdf
+                      (and (y-or-n-p
+                            (format "No pdf for Bibtex key %s. Find manually ?"
+                                    key))
+                           (setq pdf (read-file-name "Attach PDF: "))))
+              (set-buffer buf)
+              (goto-char (point-max))
+              (mml-attach-file pdf (or (mm-default-file-type pdf)
+                                       "application/octet-stream")
+                               "attachment")
+              (message "Attached file %s" pdf))))))
+
+    ;; Define custom functions to download from math websites
+    (defun aom-pdf-url (*doi-utils-redirect*)
+      "Get a url to the pdf from *DOI-UTILS-REDIRECT* for Annals of Mathematics urls.
+    A URL looks like https://annals.math.princeton.edu/YEAR/VOL-N/PAGE
+    The PDF is typically (but not always ...) at
+     https://annals.math.princeton.edu/wp-content/uploads/annals-vVOL-nN-PAGE-s.pdf"
+      (when (string-match
+             "^\\(https?://annals.math.princeton.edu\\)/\\([0-9]*\\)/\\([0-9]*\\)-\\([0-3]\\)/\\(p[0-9]*\\)"
+             *doi-utils-redirect*)
+        (let ((start (match-string-no-properties 1 *doi-utils-redirect*))
+              (year (match-string-no-properties 2 *doi-utils-redirect*))
+              (vol (match-string-no-properties 3 *doi-utils-redirect*))
+              (issue (match-string-no-properties 4 *doi-utils-redirect*))
+              (page (match-string-no-properties 5 *doi-utils-redirect*)))
+          (concat start "/wp-content/uploads/annals-v"
+                  vol "-n" issue "-" page "-s.pdf"))))
+
+    (defun doi-utils-get-ems-pdf-url (*doi-utils-redirect*)
+      (let ((first-url
+             (with-current-buffer (url-retrieve-synchronously *doi-utils-redirect*)
+               (goto-char (point-min))
+               (when (re-search-forward "/content/serial-article-files/[0-9]+" nil t)
+                 (match-string-no-properties 0)))))
+        (when first-url
+          (concat "https://ems.press" first-url))))
+
+    (defun ems-pdf-url (*doi-utils-redirect*)
+      "Get a url to the pdf from *DOI-UTILS-REDIRECT* for EMS (European
+  Mathematical Society) urls.
+    A URL looks like https://ems.press/journals/...
+    The PDF url is hidden in the page content"
+      (when (string-match "^https?://ems.press/journals/" *doi-utils-redirect*)
+        (doi-utils-get-ems-pdf-url *doi-utils-redirect*)))
+
+    (add-to-list 'doi-utils-pdf-url-functions 'aom-pdf-url)
+    (add-to-list 'doi-utils-pdf-url-functions 'ems-pdf-url)
+
+    ;; Override to also use another list of functions
+    (defun doi-utils-get-pdf-url (doi)
+      "Return a url to a pdf for the DOI if one can be calculated.
+  Loops through the functions in `doi-utils-pdf-url-functions'
+  until one is found."
+      (doi-utils-get-redirect doi)
+
+      (unless *doi-utils-redirect*
+        (error "No redirect found for %s" doi))
+      (catch 'pdf-url
+        ;; Try to find URL "properly" using per-journal info
+        (dolist (func doi-utils-pdf-url-functions)
+          (let ((this-pdf-url (funcall func *doi-utils-redirect*)))
+            (when this-pdf-url
+              (throw 'pdf-url this-pdf-url))))
+        ;; Now more coarse methods, using the DOI on several
+        ;; archives (arxiv, HAL ...)
+        (dolist (func doi-utils-pdf-url-functions-from-doi)
+          (let ((this-pdf-url (funcall func doi)))
+            (when this-pdf-url
+              (throw 'pdf-url this-pdf-url))))))
+
+    (defun doi-to-arxiv-pdf (doi)
+      (let* ((doi1 (url-hexify-string doi))
+             (doi2 (url-hexify-string (upcase doi)))
+             (num-regexp "http\\(s\\)?://arxiv.org/pdf/\\([0-9.]+\\)")
+             (pdf-url-maybe
+              (or
+               (with-current-buffer
+                   (url-retrieve-synchronously (concat "https://arxiv.org/search/?query="
+                                                       doi1
+                                                       "&searchtype=doi"))
+                 (goto-char (point-min))
+                 (when (re-search-forward num-regexp nil t)
+                   (match-string-no-properties 0)))
+               (with-current-buffer
+                   (url-retrieve-synchronously (concat "https://arxiv.org/search/?query="
+                                                       doi2
+                                                       "&searchtype=doi"))
+                 (goto-char (point-min))
+                 (when (re-search-forward num-regexp nil t)
+                   (match-string-no-properties 0))))))
+        (when pdf-url-maybe
+          (concat pdf-url-maybe ".pdf"))))
+
+    (defun doi-to-hal-pdf (doi)
+      (let* ((doi (url-hexify-string doi))
+             (num-regexp "/hal-[0-9]+\\(v[0-9]+\\)/document")
+             (pdf-url-maybe
+              (with-current-buffer
+                  (url-retrieve-synchronously (concat "https://hal.science/search/index/?qa[doiId_id][]="
+                                                      doi))
+                (goto-char (point-min))
+                (when (re-search-forward num-regexp nil t)
+                  (match-string-no-properties 0)))))
+        (when pdf-url-maybe
+          (concat "https://hal.science" pdf-url-maybe))))
+
+    (add-to-list 'bibtex-completion-key-at-point-functions 'org-ref-read-key t)
+
+    ;; Names are weirds: use a hack to char-fold
+    (defun lps/completing-read-char-fold (fun &rest args)
+      (let ((orderless-matching-styles
+             (cons 'char-fold-to-regexp orderless-matching-styles)))
+        (apply fun args)))
+
+    (advice-add 'org-ref-read-key :around 'lps/completing-read-char-fold)
+
+    ;; Redefine to use the interface that *should* be used ...
+    (defun org-ref-bib-citation ()
+      "From a bibtex entry, create and return a lightly formatted citation string."
+      (bibtex-completion-apa-format-reference (list (bibtex-completion-key-at-point))))
+
+    (defun org-ref-open-bibtex-pdf ()
+      "Open pdf for a bibtex entry, if it exists."
+      (interactive)
+      (bibtex-completion-open-pdf (list (bibtex-completion-key-at-point))))
+
+    (defun org-ref-open-bibtex-notes ()
+      "From a bibtex entry, open the notes if they exist."
+      (interactive)
+      (bibtex-completion-edit-notes (list (bibtex-completion-key-at-point))))
+
+    (defun org-ref-open-in-browser ()
+      "Open the bibtex entry at point in a browser using the url field or doi field."
+      (interactive)
+      (bibtex-completion-open-url-or-doi (list (bibtex-completion-key-at-point)))))
+#+end_src
+
+We integrate all the previous stuff with org-roam. This means that we can store notes (and look for them) in a slightly more satisfactory way than "plain" org-files !
+
+#+begin_src emacs-lisp
+  (use-package org-roam-bibtex
+    :after org-ref
+    :config
+    (add-to-list
+     'org-roam-capture-templates
+     '("r"
+       "bibliography reference" plain "%?"
+       :target (file+head "articles-notes/%<%Y%m%d%H%M%S>-${citekey}.org"
+                          "#+title: ${title}\n")
+       :unnarrowed t)
+     t #'equal))
 #+end_src
 
 **** Preview
