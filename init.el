@@ -1174,6 +1174,11 @@ If called with a prefix argument, also kills the current buffer"
                                  lps/orderless-without-if-bang))
 
   :config
+  (defun lps/completing-read-char-fold (fun &rest args)
+    (let ((orderless-matching-styles
+           (cons 'char-fold-to-regexp orderless-matching-styles)))
+      (apply fun args)))
+
   ;; From the Orderless package documentation
   (defun lps/orderless-flex-if-twiddle (pattern _index _total)
     "Use `orderless-flex' if the input starts with a ~"
@@ -2029,9 +2034,6 @@ Does not insert a space before the inserted opening parenthesis"
   (company-dabbrev-ignore-case 'keep-prefix)
   (company-dabbrev-downcase nil))
 
-(use-package company-math
-  :after company)
-
 (use-package company-shell
   :disabled t
   :after eshell
@@ -2773,11 +2775,11 @@ call the associated function interactively. Otherwise, call the
   ;; Set faces for heading levels
   ;; For non-headers: org-default
 
-  (dolist (face '((org-level-1 . 1.3)
-                  (org-level-2 . 1.2)
-                  (org-level-3 . 1.15)
-                  (org-level-4 . 1.1)
-                  (org-level-5 . 1.05)
+  (dolist (face '((org-level-1 . 1.1)
+                  (org-level-2 . 1.08)
+                  (org-level-3 . 1.06)
+                  (org-level-4 . 1.04)
+                  (org-level-5 . 1.02)
                   (org-level-6 . 1.0)
                   (org-level-7 . 1.0)
                   (org-level-8 . 1.0)))
@@ -3592,66 +3594,64 @@ article's title"
 
 (use-package bibtex-completion
   :init
-  (defvar lps/bib-directory (lps/org-expand-file-name "testbib" t))
+  (defvar lps/bib-directory (lps/org-expand-file-name "biblio" t))
   :custom
   (bibtex-completion-bibliography (list (expand-file-name "biblio.bib"
-                                                          lps/bib-directory)
-                                        (lps/org-expand-file-name "biblio.bib")))
+                                                          lps/bib-directory)))
   (bibtex-completion-library-path (file-name-as-directory
                                    (expand-file-name "articles"
-                                                     lps/bib-directory))))
+                                                     lps/bib-directory)))
+  :config
+  (add-to-list 'bibtex-completion-key-at-point-functions 'org-ref-read-key t)
 
-(use-package org-ref
-  :bind
-  ("C-c b" . org-ref-bibtex-hydra/body)
-  (:map lps/all-hydras-map
-        ("p" . org-ref-bibtex-hydra/body))
+  ;; bibtex-completion-get-value strips too many brackets
+  (defun lps/bibtex-completion-fix-stripped-brackets (s)
+    (cl-loop with cur = 0
+             minimize cur into min
+             for c across s
+             when (= c ?{) do (setf cur (1+ cur))
+             when (= c ?}) do (setf cur (1- cur))
+             finally (return (concat (make-string (- min) ?{)
+                                     s
+                                     (make-string (- cur min) ?})))))
+
+  ;; We reverse engineer the "safe ascii encoding" of "special characters"
+  (defun lps/bibtex-format-undo-nonascii (s)
+    (replace-regexp-in-string "{\\\\.\\({.}\\|.\\)}"
+                              (lambda (match)
+                                (message "String: %s/match: %s/quoted: %s"
+                                         s match (regexp-quote match))
+                                (or (car (rassoc (regexp-quote match)
+                                                 org-ref-nonascii-latex-replacements))
+                                    (car (rassoc (regexp-quote (concat
+                                                                (substring match 0 -2)
+                                                                "{"
+                                                                (substring match -2)
+                                                                "}"))
+                                                 org-ref-nonascii-latex-replacements))
+                                    (regexp-quote match)))
+                              (lps/bibtex-completion-fix-stripped-brackets s)))
+
+  ;; Override this, only ever used as an interfance: cannot break internal stuff
+  (defun bibtex-completion-clean-string (s)
+    (if s
+        (->> s
+             (lps/bibtex-format-undo-nonascii)
+             (replace-regexp-in-string "[\"{}]+" "")
+             (replace-regexp-in-string "[\n\t ]+" " "))
+      nil)))
+
+(use-package doi-utils
+  :after org-ref-bibtex
   :init
   (defvar doi-utils-pdf-url-functions-from-doi '(doi-to-arxiv-pdf
                                                  doi-to-hal-pdf))
   :custom
   (doi-utils-download-pdf t)
-  (doi-utils-async-download nil)
+  (doi-utils-async-download t)
   (doi-utils-open-pdf-after-download t)
   :config
-  ;; Add a few things to the default hydra
-  (defhydra+ org-ref-bibtex-hydra (:color blue :hint nil)
-    "Bibtex actions:"
-    ("B" (lambda ()
-           (interactive)
-           (bibtex-completion-show-entry (list (org-ref-read-key))))
-     "Show entry"
-     :column "Navigation"
-     :color "red")
-    ("e" org-ref-email-add-pdf "Email PDF only" :column "WWW")
-    ("E" org-ref-email-bibtex-entry "Email PDF and bib entry" :column "WWW")
-    ("]" org-ref-bibtex-next-entry "Next entry" :column "Navigation" :color red)
-    ("[" org-ref-bibtex-previous-entry "Previous entry" :column "Navigation" :color red))
-
-  (defun org-ref-email-add-pdf ()
-    (interactive)
-    (let ((bufs (gnus-dired-mail-buffers)))
-      (unless (and (not bufs)
-                   (not (and (y-or-n-p "No composition buffer. Compose new mail ?")
-                             (compose-mail)
-                             (setq bufs (gnus-dired-mail-buffers)))))
-        (let* ((key (bibtex-completion-key-at-point))
-               (pdf (car (bibtex-completion-find-pdf key)))
-               (buf (if (= (length bufs) 1)
-                        (get-buffer (car bufs))
-                      (gnus-completing-read "Attach to buffer"
-                                            bufs t nil nil (car bufs)))))
-          (when (or pdf
-                    (and (y-or-n-p
-                          (format "No pdf for Bibtex key %s. Find manually ?"
-                                  key))
-                         (setq pdf (read-file-name "Attach PDF: "))))
-            (set-buffer buf)
-            (goto-char (point-max))
-            (mml-attach-file pdf (or (mm-default-file-type pdf)
-                                     "application/octet-stream")
-                             "attachment")
-            (message "Attached file %s" pdf))))))
+  (advice-add 'org-ref-read-key :around 'lps/completing-read-char-fold)
 
   ;; Define custom functions to download from math websites
   (defun aom-pdf-url (*doi-utils-redirect*)
@@ -3746,34 +3746,76 @@ until one is found."
               (when (re-search-forward num-regexp nil t)
                 (match-string-no-properties 0)))))
       (when pdf-url-maybe
-        (concat "https://hal.science" pdf-url-maybe))))
+        (concat "https://hal.science" pdf-url-maybe)))))
 
-  (add-to-list 'bibtex-completion-key-at-point-functions 'org-ref-read-key t)
+(use-package org-ref-bibtex
+  :defer t
+  :commands org-ref-bibtex-hydra/body
+  :bind
+  ("C-c b" . org-ref-bibtex-hydra/body)
+  (:map lps/all-hydras-map
+        ("p" . org-ref-bibtex-hydra/body))
+  :config
+  ;; Turn on other modes when loaded
+  (org-roam-bibtex-mode 1)
 
-  ;; Names are weirds: use a hack to char-fold
-  (defun lps/completing-read-char-fold (fun &rest args)
-    (let ((orderless-matching-styles
-           (cons 'char-fold-to-regexp orderless-matching-styles)))
-      (apply fun args)))
+  ;; Add a few things to the default hydra BIG Hack with eval:
+  ;; otherwise, defhydra+ tries to expand, and it needs to know whta
+  ;; org-ref-bibtex-hydra *is* ... but it can't before the package is
+  ;; loaded
+  (eval '(defhydra+ org-ref-bibtex-hydra (:color blue :hint nil)
+           "Bibtex actions:"
+           ("p" lps/org-ref-open-bibtex-pdf "PDF" :column "Open" :exit t)
+           ("n" lps/org-ref-open-bibtex-notes "Notes" :column "Open" :exit t)
+           ("b" lps/org-ref-open-in-browser "URL" :column "Open" :exit t)
+           ("B" (lambda ()
+                  (interactive)
+                  (bibtex-completion-show-entry (list (org-ref-read-key))))
+            "Show entry"
+            :column "Navigation"
+            :color "red")
+           ("e" org-ref-email-add-pdf "Email PDF only" :column "WWW")
+           ("E" org-ref-email-bibtex-entry "Email PDF and bib entry" :column "WWW")
+           ("]" org-ref-bibtex-next-entry "Next entry" :column "Navigation" :color red)
+           ("[" org-ref-bibtex-previous-entry "Previous entry" :column "Navigation" :color red)))
 
-  (advice-add 'org-ref-read-key :around 'lps/completing-read-char-fold)
+  (defun org-ref-email-add-pdf ()
+    (interactive)
+    (let ((bufs (gnus-dired-mail-buffers)))
+      (unless (and (not bufs)
+                   (not (and (y-or-n-p "No composition buffer. Compose new mail ?")
+                             (compose-mail)
+                             (setq bufs (gnus-dired-mail-buffers)))))
+        (let* ((key (bibtex-completion-key-at-point))
+               (pdf (car (bibtex-completion-find-pdf key)))
+               (buf (if (= (length bufs) 1)
+                        (get-buffer (car bufs))
+                      (gnus-completing-read "Attach to buffer"
+                                            bufs t nil nil (car bufs)))))
+          (when (or pdf
+                    (and (y-or-n-p
+                          (format "No pdf for Bibtex key %s. Find manually ?"
+                                  key))
+                         (setq pdf (read-file-name "Attach PDF: "))))
+            (set-buffer buf)
+            (goto-char (point-max))
+            (mml-attach-file pdf (or (mm-default-file-type pdf)
+                                     "application/octet-stream")
+                             "attachment")
+            (message "Attached file %s" pdf))))))
 
   ;; Redefine to use the interface that *should* be used ...
-  (defun org-ref-bib-citation ()
-    "From a bibtex entry, create and return a lightly formatted citation string."
-    (bibtex-completion-apa-format-reference (list (bibtex-completion-key-at-point))))
-
-  (defun org-ref-open-bibtex-pdf ()
+  (defun lps/org-ref-open-bibtex-pdf ()
     "Open pdf for a bibtex entry, if it exists."
     (interactive)
     (bibtex-completion-open-pdf (list (bibtex-completion-key-at-point))))
 
-  (defun org-ref-open-bibtex-notes ()
+  (defun lps/org-ref-open-bibtex-notes ()
     "From a bibtex entry, open the notes if they exist."
     (interactive)
     (bibtex-completion-edit-notes (list (bibtex-completion-key-at-point))))
 
-  (defun org-ref-open-in-browser ()
+  (defun lps/org-ref-open-in-browser ()
     "Open the bibtex entry at point in a browser using the url field or doi field."
     (interactive)
     (bibtex-completion-open-url-or-doi (list (bibtex-completion-key-at-point)))))
