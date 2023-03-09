@@ -510,7 +510,8 @@ Note gray80 at size 10 is useful for side remarks."
 
 (use-package hl-line
   :hook ((tabulated-list-mode
-          ibuffer-mode)
+          ibuffer-mode
+          dired-mode)
          . hl-line-mode))
 
 (use-package emacs
@@ -1287,11 +1288,14 @@ If called with a prefix argument, also kills the current buffer"
   ;; Use our personal default backends
   (defun lps/company-default-backends-prog ()
     (setq-local company-backends '((company-capf company-files company-dabbrev)
-                                   (company-dabbrev-code company-gtags company-etags company-keywords company-clang)
+                                   (company-dabbrev-code
+                                    company-gtags company-etags
+                                    company-keywords
+                                    company-clang)
                                    company-oddmuse)))
 
   (defun lps/company-default-backends-text ()
-    (setq-local company-backends '((company-capf company-files company-dabbrev company-ispell)
+    (setq-local company-backends '((company-capf company-files)
                                    company-oddmuse)))
 
   ;; AZERTY-friendly company number selection
@@ -1317,16 +1321,37 @@ If called with a prefix argument, also kills the current buffer"
   :custom
   (company-box-show-single-candidate 'never)
   :config
-  (setq company-box-backends-colors '((company-yasnippet :all "dark turquoise"
-                                                         :selected (:background "slate blue"
-                                                                                :foreground "white")))))
+  (setq company-box-backends-colors
+        '((company-yasnippet :all "dark turquoise"
+                             :selected (:background "slate blue"
+                                                    :foreground "white")))))
 
 (use-package company-quickhelp
   :after company
   :hook (company-mode . company-quickhelp-mode)
-  :diminish
   :custom
-  (company-quickhelp-delay 0.2))
+  (company-quickhelp-delay 0.2)
+  :config
+  ;; Temporary (??) hack: we used HELPFUL to override the built-in help,
+  ;; so company quickhelp got confused ...
+  (defun elisp--company-doc-buffer (str)
+    (let ((symbol (intern-soft str)))
+      ;; FIXME: we really don't want to "display-buffer and then undo it".
+      (save-window-excursion
+        ;; Make sure we don't display it in another frame, otherwise
+        ;; save-window-excursion won't be able to undo it.
+        (let ((display-buffer-overriding-action
+               '(nil . ((inhibit-switch-frame . t)))))
+          (ignore-errors
+            (cond
+             ((fboundp symbol) (describe-function symbol))
+             ((boundp symbol) (describe-variable symbol))
+             ((featurep symbol) (describe-package symbol))
+             ((facep symbol) (describe-face symbol))
+             (t (signal 'user-error nil)))
+            (if (or (derived-mode-p 'help-mode)
+                    (derived-mode-p 'helpful-mode))
+                (buffer-name))))))))
 
 (use-package emacs
   :ensure nil
