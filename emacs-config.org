@@ -5140,32 +5140,33 @@ Some of our aliases will come from =.bashrc=. However, we still want to add alia
 Now, we try to add things on top of the built-in file manager, Dired.
 
 #+begin_src emacs-lisp
-    (use-package dired
-      :ensure nil
-      :defer t
-      :bind
-      (:map dired-mode-map
-            ("F" . find-name-dired))
-      :custom
-      ;; Delete and copy directories recursively
-      (dired-recursive-deletes 'top)
-      (dired-recursive-copies 'always)
-      (dired-auto-revert-buffer t)
-      (dired-listing-switches "-alFh")
-      (dired-isearch-filenames 'dwim)
-      (dired-listing-switches "-AlFh --group-directories-first")
-      (wdired-allow-to-change-permissions t))
+  (use-package dired
+    :ensure nil
+    :defer t
+    :bind
+    (:map dired-mode-map
+          ("F" . find-name-dired))
+    :custom
+    ;; Delete and copy directories recursively
+    (dired-recursive-deletes 'top)
+    (dired-recursive-copies 'always)
+    (dired-auto-revert-buffer t)
+    (dired-listing-switches "-alFh")
+    (dired-isearch-filenames 'dwim)
+    (dired-listing-switches "-AlFh --group-directories-first")
+    (wdired-allow-to-change-permissions t)
+    (dired-dwim-target t))
 
-    ;; Make things prettier
-    (use-package all-the-icons-dired
-      :diminish
-      :hook (dired-mode . all-the-icons-dired-mode)
-      :custom
-      (all-the-icons-dired-monochrome nil))
+  ;; Make things prettier
+  (use-package all-the-icons-dired
+    :diminish
+    :hook (dired-mode . all-the-icons-dired-mode)
+    :custom
+    (all-the-icons-dired-monochrome nil))
 
-    (use-package dired-x
-      :ensure nil
-      :after dired)
+  (use-package dired-x
+    :ensure nil
+    :after dired)
 #+end_src
 
 Dired can also be used to search for files, using their names or their content.
