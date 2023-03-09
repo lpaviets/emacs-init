@@ -180,7 +180,7 @@ fboundp."
     (auth-source-cache-expiry 86400) ;; All day
 
     :config
-    (defvar lps/--auth-cache-expiry-setup-p nil)
+    (defvar lps/--auth-cache-expiry-setup-p t) ; change it to ask for duration on startup
 
     (defun lps/auth-source-define-cache-expiry ()
       (interactive)
@@ -943,7 +943,7 @@ If called with a prefix argument, also kills the current buffer"
   :defer t
   :hook (prog-mode . outline-minor-mode)
   :custom
-  (outline-minor-mode-prefix "\C-o")
+  (outline-minor-mode-prefix (kbd "M-o"))
   :config
   ;; Problems with TAB -> completely override cycle keymap
   (setq outline-mode-cycle-map (make-sparse-keymap)))
@@ -1703,16 +1703,18 @@ Breaks if region or line spans multiple visual lines"
             (indent-to col)
             (lps/--fill-width-repeat-string width str))))))
 
-  (defvar lps/do-not-capitalize-list '("the" "a" "of" "in" "on"
-                                       "no" "or" "and" "if" "for"
+  (defvar lps/do-not-capitalize-list '("the" "a" "of" "in" "on" "by"
+                                       "no" "or" "and" "if" "for" "to"
                                        "le" "la" "les" "et" "ou"
                                        "si" "un" "une" "de" "des"
                                        "du" "d" "l" "ni"))
 
-  (defun lps/make-filename-from-sentence ()
+  (defun lps/make-filename-from-sentence (&optional replace-spaces)
     "Create a title from the current line or region and add it to the
- kill-ring"
-    (interactive)
+ kill-ring.
+If REPLACE-SPACE is a character, replace spaces with this char.
+If it is non-nil, replace it by an underscore _"
+    (interactive "P")
     (let* ((bounds (if (region-active-p)
                        (car (region-bounds))
                      (cons (line-beginning-position)
@@ -1722,11 +1724,14 @@ Breaks if region or line spans multiple visual lines"
       (goto-char start)
       (capitalize-word 1)
       (while (< (point) (marker-position end))
-        (let ((num-spaces (skip-chars-forward "[:punct:][:space:]")))
+        (let ((num-spaces (skip-chars-forward "[:punct:][:space:][\n]")))
           (if (> num-spaces 0)
               (progn
                 (delete-backward-char num-spaces)
-                (insert "_"))
+                (cond
+                 ((not replace-spaces) (insert " "))
+                 ((characterp replace-spaces) (insert replace-spaces))
+                 (t (insert "_"))))
             (forward-char 1)))
         (let ((word-at-pt (word-at-point)))
           (if (or (not word-at-pt)
@@ -2058,7 +2063,7 @@ Does not insert a space before the inserted opening parenthesis"
   ;; server for one or two files, however, once I start using LSP,
   ;; there is no reason not to assume that I also want to use it by
   ;; default for other files in the same session
-  (defvar lps/--default-lsp-mode 0)
+  (defvar lps/--default-lsp-mode -1) ; change to ask for LSP on startup
 
   (defun lps/lsp-by-default-in-session ()
     (if (> lps/--default-lsp-mode 0)
@@ -2145,6 +2150,11 @@ call the associated function interactively. Otherwise, call the
                                    lps/auto-compile-command-alist))
                        'compile)))
       (call-interactively command))))
+
+(use-package eldoc
+  :config
+  (with-eval-after-load 'paredit
+   (eldoc-add-command-completions "paredit-")))
 
 (use-package devdocs
   :defer t
@@ -2696,16 +2706,38 @@ call the associated function interactively. Otherwise, call the
         ("C-e" . org-end-of-line))
   (:map org-src-mode-map
         ("C-c C-c" . org-edit-src-exit))
+  (:map org-cdlatex-mode-map
+        ("°" . cdlatex-math-symbol)
+        ("'" . nil)
+        ("$" . cdlatex-dollar)) ; might break things ? Not here by default
+  :init
+  (setq org-directory "~/Documents/OrgFiles/") ; have to do it early ...
+  (defun lps/org-expand-file-name (name &optional as-directory)
+    (let ((file-or-dir (expand-file-name name org-directory)))
+      (if as-directory
+          (file-name-as-directory file-or-dir)
+        file-or-dir)))
 
   :custom
   ;; Coding in blocks
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
   (org-use-speed-commands t)
-  (org-directory "~/Documents/OrgFiles/")
-  (org-special-ctrl-a/e t) ;; Not enough with visual-line-mode, need to bind C-a/C-e too
+  (org-special-ctrl-a/e t) ;; With visual-line-mode, need to bind C-a/C-e too
   (org-return-follows-link t)
+  (org-imenu-depth 4)
   (org-catch-invisible-edits 'show)
+  (org-latex-packages-alist '(("" "amsfonts" t)))
+  (org-format-latex-options (list
+                             :foreground 'default
+                             :background 'default
+                             :scale 1.5
+                             :html-foreground "Black"
+                             :html-background "Transparent"
+                             :html-scale 1.0
+                             :matchers '("begin" "$1"
+                                         "$" "$$"
+                                         "\\(" "\\[")))
   :config
   (defun lps/windmove-mode-local-off ()
     ;; Hack to disable windmove locally
@@ -2726,8 +2758,6 @@ call the associated function interactively. Otherwise, call the
     ;; (variable-pitch-mode 1)
     (visual-line-mode 1)
     (lps/windmove-mode-local-off))
-
-  (setq org-imenu-depth 4)
 
   (setq org-ellipsis " ▾")
 
@@ -2754,7 +2784,7 @@ call the associated function interactively. Otherwise, call the
     (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'fixed-pitch))
 
   ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-  (set-face-attribute 'org-block nil :foreground nil :inherit 'fixed-pitch :extend t)
+  (set-face-attribute 'org-block nil :foreground 'unspecified :inherit 'fixed-pitch :extend t)
   (set-face-attribute 'org-block-begin-line nil :slant 'italic :foreground "dark gray" :background "#1d1d2b" :inherit 'fixed-pitch :height 1.0)
   (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
   (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
@@ -2791,7 +2821,7 @@ call the associated function interactively. Otherwise, call the
           (member (car key-template) bound-key-templates)
         (push key-template org-structure-template-alist)))))
 
-(setq org-agenda-files (list (concat org-directory "agenda/")))
+(setq org-agenda-files (list (lps/org-expand-file-name "agenda" t)))
 (setq org-log-into-drawer t)
 (setq org-log-done 'time)
 (setq org-agenda-start-with-log-mode t)
@@ -2815,7 +2845,8 @@ call the associated function interactively. Otherwise, call the
                           ("Talk" ,(all-the-icons-faicon "volume-up"))
                           ("Exam" ,(all-the-icons-octicon "mortar-board"))
                           ("Seminar" ,(all-the-icons-faicon "pencil"))
-                          ("Workshop" ,(all-the-icons-material "group_work"))))
+                          ("Workshop" ,(all-the-icons-material "group_work"))
+                          ("Culture" ,(all-the-icons-faicon "paint-brush"))))
     (cl-pushnew (list (car tag-and-icon)
                       (cdr tag-and-icon)
                       nil nil
@@ -2882,12 +2913,17 @@ call the associated function interactively. Otherwise, call the
 (use-package org-roam
   :after org
   :custom
-  (org-roam-directory (file-truename
-                       (expand-file-name "RoamNotes/" org-directory)))
+  (org-roam-directory (lps/org-expand-file-name "RoamNotes" t))
   (org-roam-node-display-template (concat "${title:*} "
                                           (propertize "${tags}"
                                                       'face
                                                       'org-tag)))
+  (org-roam-capture-templates
+   '(("d"
+      "default" plain "%?"
+      :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                         "#+title: ${title}\n")
+      :unnarrowed t)))
   :bind (("C-c n t" . org-roam-buffer-toggle)
          ("C-c n f" . org-roam-node-find)
          ("C-c n g" . org-roam-graph)
@@ -2995,15 +3031,13 @@ move to the end of the document, and search backward instead."
         ("<f6>" . devdocs-lookup)
         ("<backtab>" . indent-for-tab-command)
         ("C-c M-%" . LaTeX-replace-in-math)
-        ("C-c C-M-%" . LaTeX-replace-regexp-in-math)
-        ("C-c C-d" . lps/TeX-remove-macro))
+        ([remap beginning-of-defun] . LaTeX-find-matching-begin)
+        ([remap end-of-defun] . LaTeX-find-matching-end))
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . lps/latex-fontification)
-  (LaTeX-mode . lps/latex-add-environments)
-  (LaTeX-mode . lps/latex-company-setup)
+  ;; (LaTeX-mode . lps/latex-company-setup)
   ;; (LaTeX-mode . LaTeX-math-mode)
-  (LaTeX-mode . TeX-fold-mode)
   (LaTeX-mode . cdlatex-mode)
   (LaTeX-mode . auto-insert)
 
@@ -3030,6 +3064,8 @@ move to the end of the document, and search backward instead."
   (TeX-clean-confirm nil)
   ;; AucTeX doesn't search subdirectories for input/include ...
   (TeX-arg-input-file-search 'ask)
+  ;; Ask for note when inserting citations
+  (TeX-arg-cite-note-p t)
 
   (TeX-source-correlate-method 'synctex)
   (TeX-source-correlate-start-server t)
@@ -3079,7 +3115,8 @@ move to the end of the document, and search backward instead."
                                   "\\newtheorem*{notation}{Notation}\n"
                                   "\\newtheorem*{remark}{Remark}\n\n"
                                   "\\crefname{lemma}{Lemma}{Lemmas}\n"
-                                  "\\crefname{theorem}{Theorem}{Theorems}\n\n")))
+                                  "\\crefname{theorem}{Theorem}{Theorems}"
+                                  "\n\n")))
                    '(indent-region (point-min) (point-max)))))
 
   ;; Improve fontification
@@ -3118,11 +3155,14 @@ package, prompt for selection of the manual of that package to
 show."
     (interactive "P")
     (let ((pkg (thing-at-point 'symbol))
+          (pkgs TeX-active-styles)
           buffer list doc)
       ;; Strip off properties.  XXX: XEmacs doesn't have
       ;; `substring-no-properties'.
       (set-text-properties 0 (length pkg) nil pkg)
-      (setq pkg (TeX-read-string "View documentation for: " pkg))
+      (setq pkg (completing-read "View documentation for: "
+                                 (cons pkg pkgs)
+                                 nil nil pkg nil nil t))
       (unless (zerop (length pkg))
         (progn
           ;; Create the buffer, insert the result of the command, and
@@ -3214,13 +3254,6 @@ The return value is the string as entered in the minibuffer."
         (and def (string-equal input "") (setq input def))
         input)))
 
-  ;; Add environment for auto. insertion with C-c C-e, and some env. specific
-  ;; configuration such as indentation, etc
-  (defun lps/latex-add-environments ()
-    ;; Should be done by auctex's tikz.el FILE
-    ;; (LaTeX-add-environments '("tikzpicture" LaTeX-env-label))
-    (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")))
-
   ;; Better completion functions
   (defun lps/latex-company-setup () ;; TO FIX !
     (setq-local company-backends
@@ -3232,25 +3265,30 @@ The return value is the string as entered in the minibuffer."
                    company-ispell)))
     (setq-local company-minimum-prefix-length 4))
 
-  (defun LaTeX-replace-in-math ()
-    "Call `query-replace' with `isearch-filter-predicate'set to
-filter out matches outside LaTeX math environments."
-    (interactive)
-    (let ((isearch-filter-predicate
-           (lambda (beg end)
-             (save-excursion (save-match-data (goto-char beg) (texmathp)))))
-          (case-fold-search nil))
-      (call-interactively 'query-replace)))
+  ;; Improve isearch and query-replace (regexp or not) in math mode
+  (defun lps/safe-texmathp (beg end)
+    (if (derived-mode-p 'tex-mode)
+        (save-excursion (save-match-data (goto-char beg) (texmathp)))
+      t))
 
-  (defun LaTeX-replace-regexp-in-math ()
-    "Call `query-replace-regexp' with `isearch-filter-predicate'set
-to filter out matches outside LaTeX math environments."
-    (interactive)
-    (let ((isearch-filter-predicate
-           (lambda (beg end)
-             (save-excursion (save-match-data (goto-char beg) (texmathp)))))
-          (case-fold-search nil))
-      (call-interactively 'query-replace-regexp)))
+  (defvar lps/isearch-old-filter-predicate nil
+    "Old predicate used in `isearch-filter-predicate'
+Internal use.")
+
+  (defvar lps/isearch-in-mathp nil)
+
+  (isearch-define-mode-toggle latex-math "m" nil
+    "This determines whether to search only in math mode in the
+LaTeX document"
+    (isearch--momentary-message
+     (if (setq lps/isearch-in-mathp (not lps/isearch-in-mathp))
+         (progn
+           (setq lps/isearch-old-filter-predicate isearch-filter-predicate
+                 isearch-filter-predicate 'lps/safe-texmathp)
+           "Search or replace restricted to math mode")
+       (setq isearch-filter-predicate lps/isearch-old-filter-predicate
+             lps/isearch-old-filter-predicate nil)
+       "Search or replace not restricted to math mode")))
 
   (defun lps/TeX-remove-macro ()
     "Remove current macro and return `t'.  If no macro at point,
@@ -3272,7 +3310,126 @@ return `nil'."
     (let ((TeX-debug-bad-boxes t)
           (TeX-debug-warnings t)
           (TeX-error-overview-open-after-TeX-run t))
-     (TeX-command-sequence t t))))
+      (TeX-command-sequence t t))))
+
+(use-package tex-fold
+  :defer t
+  :hook (LaTeX-mode . TeX-fold-mode)
+  :bind
+  (:map TeX-fold-keymap
+        ("C-a" . lps/TeX-fold-all-of-env))
+  :custom
+  ;; Folding
+  (TeX-fold-command-prefix "\C-o")
+  (TeX-fold-env-spec-list '(("[frame]" ("frame"))
+                            ("[comment]" ("comment"))))
+  :config
+  ;; Not very robust
+  (defun lps/TeX-fold-all-of-env (env)
+    (interactive "MFold environment: ")
+    (save-excursion
+      (goto-char (point-min))
+      (let ((env-start (format "\\begin{%s}" env)))
+        (while (search-forward env-start nil t)
+          (TeX-fold-env))))))
+
+(use-package tex
+  :ensure auctex
+  :defer t
+  :init
+  (defvar beamer-mode-map (make-sparse-keymap))
+  (define-minor-mode beamer-mode
+    "A minor mode for editing LaTeX document using the beamer class.
+It defines the following commands:
+
+\\{beamer-mode-map}")
+  :bind
+  (:map beamer-mode-map
+        ("C-M-x" . lps/LaTeX-beamer-compile-frame)
+        ("C-c M-r" . lps/LaTeX-beamer-change-all-pauses))
+  :hook
+  (beamer-mode . lps/LaTeX-beamer-frame-as-section)
+  (beamer-mode . lps/LaTeX-beamer-fold-all-frames)
+  :config
+  ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
+
+  (defun lps/LaTeX-beamer-mark-frame ()
+    (unless (member "beamer" TeX-active-styles)
+      (error "Not in a beamer document"))
+    (beginning-of-line)
+    (while (not (looking-at-p "\\\\begin *{frame}"))
+      (LaTeX-find-matching-begin))
+    (forward-char)
+    (LaTeX-mark-environment))
+
+  ;; Adapted from:
+  ;; https://mbork.pl/2016-07-04_Compiling_a_single_Beamer_frame_in_AUCTeX
+  (defun lps/LaTeX-beamer-compile-frame ()
+    "Compile the current frame"
+    (interactive)
+    (save-mark-and-excursion
+      (lps/LaTeX-beamer-mark-frame)
+      (TeX-command-run-all-region)))
+
+  (defun lps/LaTeX-beamer-frame-as-section ()
+    (require 'reftex)
+    (unless (assoc-string "frametitle" reftex-section-levels)
+      (setq-local reftex-section-levels
+                  (append reftex-section-levels
+                          '(("frametitle" . -2)
+                            ("framesubtitle" . -3))))))
+
+  (defun lps/LaTeX-beamer-fold-all-frames ()
+    (interactive)
+    (lps/TeX-fold-all-of-env "frame"))
+
+  (defvar lps/LaTeX-beamer-pause-macros '("pause["
+                                         "only<"
+                                         "onslide<"
+                                         "alt<"
+                                         "item<")
+    "List of LaTeX macros that specifying pauses or overlays in a beamer
+frame, and whose syntax rougly follows the one used by \\onslide<...>
+
+Time specifications in those macros will be modified by the
+`lps/LaTeX-beamer-change-all-pauses' function.
+
+The character introducting the parameter list, usually [, < or {, has
+to be added to the end, e.g. if you want to recognize the overlays
+attached to items in an itemize environment, add \"item<\" to this
+variable")
+
+  (defun lps/LaTeX-beamer-change-all-pauses (n &optional from-here)
+    "Increase by N all the pauses and overlays timesteps specified by
+the macros of `lps/LaTeX-beamer-pause-macros' contained in the
+current frame.
+
+If FROM-HERE is non-nil, only change the ones after the point.
+
+If the region is active, ignore FROM-HERE and only act on the region
+instead."
+    (interactive "*nChange by steps: \nP")
+    (save-mark-and-excursion
+      (save-restriction
+        (let ((beg (cond
+                    (from-here (point))
+                    ((region-active-p) (region-beginning))
+                    (t nil))))
+          (unless (region-active-p)
+            (lps/LaTeX-beamer-mark-frame)
+            (setq beg (or beg (region-beginning))))
+          (narrow-to-region beg (region-end))
+          (goto-char (point-min))
+          (while (re-search-forward
+                  (concat "\\\\" (regexp-opt lps/LaTeX-beamer-pause-macros))
+                  nil t)
+            (let ((point (point))
+                  (end (re-search-forward "[[:space:]]*]\\|>\\|}" nil t)))
+              (when (and end (not (texmathp)))
+                (goto-char point)
+                (while (re-search-forward "[[:digit:]]+" end t)
+                  (let ((num (string-to-number (match-string 0))))
+                    (replace-match (number-to-string (+ num n)))))))))))))
 
 (use-package bibtex
   :defer t
@@ -3349,8 +3506,6 @@ Return a list of regular expressions."
   :bind
   (:map bibtex-mode-map
         ("C-c ?" . biblio-lookup))
-  (:map pdf-view-mode-map
-        ("d" . biblio-lookup))
   :custom
   (biblio-arxiv-bibtex-header "article")
   (biblio-download-directory "~/Documents/Other/articles/")
@@ -3365,37 +3520,275 @@ The default filename is of the form \"[AUTHORS]TITLE.pdf\" where
 AUTHORS is a list of the authors surnames, separated by underscores,
 and TITLE is the result of `lps/make-filename-from-sentence' on the
 article's title"
-    (let-alist record
-      (if .direct-url
-          (let* ((fname (with-temp-buffer
-                          (insert .title)
-                          (goto-char (point-min))
-                          (lps/make-filename-from-sentence)
-                          (goto-char (point-max))
-                          (insert ".pdf")
-                          (goto-char (point-min))
-                          (insert "[")
+    (save-window-excursion
+      (let-alist record
+        (cl-flet ((bsnp-all ()
+                    (buffer-substring-no-properties (point-min) (point-max))))
+          (if .direct-url
+              (let* (title auths target)
+                (with-temp-buffer
+                  (insert .title)
+                  (join-line nil (point-min) (point-max))
+                  (goto-char (point-min))
+                  (lps/make-filename-from-sentence)
+                  (setq title (bsnp-all))
+                  (with-temp-buffer
+                    (insert title)
+                    (lps/make-filename-from-sentence ?_)
+                    (insert ".pdf")
+                    (setq fname (bsnp-all)))
+                  (goto-char (point-min))
+                  (insert "[")
+                  (seq-doseq (name .authors)
+                    (when (and name (stringp name))
+                      (let ((split-name (split-string name)))
+                        (if (cdr split-name)
+                            (dolist (subname (cdr split-name))
+                              (insert subname))
+                          (insert name)))
+                      (insert "_")))
+                  (delete-backward-char 1)
+                  (insert "]")
+                  (setq auths (buffer-substring-no-properties (point-min)
+                                                              (point)))
+                  (setq fname (concat auths fname))
+                  (setq target (read-file-name "Save as: "
+                                               biblio-download-directory
+                                               fname
+                                               nil
+                                               fname)))
+                (setq target (expand-file-name target
+                                               biblio-download-directory))
+                (url-copy-file .direct-url target)
+                (let* ((bib-path (expand-file-name "biblio.org"
+                                                   org-directory))
+                       (bib-file (find-file bib-path)))
+                  (with-current-buffer (get-buffer bib-file)
+                    (goto-char (point-max))
+                    (insert "\n* "
+                            auths
+                            " "
+                            title
+                            "\n\n"
+                            "[[file:"
+                            (string-replace "[" "\\["
+                                            (string-replace "]" "\\]"
+                                                            target))
+                            "]["
+                            title
+                            "]]\n\n"
+                            "#+begin_src latex\n")
+                    (let ((biblio--target-buffer (current-buffer)))
+                      (funcall .backend
+                               'forward-bibtex
+                               record
+                               (lambda (bibtex)
+                                 (funcall 'biblio--selection-insert-callback
+                                          (biblio-format-bibtex bibtex)
+                                          record))))
+                    (ensure-empty-lines 0)
+                    (insert "#+end_src\n"))))
+            (user-error "This record does not contain a direct URL")))))))
 
-                          (seq-doseq (name .authors)
-                            (when (and name (stringp name))
-                              (let ((split-name (split-string name)))
-                                (if (cdr split-name)
-                                    (dolist (subname (cdr split-name))
-                                      (insert subname))
-                                  (insert name)))
-                              (insert "_")))
-                          (delete-backward-char 1)
-                          (insert "]")
-                          (buffer-substring-no-properties (point-min) (point-max))))
-                 (target (read-file-name "Save as: "
-                                         biblio-download-directory
-                                         fname
-                                         nil
-                                         fname)))
-            (url-copy-file .direct-url
-                           (expand-file-name target
-                                             biblio-download-directory)))
-        (user-error "This record does not contain a direct URL")))))
+(use-package bibtex-completion
+  :init
+  (defvar lps/bib-directory (lps/org-expand-file-name "testbib" t))
+  :custom
+  (bibtex-completion-bibliography (list (expand-file-name "biblio.bib"
+                                                          lps/bib-directory)
+                                        (lps/org-expand-file-name "biblio.bib")))
+  (bibtex-completion-library-path (file-name-as-directory
+                                   (expand-file-name "articles"
+                                                     lps/bib-directory))))
+
+(use-package org-ref
+  :bind
+  ("C-c b" . org-ref-bibtex-hydra/body)
+  (:map lps/all-hydras-map
+        ("p" . org-ref-bibtex-hydra/body))
+  :init
+  (defvar doi-utils-pdf-url-functions-from-doi '(doi-to-arxiv-pdf
+                                                 doi-to-hal-pdf))
+  :custom
+  (doi-utils-download-pdf t)
+  (doi-utils-async-download nil)
+  (doi-utils-open-pdf-after-download t)
+  :config
+  ;; Add a few things to the default hydra
+  (defhydra+ org-ref-bibtex-hydra (:color blue :hint nil)
+    "Bibtex actions:"
+    ("B" (lambda ()
+           (interactive)
+           (bibtex-completion-show-entry (list (org-ref-read-key))))
+     "Show entry"
+     :column "Navigation"
+     :color "red")
+    ("e" org-ref-email-add-pdf "Email PDF only" :column "WWW")
+    ("E" org-ref-email-bibtex-entry "Email PDF and bib entry" :column "WWW")
+    ("]" org-ref-bibtex-next-entry "Next entry" :column "Navigation" :color red)
+    ("[" org-ref-bibtex-previous-entry "Previous entry" :column "Navigation" :color red))
+
+  (defun org-ref-email-add-pdf ()
+    (interactive)
+    (let ((bufs (gnus-dired-mail-buffers)))
+      (unless (and (not bufs)
+                   (not (and (y-or-n-p "No composition buffer. Compose new mail ?")
+                             (compose-mail)
+                             (setq bufs (gnus-dired-mail-buffers)))))
+        (let* ((key (bibtex-completion-key-at-point))
+               (pdf (car (bibtex-completion-find-pdf key)))
+               (buf (if (= (length bufs) 1)
+                        (get-buffer (car bufs))
+                      (gnus-completing-read "Attach to buffer"
+                                            bufs t nil nil (car bufs)))))
+          (when (or pdf
+                    (and (y-or-n-p
+                          (format "No pdf for Bibtex key %s. Find manually ?"
+                                  key))
+                         (setq pdf (read-file-name "Attach PDF: "))))
+            (set-buffer buf)
+            (goto-char (point-max))
+            (mml-attach-file pdf (or (mm-default-file-type pdf)
+                                     "application/octet-stream")
+                             "attachment")
+            (message "Attached file %s" pdf))))))
+
+  ;; Define custom functions to download from math websites
+  (defun aom-pdf-url (*doi-utils-redirect*)
+    "Get a url to the pdf from *DOI-UTILS-REDIRECT* for Annals of Mathematics urls.
+  A URL looks like https://annals.math.princeton.edu/YEAR/VOL-N/PAGE
+  The PDF is typically (but not always ...) at
+   https://annals.math.princeton.edu/wp-content/uploads/annals-vVOL-nN-PAGE-s.pdf"
+    (when (string-match
+           "^\\(https?://annals.math.princeton.edu\\)/\\([0-9]*\\)/\\([0-9]*\\)-\\([0-3]\\)/\\(p[0-9]*\\)"
+           *doi-utils-redirect*)
+      (let ((start (match-string-no-properties 1 *doi-utils-redirect*))
+            (year (match-string-no-properties 2 *doi-utils-redirect*))
+            (vol (match-string-no-properties 3 *doi-utils-redirect*))
+            (issue (match-string-no-properties 4 *doi-utils-redirect*))
+            (page (match-string-no-properties 5 *doi-utils-redirect*)))
+        (concat start "/wp-content/uploads/annals-v"
+                vol "-n" issue "-" page "-s.pdf"))))
+
+  (defun doi-utils-get-ems-pdf-url (*doi-utils-redirect*)
+    (let ((first-url
+           (with-current-buffer (url-retrieve-synchronously *doi-utils-redirect*)
+             (goto-char (point-min))
+             (when (re-search-forward "/content/serial-article-files/[0-9]+" nil t)
+               (match-string-no-properties 0)))))
+      (when first-url
+        (concat "https://ems.press" first-url))))
+
+  (defun ems-pdf-url (*doi-utils-redirect*)
+    "Get a url to the pdf from *DOI-UTILS-REDIRECT* for EMS (European
+Mathematical Society) urls.
+  A URL looks like https://ems.press/journals/...
+  The PDF url is hidden in the page content"
+    (when (string-match "^https?://ems.press/journals/" *doi-utils-redirect*)
+      (doi-utils-get-ems-pdf-url *doi-utils-redirect*)))
+
+  (add-to-list 'doi-utils-pdf-url-functions 'aom-pdf-url)
+  (add-to-list 'doi-utils-pdf-url-functions 'ems-pdf-url)
+
+  ;; Override to also use another list of functions
+  (defun doi-utils-get-pdf-url (doi)
+    "Return a url to a pdf for the DOI if one can be calculated.
+Loops through the functions in `doi-utils-pdf-url-functions'
+until one is found."
+    (doi-utils-get-redirect doi)
+
+    (unless *doi-utils-redirect*
+      (error "No redirect found for %s" doi))
+    (catch 'pdf-url
+      ;; Try to find URL "properly" using per-journal info
+      (dolist (func doi-utils-pdf-url-functions)
+        (let ((this-pdf-url (funcall func *doi-utils-redirect*)))
+          (when this-pdf-url
+            (throw 'pdf-url this-pdf-url))))
+      ;; Now more coarse methods, using the DOI on several
+      ;; archives (arxiv, HAL ...)
+      (dolist (func doi-utils-pdf-url-functions-from-doi)
+        (let ((this-pdf-url (funcall func doi)))
+          (when this-pdf-url
+            (throw 'pdf-url this-pdf-url))))))
+
+  (defun doi-to-arxiv-pdf (doi)
+    (let* ((doi1 (url-hexify-string doi))
+           (doi2 (url-hexify-string (upcase doi)))
+           (num-regexp "http\\(s\\)?://arxiv.org/pdf/\\([0-9.]+\\)")
+           (pdf-url-maybe
+            (or
+             (with-current-buffer
+                 (url-retrieve-synchronously (concat "https://arxiv.org/search/?query="
+                                                     doi1
+                                                     "&searchtype=doi"))
+               (goto-char (point-min))
+               (when (re-search-forward num-regexp nil t)
+                 (match-string-no-properties 0)))
+             (with-current-buffer
+                 (url-retrieve-synchronously (concat "https://arxiv.org/search/?query="
+                                                     doi2
+                                                     "&searchtype=doi"))
+               (goto-char (point-min))
+               (when (re-search-forward num-regexp nil t)
+                 (match-string-no-properties 0))))))
+      (when pdf-url-maybe
+        (concat pdf-url-maybe ".pdf"))))
+
+  (defun doi-to-hal-pdf (doi)
+    (let* ((doi (url-hexify-string doi))
+           (num-regexp "/hal-[0-9]+\\(v[0-9]+\\)/document")
+           (pdf-url-maybe
+            (with-current-buffer
+                (url-retrieve-synchronously (concat "https://hal.science/search/index/?qa[doiId_id][]="
+                                                    doi))
+              (goto-char (point-min))
+              (when (re-search-forward num-regexp nil t)
+                (match-string-no-properties 0)))))
+      (when pdf-url-maybe
+        (concat "https://hal.science" pdf-url-maybe))))
+
+  (add-to-list 'bibtex-completion-key-at-point-functions 'org-ref-read-key t)
+
+  ;; Names are weirds: use a hack to char-fold
+  (defun lps/completing-read-char-fold (fun &rest args)
+    (let ((orderless-matching-styles
+           (cons 'char-fold-to-regexp orderless-matching-styles)))
+      (apply fun args)))
+
+  (advice-add 'org-ref-read-key :around 'lps/completing-read-char-fold)
+
+  ;; Redefine to use the interface that *should* be used ...
+  (defun org-ref-bib-citation ()
+    "From a bibtex entry, create and return a lightly formatted citation string."
+    (bibtex-completion-apa-format-reference (list (bibtex-completion-key-at-point))))
+
+  (defun org-ref-open-bibtex-pdf ()
+    "Open pdf for a bibtex entry, if it exists."
+    (interactive)
+    (bibtex-completion-open-pdf (list (bibtex-completion-key-at-point))))
+
+  (defun org-ref-open-bibtex-notes ()
+    "From a bibtex entry, open the notes if they exist."
+    (interactive)
+    (bibtex-completion-edit-notes (list (bibtex-completion-key-at-point))))
+
+  (defun org-ref-open-in-browser ()
+    "Open the bibtex entry at point in a browser using the url field or doi field."
+    (interactive)
+    (bibtex-completion-open-url-or-doi (list (bibtex-completion-key-at-point)))))
+
+(use-package org-roam-bibtex
+  :after org-ref
+  :config
+  (add-to-list
+   'org-roam-capture-templates
+   '("r"
+     "bibliography reference" plain "%?"
+     :target (file+head "articles-notes/%<%Y%m%d%H%M%S>-${citekey}.org"
+                        "#+title: ${title}\n")
+     :unnarrowed t)
+   t #'equal))
 
 (use-package preview
   :ensure nil ;; Comes with AUCTeX
@@ -4570,26 +4963,91 @@ insert as many blank lines as necessary."
   ("C-c f" . elfeed)
   (:map elfeed-search-mode-map
         ("w" . elfeed-search-browse-url))
+  :init
+  (defvar lps/elfeed-search-arxiv-authors-max-width 30)
+  (defvar lps/elfeed-default-days-range 7
+    "Range of days to filter by default in elfeed search queries")
   :custom
   (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
   (elfeed-search-title-max-width 110)
   :config
-  (setq-default elfeed-search-filter "@1-week-ago +unread -compsci -youtube"))
+  (defface elfeed-search-arxiv-authors
+    '((t (:inherit message-header-to :weight normal)))
+    "Faced used in *elfeed-search* buffer to show authors of Arxiv papers"
+    :group 'elfeed)
 
-(use-package elfeed-org
-  :after elfeed
-  :init
-  (defvar lps/elfeed-default-days-range 7
-    "Range of days to filter by default in elfeed search queries")
-  :bind (:map elfeed-search-mode-map
-              ("s" . lps/elfeed-search-filter-interactive))
-  :config
-  (setq rmh-elfeed-org-files '("~/Documents/OrgFiles/elfeed.org"))
-  (elfeed-org)
+  (setq-default elfeed-search-filter "@1-week-ago +unread -arxiv -youtube")
+
+  (defun lps/elfeed-search-format-arxiv-authors (entry)
+    (let* ((authors (elfeed-meta entry :authors))
+           (formatted-authors
+            (mapconcat (lambda (author)
+                         (when-let ((auth (plist-get author :name))
+                                    (splitted (s-split-up-to " " auth 1)))
+                           (concat
+                            (substring (car splitted) 0 1)
+                            "."
+                            (cadr splitted))))
+                       authors
+                       ", "))
+           (width (length formatted-authors))
+           (max-width (- lps/elfeed-search-arxiv-authors-max-width 6)))
+      (propertize
+       (if (<  max-width width)
+           (concat "[" (substring formatted-authors 0 max-width) "...] ")
+         (elfeed-format-column
+          (concat "[" formatted-authors "] ")
+          lps/elfeed-search-arxiv-authors-max-width
+          :left))
+       'face 'elfeed-search-arxiv-authors
+       'kbd-help formatted-authors)))
+
+  (defun lps/elfeed-search-print-entry--arxiv (entry)
+    (let* ((date
+            (elfeed-search-format-date (elfeed-entry-date entry)))
+           (title (or (elfeed-meta entry :title) (elfeed-entry-title entry) ""))
+           (title-faces (elfeed-search--faces (elfeed-entry-tags entry)))
+           (feed (elfeed-entry-feed entry))
+           (feed-title
+            (when feed
+              (or (elfeed-meta feed :title) (elfeed-feed-title feed))))
+           (authors (lps/elfeed-search-format-arxiv-authors entry))
+           (tags (mapcar #'symbol-name (elfeed-entry-tags entry)))
+           (tags-str (mapconcat
+                      (lambda (s) (propertize s 'face 'elfeed-search-tag-face))
+                      tags ","))
+           (title-width (- (window-width)
+                           lps/elfeed-search-arxiv-authors-max-width
+                           10
+                           elfeed-search-trailing-width))
+           (title-column (elfeed-format-column
+                          title (elfeed-clamp
+                                 elfeed-search-title-min-width
+                                 title-width
+                                 (- elfeed-search-title-max-width
+                                    lps/elfeed-search-arxiv-authors-max-width))
+                          :left)))
+      (insert (propertize date 'face 'elfeed-search-date-face) " ")
+      (insert (propertize title-column 'face title-faces 'kbd-help title) " ")
+      (insert authors)
+      (when feed-title
+        (insert (propertize feed-title 'face 'elfeed-search-feed-face) " "))
+      (when tags
+        (insert "(" tags-str ")"))))
+
+  (defun lps/elfeed-search-show-entry-function (entry)
+    (let ((tags (elfeed-entry-tags entry)))
+      (if (member 'arxiv tags)
+          (lps/elfeed-search-print-entry--arxiv entry)
+        (elfeed-search-print-entry--default entry))))
+
+  (setq elfeed-search-print-entry-function
+        'lps/elfeed-search-show-entry-function)
 
   (defun lps/elfeed-search-filter-prompt-time-range ()
-    (let* ((default-time (time-subtract (current-time)
-                                        (days-to-time lps/elfeed-default-days-range)))
+    (let* ((default-time
+            (time-subtract (current-time)
+                           (days-to-time lps/elfeed-default-days-range)))
            (from (org-read-date nil nil nil nil default-time)))
       (concat "@" from)))
 
@@ -4627,6 +5085,18 @@ insert as many blank lines as necessary."
           (setf elfeed-search-filter
                 (or filter (default-value 'elfeed-search-filter)))
           (elfeed-search-update :force))))))
+
+(use-package elfeed-org
+  :bind (:map elfeed-search-mode-map
+              ("C-S-s" . lps/elfeed-search-filter-interactive))
+  :custom
+  (rmh-elfeed-org-files (list
+                         (expand-file-name "elfeed.org"
+                                           org-directory)))
+  :init
+  ;; Do it without lazy loading: hope it doesn't cause loading time
+  ;; issues, but it's somewhat hard to do things in a lazy way ...
+  (elfeed-org))
 
 (use-package elfeed-tube
   :after elfeed

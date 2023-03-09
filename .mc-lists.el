@@ -7,6 +7,7 @@
         LaTeX-environment
         LaTeX-insert-left-brace
         TeX-font
+        TeX-insert-backslash
         TeX-insert-dollar
         TeX-insert-sub-or-superscript
         backward-sexp
@@ -15,9 +16,11 @@
         c-indent-line-or-region
         capitalize-dwim
         cdlatex-pbb
+        cdlatex-sub-superscript
         company-indent-or-complete-common
         counsel-M-x
         delete-indentation
+        drag-stuff-down
         end-of-buffer
         end-of-visual-line
         forward-sentence
@@ -33,6 +36,8 @@
         lps/exchange-point-and-mark
         lps/insert-parentheses
         lps/select-line
+        lps/transpose-sexp-forward
+        lps/yank-indent
         mark-sexp
         org-beginning-of-line
         org-delete-char
@@ -46,6 +51,7 @@
         paredit-backward-up
         paredit-close-round
         paredit-copy-as-kill
+        paredit-delete-char
         paredit-delete-region
         paredit-doublequote
         paredit-forward
