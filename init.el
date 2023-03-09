@@ -3644,8 +3644,6 @@ article's title"
   (defun lps/bibtex-format-undo-nonascii (s)
     (replace-regexp-in-string "{\\\\.\\({.}\\|.\\)}"
                               (lambda (match)
-                                (message "String: %s/match: %s/quoted: %s"
-                                         s match (regexp-quote match))
                                 (or (car (rassoc (regexp-quote match)
                                                  org-ref-nonascii-latex-replacements))
                                     (car (rassoc (regexp-quote (concat
@@ -3664,7 +3662,58 @@ article's title"
              (lps/bibtex-format-undo-nonascii)
              (replace-regexp-in-string "[\"{}]+" "")
              (replace-regexp-in-string "[\n\t ]+" " "))
-      nil)))
+      nil))
+
+  ;; Improve visual look of org-ref-read-key
+  (defvar lps/bibtex-completion-format-entry-properties
+    '(("author" face elfeed-search-arxiv-authors)
+      ("date" face elfeed-search-date-face)
+      ("year" face elfeed-search-date-face))
+    "Alist of (FIELD-NAME (PROPERTIES)*).
+The properties will be applied as if by
+(apply 'propertize STRING PROPERTIES)")
+
+  ;; Copy of the original function
+  ;; It simply propertizes every field by using the alist
+  ;; lps/bibtex-completion-format-entry-properties
+  (defun bibtex-completion-format-entry (entry width)
+    "Formats a BibTeX ENTRY for display in results list.
+WIDTH is the width of the results list.  The display format is
+governed by the variable `bibtex-completion-display-formats'."
+    (let* ((format
+            (or (assoc-string (bibtex-completion-get-value "=type=" entry)
+                              bibtex-completion-display-formats-internal
+                              'case-fold)
+                (assoc t bibtex-completion-display-formats-internal)))
+           (format-string (cadr format)))
+      (s-format
+       format-string
+       (lambda (field)
+         (let* ((field (split-string field ":"))
+                (field-name (car field))
+                (field-width (cadr field))
+                (field-value (bibtex-completion-get-value field-name entry)))
+           (when (and (string= field-name "author")
+                      (not field-value))
+             (setq field-value (bibtex-completion-get-value "editor" entry)))
+           (when (and (string= field-name "year")
+                      (not field-value))
+             (setq field-value (car (split-string (bibtex-completion-get-value "date" entry "")
+                                                  "-"))))
+           (setq field-value (bibtex-completion-clean-string (or field-value " ")))
+           (when (member field-name '("author" "editor"))
+             (setq field-value (bibtex-completion-shorten-authors field-value)))
+           (apply 'propertize
+                  (if (not field-width)
+                      field-value
+                    (setq field-width (string-to-number field-width))
+                    (truncate-string-to-width
+                     field-value
+                     (if (> field-width 0)
+                         field-width
+                       (- width (cddr format)))
+                     0 ?\s))
+                  (cdr (assoc field-name lps/bibtex-completion-format-entry-properties)))))))))
 
 (use-package doi-utils
   :after org-ref-bibtex
@@ -4156,7 +4205,8 @@ PWD is not in a git repo (or the git command is not found)."
   (dired-listing-switches "-alFh")
   (dired-isearch-filenames 'dwim)
   (dired-listing-switches "-AlFh --group-directories-first")
-  (wdired-allow-to-change-permissions t))
+  (wdired-allow-to-change-permissions t)
+  (dired-dwim-target t))
 
 ;; Make things prettier
 (use-package all-the-icons-dired
