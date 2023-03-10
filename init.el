@@ -3833,6 +3833,19 @@ until one is found."
   ;; Turn on other modes when loaded
   (org-roam-bibtex-mode 1)
 
+  ;; Fix arxiv template
+  (setq arxiv-entry-format-string "@article{%s,
+  journal = {CoRR},
+  title = {%s},
+  author = {%s},
+  archivePrefix = {arXiv},
+  year = {%s},
+  eprint = {%s},
+  primaryClass = {%s},
+  abstract = {%s},
+  url = {%s},
+}")
+
   ;; Add a few things to the default hydra BIG Hack with eval:
   ;; otherwise, defhydra+ tries to expand, and it needs to know whta
   ;; org-ref-bibtex-hydra *is* ... but it can't before the package is
@@ -5119,7 +5132,10 @@ insert as many blank lines as necessary."
   :bind
   ("C-c f" . elfeed)
   (:map elfeed-search-mode-map
-        ("w" . elfeed-search-browse-url))
+        ("w" . elfeed-search-browse-url)
+        ("C-S-s" . lps/elfeed-search-filter-interactive))
+  (:map elfeed-show-mode-map
+        ("D" . lps/elfeed-arxiv-get-pdf-add-bibtex-entry))
   :init
   (defvar lps/elfeed-search-arxiv-authors-max-width 30)
   (defvar lps/elfeed-default-days-range 7
@@ -5241,11 +5257,30 @@ insert as many blank lines as necessary."
         (with-current-buffer (elfeed-search-buffer)
           (setf elfeed-search-filter
                 (or filter (default-value 'elfeed-search-filter)))
-          (elfeed-search-update :force))))))
+          (elfeed-search-update :force)))))
+
+  (defun lps/elfeed-arxiv-get-pdf-add-bibtex-entry ()
+    (interactive)
+    (let* ((entry elfeed-show-entry)
+           (id (cdr (elfeed-entry-id entry)))
+           (num (progn
+                  (string-match "^https?://arxiv.org/abs/\\([0-9.]+\\)" id)
+                  (match-string 1 id)))
+           (bibfile (completing-read
+                     "Bibfile: "
+                     (append (f-entries "." (lambda (f) (f-ext? f "bib")))
+                             bibtex-completion-bibliography)))
+           (pdfdir (cond
+                    ((stringp bibtex-completion-library-path)
+                     bibtex-completion-library-path)
+                    ((= 1 (length bibtex-completion-library-path))
+                     (car bibtex-completion-library-path))
+                    (t
+                     (completing-read "PDF dir: "
+                                      bibtex-completion-library-path)))))
+      (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir))))
 
 (use-package elfeed-org
-  :bind (:map elfeed-search-mode-map
-              ("C-S-s" . lps/elfeed-search-filter-interactive))
   :custom
   (rmh-elfeed-org-files (list
                          (expand-file-name "elfeed.org"
