@@ -3853,30 +3853,36 @@ until one is found."
            ("]" org-ref-bibtex-next-entry "Next entry" :column "Navigation" :color red)
            ("[" org-ref-bibtex-previous-entry "Previous entry" :column "Navigation" :color red)))
 
-  (defun org-ref-email-add-pdf ()
-    (interactive)
+  (defun lps/org-ref-email-add-pdf--internal (keys)
+    "Does the real work of `org-ref-email-add-pdf'
+KEYS is either a list of keys, or a single key, in which
+case it has to be a string."
     (let ((bufs (gnus-dired-mail-buffers)))
       (unless (and (not bufs)
                    (not (and (y-or-n-p "No composition buffer. Compose new mail ?")
                              (compose-mail)
                              (setq bufs (gnus-dired-mail-buffers)))))
-        (let* ((key (bibtex-completion-key-at-point))
-               (pdf (car (bibtex-completion-find-pdf key)))
-               (buf (if (= (length bufs) 1)
-                        (get-buffer (car bufs))
-                      (gnus-completing-read "Attach to buffer"
-                                            bufs t nil nil (car bufs)))))
-          (when (or pdf
-                    (and (y-or-n-p
-                          (format "No pdf for Bibtex key %s. Find manually ?"
-                                  key))
-                         (setq pdf (read-file-name "Attach PDF: "))))
-            (set-buffer buf)
-            (goto-char (point-max))
-            (mml-attach-file pdf (or (mm-default-file-type pdf)
-                                     "application/octet-stream")
-                             "attachment")
-            (message "Attached file %s" pdf))))))
+        (dolist (key (ensure-list keys))
+          (let* ((pdf (car (bibtex-completion-find-pdf key)))
+                 (buf (if (= (length bufs) 1)
+                          (get-buffer (car bufs))
+                        (gnus-completing-read "Attach to buffer"
+                                              bufs t nil nil (car bufs)))))
+            (when (or pdf
+                      (and (y-or-n-p
+                            (format "No pdf for Bibtex key %s. Find manually ?"
+                                    key))
+                           (setq pdf (read-file-name "Attach PDF: "))))
+              (set-buffer buf)
+              (goto-char (point-max))
+              (mml-attach-file pdf (or (mm-default-file-type pdf)
+                                       "application/octet-stream")
+                               "attachment")
+              (message "Attached file %s" pdf)))))))
+
+  (defun org-ref-email-add-pdf ()
+    (interactive)
+    (lps/org-ref-email-add-pdf--internal (list (bibtex-completion-key-at-point))))
 
   ;; Redefine to use the interface that *should* be used ...
   (defun lps/org-ref-open-bibtex-pdf ()
@@ -3892,19 +3898,53 @@ until one is found."
   (defun lps/org-ref-open-in-browser ()
     "Open the bibtex entry at point in a browser using the url field or doi field."
     (interactive)
-    (bibtex-completion-open-url-or-doi (list (bibtex-completion-key-at-point)))))
+    (bibtex-completion-open-url-or-doi (list (bibtex-completion-key-at-point))))
+
+  (defun lps/org-ref-read-keys-multiple ()
+    "Read keys with completion.
+Each entry has to be separated by a slash /, as commas might be
+present in the list of authors or in the title of the article"
+    (unless bibtex-completion-display-formats-internal
+      (bibtex-completion-init))
+    (let* ((bibtex-completion-bibliography (org-ref-find-bibliography))
+           (candidates
+            (mapcar
+             ;; reduce format length: if multiple entries,
+             ;; gets really annoying to read otherwise
+             (lambda (entry)
+               (cons (bibtex-completion-format-entry entry
+                                                     (- (frame-width) 30))
+                     (cdr entry)))
+             (bibtex-completion-candidates)))
+           (choices (let ((crm-separator "[ ]*/[ ]*"))
+                      (completing-read-multiple "BibTeX entries: "
+                                                candidates))))
+      (mapcar (lambda (choice)
+                (cdr (assoc "=key=" (assoc choice candidates))))
+              choices))))
 
 (use-package org-roam-bibtex
   :after org-ref
+  :bind
+  ("C-&" . lps/org-roam-bibtex-dispatch)
+  :custom
+  (orb-note-actions-user
+   '(("Open or create note" . orb-edit-note)
+     ("Add to email" . lps/org-ref-email-add-pdf--internal)))
+  (orb-note-actions-interface 'hydra)
   :config
   (add-to-list
    'org-roam-capture-templates
    '("r"
      "bibliography reference" plain "%?"
      :target (file+head "articles-notes/%<%Y%m%d%H%M%S>-${citekey}.org"
-                        "#+title: ${title}\n")
+                        "#+title: ${title}\n#+filetags: :phd:\n\n")
      :unnarrowed t)
-   t #'equal))
+   t #'equal)
+
+  (defun lps/org-roam-bibtex-dispatch (citekey)
+    (interactive (list (org-ref-read-key)))
+    (orb-note-actions--run orb-note-actions-interface citekey)))
 
 (use-package preview
   :ensure nil ;; Comes with AUCTeX
