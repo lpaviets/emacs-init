@@ -3627,6 +3627,28 @@ article's title"
                                    (expand-file-name "articles"
                                                      lps/bib-directory)))
   :config
+  ;; Rewrite: shortcuts the evaluation !
+  ;; Now only executes up until finding a non-NIL return value
+  (defun bibtex-completion-key-at-point ()
+    "Return the key of the BibTeX entry at point.
+The functions used to match the keys are defined in
+`bibtex-completion-key-at-point-functions'."
+    (cl-some #'funcall bibtex-completion-key-at-point-functions))
+
+  (defun lps/bibtex-completion-current-pdf-key ()
+    (when (and (derived-mode-p 'doc-view-mode 'pdf-view-mode)
+               buffer-file-name
+               (or (and (file-directory-p bibtex-completion-library-path)
+                        (file-equal-p bibtex-completion-library-path
+                                      (file-name-directory buffer-file-name)))
+                   (and (listp bibtex-completion-library-path)
+                        (-some (lambda (f)
+                                 (file-equal-p f
+                                               (file-name-directory
+                                                buffer-file-name)))
+                               bibtex-completion-library-path))))
+      (file-name-sans-extension (file-name-nondirectory buffer-file-name))))
+
   (add-to-list 'bibtex-completion-key-at-point-functions 'org-ref-read-key t)
 
   ;; bibtex-completion-get-value strips too many brackets
@@ -3937,13 +3959,13 @@ present in the list of authors or in the title of the article"
               choices))))
 
 (use-package org-roam-bibtex
-  :after org-ref
   :bind
   ("C-&" . lps/org-roam-bibtex-dispatch)
   :custom
   (orb-note-actions-user
-   '(("Open or create note" . orb-edit-note)
-     ("Add to email" . lps/org-ref-email-add-pdf--internal)))
+   '(("Open or create note" . orb-bibtex-completion-edit-note)
+     ("Add to email" . lps/org-ref-email-add-pdf--internal)
+     ("Act on other file" . lps/org-roam-bibtex-dispatch-change-file)))
   (orb-note-actions-interface 'hydra)
   :config
   (add-to-list
@@ -3955,8 +3977,13 @@ present in the list of authors or in the title of the article"
      :unnarrowed t)
    t #'equal)
 
+  (defun lps/org-roam-bibtex-dispatch-change-file (citekey)
+    (ignore citekey)
+    (lps/org-roam-bibtex-dispatch (org-ref-read-key)))
+
   (defun lps/org-roam-bibtex-dispatch (citekey)
-    (interactive (list (org-ref-read-key)))
+    (interactive (list (or (lps/bibtex-completion-current-pdf-key)
+                           (bibtex-completion-key-at-point))))
     (orb-note-actions--run orb-note-actions-interface citekey)))
 
 (use-package preview
