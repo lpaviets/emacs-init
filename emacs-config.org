@@ -3600,6 +3600,8 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
                                :matchers '("begin" "$1"
                                            "$" "$$"
                                            "\\(" "\\[")))
+    (org-archive-location (concat (lps/org-expand-file-name "archive" t)
+                                  "%s_archive::"))
     :config
     (defun lps/windmove-mode-local-off ()
       ;; Hack to disable windmove locally
@@ -3709,7 +3711,14 @@ We also add templates to insert code blocks with a few key presses
 Not only is Org Mode great to write structured documents that can be exported to pretty much anything we want - including tangled to produce source code using literate programming -, it is also a powerful to ... *org*anize things. A built-in functionality is the agenda, where you can schedule tasks, set deadlines, configure reminders, the frequency at which you will need to repeat a given task, and so on.
 
 #+begin_src emacs-lisp
-  (setq org-agenda-files (list (lps/org-expand-file-name "agenda" t)))
+  (setq org-agenda-files
+        (list (lps/org-expand-file-name "agenda" t)
+              ;; org-roam-directory, not necessarily loaded
+              ;; at this point: don't want to have org-agenda
+              ;; depend on org-roam
+              (lps/org-expand-file-name "RoamNotes" t)
+              ;; Now for articles-notes: somewhat bad to hardcode ...
+              (lps/org-expand-file-name "RoamNotes/articles-notes" t)))
   (setq org-log-into-drawer t)
   (setq org-log-done 'time)
   (setq org-agenda-start-with-log-mode t)

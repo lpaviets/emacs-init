@@ -2765,6 +2765,8 @@ call the associated function interactively. Otherwise, call the
                              :matchers '("begin" "$1"
                                          "$" "$$"
                                          "\\(" "\\[")))
+  (org-archive-location (concat (lps/org-expand-file-name "archive" t)
+                                "%s_archive::"))
   :config
   (defun lps/windmove-mode-local-off ()
     ;; Hack to disable windmove locally
@@ -2848,7 +2850,14 @@ call the associated function interactively. Otherwise, call the
           (member (car key-template) bound-key-templates)
         (push key-template org-structure-template-alist)))))
 
-(setq org-agenda-files (list (lps/org-expand-file-name "agenda" t)))
+(setq org-agenda-files
+      (list (lps/org-expand-file-name "agenda" t)
+            ;; org-roam-directory, not necessarily loaded
+            ;; at this point: don't want to have org-agenda
+            ;; depend on org-roam
+            (lps/org-expand-file-name "RoamNotes" t)
+            ;; Now for articles-notes: somewhat bad to hardcode ...
+            (lps/org-expand-file-name "RoamNotes/articles-notes" t)))
 (setq org-log-into-drawer t)
 (setq org-log-done 'time)
 (setq org-agenda-start-with-log-mode t)
