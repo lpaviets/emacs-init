@@ -63,11 +63,15 @@
 ;;       (load file))))
 
 (require 'use-package)
-;; Comment this line if you don't want to automatically install
-;; all the packages that you are missing
-;; (setq use-package-always-ensure t)
-;; Uncomment the folllowing line to have a detailed startup log
-;; (setq use-package-verbose t)
+(use-package use-package
+  :custom
+  ;; Comment this line if you don't want to automatically install
+  ;; all the packages that you are missing
+  ;; (setq use-package-always-ensure t)
+  ;; Uncomment the folllowing line to have a detailed startup log
+  (use-package-verbose t)
+  ;; (use-package-always-defer t)
+  )
 
 (use-package benchmark-init
   :disabled t
@@ -2227,6 +2231,7 @@ call the associated function interactively. Otherwise, call the
   :defer t)
 
 (use-package python-mls
+  :after python
   :config
   (python-mls-setup)
 
@@ -2717,11 +2722,9 @@ call the associated function interactively. Otherwise, call the
    ))
 
 (use-package org
-  :commands org-capture
+  :defer t
   :hook (org-mode . lps/org-mode-setup)
   :bind
-  ("C-c o" . org-capture)
-  ("C-c a" . org-agenda)
   (:map org-mode-map
         ("<C-S-return>" . org-insert-subheading)
         ("<C-S-left>" . nil)
@@ -2765,8 +2768,6 @@ call the associated function interactively. Otherwise, call the
                              :matchers '("begin" "$1"
                                          "$" "$$"
                                          "\\(" "\\[")))
-  (org-archive-location (concat (lps/org-expand-file-name "archive" t)
-                                "%s_archive::"))
   :config
   (defun lps/windmove-mode-local-off ()
     ;; Hack to disable windmove locally
@@ -2848,34 +2849,59 @@ call the associated function interactively. Otherwise, call the
 
       (unless
           (member (car key-template) bound-key-templates)
-        (push key-template org-structure-template-alist)))))
+        (push key-template org-structure-template-alist))))))
 
-(setq org-agenda-files
-      (list (lps/org-expand-file-name "agenda" t)
-            ;; org-roam-directory, not necessarily loaded
-            ;; at this point: don't want to have org-agenda
-            ;; depend on org-roam
-            (lps/org-expand-file-name "RoamNotes" t)
-            ;; Now for articles-notes: somewhat bad to hardcode ...
-            (lps/org-expand-file-name "RoamNotes/articles-notes" t)))
-(setq org-log-into-drawer t)
-(setq org-log-done 'time)
-(setq org-agenda-start-with-log-mode t)
-(setq org-agenda-show-inherited-tags nil)
+(use-package org-agenda
+  :after org
+  :bind
+  ("C-c a" . org-agenda)
+  :custom
+  (org-agenda-files
+   (list (lps/org-expand-file-name "agenda" t)
+         ;; org-roam-directory, not necessarily loaded
+         ;; at this point: don't want to have org-agenda
+         ;; depend on org-roam
+         (lps/org-expand-file-name "RoamNotes" t)
+         ;; Now for articles-notes: somewhat bad to hardcode ...
+         (lps/org-expand-file-name "RoamNotes/articles-notes" t)))
+  (org-log-into-drawer t)
+  (org-log-done 'time)
+  (org-agenda-start-with-log-mode t)
+  (org-agenda-show-inherited-tags nil)
+  (org-archive-location (concat (lps/org-expand-file-name "archive" t)
+                                "%s_archive::"))
+  (org-tag-alist
+   '((:startgroup)
+     ;; Put mutually exclusive tags here
+     (:endgroup)
+     ("@home" . ?H)
+     ("@work" . ?W)
+     ("agenda" . ?a)
+     ("plan" . ?p)
+     ("note" . ?n)
+     ("idea" . ?i)
+     ("read" . ?r)))
 
-(setq org-tag-alist
-      '((:startgroup)
-        ;; Put mutually exclusive tags here
-        (:endgroup)
-        ("@home" . ?H)
-        ("@work" . ?W)
-        ("agenda" . ?a)
-        ("plan" . ?p)
-        ("note" . ?n)
-        ("idea" . ?i)
-        ("read" . ?r)))
+  (org-todo-keywords
+   '((sequence "TODO(t)"
+               "NEXT(n)"
+               "|"
+               "STOP(s)"
+               "DONE(d)")
+     (sequence "READ(r)" "IDEA(i)" "|" "OVER(o)")))
 
-(with-eval-after-load "org-agenda"
+  (org-todo-keyword-faces
+   '(("IDEA" . (:foreground "purple1" :weight bold))
+     ("READ" . (:foreground "orchid3" :weight bold))
+     ("NEXT" . (:foreground "orange1" :weight bold))))
+
+  (org-agenda-prefix-format
+   '((agenda . " %i %(lps/agenda-category 15)%?-15t% s")
+     (todo . " %i %(lps/agenda-category 15) ")
+     (tags . " %i %(lps/agenda-category 15) ")
+     (search . " %i %(lps/agenda-category 15)")))
+
+  :config
   (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
                           ("Conference" ,(all-the-icons-faicon "users"))
                           ("Talk" ,(all-the-icons-faicon "volume-up"))
@@ -2888,63 +2914,112 @@ call the associated function interactively. Otherwise, call the
                       nil nil
                       :ascent 'center)
                 org-agenda-category-icon-alist
-                :test 'equal)))
+                :test 'equal))
 
-;; From https://stackoverflow.com/questions/9005843/interactively-enter-headline-under-which-to-place-an-entry-using-capture
-(defun lps/org-ask-location ()
-  (let* ((org-refile-targets '((nil :maxlevel . 2)))
-         (hd (condition-case nil
-                 (car (org-refile-get-location nil nil t))
-               (error (car org-refile-history)))))
-    (goto-char (point-min))
-    (outline-next-heading)
-    (if (re-search-forward
-         (format org-complex-heading-regexp-format (regexp-quote hd))
-         nil t)
-        (goto-char (point-at-bol))
-      (goto-char (point-max))
-      (or (bolp) (insert "\n"))
-      (insert "* " hd "\n")))
-  (end-of-line))
+  ;; Taken from
+  ;; https://d12frosted.io/posts/2020-06-24-task-management-with-roam-vol2.html
+  (defun lps/agenda-category (&optional len)
+    "Get category of item at point for agenda.
 
-(setq org-capture-templates
-      `(("t" "Tasks / Projects")
-        ("tt" "Task" entry
-         (file+olp ,(concat org-directory "agenda/Tasks.org") "Inbox")
-         "* TODO %?\n  %U\n  %a\n  %i"
-         :empty-lines 1)
+Category is defined by one of the following items:
 
-        ("m" "Meeting" entry
-         (file+olp+datetree ,(concat org-directory "agenda/Meetings.org"))
-         "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
-         :empty-lines 1)
+- CATEGORY property
+- TITLE keyword
+- TITLE property
+- filename without directory and extension
 
-        ("w" "Workflows")
-        ("we" "Checking Email" entry
-         (file+olp+datetree ,(concat org-directory "agenda/Tasks.org"))
-         "* Checking Email :email:\n\n%?"
-         :empty-lines 1)
+When LEN is a number, resulting string is padded right with
+spaces and then truncated with ... on the right if result is
+longer than LEN.
 
-        ("a" "Agenda (others)" entry
-         (file ,(concat org-directory "agenda/Others.org"))
-         "* %(call-interactively #'org-time-stamp) %? :agenda:\n"
-         :empty-lines 1)
+Usage example:
 
-        ("r" "Random")
-        ("rr" "Random" plain
-         (file+function "everything.org"
-                        lps/org-ask-location))
+  (setq org-agenda-prefix-format
+        '((agenda . \" %(lps/agenda-category) %?-12t %12s\")))
 
-        ("rm" "Movie" checkitem
-         (file+function "movies.org" lps/org-ask-location))
+Refer to `org-agenda-prefix-format' for more information."
+    (let* ((file-name (when buffer-file-name
+                        (file-name-sans-extension
+                         (file-name-nondirectory buffer-file-name))))
+           (title (org-with-point-at 1
+                    (when (re-search-forward (concat "^#\\+" "title" ": \\(.*\\)")
+                                             (point-max) t)
+                      (buffer-substring-no-properties
+                       (match-beginning 1)
+                       (match-end 1)))))
+           (category (org-get-category))
+           (result
+            (or (if (and
+                     title
+                     (string-equal category file-name))
+                    title
+                  category)
+                "")))
+      (if (numberp len)
+          (s-truncate len (s-pad-right len " " result))
+        result))))
 
-        ("rb" "Book" checkitem
-           (file+function "books.org" lps/org-ask-location))
+(use-package org-capture
+  :bind
+  ("C-c o" . org-capture)
+  (:map org-capture-mode-map
+        ([remap save-buffer] . org-capture-finalize))
+  :custom
+  (org-capture-templates
+   `(("t" "Tasks / Projects")
+     ("tt" "Task" entry
+      (file+olp ,(concat org-directory "agenda/Tasks.org") "Inbox")
+      "* TODO %?\n  %U\n  %a\n  %i"
+      :empty-lines 1)
 
-        ("rR" "Restaurant" checkitem
-         (file+function "restaurants.org" lps/org-ask-location))))
+     ("m" "Meeting" entry
+      (file+olp+datetree ,(concat org-directory "agenda/Meetings.org"))
+      "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
+      :empty-lines 1)
 
-(setq org-capture-bookmark nil))
+     ("w" "Workflows")
+     ("we" "Checking Email" entry
+      (file+olp+datetree ,(concat org-directory "agenda/Tasks.org"))
+      "* Checking Email :email:\n\n%?"
+      :empty-lines 1)
+
+     ("a" "Agenda (others)" entry
+      (file ,(concat org-directory "agenda/Others.org"))
+      "* %(call-interactively #'org-time-stamp) %? :agenda:\n"
+      :empty-lines 1)
+
+     ("r" "Random")
+     ("rr" "Random" plain
+      (file+function "everything.org"
+                     lps/org-ask-location))
+
+     ("rm" "Movie" checkitem
+      (file+function "movies.org" lps/org-ask-location))
+
+     ("rb" "Book" checkitem
+      (file+function "books.org" lps/org-ask-location))
+
+     ("rR" "Restaurant" checkitem
+      (file+function "restaurants.org" lps/org-ask-location))))
+
+  (org-capture-bookmark nil)
+  :config
+  ;; From https://stackoverflow.com/questions/9005843/interactively-enter-headline-under-which-to-place-an-entry-using-capture
+  (defun lps/org-ask-location ()
+    (let* ((org-refile-targets '((nil :maxlevel . 2)))
+           (hd (condition-case nil
+                   (car (org-refile-get-location nil nil t))
+                 (error (car org-refile-history)))))
+      (goto-char (point-min))
+      (outline-next-heading)
+      (if (re-search-forward
+           (format org-complex-heading-regexp-format (regexp-quote hd))
+           nil t)
+          (goto-char (point-at-bol))
+        (goto-char (point-max))
+        (or (bolp) (insert "\n"))
+        (insert "* " hd "\n")))
+    (end-of-line)))
 
 (use-package org-roam
   :after org
@@ -3627,6 +3702,7 @@ article's title"
             (user-error "This record does not contain a direct URL")))))))
 
 (use-package bibtex-completion
+  :defer t
   :init
   (defvar lps/bib-directory (lps/org-expand-file-name "biblio" t))
   :custom
@@ -3860,13 +3936,8 @@ until one is found."
   ("C-c b" . org-ref-bibtex-hydra/body)
   (:map lps/all-hydras-map
         ("p" . org-ref-bibtex-hydra/body))
-  :config
-  ;; Turn on other modes when loaded
-  (org-roam-bibtex-mode 1)
-
-  ;; Fix arxiv template
-  (setq arxiv-entry-format-string "@article{%s,
-  journal = {CoRR},
+  :custom
+  (arxiv-entry-format-string "@article{%s,
   title = {%s},
   author = {%s},
   archivePrefix = {arXiv},
@@ -3876,6 +3947,10 @@ until one is found."
   abstract = {%s},
   url = {%s},
 }")
+  :config
+  ;; Turn on other modes when loaded
+  (org-roam-bibtex-mode 1)
+  (require 'bibtex-completion)
 
   ;; Add a few things to the default hydra BIG Hack with eval:
   ;; otherwise, defhydra+ tries to expand, and it needs to know whta
@@ -3983,8 +4058,16 @@ present in the list of authors or in the title of the article"
      "bibliography reference" plain "%?"
      :target (file+head "articles-notes/%<%Y%m%d%H%M%S>-${citekey}.org"
                         "#+title: ${title}\n#+filetags: :phd:\n\n")
-     :unnarrowed t)
+     :unnarrowed t
+     :after-finalize lps/org-roam-captures-set-category)
    t #'equal)
+
+  ;; Another solution (instead of :after-finalize in the template
+  ;; which seems to be buggy) is to use
+  ;; org-roam-capture-new-node-hook
+  (defun lps/org-roam-captures-set-category ()
+    (goto-char (point-min))
+    (org-set-property "CATEGORY" "PhD Research"))
 
   (defun lps/org-roam-bibtex-dispatch-change-file (citekey)
     (ignore citekey)
