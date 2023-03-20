@@ -3094,7 +3094,8 @@ Refer to `org-agenda-prefix-format' for more information."
                 ("<C-up>" . pdf-view-scroll-down-or-previous-page)
                 ("<C-left>" . image-scroll-right)
                 ("<C-right>" . image-scroll-left)
-                ("s a" . pdf-view-auto-slice-minor-mode))
+                ("s a" . pdf-view-auto-slice-minor-mode)
+                ("G" . pdf-view-goto-page))
     :custom
     (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                             "-pointsize" "%P"
@@ -3749,18 +3750,19 @@ The functions used to match the keys are defined in
 
   ;; We reverse engineer the "safe ascii encoding" of "special characters"
   (defun lps/bibtex-format-undo-nonascii (s)
-    (replace-regexp-in-string "{\\\\.\\({.}\\|.\\)}"
-                              (lambda (match)
-                                (or (car (rassoc (regexp-quote match)
-                                                 org-ref-nonascii-latex-replacements))
-                                    (car (rassoc (regexp-quote (concat
-                                                                (substring match 0 -2)
-                                                                "{"
-                                                                (substring match -2)
-                                                                "}"))
-                                                 org-ref-nonascii-latex-replacements))
-                                    (regexp-quote match)))
-                              (lps/bibtex-completion-fix-stripped-brackets s)))
+    (replace-regexp-in-string
+     "{\\\\.\\({.}\\|.\\)}"
+     (lambda (match)
+       (or (car (rassoc (regexp-quote match)
+                        org-ref-nonascii-latex-replacements))
+           (car (rassoc (regexp-quote (concat
+                                       (substring match 0 -2)
+                                       "{"
+                                       (substring match -2)
+                                       "}"))
+                        org-ref-nonascii-latex-replacements))
+           (regexp-quote match)))
+     (lps/bibtex-completion-fix-stripped-brackets s)))
 
   ;; Override this, only ever used as an interfance: cannot break internal stuff
   (defun bibtex-completion-clean-string (s)
@@ -3951,6 +3953,20 @@ until one is found."
   ;; Turn on other modes when loaded
   (org-roam-bibtex-mode 1)
   (require 'bibtex-completion)
+
+  (dolist (pair org-ref-nonascii-latex-replacements)
+    (let ((in (car pair))
+          (out (cdr pair)))
+      (when-let ((new-in (and (= 2 (car (aref (syntax-table) (aref in 0))))
+                              (s-upcase in))))
+        (unless (string-equal in new-in)
+          (let ((new-out (with-temp-buffer
+                           (insert out)
+                           (capitalize-word -1)
+                           (buffer-substring-no-properties (point-min)
+                                                           (point-max)))))
+            (cl-pushnew (cons new-in new-out)
+                        org-ref-nonascii-latex-replacements))))))
 
   ;; Add a few things to the default hydra BIG Hack with eval:
   ;; otherwise, defhydra+ tries to expand, and it needs to know whta
