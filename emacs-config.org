@@ -3762,15 +3762,16 @@ Not only is Org Mode great to write structured documents that can be exported to
        (search . " %i %(lps/agenda-category 15)")))
 
     :config
-    (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
-                            ("Conference" ,(all-the-icons-faicon "users"))
-                            ("Talk" ,(all-the-icons-faicon "volume-up"))
-                            ("Exam" ,(all-the-icons-octicon "mortar-board"))
-                            ("Seminar" ,(all-the-icons-faicon "pencil"))
-                            ("Workshop" ,(all-the-icons-material "group_work"))
-                            ("Culture" ,(all-the-icons-faicon "paint-brush"))))
+    (dolist (tag-and-icon `(("Lectures"     . "🏫")
+                            ("Conference"   . "👥")
+                            ("Talk"         . "🔊")
+                            ("Exam"         . "💯")
+                            ("Seminar"      . "🪧")
+                            ("Workshop"     . "👥") ; same as conference
+                            ("Culture"      . "🎨")
+                            ("PhD Research" . "🎓")))
       (cl-pushnew (list (car tag-and-icon)
-                        (cdr tag-and-icon)
+                        (list (substring-no-properties (cdr tag-and-icon)))
                         nil nil
                         :ascent 'center)
                   org-agenda-category-icon-alist
