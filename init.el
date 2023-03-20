@@ -2902,15 +2902,16 @@ call the associated function interactively. Otherwise, call the
      (search . " %i %(lps/agenda-category 15)")))
 
   :config
-  (dolist (tag-and-icon `(("Lectures" ,(all-the-icons-faicon "book"))
-                          ("Conference" ,(all-the-icons-faicon "users"))
-                          ("Talk" ,(all-the-icons-faicon "volume-up"))
-                          ("Exam" ,(all-the-icons-octicon "mortar-board"))
-                          ("Seminar" ,(all-the-icons-faicon "pencil"))
-                          ("Workshop" ,(all-the-icons-material "group_work"))
-                          ("Culture" ,(all-the-icons-faicon "paint-brush"))))
+  (dolist (tag-and-icon `(("Lectures"     . "🏫")
+                          ("Conference"   . "👥")
+                          ("Talk"         . "🔊")
+                          ("Exam"         . "💯")
+                          ("Seminar"      . "🪧")
+                          ("Workshop"     . "👥") ; same as conference
+                          ("Culture"      . "🎨")
+                          ("PhD Research" . "🎓")))
     (cl-pushnew (list (car tag-and-icon)
-                      (cdr tag-and-icon)
+                      (list (substring-no-properties (cdr tag-and-icon)))
                       nil nil
                       :ascent 'center)
                 org-agenda-category-icon-alist
@@ -3939,7 +3940,8 @@ until one is found."
   (:map lps/all-hydras-map
         ("p" . org-ref-bibtex-hydra/body))
   :custom
-  (arxiv-entry-format-string "@article{%s,
+  (arxiv-entry-format-string
+   "\n@article{%s,
   title = {%s},
   author = {%s},
   archivePrefix = {arXiv},
@@ -3948,7 +3950,7 @@ until one is found."
   primaryClass = {%s},
   abstract = {%s},
   url = {%s},
-}")
+}\n")
   :config
   ;; Turn on other modes when loaded
   (org-roam-bibtex-mode 1)
@@ -4073,17 +4075,22 @@ present in the list of authors or in the title of the article"
    '("r"
      "bibliography reference" plain "%?"
      :target (file+head "articles-notes/%<%Y%m%d%H%M%S>-${citekey}.org"
-                        "#+title: ${title}\n#+filetags: :phd:\n\n")
+                        "#+title: ${title}\n#+filetags: :phd:")
      :unnarrowed t
-     :after-finalize lps/org-roam-captures-set-category)
+     :empty-lines-before 1
+     :prepare-finalize lps/org-roam-capture-set-category)
    t #'equal)
 
-  ;; Another solution (instead of :after-finalize in the template
-  ;; which seems to be buggy) is to use
-  ;; org-roam-capture-new-node-hook
-  (defun lps/org-roam-captures-set-category ()
+  (defun lps/org-roam-capture-set-category ()
+    (add-hook 'org-capture-before-finalize-hook
+              'lps/org-roam-capture-set-category--internal
+              1))
+
+  (defun lps/org-roam-capture-set-category--internal ()
     (goto-char (point-min))
-    (org-set-property "CATEGORY" "PhD Research"))
+    (org-set-property "CATEGORY" "PhD Research")
+    (remove-hook 'org-capture-before-finalize-hook 'lps/org-roam-capture-set-category--internal)
+    (save-buffer))
 
   (defun lps/org-roam-bibtex-dispatch-change-file (citekey)
     (ignore citekey)
@@ -5396,6 +5403,7 @@ insert as many blank lines as necessary."
 
   (defun lps/elfeed-arxiv-get-pdf-add-bibtex-entry ()
     (interactive)
+    (require 'org-ref-bibtex)
     (let* ((entry elfeed-show-entry)
            (id (cdr (elfeed-entry-id entry)))
            (num (progn
