@@ -23,6 +23,7 @@
         drag-stuff-down
         end-of-buffer
         end-of-visual-line
+        eval-last-sexp
         forward-sentence
         forward-sexp
         hungry-delete-backward

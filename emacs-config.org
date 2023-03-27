@@ -3545,7 +3545,7 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
 
 We change the general feel of Org Mode documents by using other indentation rules, by changing the headers appearance, and a few other minor changes.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :noweb yes
   (use-package org-bullets
     :hook (org-mode . org-bullets-mode)
     :custom
@@ -3602,7 +3602,18 @@ We change the general feel of Org Mode documents by using other indentation rule
                                :matchers '("begin" "$1"
                                            "$" "$$"
                                            "\\(" "\\[")))
+    (org-priority-highest ?A)
+    (org-priority-lowest ?E)
+    (org-priority-default ?C)
+    (org-ellipsis " ▾")
     :config
+
+    ;; Basic fonts and faces
+    <<org-fonts>>
+
+    ;; Babel configuration
+    <<org-babel>>
+
     (defun lps/windmove-mode-local-off ()
       ;; Hack to disable windmove locally
       (setq-local windmove-mode nil))
@@ -3621,18 +3632,15 @@ We change the general feel of Org Mode documents by using other indentation rule
       (org-indent-mode 1)
       ;; (variable-pitch-mode 1)
       (visual-line-mode 1)
-      (lps/windmove-mode-local-off))
-
-    (setq org-ellipsis " ▾")
+      (lps/windmove-mode-local-off)))
 #+end_src
-
-Take care when copying this block of code: the ~use-package~ declaration continues.
 
 ** Font and faces
 
-     In order for Org Mode to feel like a document instead of code, we use a different font.
+In order for Org Mode to feel like a document instead of code, we use a different font.
 
-#+begin_src emacs-lisp
+#+NAME: org-fonts
+#+begin_src emacs-lisp :tangle no
   (defun lps/org-font-setup ()
     ;; Replace list hyphen with dot
     (font-lock-add-keywords 'org-mode
@@ -3672,8 +3680,10 @@ Take care when copying this block of code: the ~use-package~ declaration continu
 ** Org Babel
 
 Org babel is what allows us to write code and execute it, all within the same document.
+We also add templates to insert code blocks with a few key presses
 
-#+begin_src emacs-lisp
+#+NAME: org-babel
+#+begin_src emacs-lisp :tangle no
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((emacs-lisp . t)
@@ -3685,11 +3695,6 @@ Org babel is what allows us to write code and execute it, all within the same do
   ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
                                            ; else code
 
-#+end_src
-
-We also add templates to insert code blocks with a few key presses
-
-#+begin_src emacs-lisp
   (ensure-version org 9.2
     ;; This is needed as of Org 9.2
     (require 'org-tempo)
@@ -3703,7 +3708,7 @@ We also add templates to insert code blocks with a few key presses
 
         (unless
             (member (car key-template) bound-key-templates)
-          (push key-template org-structure-template-alist))))))
+          (push key-template org-structure-template-alist)))))
 #+end_src
 
 ** Org Agenda
@@ -3713,6 +3718,7 @@ Not only is Org Mode great to write structured documents that can be exported to
 #+begin_src emacs-lisp
   (use-package org-agenda
     :after org
+    :hook (org-agenda-mode . lps/windmove-mode-local-off)
     :bind
     ("C-c a" . org-agenda)
     :custom
@@ -4369,7 +4375,8 @@ Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
     :bind
     (:map beamer-mode-map
           ("C-M-x" . lps/LaTeX-beamer-compile-frame)
-          ("C-c M-r" . lps/LaTeX-beamer-change-all-pauses))
+          ("C-c M-r" . lps/LaTeX-beamer-change-all-pauses)
+          ("C-x n f" . lps/LaTeX-beamer-narrow-to-frame))
     :hook
     (beamer-mode . lps/LaTeX-beamer-frame-as-section)
     (beamer-mode . lps/LaTeX-beamer-fold-all-frames)
@@ -4393,6 +4400,12 @@ Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
       (save-mark-and-excursion
         (lps/LaTeX-beamer-mark-frame)
         (TeX-command-run-all-region)))
+
+    (defun lps/LaTeX-beamer-narrow-to-frame ()
+      (interactive)
+      (save-mark-and-excursion
+        (lps/LaTeX-beamer-mark-frame)
+        (narrow-to-region (region-beginning) (region-end))))
 
     (defun lps/LaTeX-beamer-frame-as-section ()
       (require 'reftex)
@@ -5009,11 +5022,12 @@ We integrate all the previous stuff with org-roam. This means that we can store 
     (add-to-list
      'org-roam-capture-templates
      '("r"
-       "bibliography reference" plain "%?"
+       "bibliography reference" plain "* %?"
        :target (file+head "articles-notes/%<%Y%m%d%H%M%S>-${citekey}.org"
                           "#+title: ${title}\n#+filetags: :phd:")
        :unnarrowed t
        :empty-lines-before 1
+       :kill-buffer t
        :prepare-finalize lps/org-roam-capture-set-category)
      t #'equal)
 
@@ -5531,6 +5545,19 @@ There are two usual ways to interact with processes via Emacs. The first one is 
     :bind
     (:map lps/system-tools-map
           ("p l" . list-processes)))
+#+end_src
+
+*** Printer
+
+Printing things on Linux can be cumbersome. Most desktop environments (GNOME, KDE ...) will provide some kind of wrappers around the default utilities, but they are often only available for the corresponding applications (meaning that you might have trouble printing stuff from /outside/ applications provided by the DE). On the other hand, Emacs tries, but somewhat unsuccessfully, to give some kind of abstraction over the printing process. We go an extra step further and also use a package that improves the UI for printing stuff, using ~transient~.
+
+#+begin_src emacs-lisp
+  (use-package transient-extras-lp
+    :bind
+    (:map lps/system-tools-map
+          ("i" . transient-extras-lp-menu))
+    (:map pdf-view-mode-map
+          ("i i" . transient-extras-lp-menu)))
 #+end_src
 
 * Email
@@ -6678,7 +6705,8 @@ Another cool thing to do if you want to learn keybindings in a very inefficient 
 
 * TODO Small things to do or to fix
 ** Elfeed
-Find a neat way to have bookmarks/pre-configured filters.
+- Find a neat way to have bookmarks/pre-configured filters.
+- Have a split window like mu4e when browsing feed (need to change ~elfeed-show-entry-switch~)
 ** Generic
 Use functions that have been added to Emacs rather than mine, or use a macro to decide according to the version:
 - [ ] duplicate-dwim (29.1)

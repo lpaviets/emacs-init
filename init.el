@@ -2768,7 +2768,75 @@ call the associated function interactively. Otherwise, call the
                              :matchers '("begin" "$1"
                                          "$" "$$"
                                          "\\(" "\\[")))
+  (org-priority-highest ?A)
+  (org-priority-lowest ?E)
+  (org-priority-default ?C)
+  (org-ellipsis " ▾")
   :config
+
+  ;; Basic fonts and faces
+  (defun lps/org-font-setup ()
+    ;; Replace list hyphen with dot
+    (font-lock-add-keywords 'org-mode
+                            '(("^ *\\([-]\\) "
+                               (0 (prog1 nil
+                                    (compose-region (match-beginning 1)
+                                                    (match-end 1)
+                                                    "•"))))))
+
+    ;; Set faces for heading levels
+    ;; For non-headers: org-default
+
+    (dolist (face '((org-level-1 . 1.1)
+                    (org-level-2 . 1.08)
+                    (org-level-3 . 1.06)
+                    (org-level-4 . 1.04)
+                    (org-level-5 . 1.02)
+                    (org-level-6 . 1.0)
+                    (org-level-7 . 1.0)
+                    (org-level-8 . 1.0)))
+      (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'fixed-pitch))
+
+    ;; Ensure that anything that should be fixed-pitch in Org files appears that way
+    (set-face-attribute 'org-block nil :foreground 'unspecified :inherit 'fixed-pitch :extend t)
+    (set-face-attribute 'org-block-begin-line nil :slant 'italic :foreground "dark gray" :background "#1d1d2b" :inherit 'fixed-pitch :height 1.0)
+    (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
+    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
+    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-link nil :inherit '(link fixed-pitch)))
+
+
+  ;; Babel configuration
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((emacs-lisp . t)
+     (python . t)
+     (shell . t)
+     (latex . t)
+     (lisp . t)))
+
+  ;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
+                                           ; else code
+
+  (ensure-version org 9.2
+    ;; This is needed as of Org 9.2
+    (require 'org-tempo)
+    (let ((bound-key-templates
+           (mapcar #'car org-structure-template-alist)))
+      (dolist (key-template '(("sh" . "src shell")
+                              ("el" . "src emacs-lisp")
+                              ("py" . "src python")
+                              ("latex" . "src latex")
+                              ("cl" . "src lisp")))
+
+        (unless
+            (member (car key-template) bound-key-templates)
+          (push key-template org-structure-template-alist)))))
+
   (defun lps/windmove-mode-local-off ()
     ;; Hack to disable windmove locally
     (setq-local windmove-mode nil))
@@ -2787,72 +2855,11 @@ call the associated function interactively. Otherwise, call the
     (org-indent-mode 1)
     ;; (variable-pitch-mode 1)
     (visual-line-mode 1)
-    (lps/windmove-mode-local-off))
-
-  (setq org-ellipsis " ▾")
-
-(defun lps/org-font-setup ()
-  ;; Replace list hyphen with dot
-  (font-lock-add-keywords 'org-mode
-                          '(("^ *\\([-]\\) "
-                             (0 (prog1 nil
-                                  (compose-region (match-beginning 1)
-                                                  (match-end 1)
-                                                  "•"))))))
-
-  ;; Set faces for heading levels
-  ;; For non-headers: org-default
-
-  (dolist (face '((org-level-1 . 1.1)
-                  (org-level-2 . 1.08)
-                  (org-level-3 . 1.06)
-                  (org-level-4 . 1.04)
-                  (org-level-5 . 1.02)
-                  (org-level-6 . 1.0)
-                  (org-level-7 . 1.0)
-                  (org-level-8 . 1.0)))
-    (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'fixed-pitch))
-
-  ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-  (set-face-attribute 'org-block nil :foreground 'unspecified :inherit 'fixed-pitch :extend t)
-  (set-face-attribute 'org-block-begin-line nil :slant 'italic :foreground "dark gray" :background "#1d1d2b" :inherit 'fixed-pitch :height 1.0)
-  (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-  (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-  (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
-  (set-face-attribute 'org-link nil :inherit '(link fixed-pitch)))
-
-(org-babel-do-load-languages
- 'org-babel-load-languages
- '((emacs-lisp . t)
-   (python . t)
-   (shell . t)
-   (latex . t)
-   (lisp . t)))
-
-;; (setq org-confirm-babel-evaluate nil) ; Take care if executing someone
-                                         ; else code
-
-(ensure-version org 9.2
-  ;; This is needed as of Org 9.2
-  (require 'org-tempo)
-  (let ((bound-key-templates
-         (mapcar #'car org-structure-template-alist)))
-    (dolist (key-template '(("sh" . "src shell")
-                            ("el" . "src emacs-lisp")
-                            ("py" . "src python")
-                            ("latex" . "src latex")
-                            ("cl" . "src lisp")))
-
-      (unless
-          (member (car key-template) bound-key-templates)
-        (push key-template org-structure-template-alist))))))
+    (lps/windmove-mode-local-off)))
 
 (use-package org-agenda
   :after org
+  :hook (org-agenda-mode . lps/windmove-mode-local-off)
   :bind
   ("C-c a" . org-agenda)
   :custom
@@ -3459,7 +3466,8 @@ It defines the following commands:
   :bind
   (:map beamer-mode-map
         ("C-M-x" . lps/LaTeX-beamer-compile-frame)
-        ("C-c M-r" . lps/LaTeX-beamer-change-all-pauses))
+        ("C-c M-r" . lps/LaTeX-beamer-change-all-pauses)
+        ("C-x n f" . lps/LaTeX-beamer-narrow-to-frame))
   :hook
   (beamer-mode . lps/LaTeX-beamer-frame-as-section)
   (beamer-mode . lps/LaTeX-beamer-fold-all-frames)
@@ -3483,6 +3491,12 @@ It defines the following commands:
     (save-mark-and-excursion
       (lps/LaTeX-beamer-mark-frame)
       (TeX-command-run-all-region)))
+
+  (defun lps/LaTeX-beamer-narrow-to-frame ()
+    (interactive)
+    (save-mark-and-excursion
+      (lps/LaTeX-beamer-mark-frame)
+      (narrow-to-region (region-beginning) (region-end))))
 
   (defun lps/LaTeX-beamer-frame-as-section ()
     (require 'reftex)
@@ -4073,11 +4087,12 @@ present in the list of authors or in the title of the article"
   (add-to-list
    'org-roam-capture-templates
    '("r"
-     "bibliography reference" plain "%?"
+     "bibliography reference" plain "* %?"
      :target (file+head "articles-notes/%<%Y%m%d%H%M%S>-${citekey}.org"
                         "#+title: ${title}\n#+filetags: :phd:")
      :unnarrowed t
      :empty-lines-before 1
+     :kill-buffer t
      :prepare-finalize lps/org-roam-capture-set-category)
    t #'equal)
 
@@ -4505,6 +4520,13 @@ The return string is always 6 characters wide."
   :bind
   (:map lps/system-tools-map
         ("p l" . list-processes)))
+
+(use-package transient-extras-lp
+  :bind
+  (:map lps/system-tools-map
+        ("i" . transient-extras-lp-menu))
+  (:map pdf-view-mode-map
+        ("i i" . transient-extras-lp-menu)))
 
 (use-package smtpmail
   :ensure nil
