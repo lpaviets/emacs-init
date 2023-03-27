@@ -221,16 +221,27 @@ fboundp."
     (desktop-save-mode 1))
   :custom
   (desktop-restore-frames nil) ;; Otherwise buggy with daemon-mode
-  (desktop-path (list (expand-file-name "desktop-saves/" user-emacs-directory)))
+  (desktop-path (list (locate-user-emacs-file "desktop-saves/")))
   (desktop-restore-eager 10)
   (desktop-lazy-verbose nil))
+
+(use-package saveplace
+  :ensure nil
+  :custom
+  (save-place-file (locate-user-emacs-file ".saveplaces"))
+  (save-place-limit 1000)               ; better be safe
+  :init
+  (save-place-mode 1))
 
 (use-package server
   :custom
   (server-client-instructions nil))
 
-(setq custom-file (concat user-emacs-directory "custom-file.el"))
-(load custom-file 'noerror)
+(use-package cus-edit
+  :custom
+  (custom-file (locate-user-emacs-file "custom-file.el"))
+  :config
+  (load custom-file 'noerror))
 
 (ensure-emacs-version 28
  (use-package emacs
@@ -885,8 +896,8 @@ one if none exists."
   :custom
   (recentf-max-saved-items 50)
   :config
-  (dolist (excl (list (expand-file-name (concat user-emacs-directory "eshell/"))
-                      (expand-file-name (concat user-emacs-directory "\\.elfeed/"))
+  (dolist (excl (list (expand-file-name (locate-user-emacs-file "eshell/"))
+                      (expand-file-name (locate-user-emacs-file "\\.elfeed/"))
                       "\\.synctex\\.gz" "\\.out$" "\\.toc" "\\.log"
                       (expand-file-name recentf-save-file)
                       "/usr/local/share/emacs/"
@@ -937,7 +948,7 @@ If called with a prefix argument, also kills the current buffer"
 
 (use-package emacs
   :init
-  (defvar lps/backup-directory (concat user-emacs-directory ".backups/"))
+  (defvar lps/backup-directory (locate-user-emacs-file".backups/"))
   (unless (file-exists-p lps/backup-directory)
     (make-directory lps/backup-directory))
 
@@ -3103,7 +3114,7 @@ Refer to `org-agenda-prefix-format' for more information."
                 ("<C-left>" . image-scroll-right)
                 ("<C-right>" . image-scroll-left)
                 ("s a" . pdf-view-auto-slice-minor-mode)
-                ("G" . pdf-view-goto-page))
+                ("G" . pdf-view-goto-label))
     :custom
     (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                             "-pointsize" "%P"
@@ -3136,6 +3147,9 @@ move to the end of the document, and search backward instead."
   :custom
   (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
   (use-file-base-name-flag nil))
+
+(use-package saveplace-pdf-view
+  :after pdf-view)
 
 ;; AUCTeX initialization
 (use-package tex-site
@@ -3475,6 +3489,7 @@ It defines the following commands:
   ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
 
   (defun lps/LaTeX-beamer-mark-frame ()
+    (interactive)
     (unless (member "beamer" TeX-active-styles)
       (error "Not in a beamer document"))
     (beginning-of-line)
@@ -5243,7 +5258,9 @@ insert as many blank lines as necessary."
       (move-to-column col t))
 
     (when artist-key-is-drawing
-      (artist-key-do-continously-common))))
+      (artist-key-do-continously-common)))
+
+  (setq artist-arrows [ ?> ?⌟ ?v ?⌞ ?< ?⌜ ?^ ?⌝ ]))
 
 (use-package calendar
   :ensure nil
@@ -5305,7 +5322,7 @@ insert as many blank lines as necessary."
   (defvar lps/elfeed-default-days-range 7
     "Range of days to filter by default in elfeed search queries")
   :custom
-  (elfeed-db-directory (concat user-emacs-directory ".elfeed"))
+  (elfeed-db-directory (locate-user-emacs-file ".elfeed"))
   (elfeed-search-title-max-width 110)
   :config
   (defface elfeed-search-arxiv-authors
