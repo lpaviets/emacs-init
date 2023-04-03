@@ -5350,6 +5350,10 @@ insert as many blank lines as necessary."
 
   (defun lps/elfeed-search-format-arxiv-authors (entry)
     (let* ((authors (elfeed-meta entry :authors))
+           (authors-no-dup (cl-remove-duplicates authors
+                                                 :test #'string-equal
+                                                 :key (lambda (author)
+                                                        (plist-get author :name))))
            (formatted-authors
             (mapconcat (lambda (author)
                          (when-let ((auth (plist-get author :name))
@@ -5358,7 +5362,7 @@ insert as many blank lines as necessary."
                             (substring (car splitted) 0 1)
                             "."
                             (cadr splitted))))
-                       authors
+                       authors-no-dup
                        ", "))
            (width (length formatted-authors))
            (max-width (- lps/elfeed-search-arxiv-authors-max-width 6)))
