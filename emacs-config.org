@@ -3983,21 +3983,22 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
       :magic ("%PDF" . pdf-view-mode)
       :init
       ;; For some reason it doesn't work when put in the :custom section ?!
-      (setq pdf-tools-enabled-modes '(pdf-history-minor-mode
-                                      pdf-isearch-minor-mode
-                                      pdf-links-minor-mode
-                                      pdf-misc-minor-mode
-                                      pdf-outline-minor-mode
-                                      pdf-misc-size-indication-minor-mode
-                                      pdf-misc-menu-bar-minor-mode
-                                      pdf-annot-minor-mode
-                                      pdf-sync-minor-mode
-                                      pdf-misc-context-menu-minor-mode
-                                      pdf-cache-prefetch-minor-mode
-                                      ;; pdf-occur-global-minor-mode ;; bugged autoload
-                                      pdf-view-auto-slice-minor-mode ; add to defaults
-                                      ;; pdf-virtual-global-minor-mode
-                                      ))
+      (setq pdf-tools-enabled-modes
+            '(pdf-history-minor-mode
+              pdf-isearch-minor-mode
+              pdf-links-minor-mode
+              pdf-misc-minor-mode
+              pdf-outline-minor-mode
+              pdf-misc-size-indication-minor-mode
+              pdf-misc-menu-bar-minor-mode
+              pdf-annot-minor-mode
+              pdf-sync-minor-mode
+              pdf-misc-context-menu-minor-mode
+              pdf-cache-prefetch-minor-mode
+              ;; pdf-occur-global-minor-mode ; bugged autoload
+              pdf-view-auto-slice-minor-mode ; add to defaults
+              ;; pdf-virtual-global-minor-mode
+              ))
       :bind (:map pdf-view-mode-map
                   ("C-s" . isearch-forward)
                   ("C-c ?" . lps/pdf-maybe-goto-index)
@@ -4664,6 +4665,21 @@ Finally, we also want a way to do everything from Emacs, and it starts with /fin
 
 ***** Bibliography management
 
+We first configure the built-in Bibtex mode, used to edit ~.bib~ files.
+
+#+begin_src emacs-lisp
+  (use-package bibtex
+    :defer t
+    :custom
+    (bibtex-entry-format '(realign
+                           opts-or-alts
+                           required-fields
+                           numerical-fields))
+    (bibtex-autokey-year-title-separator "_"))
+#+end_src
+
+The next packages are used to manage the bibliography in itself: download articles, add some bibtex entries from simple queries directly within Emacs, add functions to search our bibliography, or even setup a note system with packages extending Org Roam !
+
 #+begin_src emacs-lisp
   (use-package bibtex-completion
     :defer t
@@ -4927,7 +4943,11 @@ Because =bibtex-completion= is mainly an interface, we use a wrapper around it t
             (out (cdr pair)))
         (when-let ((new-in (and (= 2 (car (aref (syntax-table) (aref in 0))))
                                 (s-upcase in))))
-          (unless (string-equal in new-in)
+          (unless (or (string-equal in new-in)
+                      (cl-every (lambda (char)
+                                  (eq 'ascii (char-charset char)))
+                                new-in) ; approximation ...
+                      )
             (let ((new-out (with-temp-buffer
                              (insert out)
                              (capitalize-word -1)

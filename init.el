@@ -3093,21 +3093,22 @@ Refer to `org-agenda-prefix-format' for more information."
     :magic ("%PDF" . pdf-view-mode)
     :init
     ;; For some reason it doesn't work when put in the :custom section ?!
-    (setq pdf-tools-enabled-modes '(pdf-history-minor-mode
-                                    pdf-isearch-minor-mode
-                                    pdf-links-minor-mode
-                                    pdf-misc-minor-mode
-                                    pdf-outline-minor-mode
-                                    pdf-misc-size-indication-minor-mode
-                                    pdf-misc-menu-bar-minor-mode
-                                    pdf-annot-minor-mode
-                                    pdf-sync-minor-mode
-                                    pdf-misc-context-menu-minor-mode
-                                    pdf-cache-prefetch-minor-mode
-                                    ;; pdf-occur-global-minor-mode ;; bugged autoload
-                                    pdf-view-auto-slice-minor-mode ; add to defaults
-                                    ;; pdf-virtual-global-minor-mode
-                                    ))
+    (setq pdf-tools-enabled-modes
+          '(pdf-history-minor-mode
+            pdf-isearch-minor-mode
+            pdf-links-minor-mode
+            pdf-misc-minor-mode
+            pdf-outline-minor-mode
+            pdf-misc-size-indication-minor-mode
+            pdf-misc-menu-bar-minor-mode
+            pdf-annot-minor-mode
+            pdf-sync-minor-mode
+            pdf-misc-context-menu-minor-mode
+            pdf-cache-prefetch-minor-mode
+            ;; pdf-occur-global-minor-mode ; bugged autoload
+            pdf-view-auto-slice-minor-mode ; add to defaults
+            ;; pdf-virtual-global-minor-mode
+            ))
     :bind (:map pdf-view-mode-map
                 ("C-s" . isearch-forward)
                 ("C-c ?" . lps/pdf-maybe-goto-index)
@@ -3734,6 +3735,15 @@ article's title"
                     (insert "#+end_src\n"))))
             (user-error "This record does not contain a direct URL")))))))
 
+(use-package bibtex
+  :defer t
+  :custom
+  (bibtex-entry-format '(realign
+                         opts-or-alts
+                         required-fields
+                         numerical-fields))
+  (bibtex-autokey-year-title-separator "_"))
+
 (use-package bibtex-completion
   :defer t
   :init
@@ -3992,7 +4002,11 @@ until one is found."
           (out (cdr pair)))
       (when-let ((new-in (and (= 2 (car (aref (syntax-table) (aref in 0))))
                               (s-upcase in))))
-        (unless (string-equal in new-in)
+        (unless (or (string-equal in new-in)
+                    (cl-every (lambda (char)
+                                (eq 'ascii (char-charset char)))
+                              new-in) ; approximation ...
+                    )
           (let ((new-out (with-temp-buffer
                            (insert out)
                            (capitalize-word -1)
