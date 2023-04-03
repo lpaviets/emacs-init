@@ -2848,6 +2848,8 @@ call the associated function interactively. Otherwise, call the
             (member (car key-template) bound-key-templates)
           (push key-template org-structure-template-alist)))))
 
+  (add-hook 'org-babel-post-tangle-hook 'delete-trailing-whitespace)
+
   (defun lps/windmove-mode-local-off ()
     ;; Hack to disable windmove locally
     (setq-local windmove-mode nil))
@@ -5356,10 +5358,11 @@ insert as many blank lines as necessary."
        'face 'elfeed-search-arxiv-authors
        'kbd-help formatted-authors)))
 
-  (defun lps/elfeed-search-print-entry--arxiv (entry)
+  (defun lps/elfeed-search-print-entry--arxiv (entry &optional format-title)
     (let* ((date
             (elfeed-search-format-date (elfeed-entry-date entry)))
-           (title (or (elfeed-meta entry :title) (elfeed-entry-title entry) ""))
+           (raw-title (or (elfeed-meta entry :title) (elfeed-entry-title entry) ""))
+           (title (if format-title (funcall format-title raw-title) raw-title))
            (title-faces (elfeed-search--faces (elfeed-entry-tags entry)))
            (feed (elfeed-entry-feed entry))
            (feed-title
@@ -5389,11 +5392,18 @@ insert as many blank lines as necessary."
       (when tags
         (insert "(" tags-str ")"))))
 
+  (defun lps/elfeed-search-print-entry--hal (entry)
+    (let* ((hal-prefix-regexp "^ *\\[[a-z]+-[0-9]+\\] *")
+           (format-title (lambda (title)
+                           (replace-regexp-in-string hal-prefix-regexp "" title))))
+      (lps/elfeed-search-print-entry--arxiv entry format-title)))
+
   (defun lps/elfeed-search-show-entry-function (entry)
     (let ((tags (elfeed-entry-tags entry)))
-      (if (member 'arxiv tags)
-          (lps/elfeed-search-print-entry--arxiv entry)
-        (elfeed-search-print-entry--default entry))))
+      (cond
+       ((member 'arxiv tags) (lps/elfeed-search-print-entry--arxiv entry))
+       ((member 'hal tags) (lps/elfeed-search-print-entry--hal entry))
+       (t (elfeed-search-print-entry--default entry)))))
 
   (setq elfeed-search-print-entry-function
         'lps/elfeed-search-show-entry-function)

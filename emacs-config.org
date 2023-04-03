@@ -3724,6 +3724,8 @@ We also add templates to insert code blocks with a few key presses
         (unless
             (member (car key-template) bound-key-templates)
           (push key-template org-structure-template-alist)))))
+
+  (add-hook 'org-babel-post-tangle-hook 'delete-trailing-whitespace)
 #+end_src
 
 ** Org Agenda
@@ -4003,15 +4005,8 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
                   ("<C-up>" . pdf-view-scroll-down-or-previous-page)
                   ("<C-left>" . image-scroll-right)
                   ("<C-right>" . image-scroll-left)
-<<<<<<< HEAD
-                  ("s a" . pdf-view-auto-slice-minor-mode)
-                  ("G" . pdf-view-goto-page))
-||||||| 831c0ad
-                  ("s a" . pdf-view-auto-slice-minor-mode))
-=======
                   ("s a" . pdf-view-auto-slice-minor-mode)
                   ("G" . pdf-view-goto-label))
->>>>>>> bed174b0ae9f4180ed2e146fab599be9dbf6b68d
       :custom
       (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                               "-pointsize" "%P"
@@ -6494,10 +6489,11 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
          'face 'elfeed-search-arxiv-authors
          'kbd-help formatted-authors)))
 
-    (defun lps/elfeed-search-print-entry--arxiv (entry)
+    (defun lps/elfeed-search-print-entry--arxiv (entry &optional format-title)
       (let* ((date
               (elfeed-search-format-date (elfeed-entry-date entry)))
-             (title (or (elfeed-meta entry :title) (elfeed-entry-title entry) ""))
+             (raw-title (or (elfeed-meta entry :title) (elfeed-entry-title entry) ""))
+             (title (if format-title (funcall format-title raw-title) raw-title))
              (title-faces (elfeed-search--faces (elfeed-entry-tags entry)))
              (feed (elfeed-entry-feed entry))
              (feed-title
@@ -6527,11 +6523,18 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
         (when tags
           (insert "(" tags-str ")"))))
 
+    (defun lps/elfeed-search-print-entry--hal (entry)
+      (let* ((hal-prefix-regexp "^ *\\[[a-z]+-[0-9]+\\] *")
+             (format-title (lambda (title)
+                             (replace-regexp-in-string hal-prefix-regexp "" title))))
+        (lps/elfeed-search-print-entry--arxiv entry format-title)))
+
     (defun lps/elfeed-search-show-entry-function (entry)
       (let ((tags (elfeed-entry-tags entry)))
-        (if (member 'arxiv tags)
-            (lps/elfeed-search-print-entry--arxiv entry)
-          (elfeed-search-print-entry--default entry))))
+        (cond
+         ((member 'arxiv tags) (lps/elfeed-search-print-entry--arxiv entry))
+         ((member 'hal tags) (lps/elfeed-search-print-entry--hal entry))
+         (t (elfeed-search-print-entry--default entry)))))
 
     (setq elfeed-search-print-entry-function
           'lps/elfeed-search-show-entry-function)

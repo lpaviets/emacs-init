@@ -129,3 +129,4 @@ flycheck_*.el
 /pyhist-Python
 /extra-packages/private/*
 /desktop/
+/.saveplaces
