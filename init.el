@@ -1748,7 +1748,7 @@ Breaks if region or line spans multiple visual lines"
             (indent-to col)
             (lps/--fill-width-repeat-string width str))))))
 
-  (defvar lps/do-not-capitalize-list '("the" "a" "of" "in" "on" "by"
+  (defvar lps/do-not-capitalize-list '("the" "a" "an" "of" "in" "on" "by"
                                        "no" "or" "and" "if" "for" "to"
                                        "le" "la" "les" "et" "ou"
                                        "si" "un" "une" "de" "des"
@@ -3578,9 +3578,75 @@ instead."
 
 (use-package bibtex
   :defer t
+  :init
+  (defvar lps/bib-directory (lps/org-expand-file-name "biblio" t))
+  (defvar lps/bib-bibliography-files (list (expand-file-name "biblio.bib"
+                                                             lps/bib-directory)))
+  (defvar lps/bib-bibliography-library (file-name-as-directory
+                                        (expand-file-name "articles"
+                                                          lps/bib-directory)))
   :bind
   (:map bibtex-mode-map
-        ("C-c C-?" . bibtex-print-help-message)))
+        ("C-c C-?" . bibtex-print-help-message))
+  :custom
+  (bibtex-entry-format '(realign
+                         unify-case
+                         opts-or-alts
+                         required-fields
+                         numerical-fields))
+  (bibtex-unify-case-function 'downcase)
+  ;; minor changes + also re-specify in case default changes
+  (bibtex-autokey-prefix-string "")
+  (bibtex-autokey-names 3)
+  (bibtex-autokey-names-stretch 0)
+  (bibtex-autokey-name-case-convert-function 'lps/bibtex-autokey-name-convert)
+  (bibtex-autokey-name-length 'infty)
+  (bibtex-autokey-name-separator "_")
+  (bibtex-autokey-year-length 2)
+  (bibtex-autokey-titlewords 5)
+  (bibtex-autokey-titlewords-stretch 2)
+  (bibtex-autokey-titleword-separator "_")
+  (bibtex-autokey-name-year-separator "")
+  (bibtex-autokey-year-title-separator "_")
+  :config
+  ;; From https://emacs.stackexchange.com/a/75531
+  (defun lps/string-try-remove-accentuation (string)
+    (mapconcat (lambda (c)
+                 (char-to-string
+                  (car (get-char-code-property c 'decomposition))))
+               string))
+
+  (defun lps/bibtex-autokey-name-convert (name)
+    (downcase (lps/string-try-remove-accentuation name)))
+
+  (defun lps/bibtex-fix-file-field-format ()
+    (save-excursion
+      (bibtex-beginning-of-entry)
+      (let* ((bounds (or
+                      (bibtex-search-forward-field "file")
+                      (bibtex-search-forward-field "FILE")))
+             (end-field (and bounds (copy-marker (bibtex-end-of-field bounds)))))
+        (when end-field
+          (goto-char (bibtex-start-of-field bounds))
+          (forward-char)                ; leading comma
+          (bibtex-delete-whitespace)
+          (insert "\n")
+          (indent-to-column (+ bibtex-entry-offset
+                               bibtex-field-indentation))
+          (re-search-forward "[ \t\n]*=" end-field)
+          (replace-match "=")
+          (forward-char -1)
+          (if bibtex-align-at-equal-sign
+              (indent-to-column
+               (+ bibtex-entry-offset (- bibtex-text-indentation 2)))
+            (insert " "))
+          (forward-char)
+          (bibtex-delete-whitespace)
+          (if bibtex-align-at-equal-sign
+              (insert " ")
+            (indent-to-column bibtex-text-indentation))))))
+
+  (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-file-field-format))
 
 (use-package reftex
   :hook (LaTeX-mode . reftex-mode)
@@ -3651,109 +3717,44 @@ Return a list of regular expressions."
   :bind
   (:map bibtex-mode-map
         ("C-c ?" . biblio-lookup))
+  (:map biblio-selection-mode-map
+        ("M-RET" . biblio--selection-browse)
+        ("RET" . lps/biblio-download-and-insert-bibtex))
   :custom
-  (biblio-arxiv-bibtex-header "article")
-  (biblio-download-directory "~/Documents/Other/articles/")
-  (biblio-selection-mode-actions-alist
-   '(("Dissemin (find open access copies of this article)" . biblio-dissemin--lookup-record)
-     ("Download this article and format its name" . lps/biblio-download--action)))
-  :init
-  (defun lps/biblio-download--action (record)
-    "Retrieve a RECORD from Dissemin, and display it.
-RECORD is a formatted record as expected by `biblio-insert-result'.
-The default filename is of the form \"[AUTHORS]TITLE.pdf\" where
-AUTHORS is a list of the authors surnames, separated by underscores,
-and TITLE is the result of `lps/make-filename-from-sentence' on the
-article's title"
-    (save-window-excursion
-      (let-alist record
-        (cl-flet ((bsnp-all ()
-                    (buffer-substring-no-properties (point-min) (point-max))))
-          (if .direct-url
-              (let* (title auths target)
-                (with-temp-buffer
-                  (insert .title)
-                  (join-line nil (point-min) (point-max))
-                  (goto-char (point-min))
-                  (lps/make-filename-from-sentence)
-                  (setq title (bsnp-all))
-                  (with-temp-buffer
-                    (insert title)
-                    (lps/make-filename-from-sentence ?_)
-                    (insert ".pdf")
-                    (setq fname (bsnp-all)))
-                  (goto-char (point-min))
-                  (insert "[")
-                  (seq-doseq (name .authors)
-                    (when (and name (stringp name))
-                      (let ((split-name (split-string name)))
-                        (if (cdr split-name)
-                            (dolist (subname (cdr split-name))
-                              (insert subname))
-                          (insert name)))
-                      (insert "_")))
-                  (delete-backward-char 1)
-                  (insert "]")
-                  (setq auths (buffer-substring-no-properties (point-min)
-                                                              (point)))
-                  (setq fname (concat auths fname))
-                  (setq target (read-file-name "Save as: "
-                                               biblio-download-directory
-                                               fname
-                                               nil
-                                               fname)))
-                (setq target (expand-file-name target
-                                               biblio-download-directory))
-                (url-copy-file .direct-url target)
-                (let* ((bib-path (expand-file-name "biblio.org"
-                                                   org-directory))
-                       (bib-file (find-file bib-path)))
-                  (with-current-buffer (get-buffer bib-file)
-                    (goto-char (point-max))
-                    (insert "\n* "
-                            auths
-                            " "
-                            title
-                            "\n\n"
-                            "[[file:"
-                            (string-replace "[" "\\["
-                                            (string-replace "]" "\\]"
-                                                            target))
-                            "]["
-                            title
-                            "]]\n\n"
-                            "#+begin_src latex\n")
-                    (let ((biblio--target-buffer (current-buffer)))
-                      (funcall .backend
-                               'forward-bibtex
-                               record
-                               (lambda (bibtex)
-                                 (funcall 'biblio--selection-insert-callback
-                                          (biblio-format-bibtex bibtex)
-                                          record))))
-                    (ensure-empty-lines 0)
-                    (insert "#+end_src\n"))))
-            (user-error "This record does not contain a direct URL")))))))
+  (biblio-arxiv-bibtex-header "misc")
+  (biblio-download-directory lps/bib-bibliography-library)
+  :config
+  (defun lps/biblio-download-and-insert-bibtex ()
+    (interactive)
+    (let* ((bibfile (completing-read "Bibfile: " (org-ref-find-bibliography)))
+           (bibtex-entry (biblio--selection-copy))
+           (record (biblio--selection-metadata-at-point))
+           (url (cdr (assq 'direct-url record)))
+           bibkey)
+      ;; Add bibtex entry to biblio
+      (save-window-excursion
+        (with-current-buffer
+            (find-file-noselect bibfile)
+          ;; Check if the doi already exists
+          (goto-char (point-min))
+          (if (re-search-forward (concat doi "\\_>") nil t)
+              (message "%s is already in this file" doi)
+            (goto-char (point-max))
 
-(use-package bibtex
-  :defer t
-  :custom
-  (bibtex-entry-format '(realign
-                         opts-or-alts
-                         required-fields
-                         numerical-fields))
-  (bibtex-autokey-year-title-separator "_"))
+            (when (not (looking-back "\n\n" (min 3 (point))))
+              (insert "\n\n"))
+            (insert bibtex-entry)
+            (setq bibkey (bibtex-completion-get-key-bibtex))
+            (save-buffer))))
+      (if url
+          (url-copy-file url (expand-file-name bibkey biblio-download-directory))
+        (user-error "No direct URL (try arXiv or HAL)")))))
 
 (use-package bibtex-completion
   :defer t
-  :init
-  (defvar lps/bib-directory (lps/org-expand-file-name "biblio" t))
   :custom
-  (bibtex-completion-bibliography (list (expand-file-name "biblio.bib"
-                                                          lps/bib-directory)))
-  (bibtex-completion-library-path (file-name-as-directory
-                                   (expand-file-name "articles"
-                                                     lps/bib-directory)))
+  (bibtex-completion-bibliography lps/bib-bibliography-files)
+  (bibtex-completion-library-path lps/bib-bibliography-library)
   :config
   ;; Rewrite: shortcuts the evaluation !
   ;; Now only executes up until finding a non-NIL return value
@@ -3871,6 +3872,8 @@ governed by the variable `bibtex-completion-display-formats'."
   :init
   (defvar doi-utils-pdf-url-functions-from-doi '(doi-to-arxiv-pdf
                                                  doi-to-hal-pdf))
+  ;; Redefine here, superset
+  (defvar org-ref-lower-case-words lps/do-not-capitalize-list)
   :custom
   (doi-utils-download-pdf t)
   (doi-utils-async-download t)
@@ -3916,10 +3919,12 @@ Mathematical Society) urls.
   (add-to-list 'doi-utils-pdf-url-functions 'ems-pdf-url)
 
   ;; Override to also use another list of functions
-  (defun doi-utils-get-pdf-url (doi)
+  (defun doi-utils-get-pdf-url-from-anywhere (doi)
     "Return a url to a pdf for the DOI if one can be calculated.
 Loops through the functions in `doi-utils-pdf-url-functions'
-until one is found."
+until one is found.
+If none is found, loops through the functions in
+`doi-utils-pdf-url-functions-from-doi' afterwards."
     (doi-utils-get-redirect doi)
 
     (unless *doi-utils-redirect*
@@ -3943,17 +3948,17 @@ until one is found."
            (num-regexp "http\\(s\\)?://arxiv.org/pdf/\\([0-9.]+\\)")
            (pdf-url-maybe
             (or
-             (with-current-buffer
-                 (url-retrieve-synchronously (concat "https://arxiv.org/search/?query="
-                                                     doi1
-                                                     "&searchtype=doi"))
+             (with-current-buffer (url-retrieve-synchronously
+                                   (concat "https://arxiv.org/search/?query="
+                                           doi1
+                                           "&searchtype=doi"))
                (goto-char (point-min))
                (when (re-search-forward num-regexp nil t)
                  (match-string-no-properties 0)))
-             (with-current-buffer
-                 (url-retrieve-synchronously (concat "https://arxiv.org/search/?query="
-                                                     doi2
-                                                     "&searchtype=doi"))
+             (with-current-buffer (url-retrieve-synchronously
+                                   (concat "https://arxiv.org/search/?query="
+                                           doi2
+                                           "&searchtype=doi"))
                (goto-char (point-min))
                (when (re-search-forward num-regexp nil t)
                  (match-string-no-properties 0))))))
@@ -3982,7 +3987,7 @@ until one is found."
         ("p" . org-ref-bibtex-hydra/body))
   :custom
   (arxiv-entry-format-string
-   "\n@article{%s,
+   "\n@misc{%s,
   title = {%s},
   author = {%s},
   archivePrefix = {arXiv},
@@ -4005,7 +4010,7 @@ until one is found."
         (unless (or (string-equal in new-in)
                     (cl-every (lambda (char)
                                 (eq 'ascii (char-charset char)))
-                              new-in) ; approximation ...
+                              new-in)   ; approximation ...
                     )
           (let ((new-out (with-temp-buffer
                            (insert out)
@@ -4019,21 +4024,28 @@ until one is found."
   ;; otherwise, defhydra+ tries to expand, and it needs to know whta
   ;; org-ref-bibtex-hydra *is* ... but it can't before the package is
   ;; loaded
-  (eval '(defhydra+ org-ref-bibtex-hydra (:color blue :hint nil)
-           "Bibtex actions:"
-           ("p" lps/org-ref-open-bibtex-pdf "PDF" :column "Open" :exit t)
-           ("n" lps/org-ref-open-bibtex-notes "Notes" :column "Open" :exit t)
-           ("b" lps/org-ref-open-in-browser "URL" :column "Open" :exit t)
-           ("B" (lambda ()
-                  (interactive)
-                  (bibtex-completion-show-entry (list (org-ref-read-key))))
-            "Show entry"
-            :column "Navigation"
-            :color "red")
-           ("e" org-ref-email-add-pdf "Email PDF only" :column "WWW")
-           ("E" org-ref-email-bibtex-entry "Email PDF and bib entry" :column "WWW")
-           ("]" org-ref-bibtex-next-entry "Next entry" :column "Navigation" :color red)
-           ("[" org-ref-bibtex-previous-entry "Previous entry" :column "Navigation" :color red)))
+  (eval '(progn
+           (defhydra+ org-ref-bibtex-hydra (:color blue :hint nil)
+             "Bibtex actions:"
+             ("p" lps/org-ref-open-bibtex-pdf "PDF" :column "Open" :exit t)
+             ("n" lps/org-ref-open-bibtex-notes "Notes" :column "Open" :exit t)
+             ("b" lps/org-ref-open-in-browser "URL" :column "Open" :exit t)
+             ("B" (lambda ()
+                    (interactive)
+                    (bibtex-completion-show-entry (list (org-ref-read-key))))
+              "Show entry"
+              :column "Navigation"
+              :color "red")
+             ("e" org-ref-email-add-pdf "Email PDF only" :column "WWW")
+             ("E" org-ref-email-bibtex-entry "Email PDF and bib entry" :column "WWW")
+             ("]" org-ref-bibtex-next-entry "Next entry" :column "Navigation" :color red)
+             ("[" org-ref-bibtex-previous-entry "Previous entry" :column "Navigation" :color red))
+           ;;;; Add a command to search more sources at once
+           ;; (defhydra+ org-ref-bibtex-new-entry (:color blue)
+           ;;   "New Bibtex entry:"
+           ;;   ("N" doi-utils-get-pdf-url-from-anywhere "from anywhere"
+           ;;    :column "Automatic"))
+           ))
 
   (defun lps/org-ref-email-add-pdf--internal (keys)
     "Does the real work of `org-ref-email-add-pdf'
@@ -4103,7 +4115,9 @@ present in the list of authors or in the title of the article"
                                                 candidates))))
       (mapcar (lambda (choice)
                 (cdr (assoc "=key=" (assoc choice candidates))))
-              choices))))
+              choices)))
+
+  (add-to-list 'org-ref-clean-bibtex-entry-hook 'bibtex-clean-entry t))
 
 (use-package org-roam-bibtex
   :bind
@@ -5476,10 +5490,7 @@ insert as many blank lines as necessary."
            (num (progn
                   (string-match "^https?://arxiv.org/abs/\\([0-9.]+\\)" id)
                   (match-string 1 id)))
-           (bibfile (completing-read
-                     "Bibfile: "
-                     (append (f-entries "." (lambda (f) (f-ext? f "bib")))
-                             bibtex-completion-bibliography)))
+           (bibfile (completing-read "Bibfile: " (org-ref-possible-bibfiles)))
            (pdfdir (cond
                     ((stringp bibtex-completion-library-path)
                      bibtex-completion-library-path)
