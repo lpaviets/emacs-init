@@ -2750,7 +2750,7 @@ call the associated function interactively. Otherwise, call the
   (:map org-cdlatex-mode-map
         ("°" . cdlatex-math-symbol)
         ("'" . nil)
-        ("$" . cdlatex-dollar)) ; might break things ? Not here by default
+        ("$" . TeX-insert-dollar)) ; might break things ? Not here by default
   :init
   (setq org-directory "~/Documents/OrgFiles/") ; have to do it early ...
   (defun lps/org-expand-file-name (name &optional as-directory)
@@ -3062,7 +3062,16 @@ Refer to `org-agenda-prefix-format' for more information."
          ("C-c n i" . org-roam-node-insert)
          ("C-c n c" . org-roam-capture))
   :config
-  (org-roam-db-autosync-mode))
+  (org-roam-db-autosync-mode)
+
+
+  (defun lps/org-roam-cdlatex-mode ()
+    (when (and
+           (eq major-mode 'org-mode)
+           (f-ancestor-of-p org-roam-directory (buffer-file-name)))
+      (org-cdlatex-mode 1)))
+
+  (add-hook 'find-file-hook 'lps/org-roam-cdlatex-mode))
 
 (use-package consult-org-roam
   :after consult org-roam
@@ -3595,6 +3604,7 @@ instead."
                          required-fields
                          numerical-fields))
   (bibtex-unify-case-function 'downcase)
+  (bibtex-comma-after-last-field t)
   ;; minor changes + also re-specify in case default changes
   (bibtex-autokey-prefix-string "")
   (bibtex-autokey-names 3)
@@ -3727,27 +3737,31 @@ Return a list of regular expressions."
   (defun lps/biblio-download-and-insert-bibtex ()
     (interactive)
     (let* ((bibfile (completing-read "Bibfile: " (org-ref-find-bibliography)))
-           (bibtex-entry (biblio--selection-copy))
            (record (biblio--selection-metadata-at-point))
-           (url (cdr (assq 'direct-url record)))
-           bibkey)
+           (bibtex-entry
+            (funcall (biblio-alist-get 'backend record)
+                     'forward-bibtex
+                     record
+                     (lambda (bibtex)
+                       (biblio-format-bibtex bibtex biblio-bibtex-use-autokey))))
+           (url (cdr (assq 'direct-url record))))
       ;; Add bibtex entry to biblio
       (save-window-excursion
         (with-current-buffer
             (find-file-noselect bibfile)
-          ;; Check if the doi already exists
-          (goto-char (point-min))
-          (if (re-search-forward (concat doi "\\_>") nil t)
-              (message "%s is already in this file" doi)
-            (goto-char (point-max))
-
-            (when (not (looking-back "\n\n" (min 3 (point))))
-              (insert "\n\n"))
-            (insert bibtex-entry)
-            (setq bibkey (bibtex-completion-get-key-bibtex))
-            (save-buffer))))
+          ;; FIXME: check if entry already exists !
+          (goto-char (point-max))
+          (when (not (looking-back "\n\n" (min 3 (point))))
+            (insert "\n\n"))
+          (insert bibtex-entry)
+          (let ((org-ref-title-case-types (cons '("misc" "title")
+                                                org-ref-title-case-types)))
+            (org-ref-title-case))
+          (setq bibkey (bibtex-completion-get-key-bibtex))
+          (save-buffer)))
       (if url
-          (url-copy-file url (expand-file-name bibkey biblio-download-directory))
+          (url-copy-file url (expand-file-name (concat bibkey ".pdf")
+                                               biblio-download-directory))
         (user-error "No direct URL (try arXiv or HAL)")))))
 
 (use-package bibtex-completion
@@ -3873,7 +3887,7 @@ governed by the variable `bibtex-completion-display-formats'."
   (defvar doi-utils-pdf-url-functions-from-doi '(doi-to-arxiv-pdf
                                                  doi-to-hal-pdf))
   ;; Redefine here, superset
-  (defvar org-ref-lower-case-words lps/do-not-capitalize-list)
+  (setq org-ref-lower-case-words lps/do-not-capitalize-list)
   :custom
   (doi-utils-download-pdf t)
   (doi-utils-async-download t)
@@ -4138,19 +4152,13 @@ present in the list of authors or in the title of the article"
      :unnarrowed t
      :empty-lines-before 1
      :kill-buffer t
-     :prepare-finalize lps/org-roam-capture-set-category)
+     :hook (org-cdlatex-mode lps/org-roam-capture-set-category))
    t #'equal)
 
   (defun lps/org-roam-capture-set-category ()
-    (add-hook 'org-capture-before-finalize-hook
-              'lps/org-roam-capture-set-category--internal
-              1))
-
-  (defun lps/org-roam-capture-set-category--internal ()
-    (goto-char (point-min))
-    (org-set-property "CATEGORY" "PhD Research")
-    (remove-hook 'org-capture-before-finalize-hook 'lps/org-roam-capture-set-category--internal)
-    (save-buffer))
+    (save-excursion
+      (goto-char (point-min))
+      (org-set-property "CATEGORY" "PhD Research")))
 
   (defun lps/org-roam-bibtex-dispatch-change-file (citekey)
     (ignore citekey)
