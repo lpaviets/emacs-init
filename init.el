@@ -2890,6 +2890,9 @@ call the associated function interactively. Otherwise, call the
   (org-agenda-show-inherited-tags nil)
   (org-archive-location (concat (lps/org-expand-file-name "archive" t)
                                 "%s_archive::"))
+  ;; Window configuration
+  (org-agenda-restore-windows-after-quit t)
+  (org-agenda-window-setup 'other-window)
   (org-tag-alist
    '((:startgroup)
      ;; Put mutually exclusive tags here
@@ -4200,7 +4203,7 @@ present in the list of authors or in the title of the article"
   (cdlatex-paired-parens "$([{")
   (cdlatex-make-sub-superscript-roman-if-pressed-twice t)
   (cdlatex-simplify-sub-super-scripts nil)
-  (cdlatex-math-modify-prefix "C-^")
+  (cdlatex-math-modify-prefix "C-°")
   (cdlatex-takeover-dollar nil)
   (cdlatex-auto-help-delay 1.0)
   (cdlatex-takeover-parenthesis nil)
@@ -5352,7 +5355,8 @@ insert as many blank lines as necessary."
   :bind
   (:map elfeed-search-mode-map
         ("w" . elfeed-search-browse-url)
-        ("C-S-s" . lps/elfeed-search-filter-interactive))
+        ("C-S-s" . lps/elfeed-search-filter-interactive)
+        ("*" . lps/elfeed-toggle-star))
   (:map elfeed-show-mode-map
         ("D" . lps/elfeed-arxiv-get-pdf-add-bibtex-entry))
   :init
@@ -5364,6 +5368,10 @@ insert as many blank lines as necessary."
   (elfeed-search-title-max-width 110)
   (elfeed-search-filter "@1-week-ago +unread -arxiv -youtube")
   :config
+  (defun lps/elfeed-toggle-star ()
+    (interactive)
+    (elfeed-search-toggle-all 'star))
+
   (defface elfeed-search-arxiv-authors
     '((t (:inherit message-header-to :weight normal)))
     "Faced used in *elfeed-search* buffer to show authors of Arxiv papers"
@@ -5544,7 +5552,10 @@ insert as many blank lines as necessary."
         :key ?y)
       ( :name "Politique"
         :query "+unread +politique"
-        :key ?p))
+        :key ?p)
+      ( :name "Favourite"
+        :query "+star"
+        :key ?f))
     "See `mu4e-bookmarks' for some documentation")
   :config
   ;; mu4e-like dashboard !
