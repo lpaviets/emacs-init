@@ -571,6 +571,9 @@ Note gray80 at size 10 is useful for side remarks."
   ;; (global-hungry-delete-mode 1)
   (setq hungry-delete-join-reluctantly t))
 
+(use-package page-break-lines
+  :hook (emacs-news-mode . page-break-lines-mode))
+
 (use-package hydra
   :defer t
   :bind-keymap ("C-c h" . lps/all-hydras-map))
