@@ -161,7 +161,9 @@ fboundp."
   :bind
   (:map lps/system-tools-map
         ("P i" . package-install)
-        ("P l" . package-list-packages)))
+        ("P l" . package-list-packages)
+        ("P d" . package-delete)
+        ("P u" . package-update)))
 
 (system-case
  (gnu/linux
@@ -529,6 +531,20 @@ Note gray80 at size 10 is useful for side remarks."
           dired-mode)
          . hl-line-mode))
 
+(use-package hl-todo
+  :init
+  (global-hl-todo-mode 1)
+  :custom
+  (hl-todo-include-modes '(prog-mode text-mode))
+  (hl-todo-color-background nil)
+  (hl-todo-wrap-movement t)
+  (hl-todo-highlight-punctuation ":!.?")
+  (hl-todo-keyword-faces `(("TODO" . "#cc9393")
+                           ("FAIL" . "#8c5353")
+                           ("DONE" . "#afd8af")
+                           ("HACK" . "#d0bf8f")
+                           ("FIXME" . "#cc9393"))))
+
 (use-package emacs
   :ensure nil
   :hook (before-save . delete-trailing-whitespace)
@@ -607,6 +623,7 @@ Note gray80 at size 10 is useful for side remarks."
   :ensure nil
   :custom
   (enable-recursive-minibuffers t)
+  (completions-group t)
   :config
   (minibuffer-depth-indicate-mode 1))
 
@@ -1112,6 +1129,11 @@ If called with a prefix argument, also kills the current buffer"
   ([remap capitalize-word] . capitalize-dwim)
   ([remap count-words-region] . count-words)
   ([remap count-words-region] . count-words))
+
+(use-package emacs
+  :ensure nil
+  :custom
+  (read-char-by-name-sort 'code))
 
 (use-package multiple-cursors
   :defer t
@@ -3047,6 +3069,8 @@ Refer to `org-agenda-prefix-format' for more information."
 
 (use-package org-roam
   :after org
+  :init
+  (defvar lps/org-roam-map (make-sparse-keymap))
   :custom
   (org-roam-directory (lps/org-expand-file-name "RoamNotes" t))
   (org-roam-node-display-template (concat "${title:*} "
@@ -3054,19 +3078,24 @@ Refer to `org-agenda-prefix-format' for more information."
                                                       'face
                                                       'org-tag)))
   (org-roam-capture-templates
-   '(("d"
+   `(("d"
       "default" plain "%?"
       :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
                          "#+title: ${title}\n")
-      :unnarrowed t)))
-  :bind (("C-c n t" . org-roam-buffer-toggle)
-         ("C-c n f" . org-roam-node-find)
-         ("C-c n g" . org-roam-graph)
-         ("C-c n i" . org-roam-node-insert)
-         ("C-c n c" . org-roam-capture))
+      :unnarrowed t
+      :hook ,(lambda () (call-interactively 'org-roam-tag-add)))))
+  :bind-keymap
+  ("C-c n" . lps/org-roam-map)
+  :bind
+  (:map lps/org-roam-map
+        ("t" . org-roam-buffer-toggle)
+        ("f" . org-roam-node-find)
+        ("g" . org-roam-graph)
+        ("i" . org-roam-node-insert)
+        ("c" . org-roam-capture)
+        ("a" . org-roam-tag-add))
   :config
   (org-roam-db-autosync-mode)
-
 
   (defun lps/org-roam-cdlatex-mode ()
     (when (and
@@ -3663,6 +3692,9 @@ instead."
 
 (use-package reftex
   :hook (LaTeX-mode . reftex-mode)
+  :bind
+  (:map TeX-mode-map
+        ("C-c M-n" . reftex-parse-all))
   :custom
   (reftex-plug-into-AUCTeX t)
   (reftex-toc-split-windows-horizontally nil)
@@ -5524,7 +5556,12 @@ insert as many blank lines as necessary."
   :init
   ;; Do it without lazy loading: hope it doesn't cause loading time
   ;; issues, but it's somewhat hard to do things in a lazy way ...
-  (elfeed-org))
+  (elfeed-org)
+  :config
+  (defun lps/elfeed-org-reread ()
+    (interactive)
+    (rmh-elfeed-org-process rmh-elfeed-org-files
+                            rmh-elfeed-org-tree-id)))
 
 (use-package emacs
   :bind
@@ -5572,6 +5609,7 @@ insert as many blank lines as necessary."
   (defvar lps/elfeed-dashboard-mode-map
     (let ((map (make-sparse-keymap)))
       (define-key map "U" 'elfeed-update)
+      (define-key map "r" 'lps/elfeed-org-reread)
       (define-key map "s" (lps/elfeed-wrap-before-elfeed
                            #'lps/elfeed-search-filter-interactive))
       (define-key map "S" (lps/elfeed-wrap-before-elfeed
@@ -5693,6 +5731,7 @@ insert as many blank lines as necessary."
          (propertize "  Misc\n\n" 'face 'mu4e-title-face)
 
          (mu4e~main-action-str "\t* [U]pdate feeds & database\n" 'elfeed-update)
+         (mu4e~main-action-str "\t* [r]ead elfeed-org files" 'lps/elfeed-org-reread)
          "\n"
          ;; (mu4e~main-action-str "\t* [H]elp\n" 'mu4e-display-manual)
          (mu4e~main-action-str "\t* [q]uit\n" 'bury-buffer)
