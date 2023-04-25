@@ -161,7 +161,9 @@ fboundp."
   :bind
   (:map lps/system-tools-map
         ("P i" . package-install)
-        ("P l" . package-list-packages)))
+        ("P l" . package-list-packages)
+        ("P d" . package-delete)
+        ("P u" . package-update)))
 
 (system-case
  (gnu/linux
@@ -529,6 +531,20 @@ Note gray80 at size 10 is useful for side remarks."
           dired-mode)
          . hl-line-mode))
 
+(use-package hl-todo
+  :init
+  (global-hl-todo-mode 1)
+  :custom
+  (hl-todo-include-modes '(prog-mode text-mode))
+  (hl-todo-color-background nil)
+  (hl-todo-wrap-movement t)
+  (hl-todo-highlight-punctuation ":!.?")
+  (hl-todo-keyword-faces `(("TODO" . "#cc9393")
+                           ("FAIL" . "#8c5353")
+                           ("DONE" . "#afd8af")
+                           ("HACK" . "#d0bf8f")
+                           ("FIXME" . "#cc9393"))))
+
 (use-package emacs
   :ensure nil
   :hook (before-save . delete-trailing-whitespace)
@@ -554,6 +570,9 @@ Note gray80 at size 10 is useful for side remarks."
   :init
   ;; (global-hungry-delete-mode 1)
   (setq hungry-delete-join-reluctantly t))
+
+(use-package page-break-lines
+  :hook (emacs-news-mode . page-break-lines-mode))
 
 (use-package hydra
   :defer t
@@ -607,6 +626,7 @@ Note gray80 at size 10 is useful for side remarks."
   :ensure nil
   :custom
   (enable-recursive-minibuffers t)
+  (completions-group t)
   :config
   (minibuffer-depth-indicate-mode 1))
 
@@ -1112,6 +1132,11 @@ If called with a prefix argument, also kills the current buffer"
   ([remap capitalize-word] . capitalize-dwim)
   ([remap count-words-region] . count-words)
   ([remap count-words-region] . count-words))
+
+(use-package emacs
+  :ensure nil
+  :custom
+  (read-char-by-name-sort 'code))
 
 (use-package multiple-cursors
   :defer t
@@ -2890,6 +2915,9 @@ call the associated function interactively. Otherwise, call the
   (org-agenda-show-inherited-tags nil)
   (org-archive-location (concat (lps/org-expand-file-name "archive" t)
                                 "%s_archive::"))
+  ;; Window configuration
+  (org-agenda-restore-windows-after-quit t)
+  (org-agenda-window-setup 'other-window)
   (org-tag-alist
    '((:startgroup)
      ;; Put mutually exclusive tags here
@@ -3044,6 +3072,8 @@ Refer to `org-agenda-prefix-format' for more information."
 
 (use-package org-roam
   :after org
+  :init
+  (defvar lps/org-roam-map (make-sparse-keymap))
   :custom
   (org-roam-directory (lps/org-expand-file-name "RoamNotes" t))
   (org-roam-node-display-template (concat "${title:*} "
@@ -3051,19 +3081,24 @@ Refer to `org-agenda-prefix-format' for more information."
                                                       'face
                                                       'org-tag)))
   (org-roam-capture-templates
-   '(("d"
+   `(("d"
       "default" plain "%?"
       :target (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
                          "#+title: ${title}\n")
-      :unnarrowed t)))
-  :bind (("C-c n t" . org-roam-buffer-toggle)
-         ("C-c n f" . org-roam-node-find)
-         ("C-c n g" . org-roam-graph)
-         ("C-c n i" . org-roam-node-insert)
-         ("C-c n c" . org-roam-capture))
+      :unnarrowed t
+      :hook ,(lambda () (call-interactively 'org-roam-tag-add)))))
+  :bind-keymap
+  ("C-c n" . lps/org-roam-map)
+  :bind
+  (:map lps/org-roam-map
+        ("t" . org-roam-buffer-toggle)
+        ("f" . org-roam-node-find)
+        ("g" . org-roam-graph)
+        ("i" . org-roam-node-insert)
+        ("c" . org-roam-capture)
+        ("a" . org-roam-tag-add))
   :config
   (org-roam-db-autosync-mode)
-
 
   (defun lps/org-roam-cdlatex-mode ()
     (when (and
@@ -3660,6 +3695,9 @@ instead."
 
 (use-package reftex
   :hook (LaTeX-mode . reftex-mode)
+  :bind
+  (:map TeX-mode-map
+        ("C-c M-n" . reftex-parse-all))
   :custom
   (reftex-plug-into-AUCTeX t)
   (reftex-toc-split-windows-horizontally nil)
@@ -4200,7 +4238,7 @@ present in the list of authors or in the title of the article"
   (cdlatex-paired-parens "$([{")
   (cdlatex-make-sub-superscript-roman-if-pressed-twice t)
   (cdlatex-simplify-sub-super-scripts nil)
-  (cdlatex-math-modify-prefix "C-^")
+  (cdlatex-math-modify-prefix "C-°")
   (cdlatex-takeover-dollar nil)
   (cdlatex-auto-help-delay 1.0)
   (cdlatex-takeover-parenthesis nil)
@@ -5352,7 +5390,8 @@ insert as many blank lines as necessary."
   :bind
   (:map elfeed-search-mode-map
         ("w" . elfeed-search-browse-url)
-        ("C-S-s" . lps/elfeed-search-filter-interactive))
+        ("C-S-s" . lps/elfeed-search-filter-interactive)
+        ("*" . lps/elfeed-toggle-star))
   (:map elfeed-show-mode-map
         ("D" . lps/elfeed-arxiv-get-pdf-add-bibtex-entry))
   :init
@@ -5364,6 +5403,10 @@ insert as many blank lines as necessary."
   (elfeed-search-title-max-width 110)
   (elfeed-search-filter "@1-week-ago +unread -arxiv -youtube")
   :config
+  (defun lps/elfeed-toggle-star ()
+    (interactive)
+    (elfeed-search-toggle-all 'star))
+
   (defface elfeed-search-arxiv-authors
     '((t (:inherit message-header-to :weight normal)))
     "Faced used in *elfeed-search* buffer to show authors of Arxiv papers"
@@ -5516,7 +5559,206 @@ insert as many blank lines as necessary."
   :init
   ;; Do it without lazy loading: hope it doesn't cause loading time
   ;; issues, but it's somewhat hard to do things in a lazy way ...
-  (elfeed-org))
+  (elfeed-org)
+  :config
+  (defun lps/elfeed-org-reread ()
+    (interactive)
+    (rmh-elfeed-org-process rmh-elfeed-org-files
+                            rmh-elfeed-org-tree-id)))
+
+(use-package emacs
+  :bind
+  ("C-c f" . lps/elfeed-dashboard)
+  (:map elfeed-search-mode-map
+        ("b" . lps/elfeed-search-bookmark))
+  :init
+  (defvar lps/elfeed-dashboard-buffer "*elfeed-dashboard*")
+  (defcustom lps/elfeed-bookmarks
+    '(( :name  "All unread entries"
+        :query "+unread"
+        :key ?u)
+      ( :name "Today's entries"
+        :query "@1-day-ago"
+        :key ?t)
+      ( :name "Last 7 days"
+        :query "@1-week-ago"
+        :hide-unread t
+        :key ?w)
+      ( :name "Science articles"
+        :query "+unread +articles"
+        :key ?a)
+      ( :name "YT Videos"
+        :query "+unread +youtube"
+        :key ?y)
+      ( :name "Politique"
+        :query "+unread +politique"
+        :key ?p)
+      ( :name "Favourite"
+        :query "+star"
+        :key ?f))
+    "See `mu4e-bookmarks' for some documentation")
+  :config
+  ;; mu4e-like dashboard !
+  (require 'elfeed-org)
+  (require 'mu4e)
+
+  ;; Ugly macro ... Lexical binding is a mess
+  (defmacro lps/elfeed-wrap-before-elfeed (fun)
+    `(lambda ()
+       (interactive)
+       (call-interactively ,fun)
+       (elfeed)))
+
+  (defvar lps/elfeed-dashboard-mode-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map "U" 'elfeed-update)
+      (define-key map "r" 'lps/elfeed-org-reread)
+      (define-key map "s" (lps/elfeed-wrap-before-elfeed
+                           #'lps/elfeed-search-filter-interactive))
+      (define-key map "S" (lps/elfeed-wrap-before-elfeed
+                           #'elfeed-search-set-filter))
+      (define-key map "b" 'lps/elfeed-search-bookmark)
+      (define-key map "$" (lambda ()
+                            (interactive)
+                            (pop-to-buffer (elfeed-log-buffer))))
+      map)
+    "Keymap for the *elfeed-dashboard* buffer.")
+
+  (defun lps/elfeed-ask-bookmark (prompt)
+    "Ask the user for a bookmark (using PROMPT) as defined in
+`lps/elfeed-bookmarks', then return the corresponding query."
+    (unless lps/elfeed-bookmarks (mu4e-error "No bookmarks defined"))
+    (let* ((prompt (mu4e-format "%s" prompt))
+           (bmarks
+            (mapconcat
+             (lambda (bm)
+               (concat
+                "[" (propertize (make-string 1 (plist-get bm :key))
+                                'face 'mu4e-highlight-face)
+                "]"
+                (plist-get bm :name)))
+             lps/elfeed-bookmarks ", "))
+           (kar (read-char (concat prompt bmarks))))
+      (let* ((chosen-bm
+              (or (cl-find-if
+                   (lambda (bm)
+                     (= kar (plist-get bm :key)))
+                   lps/elfeed-bookmarks)
+                  (error "Unknown shortcut '%c'" kar)))
+             (expr (plist-get chosen-bm :query))
+             (expr (if (not (functionp expr)) expr
+                     (funcall expr)))
+             (query (eval expr)))
+        (if (stringp query)
+            query
+          (error "Expression must evaluate to query string ('%S')" expr)))))
+
+  (defun lps/elfeed-search-bookmark (&optional expr)
+    "Search using some bookmarked query EXPR."
+    (interactive)
+    (let ((expr
+           (or expr (lps/elfeed-ask-bookmark "Select bookmark: "))))
+      (elfeed-search-set-filter expr)
+      (elfeed)))
+
+  (defun lps/elfeed-dashboard-query-count (query)
+    (let* ((count 0)
+           (filter
+            (elfeed-search-parse-filter query))
+           (func (byte-compile
+                  (elfeed-search-compile-filter filter))))
+      (with-elfeed-db-visit (entry feed)
+        (when (funcall func entry feed count)
+          (setf count (1+ count))))
+      count))
+
+  (defun lps/elfeed-bookmarks-dashboard ()
+    (cl-loop with bmks = lps/elfeed-bookmarks
+             with longest = (cl-loop for b in lps/elfeed-bookmarks
+                                     maximize (string-width (plist-get b :name)))
+             ;; with queries = (mu4e-last-query-results)
+             for bm in bmks
+             for key = (string (plist-get bm :key))
+             for name = (plist-get bm :name)
+             for query = (plist-get bm :query)
+             for count-u = (lps/elfeed-dashboard-query-count (concat "+unread "
+                                                                     query))
+             for count = (lps/elfeed-dashboard-query-count query)
+             when (not (plist-get bm :hide))
+             concat (concat
+                     ;; menu entry
+                     (mu4e~main-action-str
+                      (concat "\t* [b" key "] " name)
+                      (concat "b" key))
+                     ;; append all/unread numbers, if available.
+                     (if (and count count-u)
+                         (format
+                          "%s (%s/%s)"
+                          (make-string (- longest (string-width name)) ? )
+                          (propertize (number-to-string count-u)
+                                      'face 'mu4e-header-key-face)
+                          count)
+                       "")
+                     "\n")))
+
+  (defun lps/elfeed-dashboard ()
+    (interactive)
+    (with-current-buffer (get-buffer-create lps/elfeed-dashboard-buffer)
+      (let ((inhibit-read-only t)
+            (pos (point)))
+        (erase-buffer)
+        (insert
+         "* "
+         (propertize "elfeed" 'face 'mu4e-header-key-face)
+         (propertize " - Elfeed reader for Emacs version " 'face 'mu4e-title-face)
+         (propertize  elfeed-version 'face 'mu4e-header-key-face)
+         "\n"
+         (propertize "  Last updated at " 'face 'mu4e-title-face)
+         (let* ((db-time (seconds-to-time (elfeed-db-last-update)))
+                (update (format-time-string "%Y-%m-%d %H:%M" db-time)))
+           (propertize update 'face 'mu4e-header-key-face))
+         "\n\n"
+         (propertize "  Basics\n\n" 'face 'mu4e-title-face)
+         ;; (mu4e~main-action-str
+         ;;  "\t* [j]ump to some maildir\n" 'mu4e-jump-to-maildir)
+         (mu4e~main-action-str
+          "\t* enter a [s]earch query interactively\n"
+          'lps/elfeed-search-filter-interactive)
+         "\n"
+         (mu4e~main-action-str
+          "\t* modify the [S]earch query\n" 'elfeed-search-set-filter)
+         "\n"
+         (propertize "  Bookmarks\n\n" 'face 'mu4e-title-face)
+         (lps/elfeed-bookmarks-dashboard)
+         "\n"
+         (propertize "  Misc\n\n" 'face 'mu4e-title-face)
+
+         (mu4e~main-action-str "\t* [U]pdate feeds & database\n" 'elfeed-update)
+         (mu4e~main-action-str "\t* [r]ead elfeed-org files" 'lps/elfeed-org-reread)
+         "\n"
+         ;; (mu4e~main-action-str "\t* [H]elp\n" 'mu4e-display-manual)
+         (mu4e~main-action-str "\t* [q]uit\n" 'bury-buffer)
+
+         "\n"
+         (propertize "  Info\n\n" 'face 'mu4e-title-face)
+         (mu4e~key-val "database-path" elfeed-db-directory)
+         (mu4e~key-val "in store"
+                       (format "%d" (elfeed-db-size))
+                       "entries"))
+        (goto-char pos))
+      (lps/elfeed-dashboard-mode))
+    (pop-to-buffer lps/elfeed-dashboard-buffer))
+
+  (defun lps/elfeed-dashboard--redraw (_ignore-auto _noconfirm)
+    "The revert buffer function for `lsp/elfeed-dashboard-mode'."
+    (lps/elfeed-dashboard))
+
+  (define-derived-mode lps/elfeed-dashboard-mode special-mode "elfeed:dashboard"
+    "Major mode for the elfeed dashboard.
+\\{lps/elfeed-dashboard-mode-map}."
+    (setq truncate-lines t)
+    (setq-local revert-buffer-function #'lps/elfeed-dashboard--redraw)
+    (read-only-mode 1)))
 
 (use-package emacs
   :bind
