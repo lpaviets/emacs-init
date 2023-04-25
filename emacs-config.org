@@ -4004,9 +4004,10 @@ As usual with those popular packages, we can enhance them using various other sm
   (use-package consult-org-roam
     :after consult org-roam
     :bind
-    ("C-c n F" . consult-org-roam-file-find)
-    ("C-c n b" . consult-org-roam-backlinks)
-    ("C-c n s" . consult-org-roam-search)
+    (:map lps/org-roam-map
+          ("F" . consult-org-roam-file-find)
+          ("b" . consult-org-roam-backlinks)
+          ("s" . consult-org-roam-search))
     :custom
     (consult-org-roam-grep-func #'consult-grep)
     :config
@@ -4019,7 +4020,8 @@ To improve this note-taking system, we would like to be able to visualize the gr
   (use-package org-roam-ui
     :after org-roam
     :bind
-    ("C-c n G" . org-roam-ui-mode)
+    (:map lps/org-roam-map
+     ("G" . org-roam-ui-mode))
     :custom
     (org-roam-ui-sync-theme t)
     (org-roam-ui-follow nil)
@@ -4633,10 +4635,11 @@ Another useful package to deal with references, bibliography, citations and so o
 
 #+begin_src emacs-lisp
   (use-package reftex
+    :defer t
     :hook (LaTeX-mode . reftex-mode)
-    :bind
-    (:map TeX-mode-map
-          ("C-c M-n" . reftex-parse-all))
+    ;; :bind
+    ;; (:map TeX-mode-map
+    ;;       ("C-c M-n" . reftex-parse-all))
     :custom
     (reftex-plug-into-AUCTeX t)
     (reftex-toc-split-windows-horizontally nil)

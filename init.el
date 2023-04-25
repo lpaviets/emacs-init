@@ -3111,9 +3111,10 @@ Refer to `org-agenda-prefix-format' for more information."
 (use-package consult-org-roam
   :after consult org-roam
   :bind
-  ("C-c n F" . consult-org-roam-file-find)
-  ("C-c n b" . consult-org-roam-backlinks)
-  ("C-c n s" . consult-org-roam-search)
+  (:map lps/org-roam-map
+        ("F" . consult-org-roam-file-find)
+        ("b" . consult-org-roam-backlinks)
+        ("s" . consult-org-roam-search))
   :custom
   (consult-org-roam-grep-func #'consult-grep)
   :config
@@ -3122,7 +3123,8 @@ Refer to `org-agenda-prefix-format' for more information."
 (use-package org-roam-ui
   :after org-roam
   :bind
-  ("C-c n G" . org-roam-ui-mode)
+  (:map lps/org-roam-map
+   ("G" . org-roam-ui-mode))
   :custom
   (org-roam-ui-sync-theme t)
   (org-roam-ui-follow nil)
@@ -3694,10 +3696,11 @@ instead."
   (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-file-field-format))
 
 (use-package reftex
+  :defer t
   :hook (LaTeX-mode . reftex-mode)
-  :bind
-  (:map TeX-mode-map
-        ("C-c M-n" . reftex-parse-all))
+  ;; :bind
+  ;; (:map TeX-mode-map
+  ;;       ("C-c M-n" . reftex-parse-all))
   :custom
   (reftex-plug-into-AUCTeX t)
   (reftex-toc-split-windows-horizontally nil)
