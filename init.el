@@ -3193,7 +3193,9 @@ move to the end of the document, and search backward instead."
         ("<backtab>" . indent-for-tab-command)
         ("C-c M-%" . LaTeX-replace-in-math)
         ([remap beginning-of-defun] . LaTeX-find-matching-begin)
-        ([remap end-of-defun] . LaTeX-find-matching-end))
+        ([remap end-of-defun] . LaTeX-find-matching-end)
+        ("C-S-b" . lps/LaTeX-prev-math)
+        ("C-S-f" . lps/LaTeX-next-math))
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . lps/latex-fontification)
@@ -3279,6 +3281,20 @@ move to the end of the document, and search backward instead."
                                   "\\crefname{theorem}{Theorem}{Theorems}"
                                   "\n\n")))
                    '(indent-region (point-min) (point-max)))))
+
+;;;  Navigation
+  ;; Slow: could be made faster by searching $ or \] characters
+  ;; rather than calling `texmathp' at each step.
+  ;; However, this is the most robust, and fast enough.
+  (defun lps/LaTeX-prev-math ()
+    (interactive)
+    (while (not (texmathp))
+      (backward-char 1)))
+
+  (defun lps/LaTeX-next-math ()
+    (interactive)
+    (while (not (texmathp))
+      (forward-char 1)))
 
   ;; Improve fontification
   (defun lps/latex-fontification ()
@@ -3674,11 +3690,11 @@ instead."
   (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-file-field-format))
 
 (use-package reftex
-  :defer t
+  :after latex
   :hook (LaTeX-mode . reftex-mode)
-  ;; :bind
-  ;; (:map TeX-mode-map
-  ;;       ("C-c M-n" . reftex-parse-all))
+  :bind
+  (:map TeX-mode-map
+        ("C-c M-n" . reftex-parse-all))
   :custom
   (reftex-plug-into-AUCTeX t)
   (reftex-toc-split-windows-horizontally nil)
