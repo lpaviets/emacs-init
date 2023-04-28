@@ -769,16 +769,6 @@ First of all, we never want ~TAB~ to insert actual tab characters. We also don't
       (join-line t beg end)))
 #+end_src
 
-Then, we do not want to repeatedly spam the ~DEL~ key in order to delete a long sequence of whitespaces.
-
-#+begin_src emacs-lisp
-  (use-package hungry-delete
-    :defer t
-    :init
-    ;; (global-hungry-delete-mode 1)
-    (setq hungry-delete-join-reluctantly t))
-#+end_src
-
 Finally, as Emacs also has commands to work with pages (as opposed to paragraphs and so on), we improve the visual look of those pages breaks.
 
 #+begin_src emacs-lisp
@@ -2737,19 +2727,6 @@ Most of the time, when writing text, we are going to use words over and over aga
     (company-dabbrev-downcase nil))
 #+end_src
 
-We add another backend to support completion in shell and terminal-modes
-#+begin_src emacs-lisp
-  (use-package company-shell
-    :disabled t
-    :after eshell
-    :hook (eshell-mode . lps/company-shell-modes)
-    :config
-    (defun lps/company-shell-modes ()
-      ;; Not satisfying: duplicates from company-capf and company-shell, so we disable the 2nd one but we lose some documentation ...
-      (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev company-shell)))
-      (push 'elisp-completion-at-point completion-at-point-functions)))
-#+end_src
-
 ** Language Server Protocol
 *** Protocol
 
@@ -4101,12 +4078,6 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
 We also add the (generally useful) feature of remembering where we left a PDF when we last closed it. This is especially useful for longer documents, such as manuals, books, or especially long articles.
 
 #+begin_src emacs-lisp
-  (use-package pdf-view-restore
-    :disabled t ; buggy ...
-    :custom
-    (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
-    (use-file-base-name-flag nil))
-
   (use-package saveplace-pdf-view
     :after pdf-view)
 #+end_src
@@ -5409,10 +5380,6 @@ We use two packages to have a more powerful completion system in ~eshell~. The U
 #+begin_src emacs-lisp
   (system-case
    (gnu/linux
-    (use-package bash-completion
-      :disabled t
-      :hook (eshell-mode . bash-completion-setup))
-
     (use-package fish-completion
       :defer t
       :hook (eshell-mode . lps/start-fish-completion)
@@ -5423,18 +5390,6 @@ We use two packages to have a more powerful completion system in ~eshell~. The U
           (define-key eshell-mode-map (kbd "TAB") 'company-manual-begin)
           (fish-completion-mode 1)
           (setq fish-completion-fallback-on-bash-p t))))))
-#+end_src
-
-Another method, which tries to simulate the completion mechanism of ~fish~ shells, and which also provides suggestions based on history:
-
-#+begin_src emacs-lisp
-  ;; Straight from Centaur Emacs
-  (use-package esh-autosuggest
-    :disabled t
-    :defer t
-    :hook (eshell-mode . esh-autosuggest-mode)
-    :custom
-    (esh-autosuggest-use-company-map t))
 #+end_src
 
 *** Aliases and commands
@@ -6031,31 +5986,9 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
           (mu4e-search query "Search for: " t)))))
 #+end_src
 
-Because it might be a bit tedious to constantly open and quit the ~mu4e~ buffers to check for incoming messages, we use another package to get notifications informing us when we receive a new message.
-This package might also be used to generate desktop notifications, although I do not use this functionality.
+One point that is a bit infuriating with the current state of ~mu4e~ is how you are supposed to manage attachments. In particular, you have to navigate in a whole filetree, everytime you want to attach a file. To my knowledge, there is no "easy and immediate" way to /e.g./ attach several files at once.
 
-#+begin_src emacs-lisp
-  (use-package mu4e-alert
-    :after mu4e
-    :disabled t
-    :config
-    ;; Temporary fix: mu4e and mu4e-alert are out of sync
-    ;; while mu4e changes its naming conventions from the
-    ;; old mu4e~<stuff> to mu4e--<stuff>
-
-    (defadvice mu4e-context-switch (around mu4e-alert-update-mail-count-modeline disable)
-      "Advice `mu4e-context-switch' to update mode-line after changing the context."
-      (let ((context mu4e--context-current))
-        ad-do-it
-        (unless (equal context mu4e--context-current)
-          (mu4e-alert-update-mail-count-modeline))))
-
-    (mu4e-alert-enable-mode-line-display))
-#+end_src
-
-  One point that is a bit infuriating with the current state of ~mu4e~ is how you are supposed to manage attachments. In particular, you have to navigate in a whole filetree, everytime you want to attach a file. To my knowledge, there is no "easy and immediate" way to /e.g./ attach several files at once.
-
-  To patch this, we use a few tricks, with ~ivy~ and ~gnus-dired~
+To patch this, we use a few tricks, with ~ivy~ and ~gnus-dired~
 
 #+begin_src emacs-lisp
   ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
@@ -6428,17 +6361,6 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
         (ispell-change-dictionary dict))))
 #+end_src
 
-Depending on the context, we tend to write in different languages. It might be useful to try and automatically guess which one !
-
-#+begin_src emacs-lisp
-  (use-package guess-language
-    ;;:hook (text-mode . guess-language-mode)
-    :disabled t
-    :custom
-    (guess-language-languages '(en fr))
-    (guess-language-after-detection-functions '(guess-language-switch-flyspell-function)))
-#+end_src
-
 * Other
 ** Artist and picture modes
 
@@ -6770,7 +6692,10 @@ Finally, because Elfeed is somewhat complicated to use, we also add a dashboard 
 
     (defvar lps/elfeed-dashboard-mode-map
       (let ((map (make-sparse-keymap)))
-        (define-key map "U" 'elfeed-update)
+        (define-key map "U" (lambda ()
+                              (interactive)
+                              (elfeed-update)
+                              (lps/elfeed-dashboard--redraw nil nil)))
         (define-key map "r" 'lps/elfeed-org-reread)
         (define-key map "s" (lps/elfeed-wrap-before-elfeed
                              #'lps/elfeed-search-filter-interactive))
@@ -6892,7 +6817,11 @@ Finally, because Elfeed is somewhat complicated to use, we also add a dashboard 
            "\n"
            (propertize "  Misc\n\n" 'face 'mu4e-title-face)
 
-           (mu4e~main-action-str "\t* [U]pdate feeds & database\n" 'elfeed-update)
+           (mu4e~main-action-str "\t* [U]pdate feeds & database\n"
+                                 (lambda ()
+                                   (interactive)
+                                   (elfeed-update)
+                                   (lps/elfeed-dashboard--redraw nil nil)))
            (mu4e~main-action-str "\t* [r]ead elfeed-org files" 'lps/elfeed-org-reread)
            "\n"
            ;; (mu4e~main-action-str "\t* [H]elp\n" 'mu4e-display-manual)

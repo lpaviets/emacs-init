@@ -565,12 +565,6 @@ Note gray80 at size 10 is useful for side remarks."
                  (list (region-beginning) (region-end)))))
     (join-line t beg end)))
 
-(use-package hungry-delete
-  :defer t
-  :init
-  ;; (global-hungry-delete-mode 1)
-  (setq hungry-delete-join-reluctantly t))
-
 (use-package page-break-lines
   :hook (emacs-news-mode . page-break-lines-mode))
 
@@ -2099,16 +2093,6 @@ Does not insert a space before the inserted opening parenthesis"
   (company-dabbrev-ignore-case 'keep-prefix)
   (company-dabbrev-downcase nil))
 
-(use-package company-shell
-  :disabled t
-  :after eshell
-  :hook (eshell-mode . lps/company-shell-modes)
-  :config
-  (defun lps/company-shell-modes ()
-    ;; Not satisfying: duplicates from company-capf and company-shell, so we disable the 2nd one but we lose some documentation ...
-    (setq-local company-backends '((company-shell-env company-fish-shell company-capf company-files company-dabbrev company-shell)))
-    (push 'elisp-completion-at-point completion-at-point-functions)))
-
 (use-package emacs
   :ensure nil
   :hook ((python-mode
@@ -3190,12 +3174,6 @@ move to the end of the document, and search backward instead."
             (isearch-forward))
         (pdf-view-goto-page (pdf-cache-number-of-pages))
         (isearch-backward))))))
-
-(use-package pdf-view-restore
-  :disabled t ; buggy ...
-  :custom
-  (pdf-view-restore-filename (concat user-emacs-directory ".pdf-view-restore"))
-  (use-file-base-name-flag nil))
 
 (use-package saveplace-pdf-view
   :after pdf-view)
@@ -4422,10 +4400,6 @@ PWD is not in a git repo (or the git command is not found)."
 
 (system-case
  (gnu/linux
-  (use-package bash-completion
-    :disabled t
-    :hook (eshell-mode . bash-completion-setup))
-
   (use-package fish-completion
     :defer t
     :hook (eshell-mode . lps/start-fish-completion)
@@ -4436,14 +4410,6 @@ PWD is not in a git repo (or the git command is not found)."
         (define-key eshell-mode-map (kbd "TAB") 'company-manual-begin)
         (fish-completion-mode 1)
         (setq fish-completion-fallback-on-bash-p t))))))
-
-;; Straight from Centaur Emacs
-(use-package esh-autosuggest
-  :disabled t
-  :defer t
-  :hook (eshell-mode . esh-autosuggest-mode)
-  :custom
-  (esh-autosuggest-use-company-map t))
 
 ;; Inspired from https://github.com/daviderestivo/load-bash-alias/blob/master/load-bash-alias.el
 ;; WARNING: it is not very robust, and might mess up if bash aliases involve
@@ -4960,23 +4926,6 @@ by hand if needed"
       (let ((query (mapconcat 'identity (reverse query-list) " ")))
         (mu4e-search query "Search for: " t)))))
 
-(use-package mu4e-alert
-  :after mu4e
-  :disabled t
-  :config
-  ;; Temporary fix: mu4e and mu4e-alert are out of sync
-  ;; while mu4e changes its naming conventions from the
-  ;; old mu4e~<stuff> to mu4e--<stuff>
-
-  (defadvice mu4e-context-switch (around mu4e-alert-update-mail-count-modeline disable)
-    "Advice `mu4e-context-switch' to update mode-line after changing the context."
-    (let ((context mu4e--context-current))
-      ad-do-it
-      (unless (equal context mu4e--context-current)
-        (mu4e-alert-update-mail-count-modeline))))
-
-  (mu4e-alert-enable-mode-line-display))
-
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired
     :ensure nil
@@ -5304,13 +5253,6 @@ is handled appropriately."
       (lps/ispell-change-personal-dictionary dict)
       (ispell-change-dictionary dict))))
 
-(use-package guess-language
-  ;;:hook (text-mode . guess-language-mode)
-  :disabled t
-  :custom
-  (guess-language-languages '(en fr))
-  (guess-language-after-detection-functions '(guess-language-switch-flyspell-function)))
-
 (use-package artist
   :ensure nil
   :defer t
@@ -5614,7 +5556,10 @@ insert as many blank lines as necessary."
 
   (defvar lps/elfeed-dashboard-mode-map
     (let ((map (make-sparse-keymap)))
-      (define-key map "U" 'elfeed-update)
+      (define-key map "U" (lambda ()
+                            (interactive)
+                            (elfeed-update)
+                            (lps/elfeed-dashboard--redraw nil nil)))
       (define-key map "r" 'lps/elfeed-org-reread)
       (define-key map "s" (lps/elfeed-wrap-before-elfeed
                            #'lps/elfeed-search-filter-interactive))
@@ -5736,7 +5681,11 @@ insert as many blank lines as necessary."
          "\n"
          (propertize "  Misc\n\n" 'face 'mu4e-title-face)
 
-         (mu4e~main-action-str "\t* [U]pdate feeds & database\n" 'elfeed-update)
+         (mu4e~main-action-str "\t* [U]pdate feeds & database\n"
+                               (lambda ()
+                                 (interactive)
+                                 (elfeed-update)
+                                 (lps/elfeed-dashboard--redraw nil nil)))
          (mu4e~main-action-str "\t* [r]ead elfeed-org files" 'lps/elfeed-org-reread)
          "\n"
          ;; (mu4e~main-action-str "\t* [H]elp\n" 'mu4e-display-manual)
