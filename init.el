@@ -2164,14 +2164,18 @@ Does not insert a space before the inserted opening parenthesis"
 (use-package eglot
   ;;:hook ((python-mode c-mode c++-mode) . eglot-ensure)
   :ensure nil
-  :bind-keymap ("C-c l" . eglot-mode-map)
-  :bind (:map eglot-mode-map
-              ("r" . eglot-rename)
-              ("g g" . xref-find-definitions)
-              ("g r" . xref-find-references)
-              ("h" . eldoc))
+  :init
+  (defvar lps/eglot-prefix-map (make-sparse-keymap))
+  :bind
+  (:map lps/eglot-prefix-map
+        ("r" . eglot-rename)
+        ("g g" . xref-find-definitions)
+        ("g r" . xref-find-references)
+        ("h" . eldoc))
   :custom
-  (eglot-ignored-server-capabilities '(:documentHighlightProvider)))
+  (eglot-ignored-server-capabilities '(:documentHighlightProvider))
+  :config
+  (define-key eglot-mode-map (kbd "C-c l") lps/eglot-prefix-map))
 
 ;; Flycheck
 (use-package flycheck
