@@ -387,9 +387,9 @@ fboundp."
 
   (defun lps/toggle-live-code-presentation-settings ()
     "Various useful settings for live coding sessions
-Still very buggy, but this should not matter in a live presentation
-setting.
-Avoid toggling several times, just use it once if possible"
+  Still very buggy, but this should not matter in a live presentation
+  setting.
+  Avoid toggling several times, just use it once if possible"
     (interactive)
     (if lps/live-presentation-p
         (progn
@@ -414,10 +414,10 @@ Avoid toggling several times, just use it once if possible"
 
     (setq lps/live-presentation-p (not lps/live-presentation-p)))
 
-  ;;; Inspired from https://www.reddit.com/r/emacs/comments/vb05co/resizerecolour_text_onthefly/
+    ;;; Inspired from https://www.reddit.com/r/emacs/comments/vb05co/resizerecolour_text_onthefly/
   (defun lps/resize-and-color-region (beg end)
     "Resize/recolour selected region;defaulting to blue at size 300,for titles.
-Note gray80 at size 10 is useful for side remarks."
+  Note gray80 at size 10 is useful for side remarks."
     (interactive "r")
     (let ((contents (buffer-substring beg end))
           (color (read-color "Colour: "))
@@ -427,6 +427,41 @@ Note gray80 at size 10 is useful for side remarks."
         (insert (propertize contents
                             'font-lock-face
                             `(:foreground ,color :height ,size)))))))
+
+(use-package emacs
+  :init
+  (defvar-local lps/slideshow-mode-line--old-format nil
+    "Storage for the old `mode-line-format', to be restored upon
+quitting the minor mode")
+  (defvar-local lps/slideshow--old-window-configuration nil
+    "Storage for the old window configuration, to be restored upon
+quitting the minor mode")
+  (define-minor-mode lps/slideshow-mode
+    "Minor mode to use for nice slideshows.
+
+All windows except the current one are deleted.
+The mode-line is also hidden, and the frame becomes full-screen.
+
+Upon quitting `lps/slideshow-mode', the previous window configuration,
+the mode-line and the usual non-full-screen Emacs are restored."
+    :init-value nil
+    :global nil
+    (if lps/slideshow-mode
+        (progn
+          (unless lps/slideshow-mode-line--old-format
+            (setq lps/slideshow-mode-line--old-format mode-line-format))
+          (unless lps/slideshow--old-window-configuration
+            (setq lps/slideshow--old-window-configuration
+                  (current-window-configuration)))
+          (setq mode-line-format nil)
+          (toggle-frame-fullscreen)
+          (delete-other-windows))
+      (setq mode-line-format lps/slideshow-mode-line--old-format
+            lps/slideshow-mode-line--old-format nil)
+      (toggle-frame-fullscreen)
+      (set-window-configuration lps/slideshow--old-window-configuration)
+      (setq lps/slideshow--old-window-configuration nil))
+    (redraw-display)))
 
 ;; First time used: run M-x all-the-icons-install-fonts
 (use-package all-the-icons
@@ -3145,7 +3180,8 @@ Refer to `org-agenda-prefix-format' for more information."
                 ("<C-left>" . image-scroll-right)
                 ("<C-right>" . image-scroll-left)
                 ("s a" . pdf-view-auto-slice-minor-mode)
-                ("G" . pdf-view-goto-label))
+                ("G" . pdf-view-goto-label)
+                ("<f11>" . lps/slideshow-mode))
     :custom
     (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                             "-pointsize" "%P"
@@ -3680,14 +3716,15 @@ instead."
   (reftex-plug-into-AUCTeX t)
   (reftex-toc-split-windows-horizontally nil)
   (reftex-label-alist
-   '(("section"     ?s "sec:"  "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"       ))
-     ("definition"  ?d "def:"  "~\\ref{%s}" t (regexp "[Dd]efinition\\(s\\)?"    ))
-     ("example"     ?x "ex:"   "~\\ref{%s}" t (regexp "[Ee]xample\\(s\\)?"       ))
-     ("lemma"       ?l "lem:"  "~\\ref{%s}" t (regexp "[Ll]emma\\(s\\|ta\\)?"    ))
-     ("proposition" ?p "prop:" "~\\ref{%s}" t (regexp "[Pp]roposition\\(s\\)?"   ))
-     ("theorem"     ?h "thm:"  "~\\ref{%s}" t (regexp "[Tt]heorem\\(s\\)?"       ))
-     ("remark"      ?r "rem:"  "~\\ref{%s}" t (regexp "[Rr]emark\\(s\\)?"        ))
-     ("corollary"   ?c "cor:"  "~\\ref{%s}" t (regexp "[Cc]orollar\\(y\\|ies\\)")))))
+   '(("section"     ?s "sec:"   "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"))
+     ("definition"  ?d "def:"   "~\\ref{%s}" t (regexp "[Dd]efinition\\(s\\)?"))
+     ("example"     ?x "ex:"    "~\\ref{%s}" t (regexp "[Ee]xample\\(s\\)?"))
+     ("lemma"       ?l "lem:"   "~\\ref{%s}" t (regexp "[Ll]emma\\(s\\|ta\\)?"))
+     ("proposition" ?p "prop:"  "~\\ref{%s}" t (regexp "[Pp]roposition\\(s\\)?"))
+     ("theorem"     ?h "thm:"   "~\\ref{%s}" t (regexp "[Tt]heorem\\(s\\)?"))
+     ("remark"      ?r "rem:"   "~\\ref{%s}" t (regexp "[Rr]emark\\(s\\)?"))
+     ("corollary"   ?c "cor:"   "~\\ref{%s}" t (regexp "[Cc]orollar\\(y\\|ies\\)"))
+     ("proof"       ?p "proof:" "~\\ref{%s}" t (regexp "[Pp]roof\\(s\\)?")))))
 
 (use-package reftex-cite
   :diminish
