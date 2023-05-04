@@ -776,7 +776,7 @@ Another useful thing, which is not strictly necessary but comfortable when worki
     (global-hl-todo-mode 1)
     :custom
     (hl-todo-include-modes '(prog-mode text-mode))
-    (hl-todo-color-background nil)
+    (hl-todo-color-background t)
     (hl-todo-wrap-movement t)
     (hl-todo-highlight-punctuation ":!.?")
     (hl-todo-keyword-faces `(("TODO" . "#cc9393")
@@ -1355,14 +1355,42 @@ It will condense all the available information about something within a single H
   (use-package helpful
     :custom
     (describe-char-unidata-list t)
-    :bind (:map help-map
-                (";" . helpful-at-point))
+    :bind
+    (:map help-map
+          (";" . helpful-at-point))
+    (:map helpful-mode-map
+          ("i" . lps/helpful-manual)
+          ("s" . lps/helpful-source))
     :init
     (require 'helpful) ;; somewhat hacky, would like to autoload ...
     (defalias 'describe-function 'helpful-callable)
     (defalias 'describe-variable 'helpful-variable)
     (defalias 'describe-symbol 'helpful-symbol)
-    (defalias 'describe-key 'helpful-key))
+    (defalias 'describe-key 'helpful-key)
+    :config
+    ;; Taken from `helpful--manual'
+    (defun lps/helpful-manual ()
+      (interactive)
+      (info-lookup 'symbol helpful--sym #'emacs-lisp-mode))
+
+    ;; From the main `helpful-update' and `helpful--navigate'
+    (defun lps/helpful-source ()
+      (interactive)
+      (-let* ((primitive-p (helpful--primitive-p helpful--sym helpful--callable-p))
+              (look-for-src (or (not primitive-p)
+                                find-function-C-source-directory))
+              ((buf pos opened)
+               (if look-for-src
+                   (helpful--definition helpful--sym helpful--callable-p)
+                 '(nil nil nil)))
+              (source-path (when buf
+                             (buffer-file-name buf))))
+        (find-file source-path)
+        (when pos
+          (when (or (< pos (point-min))
+                    (> pos (point-max)))
+            (widen))
+          (goto-char pos)))))
 
 #+end_src
 
