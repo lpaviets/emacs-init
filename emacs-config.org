@@ -5764,7 +5764,9 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
                  ("q" . lps/mu4e-kill-buffers)
                  ("Q" . mu4e-quit))
            (:map mu4e-search-minor-mode-map
-                 ("C-S-s" . lps/mu4e-build-query)))
+                 ("C-S-s" . lps/mu4e-build-query))
+           (:map mu4e-view-mode-map
+                 ("A" . lps/mu4e-view-mime-part-action)))
     :init
     (setq mail-user-agent 'mu4e-user-agent)
     (set-variable 'read-mail-command 'mu4e)
@@ -6076,7 +6078,27 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
         (while (not (eq (setq choice (lps/--mu4e-parse-query choices)) :quit))
           (push choice query-list))
         (let ((query (mapconcat 'identity (reverse query-list) " ")))
-          (mu4e-search query "Search for: " t)))))
+          (mu4e-search query "Search for: " t))))
+
+    (defun lps/mu4e-view-mime-part-action ()
+      "Wrapper around `mu4e-view-mime-part-action' with better prompt"
+      (interactive)
+      (let* ((parts (mu4e~view-gather-mime-parts))
+             attachments)
+        (cl-loop for part in parts
+                 for num = (car part)
+                 for fn = (or (cdr (assoc 'filename
+                                          (assoc "attachment" (cdr part))))
+                              (cl-loop for item in part
+                                       for name = (and (listp item)
+                                                       (assoc-default 'name item))
+                                       thereis (and (stringp name) name)))
+                 when fn
+                 do (push (cons fn num) attachments))
+        (mu4e-view-mime-part-action (cdr (assoc
+                                          (completing-read "MIME-part: "
+                                                           attachments nil t)
+                                          attachments))))))
 #+end_src
 
 One point that is a bit infuriating with the current state of ~mu4e~ is how you are supposed to manage attachments. In particular, you have to navigate in a whole filetree, everytime you want to attach a file. To my knowledge, there is no "easy and immediate" way to /e.g./ attach several files at once.
