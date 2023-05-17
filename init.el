@@ -338,7 +338,8 @@ fboundp."
 
   (defvar lps/truncate-lines-modes-hook '(dired-mode-hook
                                           outline-mode-hook
-                                          tabulated-list-mode-hook)
+                                          tabulated-list-mode-hook
+                                          occur-mode-hook)
     "Modes in which `truncate-lines' will be set to `t' automatically")
 
   (dolist (hook lps/truncate-lines-modes-hook)
@@ -1743,6 +1744,9 @@ Move point in the last duplicated string (line or region)."
         ("r b" . delete-blank-lines)
         ("r d" . delete-matching-lines)
         ("r k" . keep-lines))
+  :custom
+  (list-matching-lines-default-context-lines 1)
+  (list-matching-lines-jump-to-current-line t)
   :config
   (defun lps/insert-line-above (N)
     (interactive "P")

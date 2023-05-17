@@ -501,7 +501,8 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
 
     (defvar lps/truncate-lines-modes-hook '(dired-mode-hook
                                             outline-mode-hook
-                                            tabulated-list-mode-hook)
+                                            tabulated-list-mode-hook
+                                            occur-mode-hook)
       "Modes in which `truncate-lines' will be set to `t' automatically")
 
     (dolist (hook lps/truncate-lines-modes-hook)
@@ -535,7 +536,6 @@ This is simply a way to change how Emacs looks. Some themes are more complete th
   (use-package modus-themes)
   (use-package doom-themes)
 #+end_src
-
 
 *** Presentation
 
@@ -639,7 +639,6 @@ As we tend to use ~beamer~ to make presentations (and therefore, the slides are 
         (setq lps/slideshow--old-window-configuration nil))
       (redraw-display)))
 #+end_src
-
 
 *** Modeline and icons
 
@@ -2293,6 +2292,9 @@ Hence, we will define and rebind a few commands for that.
           ("r b" . delete-blank-lines)
           ("r d" . delete-matching-lines)
           ("r k" . keep-lines))
+    :custom
+    (list-matching-lines-default-context-lines 1)
+    (list-matching-lines-jump-to-current-line t)
     :config
     (defun lps/insert-line-above (N)
       (interactive "P")
