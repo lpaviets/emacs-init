@@ -1496,9 +1496,11 @@ If called with a prefix argument, also kills the current buffer"
   (isearch-regexp-lax-whitespace t)
   (isearch-yank-on-move 'shift)
   (isearch-allow-scroll t)
+  (isearch-lazy-count t)
   :config
   ;; Change this face to distinguish between current match and other ones
-  (set-face-foreground 'isearch "#98f5ff"))
+  (set-face-foreground 'isearch "yellow")
+  (set-face-foreground 'lazy-highlight "yellow3"))
 
 (use-package replace
   :ensure nil
@@ -3705,7 +3707,8 @@ instead."
                          unify-case
                          opts-or-alts
                          required-fields
-                         numerical-fields))
+                         numerical-fields
+                         last-comma))
   (bibtex-unify-case-function 'downcase)
   (bibtex-comma-after-last-field t)
   ;; minor changes + also re-specify in case default changes
