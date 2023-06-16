@@ -588,6 +588,11 @@ the mode-line and the usual non-full-screen Emacs are restored."
   ;; Tab behaviour and whitespaces
   (setq-default indent-tabs-mode nil)
   (setq-default tab-width 4)
+  :custom
+  (cycle-spacing-actions '(just-one-space
+                           (delete-all-space inverted-arg)
+                           delete-all-space
+                           restore))
   :bind
   (:map lps/quick-edit-map
         ("DEL" . cycle-spacing)
@@ -2464,6 +2469,18 @@ call the associated function interactively. Otherwise, call the
   (defun lps/sly-start-repl ()
     (unless (sly-connected-p)
       (sly)))
+
+  ;; ;; Buggy still ...
+  ;; (defun lps/desktop-restore-lisp-file-no-repl (buffer-file-name
+  ;;                                               _buffer-name
+  ;;                                               _buffer-misc)
+  ;;   (let ((sly-editing-mode-hook (remove 'lps/sly-start-repl
+  ;;                                        sly-editing-mode-hook)))
+  ;;     (desktop-restore-file-buffer buffer-file-name _buffer-name _buffer-misc)))
+
+  ;; (add-to-list 'desktop-buffer-mode-handlers
+  ;;              '(lisp-mode . lps/desktop-restore-lisp-file-no-repl)
+  ;;              nil 'equal)
 
   (add-hook 'sly-editing-mode-hook 'lps/sly-start-repl)
   (add-hook 'sly-mode-hook 'lps/sly-company-setup)
