@@ -112,7 +112,7 @@ flycheck_*.el
 
 # Sandbox stuff: only interested in init.el
 /sandbox/*
-!/sandbox/init.el
+!/sandbox/*init.el
 
 # Desktop save path
 /desktop-saves/

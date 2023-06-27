@@ -362,7 +362,8 @@ fboundp."
   (kaolin-themes-comments-style 'alt)
   (kaolin-themes-distinct-parentheses t)
   (kaolin-themes-italic-comments t)
-  (kaolin-themes-hl-line-colored t))
+  (kaolin-themes-hl-line-colored t)
+  (kaolin-themes-org-scale-headings nil))
 
 (use-package modus-themes)
 (use-package doom-themes)
@@ -1075,8 +1076,21 @@ If called with a prefix argument, also kills the current buffer"
   (:map help-map
         ("u" . describe-face)
         ("U" . describe-font)
-        ("C-k" . describe-keymap)
-        ("M" . man)))
+        ("C-k" . describe-keymap)))
+
+(use-package man
+  :bind
+  (:map help-map
+        ("M" . man))
+  :config
+  ;; Minor improvements to visual appearance:
+  ;; sections and some keywords are easier to see
+  (set-face-attribute 'Man-overstrike nil
+                      :inherit font-lock-builtin-face
+                      :bold t)
+  (set-face-attribute 'Man-underline nil
+                      :inherit font-lock-variable-name-face
+                      :underline t))
 
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
@@ -3310,6 +3324,8 @@ move to the end of the document, and search backward instead."
   (TeX-electric-sub-and-superscript t)
   ;; Don't insert magic quotes right away.
   (TeX-quote-after-quote t)
+  ;; Don't insert braces by default
+  (TeX-insert-braces nil)
   ;; But do insert closing $ when inserting the first one
   (TeX-electric-math '("$" . "$"))
   ;; Also change the key to access LaTeX-math-mode
@@ -4304,6 +4320,7 @@ present in the list of authors or in the title of the article"
   :config
   (setq preview-auto-reveal t)
   (setq preview-auto-cache-preamble t)
+  (setq preview-scale-function 1.5) ; hack ? Find a better way
   (add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t)
 
   ;; Dirty way to reduce noise when idle-y

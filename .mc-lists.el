@@ -20,6 +20,8 @@
         company-indent-or-complete-common
         counsel-M-x
         delete-indentation
+        delete-region
+        downcase-dwim
         drag-stuff-down
         end-of-buffer
         end-of-visual-line
