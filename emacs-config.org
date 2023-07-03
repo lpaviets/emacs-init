@@ -4289,9 +4289,6 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
                                     ;; "\\usepackage{autoref}\n"
                                     "\\usepackage{cleveref}\n"
                                     "\\usepackage{url}\n\n"
-                                    "\\newcommand\\NN{\\mathbb N}\n"
-                                    "\\newcommand\\ZZ{\\mathbb Z}\n"
-                                    "\\newcommand\\RR{\\mathbb R}\n\n"
                                     "\\newtheorem{conjecture}{Conjecture}\n"
                                     "\\newtheorem{proposition}{Proposition}\n"
                                     "\\newtheorem{definition}{Definition}\n"
@@ -7325,3 +7322,6 @@ To explore:
 
 ** Printing
 Not particularly Emacs-related, but: find a way to specify a username/password to ~lp~ when printing using either the built-in functions or ~transient-extras-lp-*~
+
+** Beamer template
+Add a template to fill new Beamer documents with my usual stuff (Warsaw, improved footers, etc).
