@@ -664,7 +664,33 @@ the mode-line and the usual non-full-screen Emacs are restored."
   (enable-recursive-minibuffers t)
   (completions-group t)
   :config
-  (minibuffer-depth-indicate-mode 1))
+  (minibuffer-depth-indicate-mode 1)
+
+  (defun lps/disable-minibuffer-completion-help (fun &rest args)
+    (cl-letf (((symbol-function #'minibuffer-completion-help)
+               #'ignore))
+      (apply fun args)))
+
+  (defun lps/completing-read-in-region (start end collection &optional predicate)
+    "Prompt for completion of region in the minibuffer if non-unique.
+   Use as a value for `completion-in-region-function'.
+
+It might be buggy with some backend, so use at your own risk"
+    (let* ((initial (buffer-substring-no-properties start end))
+           (all (completion-all-completions initial collection predicate
+                                            (length initial)))
+           (completion (cond
+                        ((atom all) nil)
+                        ((and (consp all) (atom (cdr all))) (car all))
+                        (t (completing-read
+                            "Completion: " collection predicate nil initial)))))
+      (cond (completion (completion--replace start end completion) t)
+            (t (message "No completion") nil))))
+
+  (defmacro lps/with-completing-read-in-region (&rest body)
+    (declare (indent 1))
+    `(let ((completion-in-region-function 'lps/completing-read-in-region))
+       ,@body)))
 
 (use-package vertico
   :ensure t
@@ -688,12 +714,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
           (progn
             (delete-minibuffer-contents)
             (insert directory))
-        (backward-kill-word arg))))
-
-  (defun lps/disable-minibuffer-completion-help (fun &rest args)
-    (cl-letf (((symbol-function #'minibuffer-completion-help)
-               #'ignore))
-      (apply fun args))))
+        (backward-kill-word arg)))))
 
 (use-package marginalia
   :after vertico
@@ -4737,7 +4758,9 @@ The return string is always 6 characters wide."
          (:map mu4e-search-minor-mode-map
                ("C-S-s" . lps/mu4e-build-query))
          (:map mu4e-view-mode-map
-               ("A" . lps/mu4e-view-mime-part-action)))
+               ("A" . lps/mu4e-view-mime-part-action))
+         (:map message-mode-map
+               ([remap message-tab] . lps/message-tab)))
   :init
   (setq mail-user-agent 'mu4e-user-agent)
   (set-variable 'read-mail-command 'mu4e)
@@ -4745,7 +4768,12 @@ The return string is always 6 characters wide."
   ;; Useless as long as I have not configured GPG properly
   (defvar lps/safe-mail-send nil "If non-nil, ask for a signature, an encryption, and ask confirmation when sending a non-multipart MIME mail")
 
+  ;; Improve completion
   (setq mu4e-completing-read-function 'completing-read)
+  (defun lps/message-tab ()
+    (interactive nil message-mode)
+    (lps/with-completing-read-in-region
+        (message-tab)))
 
   ;; Security issues
   (add-hook 'mu4e-main-mode-hook #'lps/auth-source-define-cache-expiry)
