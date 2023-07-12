@@ -571,6 +571,12 @@ the mode-line and the usual non-full-screen Emacs are restored."
 (use-package hl-todo
   :init
   (global-hl-todo-mode 1)
+  :bind
+  (:map hl-todo-mode-map
+        ("C-c t p" . hl-todo-previous)
+        ("C-c t n" . hl-todo-next)
+        ("C-c t o" . hl-todo-occur)
+        ("C-c t i" . hl-todo-insert))
   :custom
   (hl-todo-include-modes '(prog-mode text-mode))
   (hl-todo-color-background t)
@@ -580,7 +586,16 @@ the mode-line and the usual non-full-screen Emacs are restored."
                            ("FAIL" . "#8c5353")
                            ("DONE" . "#afd8af")
                            ("HACK" . "#d0bf8f")
-                           ("FIXME" . "#cc9393"))))
+                           ("FIXME" . "#cc9393")))
+  :config
+  (defvar hl-todo-repeat-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map (kbd "n") #'hl-todo-next)
+      (define-key map (kbd "p") #'hl-todo-previous)
+      (define-key map (kbd "i") #'hl-todo-insert)
+      map))
+  (dolist (cmd '(hl-todo-next hl-todo-previous hl-todo-insert))
+    (put cmd 'repeat-map 'hl-todo-repeat-map)))
 
 (use-package emacs
   :ensure nil
@@ -947,8 +962,6 @@ buffer in current window."
        "%s: Can't touch this!"
      "%s is up for grabs.")
    (current-buffer)))
-
-(global-set-key (kbd "C-c t") 'lps/toggle-window-dedicated)
 
 (use-package ffap
   :ensure nil
@@ -1877,7 +1890,7 @@ Breaks if region or line spans multiple visual lines"
             (lps/--fill-width-repeat-string width str))))))
 
   (defvar lps/do-not-capitalize-list '("the" "a" "an" "of" "in" "on" "by"
-                                       "no" "or" "and" "if" "for" "to"
+                                       "no" "or" "and" "if" "for" "to" "is"
                                        "le" "la" "les" "et" "ou"
                                        "si" "un" "une" "de" "des"
                                        "du" "d" "l" "ni"))
@@ -3833,7 +3846,11 @@ instead."
      ("theorem"     ?h "thm:"   "~\\ref{%s}" t (regexp "[Tt]heorem\\(s\\)?"))
      ("remark"      ?r "rem:"   "~\\ref{%s}" t (regexp "[Rr]emark\\(s\\)?"))
      ("corollary"   ?c "cor:"   "~\\ref{%s}" t (regexp "[Cc]orollar\\(y\\|ies\\)"))
-     ("proof"       ?p "proof:" "~\\ref{%s}" t (regexp "[Pp]roof\\(s\\)?")))))
+     ("proof"       ?p "proof:" "~\\ref{%s}" t (regexp "[Pp]roof\\(s\\)?"))))
+  (reftex-insert-label-flags '("sftxlhprc" "sftxlhprc"))
+  (reftex-derive-label-parameters `(4 25 t 1 "-"
+                                      ,lps/do-not-capitalize-list
+                                      t)))
 
 (use-package reftex-cite
   :diminish
