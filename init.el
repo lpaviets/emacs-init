@@ -3839,15 +3839,15 @@ instead."
   (reftex-toc-split-windows-horizontally nil)
   (reftex-label-alist
    '(("section"     ?s "sec:"   "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"))
-     ("definition"  ?d "def:"   "~\\ref{%s}" t (regexp "[Dd]efinition\\(s\\)?"))
-     ("example"     ?x "ex:"    "~\\ref{%s}" t (regexp "[Ee]xample\\(s\\)?"))
-     ("lemma"       ?l "lem:"   "~\\ref{%s}" t (regexp "[Ll]emma\\(s\\|ta\\)?"))
-     ("proposition" ?p "prop:"  "~\\ref{%s}" t (regexp "[Pp]roposition\\(s\\)?"))
-     ("theorem"     ?h "thm:"   "~\\ref{%s}" t (regexp "[Tt]heorem\\(s\\)?"))
+     ("definition"  ?d "def:"   "~\\ref{%s}" 1 (regexp "[Dd]efinition\\(s\\)?"))
+     ("example"     ?x "ex:"    "~\\ref{%s}" 1 (regexp "[Ee]xample\\(s\\)?"))
+     ("lemma"       ?l "lem:"   "~\\ref{%s}" 1 (regexp "[Ll]emma\\(s\\|ta\\)?"))
+     ("proposition" ?p "prop:"  "~\\ref{%s}" 1 (regexp "[Pp]roposition\\(s\\)?"))
+     ("theorem"     ?h "thm:"   "~\\ref{%s}" 1 (regexp "[Tt]heorem\\(s\\)?"))
      ("remark"      ?r "rem:"   "~\\ref{%s}" t (regexp "[Rr]emark\\(s\\)?"))
-     ("corollary"   ?c "cor:"   "~\\ref{%s}" t (regexp "[Cc]orollar\\(y\\|ies\\)"))
-     ("proof"       ?p "proof:" "~\\ref{%s}" t (regexp "[Pp]roof\\(s\\)?"))))
-  (reftex-insert-label-flags '("sftxlhprc" "sftxlhprc"))
+     ("corollary"   ?c "cor:"   "~\\ref{%s}" 1 (regexp "[Cc]orollar\\(y\\|ies\\)"))
+     ("proof"       ?p "proof:" "~\\ref{%s}" 1 (regexp "[Pp]roof\\(s\\)?"))))
+  (reftex-insert-label-flags '(t t))
   (reftex-derive-label-parameters `(4 25 t 1 "-"
                                       ,lps/do-not-capitalize-list
                                       t)))
