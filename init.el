@@ -457,7 +457,8 @@ the mode-line and the usual non-full-screen Emacs are restored."
                   (current-window-configuration)))
           (setq mode-line-format nil)
           (toggle-frame-fullscreen)
-          (delete-other-windows))
+          (delete-other-windows)
+          (pdf-view-goto-page 1))
       (setq mode-line-format lps/slideshow-mode-line--old-format
             lps/slideshow-mode-line--old-format nil)
       (toggle-frame-fullscreen)
