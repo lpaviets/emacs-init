@@ -70,6 +70,7 @@
   ;; (setq use-package-always-ensure t)
   ;; Uncomment the folllowing line to have a detailed startup log
   (use-package-verbose t)
+  ;; (use-package-compute-statistics t)
   ;; (use-package-always-defer t)
   )
 
@@ -431,6 +432,8 @@ fboundp."
                             `(:foreground ,color :height ,size)))))))
 
 (use-package emacs
+  :commands lps/slideshow-mode
+  :defer t
   :init
   (defvar-local lps/slideshow-mode-line--old-format nil
     "Storage for the old `mode-line-format', to be restored upon
@@ -857,101 +860,9 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
 
   :init
   (windmove-default-keybindings 'shift)
-  (windmove-swap-states-default-keybindings '(ctrl shift))
-
-  :config
-  (defun hydra-move-splitter-left (arg)
-    "Move window splitter left."
-    (interactive "p")
-    (if (let ((windmove-wrap-around))
-          (windmove-find-other-window 'right))
-        (shrink-window-horizontally arg)
-      (enlarge-window-horizontally arg)))
-
-  (defun hydra-move-splitter-right (arg)
-    "Move window splitter right."
-    (interactive "p")
-    (if (let ((windmove-wrap-around))
-          (windmove-find-other-window 'right))
-        (enlarge-window-horizontally arg)
-      (shrink-window-horizontally arg)))
-
-  (defun hydra-move-splitter-up (arg)
-    "Move window splitter up."
-    (interactive "p")
-    (if (let ((windmove-wrap-around))
-          (windmove-find-other-window 'up))
-        (enlarge-window arg)
-      (shrink-window arg)))
-
-  (defun hydra-move-splitter-down (arg)
-    "Move window splitter down."
-    (interactive "p")
-    (if (let ((windmove-wrap-around))
-          (windmove-find-other-window 'up))
-        (shrink-window arg)
-      (enlarge-window arg))))
-
-(use-package emacs
-  :ensure nil
-  :bind (:map lps/all-hydras-map
-              ("w" . hydra-window/body))
-
-  :init
-  (defhydra hydra-window (:color red
-                                 :hint nil)
-   "
-    ^Focus^           ^Resize^       ^Split^                 ^Delete^          ^Other
-    ^^^^^^^^^-------------------------------------------------------------------------------
-    _b_move left      _B_left        _V_split-vert-move      _o_del-other      _c_new-frame
-    _n_move down      _N_down        _H_split-horiz-move     _da_ace-del       _u_winner-undo
-    _p_move up        _P_up          _v_split-vert           _dw_del-window    _r_winner-redo
-    _f_move right     _F_right       _h_split-horiz          _df_del-frame
-    _q_uit
-    "
-   ;; Move the focus around
-   ("b" windmove-left)
-   ("n" windmove-down)
-   ("p" windmove-up)
-   ("f" windmove-right)
-
-   ;; Changes the size of the current window
-   ("B" hydra-move-splitter-left)
-   ("N" hydra-move-splitter-down)
-   ("P" hydra-move-splitter-up)
-   ("F" hydra-move-splitter-right)
-
-   ;; Split and move (or not)
-   ("V" (lambda ()
-          (interactive)
-          (split-window-right)
-          (windmove-right)))
-   ("H" (lambda ()
-          (interactive)
-          (split-window-below)
-          (windmove-down)))
-   ("v" split-window-right)
-   ("h" split-window-below)
-
-   ;; winner-mode must be enabled
-   ("u" winner-undo)
-   ("r" winner-redo) ;;Fixme, not working?
-
-   ;; Delete windows
-   ("o" delete-other-windows :exit t)
-   ("da" ace-delete-window)
-   ("dw" delete-window)
-   ("db" kill-this-buffer)
-   ("df" delete-frame :exit t)
-
-   ;; Other stuff
-   ("a" ace-window :exit t)
-   ("c" make-frame :exit t)
-   ("s" ace-swap-window)
-   ("q" nil)))
+  (windmove-swap-states-default-keybindings '(ctrl shift)))
 
 ;; Taken from https://emacs.stackexchange.com/questions/2189/how-can-i-prevent-a-command-from-using-specific-windows
-
 (defun lps/toggle-window-dedicated ()
   "Control whether or not Emacs is allowed to display another
 buffer in current window."
@@ -1116,6 +1027,8 @@ If called with a prefix argument, also kills the current buffer"
   :bind
   (:map help-map
         ("M" . man))
+  :custom
+  (Man-notify-method 'aggressive)
   :config
   ;; Minor improvements to visual appearance:
   ;; sections and some keywords are easier to see
@@ -1505,10 +1418,9 @@ If called with a prefix argument, also kills the current buffer"
                 (buffer-name))))))))
 
 (use-package emacs
-  :ensure nil
   :bind (:map lps/all-hydras-map
               ("m" . hydra-move/body))
-  :init
+  :config
   (defhydra hydra-move ()
     "Movement" ; m as in movement
     ("n" next-line)
@@ -1578,11 +1490,10 @@ If called with a prefix argument, also kills the current buffer"
   (avy-translate-char-function '(lambda (c) (if (= c 32) ?q c))))
 
 (use-package emacs
-  :ensure nil
   :bind
   (:map lps/all-hydras-map
         ("r" . hydra-rectangle/body))
-  :init
+  :config
   (defhydra hydra-rectangle (:body-pre (rectangle-mark-mode 1)
                                        :color pink
                                        :hint nil
@@ -1607,7 +1518,7 @@ If called with a prefix argument, also kills the current buffer"
     ("N" rectangle-number-lines)            ;; C-x r N
     ("r" (if (region-active-p)
              (deactivate-mark)
-           (rectangle-mark-mode 1)))        ;; C-x SPC
+           (rectangle-mark-mode 1))) ;; C-x SPC
     ("I" string-insert-rectangle)
     ("u" undo nil)
     ("q" nil)))
@@ -3895,6 +3806,7 @@ Return a list of regular expressions."
      "[ \t]*&&[ \t]*")))
 
 (use-package biblio-core
+  :defer t
   :config
   ;; We just override this function, to use our own completion
   ;; system.
@@ -4234,7 +4146,7 @@ If none is found, loops through the functions in
              ("E" org-ref-email-bibtex-entry "Email PDF and bib entry" :column "WWW")
              ("]" org-ref-bibtex-next-entry "Next entry" :column "Navigation" :color red)
              ("[" org-ref-bibtex-previous-entry "Previous entry" :column "Navigation" :color red))
-           ;;;; Add a command to search more sources at once
+           ;; Add a command to search more sources at once
            ;; (defhydra+ org-ref-bibtex-new-entry (:color blue)
            ;;   "New Bibtex entry:"
            ;;   ("N" doi-utils-get-pdf-url-from-anywhere "from anywhere"
@@ -4750,17 +4662,31 @@ The return string is always 6 characters wide."
   (:map pdf-view-mode-map
         ("i i" . transient-extras-lp-menu)))
 
+(use-package message
+  :bind
+  (:map message-mode-map
+        ([remap message-tab] . lps/message-tab))
+  :custom
+  (read-mail-command 'mu4e)
+  (mail-user-agent 'mu4e-user-agent)
+  (message-send-mail-function 'smtpmail-send-it)
+  (message-kill-buffer-on-exit t)
+  :config
+  (defun lps/message-tab ()
+    (interactive nil message-mode)
+    (lps/with-completing-read-in-region
+        (message-tab))))
+
 (use-package smtpmail
   :ensure nil
   :after mu4e
-  :config
-  (setq message-send-mail-function 'smtpmail-send-it)
+  :custom
   ;; Default SMTP configuration
-  (setq smtpmail-debug-info t)
-  (setq smtpmail-smtp-user "paviets201")
-  (setq smtpmail-smtp-server "smtp.unicaen.fr")
-  (setq smtpmail-smtp-service 465)
-  (setq smtpmail-stream-type 'ssl))
+  (smtpmail-debug-info t)
+  (smtpmail-smtp-user "paviets201")
+  (smtpmail-smtp-server "smtp.unicaen.fr")
+  (smtpmail-smtp-service 465)
+  (smtpmail-stream-type 'ssl))
 
 (use-package mu4e
   :ensure nil
@@ -4775,34 +4701,42 @@ The return string is always 6 characters wide."
          (:map mu4e-search-minor-mode-map
                ("C-S-s" . lps/mu4e-build-query))
          (:map mu4e-view-mode-map
-               ("A" . lps/mu4e-view-mime-part-action))
-         (:map message-mode-map
-               ([remap message-tab] . lps/message-tab)))
-  :init
-  (setq mail-user-agent 'mu4e-user-agent)
-  (set-variable 'read-mail-command 'mu4e)
+               ("A" . lps/mu4e-view-mime-part-action)))
+  :custom
+  (mu4e-compose-context-policy 'always-ask)
+  (mu4e-context-policy 'pick-first)
+  (mu4e-confirm-quit nil)
+  (mu4e-use-fancy-chars t)              ; ASCII-only time is over
+  (mu4e-headers-precise-alignment t)    ; and fix alignment !
+  (mu4e-compose-format-flowed t)
+  (mu4e-change-filenames-when-moving t) ; Avoid mail syncing issues with mbsync
+  ;; Refresh mail every 5 minutes
+  (mu4e-update-interval (* 5 60))
+  (mu4e-get-mail-command "mbsync -a")
+  (mu4e-index-update-in-background t)
+  (mu4e-hide-index-messages t)
+  (mu4e-headers-date-format "%d-%m-%Y %H:%M") ; Always show full date and time
+  (mu4e-search-threads t)             ; Also show full message threads
+  (mu4e-headers-include-related t)
+  ;; Keep one mail per line
+  ;; Todo: fix so that it updates when window is resized
+  (mu4e-headers-fields '((:human-date . 20)
+                         (:flags . 6)
+                         (:mailing-list . 10)
+                         (:from-or-to . 22)
+                         (:subject . 100)))
   :config
   ;; Useless as long as I have not configured GPG properly
   (defvar lps/safe-mail-send nil "If non-nil, ask for a signature, an encryption, and ask confirmation when sending a non-multipart MIME mail")
 
   ;; Improve completion
   (setq mu4e-completing-read-function 'completing-read)
-  (defun lps/message-tab ()
-    (interactive nil message-mode)
-    (lps/with-completing-read-in-region
-        (message-tab)))
 
   ;; Security issues
   (add-hook 'mu4e-main-mode-hook #'lps/auth-source-define-cache-expiry)
 
   ;; Might avoid unwanted drafts
   (add-hook 'mu4e-compose-mode-hook #'(lambda () (auto-save-mode -1)))
-
-  ;; Convenience functions
-  (setq mu4e-compose-context-policy 'always-ask)
-  (setq mu4e-context-policy 'pick-first)
-  (setq message-kill-buffer-on-exit t)
-  (setq mu4e-confirm-quit nil)
 
   ;; View images
   (when (version< mu4e-mu-version "1.7")
@@ -4812,40 +4746,6 @@ The return string is always 6 characters wide."
 
   ;; but prefer text compared to html
   (add-to-list 'mm-discouraged-alternatives "text/html")
-
-  ;; ASCII-only time is over
-  (setq mu4e-use-fancy-chars t)
-  ;; and fix alignment !
-  (setq mu4e-headers-precise-alignment t)
-
-  ;; Unless we want to send mail to very old clients
-  (setq mu4e-compose-format-flowed t)
-
-  ;; Avoid mail syncing issues with mbsync
-  (setq mu4e-change-filenames-when-moving t)
-
-  ;; Refresh mail every 5 minutes
-  (setq mu4e-update-interval (* 5 60))
-  (setq mu4e-get-mail-command "mbsync -a")
-  (setq mu4e-index-update-in-background t)
-  (setq mu4e-hide-index-messages t)
-
-  ;; Always show full date and time
-  (setq mu4e-headers-date-format "%d-%m-%Y %H:%M")
-  ;; Also show full message threads
-  (setq mu4e-search-threads t)
-
-  ;; Less redundant information
-  (setq mu4e-headers-include-related nil)
-  (setq mu4e-headers-show-threads nil)
-
-  ;; Keep one mail per line
-  ;; Todo: fix so that it updates when window is resized
-  (setq mu4e-headers-fields '((:human-date . 20)
-                              (:flags . 6)
-                              (:mailing-list . 10)
-                              (:from-or-to . 22)
-                              (:subject . 100)))
 
   (defun lps/resize-headers-fields ()
     (if (eq major-mode 'mu4e-headers-mode)
@@ -5118,52 +5018,52 @@ by hand if needed"
 
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired
-    :ensure nil
-    :after mu4e
-    :hook (dired-mode . turn-on-gnus-dired-mode)
-    :config
-    ;; This overrides a function !
-    (defun gnus-dired-mail-buffers ()
-      "Return a list of active message buffers."
-      (let (buffers)
-        (save-current-buffer
-          (dolist (buffer (buffer-list t))
-            (set-buffer buffer)
-            (when (and (derived-mode-p 'message-mode)
-                       (null message-sent-message-via))
-              (push (buffer-name buffer) buffers))))
-        (nreverse buffers)))
+  :after mu4e
+  :hook (dired-mode . turn-on-gnus-dired-mode)
+  :config
+  ;; This overrides a function !
+  (defun gnus-dired-mail-buffers ()
+    "Return a list of active message buffers."
+    (let (buffers)
+      (save-current-buffer
+        (dolist (buffer (buffer-list t))
+          (set-buffer buffer)
+          (when (and (derived-mode-p 'message-mode)
+                     (null message-sent-message-via))
+            (push (buffer-name buffer) buffers))))
+      (nreverse buffers)))
 
-    (setq gnus-dired-mail-mode 'mu4e-user-agent))
+  (setq gnus-dired-mail-mode 'mu4e-user-agent))
 
 
 (use-package dired
-    :ensure nil
-    :after gnus-dired
-    :bind (:map dired-mode-map
-                ("E" . lps/mu4e-file-attach-marked-files))
-    :config
-    (defun lps/mu4e-file-attach-marked-files ()
-      (interactive)
-      (gnus-dired-attach (dired-map-over-marks (dired-get-file-for-visit) nil))))
+  :after gnus-dired
+  :bind (:map dired-mode-map
+              ("E" . lps/mu4e-file-attach-marked-files))
+  :config
+  (defun lps/mu4e-file-attach-marked-files ()
+    (interactive)
+    (gnus-dired-attach (dired-map-over-marks (dired-get-file-for-visit) nil))))
 
 (use-package org-mime
   :after mu4e
+  :custom
+  (org-mime-export-options '(:section-numbers nil
+                                              :with-author nil
+                                              :with-toc nil))
   :config
   (defun lps/safe-org-mime-confirm-when-no-multipart ()
     (when lps/safe-mail-send
       (org-mime-confirm-when-no-multipart)))
 
-  ;; Make sure that this hook is added AFTER lps/sign-or-encrypt-message
-  ;; so that it is executed BEFORE it.
-  ;; We want to htmlize, then sign/encrypt, not the other way around !
+  ;; Make sure that this hook is added AFTER
+  ;; lps/sign-or-encrypt-message so that it is executed BEFORE it. We
+  ;; want to htmlize, then sign/encrypt, not the other way around !
   (add-hook 'message-send-hook 'lps/safe-org-mime-confirm-when-no-multipart)
-  (setq org-mime-export-options'(:section-numbers nil
-                                                  :with-author nil
-                                                  :with-toc nil))
 
-  ;; Hacky function to avoid big formatting problems when calling org-mime-htmlize
-  ;; after having linked attachments, or signing/encrypting the message
+  ;; Hacky function to avoid big formatting problems when calling
+  ;; org-mime-htmlize after having linked attachments, or
+  ;; signing/encrypting the message
   (defun lps/org-mime-htmlize-preserve-secure-and-attach ()
     (interactive)
     (let ((re-secure "<#secure method=[a-z]+ mode=[a-z]+>\n?")
@@ -5199,7 +5099,8 @@ by hand if needed"
   (ensure-version mu4e-mu 1.8
     (mu4e-column-faces-mode)))
 
-(use-package elpher)
+(use-package elpher
+  :defer t)
 
 (use-package olivetti
   :defer t
@@ -5687,26 +5588,36 @@ insert as many blank lines as necessary."
       (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir))))
 
 (use-package elfeed-org
+  :defer t
   :custom
   (rmh-elfeed-org-files (list
                          (expand-file-name "elfeed.org"
                                            org-directory)))
   :init
-  ;; Do it without lazy loading: hope it doesn't cause loading time
-  ;; issues, but it's somewhat hard to do things in a lazy way ...
-  (elfeed-org)
+  (defun lps/elfeed-org-lazy-load ()
+    (elfeed-org)
+    (advice-remove 'elfeed 'lps/elfeed-org-lazy-load))
+
+  (advice-add 'elfeed :before 'lps/elfeed-org-lazy-load)
   :config
   (defun lps/elfeed-org-reread ()
     (interactive)
     (rmh-elfeed-org-process rmh-elfeed-org-files
                             rmh-elfeed-org-tree-id)))
 
-(use-package emacs
+(use-package elfeed
   :bind
   ("C-c f" . lps/elfeed-dashboard)
   (:map elfeed-search-mode-map
         ("b" . lps/elfeed-search-bookmark))
   :init
+  ;; Ugly macro ... Lexical binding is a mess
+  (defmacro lps/elfeed-wrap-before-elfeed (fun)
+    `(lambda ()
+       (interactive)
+       (call-interactively ,fun)
+       (elfeed)))
+
   (defvar lps/elfeed-dashboard-buffer "*elfeed-dashboard*")
   (defcustom lps/elfeed-bookmarks
     '(( :name  "All unread entries"
@@ -5736,13 +5647,6 @@ insert as many blank lines as necessary."
   ;; mu4e-like dashboard !
   (require 'elfeed-org)
   (require 'mu4e)
-
-  ;; Ugly macro ... Lexical binding is a mess
-  (defmacro lps/elfeed-wrap-before-elfeed (fun)
-    `(lambda ()
-       (interactive)
-       (call-interactively ,fun)
-       (elfeed)))
 
   (defvar lps/elfeed-dashboard-mode-map
     (let ((map (make-sparse-keymap)))
@@ -5900,184 +5804,6 @@ insert as many blank lines as necessary."
 \\{lps/elfeed-dashboard-mode-map}."
     (setq truncate-lines t)
     (setq-local revert-buffer-function #'lps/elfeed-dashboard--redraw)
-    (read-only-mode 1)))
-
-(use-package emacs
-  :bind
-  ("C-c f" . lps/elfeed-dashboard)
-  (:map elfeed-search-mode-map
-        ("b" . lps/elfeed-search-bookmark))
-  :init
-  (defvar lps/elfeed-dashboard-buffer "*elfeed-dashboard*")
-  (defcustom lps/elfeed-bookmarks
-    '(( :name  "All unread entries"
-        :query "+unread"
-        :key ?u)
-      ( :name "Today's entries"
-        :query "@1-day-ago"
-        :key ?t)
-      ( :name "Last 7 days"
-        :query "@1-week-ago"
-        :hide-unread t
-        :key ?w)
-      ( :name "Science articles"
-        :query "+unread +articles"
-        :key ?a)
-      ( :name "YT Videos"
-        :query "+unread +youtube"
-        :key ?y)
-      ( :name "Politique"
-        :query "+unread +politique"
-        :key ?p))
-    "See `mu4e-bookmarks' for some documentation")
-  :config
-  ;; mu4e-like dashboard !
-
-  ;; Ugly macro ... Lexical binding is a mess
-  (defmacro lps/elfeed-wrap-before-elfeed (fun)
-    `(lambda ()
-       (interactive)
-       (call-interactively ,fun)
-       (elfeed)))
-
-  (defvar lps/elfeed-dashboard-mode-map
-    (let ((map (make-sparse-keymap)))
-      (define-key map "U" 'elfeed-update)
-      (define-key map "s" (lps/elfeed-wrap-before-elfeed
-                           #'lps/elfeed-search-filter-interactive))
-      (define-key map "S" (lps/elfeed-wrap-before-elfeed
-                           #'elfeed-search-set-filter))
-      (define-key map "b" 'lps/elfeed-search-bookmark)
-      (define-key map "$" (lambda ()
-                            (interactive)
-                            (pop-to-buffer (elfeed-log-buffer))))
-      map)
-    "Keymap for the *elfeed-dashboard* buffer.")
-
-  (defun lps/elfeed-ask-bookmark (prompt)
-    "Ask the user for a bookmark (using PROMPT) as defined in
-`lps/elfeed-bookmarks', then return the corresponding query."
-    (unless lps/elfeed-bookmarks (mu4e-error "No bookmarks defined"))
-    (let* ((prompt (mu4e-format "%s" prompt))
-           (bmarks
-            (mapconcat
-             (lambda (bm)
-               (concat
-                "[" (propertize (make-string 1 (plist-get bm :key))
-                                'face 'mu4e-highlight-face)
-                "]"
-                (plist-get bm :name)))
-             lps/elfeed-bookmarks ", "))
-           (kar (read-char (concat prompt bmarks))))
-      (let* ((chosen-bm
-              (or (cl-find-if
-                   (lambda (bm)
-                     (= kar (plist-get bm :key)))
-                   lps/elfeed-bookmarks)
-                  (error "Unknown shortcut '%c'" kar)))
-             (expr (plist-get chosen-bm :query))
-             (expr (if (not (functionp expr)) expr
-                     (funcall expr)))
-             (query (eval expr)))
-        (if (stringp query)
-            query
-          (error "Expression must evaluate to query string ('%S')" expr)))))
-
-  (defun lps/elfeed-search-bookmark (&optional expr)
-    "Search using some bookmarked query EXPR."
-    (interactive)
-    (let ((expr
-           (or expr (lps/elfeed-ask-bookmark "Select bookmark: "))))
-      (elfeed-search-set-filter expr)
-      (elfeed)))
-
-  (defun lps/elfeed-dashboard-query-count (query)
-    (let* ((count 0)
-           (filter
-            (elfeed-search-parse-filter query))
-           (func (byte-compile
-                  (elfeed-search-compile-filter filter))))
-      (with-elfeed-db-visit (entry feed)
-        (when (funcall func entry feed count)
-          (setf count (1+ count))))
-      count))
-
-  (defun lps/elfeed-bookmarks-dashboard ()
-    (cl-loop with bmks = lps/elfeed-bookmarks
-             with longest = (cl-loop for b in lps/elfeed-bookmarks
-                                     maximize (string-width (plist-get b :name)))
-             ;; with queries = (mu4e-last-query-results)
-             for bm in bmks
-             for key = (string (plist-get bm :key))
-             for name = (plist-get bm :name)
-             for query = (plist-get bm :query)
-             for count-u = (lps/elfeed-dashboard-query-count (concat "+unread "
-                                                                     query))
-             for count = (lps/elfeed-dashboard-query-count query)
-             when (not (plist-get bm :hide))
-             concat (concat
-                     ;; menu entry
-                     (mu4e~main-action-str
-                      (concat "\t* [b" key "] " name)
-                      (concat "b" key))
-                     ;; append all/unread numbers, if available.
-                     (if (and count count-u)
-                         (format
-                          "%s (%s/%s)"
-                          (make-string (- longest (string-width name)) ? )
-                          (propertize (number-to-string count-u)
-                                      'face 'mu4e-header-key-face)
-                          count)
-                       "")
-                     "\n")))
-
-  (defun lps/elfeed-dashboard ()
-    (interactive)
-    (require 'elfeed-org)
-    (with-current-buffer (get-buffer-create lps/elfeed-dashboard-buffer)
-      (let ((inhibit-read-only t)
-            (pos (point)))
-        (erase-buffer)
-        (insert
-         "* "
-         (propertize "elfeed" 'face 'mu4e-header-key-face)
-         (propertize " - Elfeed reader for Emacs version " 'face 'mu4e-title-face)
-         (propertize  elfeed-version 'face 'mu4e-header-key-face)
-         "\n\n"
-         (propertize "  Basics\n\n" 'face 'mu4e-title-face)
-         ;; (mu4e~main-action-str
-         ;;  "\t* [j]ump to some maildir\n" 'mu4e-jump-to-maildir)
-         (mu4e~main-action-str
-          "\t* enter a [s]earch query interactively\n"
-          'lps/elfeed-search-filter-interactive)
-         "\n"
-         (mu4e~main-action-str
-          "\t* modify the [S]earch query\n" 'elfeed-search-set-filter)
-         "\n"
-         (propertize "  Bookmarks\n\n" 'face 'mu4e-title-face)
-         (lps/elfeed-bookmarks-dashboard)
-         "\n"
-         (propertize "  Misc\n\n" 'face 'mu4e-title-face)
-
-         (mu4e~main-action-str "\t* [U]pdate feeds & database\n" 'elfeed-update)
-         "\n"
-         ;; (mu4e~main-action-str "\t* [H]elp\n" 'mu4e-display-manual)
-         (mu4e~main-action-str "\t* [q]uit\n" 'bury-buffer)
-
-         "\n"
-         (propertize "  Info\n\n" 'face 'mu4e-title-face)
-         (mu4e~key-val "database-path" elfeed-db-directory)
-         (mu4e~key-val "in store"
-                       (format "%d" (elfeed-db-size))
-                       "entries"))
-        (goto-char pos))
-      (lps/elfeed-dashboard-mode))
-    (pop-to-buffer lps/elfeed-dashboard-buffer))
-
-  (define-derived-mode lps/elfeed-dashboard-mode special-mode "elfeed:dashboard"
-    "Major mode for the elfeed dashboard.
-\\{lps/elfeed-dashboard-mode-map}."
-    (setq truncate-lines t)
     (read-only-mode 1)))
 
 (use-package elfeed-tube
