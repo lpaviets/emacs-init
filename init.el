@@ -206,12 +206,11 @@ fboundp."
       ;; (shell-command "gpgconf -- reload gpg-agent")
       (setq lps/--auth-cache-expiry-setup-p nil)))))
 
-(use-package restart-emacs
-  :commands
-  (restart-emacs restart-emacs-start-new-emacs)
-  :bind
-  (:map lps/system-tools-map
-        ("r" . restart-emacs)))
+(ensure-emacs-version 29
+  (use-package emacs
+    :bind
+    (:map lps/system-tools-map
+          ("r" . restart-emacs))))
 
 (use-package desktop
   :init
@@ -240,7 +239,7 @@ fboundp."
   :custom
   (server-client-instructions nil))
 
-(use-package cus-edit
+(use-package emacs
   :custom
   (custom-file (locate-user-emacs-file "custom-file.el"))
   :config
@@ -287,17 +286,15 @@ fboundp."
 
   (defun lps/set-default-fonts ()
     ;; Variable pitch
-    (let ((font-list (font-family-list)))
-      (when (member lps/variable-font font-list)
-        (set-face-font 'variable-pitch lps/variable-font))
-
-      ;; Default fixed-pitch
-      (when (member lps/fixed-font font-list)
-        (set-face-font 'fixed-pitch lps/fixed-font))
-
-      ;; Default (not used in the same place as fixed-pitch)
-      (when (member lps/default-font font-list)
-        (set-face-font 'default lps/default-font))))
+    (let ((all-fonts (font-family-list))
+          (font-assoc `((variable-pitch ,lps/variable-font)
+                        (fixed-pitch ,lps/fixed-font)
+                        (default ,lps/default-font))))
+      (dolist (new-font font-assoc)
+        (let ((font-name (car new-font))
+              (font-val (cadr new-font)))
+          (when (member font-val all-fonts)
+            (set-face-font font-name font-val))))))
 
   (if (daemonp)
       (add-hook 'after-make-frame-functions
@@ -565,7 +562,8 @@ the mode-line and the usual non-full-screen Emacs are restored."
 (use-package hl-line
   :hook ((tabulated-list-mode
           ibuffer-mode
-          dired-mode)
+          dired-mode
+          proced-mode)
          . hl-line-mode))
 
 (use-package hl-todo
@@ -836,15 +834,15 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
   (add-hook 'ibuffer-mode-hook #'lps/ibuffer-switch-to-default-filter))
 
 (use-package winner
-  :commands (winner-undo winner-redo)
+  :custom
+  (winner-boring-buffers '("*Completions*"
+                           "*Compile-Log*"
+                           "*Fuzzy Completions*"
+                           "*Apropos*"
+                           "*Help*"
+                           "*Buffer List*"
+                           "*Ibuffer*"))
   :init
-  (setq winner-boring-buffers '("*Completions*"
-                                "*Compile-Log*"
-                                "*Fuzzy Completions*"
-                                "*Apropos*"
-                                "*Help*"
-                                "*Buffer List*"
-                                "*Ibuffer*"))
   (winner-mode 1))
 
 (use-package windmove
@@ -1743,7 +1741,8 @@ Move point in the last duplicated string (line or region)."
         ("C-u" . lps/underline-or-frame-dwim)
         ("k" . zap-up-to-char)
         ("C-t" . lps/make-filename-from-sentence))
-
+  (:map lisp-data-mode-map
+        ("M-*" . lps/earmuffify))
   :config
   (defun lps/--fill-width-repeat-string (width str)
     "Insert STR as many times as necessary to fill WIDTH,
@@ -1844,7 +1843,19 @@ If it is non-nil, replace it by an underscore _"
                           lps/do-not-capitalize-list))
               (downcase-word 1)
             (capitalize-word 1))))
-      (kill-ring-save start (point)))))
+      (kill-ring-save start (point))))
+
+  (defun lps/earmuffify ()
+    (interactive)
+    (let ((bounds (bounds-of-thing-at-point 'symbol)))
+      (if (not bounds)
+          (message "No symbol at point")
+        (goto-char (car bounds))
+        (unless (= (char-after) ?*)
+          (insert ?*))
+        (forward-symbol 1)
+        (unless (= (char-before) ?*)
+          (insert ?*))))))
 
 (use-package projectile
   :diminish
@@ -2401,8 +2412,6 @@ call the associated function interactively. Otherwise, call the
   (:map sly-mode-map
         ("M-_" . nil)
         ("<f6>" . sly-documentation-lookup))
-  (:map sly-editing-mode-map
-        ("M-*" . lps/earmuffify))
   (:map sly-doc-map
         ("C-g" . nil)
         ("C-h" . nil)
@@ -2495,19 +2504,7 @@ call the associated function interactively. Otherwise, call the
                '("*sly-db" . ((display-buffer-reuse-mode-window
                                display-buffer-below-selected)
                               . ((inhibit-same-window . nil)
-                                 (mode . sly-db-mode)))))
-
-  (defun lps/earmuffify ()
-    (interactive)
-    (let ((bounds (bounds-of-thing-at-point 'symbol)))
-      (if (not bounds)
-          (message "No symbol at point")
-        (goto-char (car bounds))
-        (unless (= (char-after) ?*)
-          (insert ?*))
-        (forward-symbol 1)
-        (unless (= (char-before) ?*)
-          (insert ?*))))))
+                                 (mode . sly-db-mode))))))
 
 (use-package sly-mrepl
   :ensure nil
@@ -4623,6 +4620,9 @@ PWD is not in a git repo (or the git command is not found)."
   (proced-goal-attribute nil)
   (proced-format 'medium)
   :config
+  ;; Bug when sorting by pcpu (CPU usage): uses the string "%CPU" in
+  ;; the mode-line, but %C is a control char, so it prints the current
+  ;; column number rather than the literal %C !
   (ensure-emacs-version 29.1
     (setq proced-enable-color-flag t))
 
