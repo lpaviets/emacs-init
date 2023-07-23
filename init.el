@@ -353,7 +353,8 @@ fboundp."
   (display-line-numbers-grow-only t)
   :hook
   ((prog-mode LaTeX-mode) . display-line-numbers-mode)
-  ((text-mode org-mode LaTeX-mode comint-mode) . visual-line-mode))
+  ((text-mode org-mode LaTeX-mode comint-mode) . visual-line-mode)
+  (LaTeX-mode . auto-fill-mode))
 
 ;; Themes
 (use-package solarized-theme)
@@ -2990,7 +2991,9 @@ call the associated function interactively. Otherwise, call the
                           ("Seminar"      . "🪧")
                           ("Workshop"     . "👥") ; same as conference
                           ("Culture"      . "🎨")
-                          ("PhD Research" . "🎓")))
+                          ("PhD Research" . "🎓")
+                          ("Holidays"     . "☀️")
+                          ("Science"      . "👩🏾‍🔬")))
     (cl-pushnew (list (car tag-and-icon)
                       (list (substring-no-properties (cdr tag-and-icon)))
                       nil nil
