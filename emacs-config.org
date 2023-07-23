@@ -491,8 +491,6 @@ Emacs is very much keyboard-oriented. As such, we have little-to-no use of the v
 Because we now have plenty of free space on our screen, we can sacrifice a bit of it to put useful information there, such as line numbers. We also want to see the current line and column in the modeline, and while we are at it, we also want Emacs to wrap our lines in modes where this makes sense, so that we never have to scroll horizontally to see the end of a long line (besides, how would we do it, now that we don't have a scrollbar anymore ?!)
 
 #+begin_src emacs-lisp
-  ;; Line/column numbering modes
-
   (use-package emacs
     :init
     (column-number-mode t)
@@ -745,19 +743,16 @@ We also want to add some extra information on the modeline, of the kind that we 
 Some packages are used lated in the configuration, and we want to be able to use those comfortable modes.
 
 #+begin_src emacs-lisp
-  ;; Generic UI modes
-
   (use-package beacon
+    :init
+    (beacon-mode 1)
     :custom
     (beacon-blink-when-point-moves-vertically 30)
-    (beacon-size 20)
-    :init (beacon-mode))
+    (beacon-size 20))
+
   (use-package rainbow-mode
     :defer t)
-  (use-package fill-column-indicator
-    :defer t)
-  (use-package visual-fill-column
-    :defer t)
+
   (use-package highlight-numbers
     :hook (prog-mode . highlight-numbers-mode))
 #+end_src
@@ -1137,7 +1132,18 @@ Because window management can be a bit tedious with the basic Emacs functionalit
 
     :init
     (windmove-default-keybindings 'shift)
-    (windmove-swap-states-default-keybindings '(ctrl shift)))
+    (windmove-swap-states-default-keybindings '(ctrl shift))
+
+    (defun lps/windmove-mode-local-off ()
+      ;; Hack to disable windmove locally
+      (setq-local windmove-mode nil))
+
+    (defun lps/windmove-mode-local-off-around (fun &rest args)
+      (unwind-protect
+          (progn
+            (add-hook 'minibuffer-setup-hook 'lps/windmove-mode-local-off)
+            (apply fun args))
+        (remove-hook 'minibuffer-setup-hook 'lps/windmove-mode-local-off))))
 #+end_src
 
 Sometimes, we also want some very specific buffer to be associated to a certain window. As there is probably no general rule that would decide this for us, it is not possible to modify ~display-buffer-alist~ or other similar variables to get the desired behaviour. Hence, we will simply create a function that binds - or unbinds - the current buffer to the current window.
@@ -2958,13 +2964,13 @@ Many programming languages have, in one way or another, a REPL or a command-line
 In this section, we fine-tune our editing tools for various programming languages.
 *** Python
 
-     We need to specify which server LSP will use. Several packages are available.
+We need to specify which server LSP will use. Several packages are available.
 
-     *MANUAL* Before using LSP, use the following command to install a server:
+*MANUAL* Before using LSP, use the following command to install a server:
 
-     =pip install --user python-language-server[all]=
+=pip install --user python-language-server[all]=
 
-     The command ~pyls~ needs to be available on the ~PATH~ environment variable.
+The command ~pyls~ needs to be available on the ~PATH~ environment variable.
 
 #+begin_src emacs-lisp
   (use-package python
@@ -2986,7 +2992,6 @@ I will use another server, based on [[https://github.com/microsoft/pyright][Pyri
 
 #+begin_src emacs-lisp
   (use-package lsp-pyright
-    :after python
     :defer t)
 #+end_src
 
@@ -3696,17 +3701,6 @@ We change the general feel of Org Mode documents by using other indentation rule
 
     ;; Babel configuration
     <<org-babel>>
-
-    (defun lps/windmove-mode-local-off ()
-      ;; Hack to disable windmove locally
-      (setq-local windmove-mode nil))
-
-    (defun lps/windmove-mode-local-off-around (fun &rest args)
-      (unwind-protect
-          (progn
-            (add-hook 'minibuffer-setup-hook 'lps/windmove-mode-local-off)
-            (apply fun args))
-        (remove-hook 'minibuffer-setup-hook 'lps/windmove-mode-local-off)))
 
     (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
 
@@ -4800,7 +4794,7 @@ The next packages are used to manage the bibliography in itself: download articl
 
 #+begin_src emacs-lisp
   (use-package bibtex-completion
-    :defer t
+    :commands bibtex-completion-key-at-point
     :custom
     (bibtex-completion-bibliography lps/bib-bibliography-files)
     (bibtex-completion-library-path lps/bib-bibliography-library)
@@ -5041,19 +5035,19 @@ Because =bibtex-completion= is mainly an interface, we use a wrapper around it t
     :custom
     (arxiv-entry-format-string
      "\n@misc{%s,
-    title = {%s},
-    author = {%s},
+    title =         {%s},
+    author =        {%s},
     archivePrefix = {arXiv},
-    year = {%s},
-    eprint = {%s},
-    primaryClass = {%s},
-    abstract = {%s},
-    url = {%s},
+    year =          {%s},
+    eprint =        {%s},
+    primaryClass =  {%s},
+    abstract =      {%s},
+    url =           {%s},
   }\n")
     :config
     ;; Turn on other modes when loaded
-    (org-roam-bibtex-mode 1)
     (require 'bibtex-completion)
+    (org-roam-bibtex-mode 1)
 
     (dolist (pair org-ref-nonascii-latex-replacements)
       (let ((in (car pair))
@@ -6266,7 +6260,7 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
       (when (y-or-n-p "Check spelling ?")
         (ispell-message)))
 
-    ;;; Redefinition of ispell-message to work with mu4e
+  ;;; Redefinition of ispell-message to work with mu4e
     (defun ispell-message ()
       "Check the spelling of a mail message or news post.
   Don't check spelling of message headers except the Subject field.
@@ -6289,64 +6283,65 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
       (interactive)
       (save-excursion
         (goto-char (point-min))
-        (let* (boundary mimep
-                        (ispell-skip-region-alist-save ispell-skip-region-alist)
-                        ;; Nil when message came from outside (eg calling Emacs as editor)
-                        ;; Non-nil marker of end of headers.
-                        (internal-messagep
-                         (re-search-forward
-                          (concat "^" (regexp-quote mail-header-separator) "$") nil t))
-                        (end-of-headers   ; Start of body.
-                         (copy-marker
-                          (or internal-messagep
-                              (re-search-forward "^$" nil t)
-                              (point-min))))
-                        (limit (copy-marker ; End of region we will spell check.
-                                (cond
-                                 ((not ispell-message-text-end) (point-max))
-                                 ((char-or-string-p ispell-message-text-end)
-                                  (if (re-search-forward ispell-message-text-end nil t)
-                                      (match-beginning 0)
-                                    (point-max)))
-                                 (t (min (point-max)
-                                         (funcall ispell-message-text-end))))))
-                        (default-prefix ; Vanilla cite prefix used for cite-regexp)
-                          (if (ispell-non-empty-string mail-yank-prefix)
-                              "   \\|\t"))
-                        (cite-regexp      ;Prefix of quoted text
-                         (cond
-                          ((functionp 'sc-cite-regexp) ; supercite >= 3.0
-                           (with-no-warnings
-                             (concat "\\(" (sc-cite-regexp) "\\)" "\\|"
-                                     (ispell-non-empty-string
-                                      sc-reference-tag-string))))
-                          ((member major-mode '(message-mode
-                                                mu4e-compose-mode)) ; GNUS >= 5
-                           (concat "In article <" "\\|"
-                                   "[^,;&+=\n]+ <[^,;&+=]+> writes:" "\\|"
-                                   (with-no-warnings message-cite-prefix-regexp)
-                                   "\\|"
-                                   default-prefix))
-                          ((equal major-mode 'mh-letter-mode) ; mh mail message
-                           (concat "[^,;&+=\n]+ writes:" "\\|"
-                                   (with-no-warnings
-                                     (ispell-non-empty-string mh-ins-buf-prefix))))
-                          ((not internal-messagep) ; Assume nn sent us this message.
-                           (concat "In [a-zA-Z.]+ you write:" "\\|"
-                                   "In <[^,;&+=]+> [^,;&+=]+ writes:" "\\|"
-                                   " *> *"))
-                          ((boundp 'vm-included-text-prefix) ; VM mail message
-                           (concat "[^,;&+=\n]+ writes:" "\\|"
-                                   (ispell-non-empty-string vm-included-text-prefix)))
-                          (t default-prefix)))
-                        (ispell-skip-region-alist
-                         (cons (list (ispell--make-filename-or-URL-re))
-                               (cons (list (concat "^\\(" cite-regexp "\\)")
-                                           (function forward-line))
-                                     ispell-skip-region-alist)))
-                        (old-case-fold-search case-fold-search)
-                        (dictionary-alist ispell-message-dictionary-alist)
-                        (ispell-checking-message t))
+        (let* (boundary
+               mimep
+               (ispell-skip-region-alist-save ispell-skip-region-alist)
+               ;; Nil when message came from outside (eg calling Emacs as editor)
+               ;; Non-nil marker of end of headers.
+               (internal-messagep
+                (re-search-forward
+                 (concat "^" (regexp-quote mail-header-separator) "$") nil t))
+               (end-of-headers            ; Start of body.
+                (copy-marker
+                 (or internal-messagep
+                     (re-search-forward "^$" nil t)
+                     (point-min))))
+               (limit (copy-marker  ; End of region we will spell check.
+                       (cond
+                        ((not ispell-message-text-end) (point-max))
+                        ((char-or-string-p ispell-message-text-end)
+                         (if (re-search-forward ispell-message-text-end nil t)
+                             (match-beginning 0)
+                           (point-max)))
+                        (t (min (point-max)
+                                (funcall ispell-message-text-end))))))
+               (default-prefix ; Vanilla cite prefix used for cite-regexp)
+                (if (ispell-non-empty-string mail-yank-prefix)
+                    "   \\|\t"))
+               (cite-regexp               ;Prefix of quoted text
+                (cond
+                 ((functionp 'sc-cite-regexp) ; supercite >= 3.0
+                  (with-no-warnings
+                    (concat "\\(" (sc-cite-regexp) "\\)" "\\|"
+                            (ispell-non-empty-string
+                             sc-reference-tag-string))))
+                 ((member major-mode '(message-mode
+                                       mu4e-compose-mode)) ; GNUS >= 5
+                  (concat "In article <" "\\|"
+                          "[^,;&+=\n]+ <[^,;&+=]+> writes:" "\\|"
+                          (with-no-warnings message-cite-prefix-regexp)
+                          "\\|"
+                          default-prefix))
+                 ((equal major-mode 'mh-letter-mode) ; mh mail message
+                  (concat "[^,;&+=\n]+ writes:" "\\|"
+                          (with-no-warnings
+                            (ispell-non-empty-string mh-ins-buf-prefix))))
+                 ((not internal-messagep) ; Assume nn sent us this message.
+                  (concat "In [a-zA-Z.]+ you write:" "\\|"
+                          "In <[^,;&+=]+> [^,;&+=]+ writes:" "\\|"
+                          " *> *"))
+                 ((boundp 'vm-included-text-prefix) ; VM mail message
+                  (concat "[^,;&+=\n]+ writes:" "\\|"
+                          (ispell-non-empty-string vm-included-text-prefix)))
+                 (t default-prefix)))
+               (ispell-skip-region-alist
+                (cons (list (ispell--make-filename-or-URL-re))
+                      (cons (list (concat "^\\(" cite-regexp "\\)")
+                                  (function forward-line))
+                            ispell-skip-region-alist)))
+               (old-case-fold-search case-fold-search)
+               (dictionary-alist ispell-message-dictionary-alist)
+               (ispell-checking-message t))
 
           ;; Select dictionary for message
           (or (local-variable-p 'ispell-local-dictionary (current-buffer))
