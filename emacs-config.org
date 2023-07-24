@@ -2408,7 +2408,7 @@ We also define a bunch of functions and commands related to editing text that ar
 * Programming
 ** Project management
 *** Projectile
-    [[https://projectile.mx/][Projectile]] is an Emacs package that makes project management easier. It allows us /e.g./ to navigate between files of the same project, search/replace within files of the same project, and integrates very well with other tools, such as =lsp-mode= or ~counsel~.
+    [[https://projectile.mx/][Projectile]] is an Emacs package that makes project management easier. It allows us /e.g./ to navigate between files of the same project, search/replace within files of the same project, and integrates very well with other tools, such as =lsp-mode=.
 
 #+begin_src emacs-lisp
   (use-package projectile
@@ -7032,35 +7032,6 @@ Finally, and because we might use this on old computers or with bad network, we 
            (mpv--tq-filter mpv--queue string)))
         (run-hook-with-args 'mpv-on-start-hook args)
         t)))
-#+end_src
-
-* Fun
-As we tend to spend a lot of time in Emacs, isn't it natural to install fun and distracting packages ?
-** XKCD
-We /love/ [[https://xkcd.com][XKCD]], and so do most of Emacs users. Hence, someone has written a package to read his favourite web-comic directly within Emacs !
-
-#+begin_src emacs-lisp
-  (use-package xkcd
-    :defer t)
-#+end_src
-
-** Keyboard games
-*** Speed-typing
-This package can help you benchmark how fast you are able to write text within Emacs, by using random text samples that you have to copy. It is even possible to add some other books from which to generate those samples.
-
-#+begin_src emacs-lisp
-  (use-package speed-type
-    :defer t
-    :custom (speed-type-default-lang 'French)) ; Todo: fix bad behaviour !
-#+end_src
-
-*** Key Quiz
-
-Another cool thing to do if you want to learn keybindings in a very inefficient way is to simply pick a command at random and try to remember the associated keybinding ! This is exactly what the following package tries to do
-
-#+begin_src emacs-lisp
-  (use-package key-quiz
-    :defer t)
 #+end_src
 
 * TODO Small things to do or to fix

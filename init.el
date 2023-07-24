@@ -5881,13 +5881,3 @@ instance, it will be killed. Options specified in
          (mpv--tq-filter mpv--queue string)))
       (run-hook-with-args 'mpv-on-start-hook args)
       t)))
-
-(use-package xkcd
-  :defer t)
-
-(use-package speed-type
-  :defer t
-  :custom (speed-type-default-lang 'French)) ; Todo: fix bad behaviour !
-
-(use-package key-quiz
-  :defer t)
