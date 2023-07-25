@@ -2844,6 +2844,9 @@ call the associated function interactively. Otherwise, call the
   (org-priority-highest ?A)
   (org-priority-lowest ?E)
   (org-priority-default ?C)
+  (org-archive-location (concat (lps/org-expand-file-name "archive" t)
+                                "%s_archive::"))
+  (org-archive-subtree-save-file-p t)
   (org-ellipsis " ▾")
   :config
 
@@ -2928,7 +2931,8 @@ call the associated function interactively. Otherwise, call the
   ("C-c a" . org-agenda)
   :custom
   (org-agenda-files
-   (list (lps/org-expand-file-name "agenda" t)
+   (list (lps/org-expand-file-name "agenda" t)  ; basic agenda files
+         (lps/org-expand-file-name "archive" t) ; archived files
          ;; org-roam-directory, not necessarily loaded
          ;; at this point: don't want to have org-agenda
          ;; depend on org-roam
@@ -2939,8 +2943,6 @@ call the associated function interactively. Otherwise, call the
   (org-log-done 'time)
   (org-agenda-start-with-log-mode t)
   (org-agenda-show-inherited-tags nil)
-  (org-archive-location (concat (lps/org-expand-file-name "archive" t)
-                                "%s_archive::"))
   ;; Window configuration
   (org-agenda-restore-windows-after-quit t)
   (org-agenda-window-setup 'other-window)
@@ -2985,7 +2987,10 @@ call the associated function interactively. Otherwise, call the
                           ("Culture"      . "🎨")
                           ("PhD Research" . "🎓")
                           ("Holidays"     . "☀️")
-                          ("Science"      . "👩🏾‍🔬")))
+                          ("Science"      . "👩🏾‍🔬")
+                          ("Banque"       . "💰")
+                          ("Informatique" . "🖱️")
+                          ("Santé"        . "⚕️")))
     (cl-pushnew (list (car tag-and-icon)
                       (list (substring-no-properties (cdr tag-and-icon)))
                       nil nil
@@ -5033,15 +5038,11 @@ by hand if needed"
 
   (setq gnus-dired-mail-mode 'mu4e-user-agent))
 
-
 (use-package dired
   :after gnus-dired
-  :bind (:map dired-mode-map
-              ("E" . lps/mu4e-file-attach-marked-files))
-  :config
-  (defun lps/mu4e-file-attach-marked-files ()
-    (interactive)
-    (gnus-dired-attach (dired-map-over-marks (dired-get-file-for-visit) nil))))
+  :bind
+  (:map dired-mode-map
+        ("E" . gnus-dired-attach)))
 
 (use-package org-mime
   :after mu4e
