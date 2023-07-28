@@ -352,8 +352,6 @@ fboundp."
   (LaTeX-mode . auto-fill-mode))
 
 ;; Themes
-(use-package solarized-theme)
-
 (use-package kaolin-themes
   :custom
   (kaolin-themes-comments-style 'alt)
@@ -361,9 +359,6 @@ fboundp."
   (kaolin-themes-italic-comments t)
   (kaolin-themes-hl-line-colored t)
   (kaolin-themes-org-scale-headings nil))
-
-(use-package modus-themes)
-(use-package doom-themes)
 
 (use-package emacs
   :after kaolin-themes
@@ -413,19 +408,25 @@ fboundp."
 
     (setq lps/live-presentation-p (not lps/live-presentation-p)))
 
-    ;;; Inspired from https://www.reddit.com/r/emacs/comments/vb05co/resizerecolour_text_onthefly/
-  (defun lps/resize-and-color-region (beg end)
+;;; Inspired from https://www.reddit.com/r/emacs/comments/vb05co/resizerecolour_text_onthefly/
+  (defun lps/resize-and-color-region (beg end &optional reset)
     "Resize/recolour selected region;defaulting to blue at size 300,for titles.
-  Note gray80 at size 10 is useful for side remarks."
-    (interactive "r")
-    (let ((contents (buffer-substring beg end))
-          (color (read-color "Colour: "))
-          (size (read-number "Size: ")))
+  If RESET is non-NIL, revert to the previous colour/size."
+    (interactive "r\nP")
+    (let ((contents (buffer-substring-no-properties beg end))
+          (revert-props (get-text-property beg 'old-props))
+          (old-props (text-properties-at beg))) ; assume same everywhere
       (when contents
         (delete-region beg end)
-        (insert (propertize contents
-                            'font-lock-face
-                            `(:foreground ,color :height ,size)))))))
+        (if reset
+            (insert (apply 'propertize contents revert-props))
+          (let ((color (read-color "Colour: "))
+                (size (read-number "Size: ")))
+            (insert (propertize contents
+                                'font-lock-face
+                                `(:foreground ,color :height ,size)
+                                'old-props
+                                old-props))))))))
 
 (use-package emacs
   :commands lps/slideshow-mode
