@@ -246,7 +246,6 @@ We explicitly fix how long passwords should be cached. A clever thing could be t
   (system-case
    (gnu/linux
     (use-package password-cache
-      :ensure nil
       :custom
       (password-cache t)
       (password-cache-expiry 300))
@@ -258,7 +257,6 @@ We explicitly fix how long passwords should be cached. A clever thing could be t
       (pinentry-start))
 
     (use-package auth-source
-      :ensure nil
       :custom
       (auth-sources (remove "~/.authinfo" auth-sources))
       (auth-source-cache-expiry 86400) ;; All day
@@ -445,17 +443,26 @@ All the variable names are pretty explicit, so you should be able to customize t
 *** Startup
 
 Who wants to be told the same thing over and over again each time they start Emacs ?
-#+begin_src emacs-lisp
-  ;; Disable the annoying startup message and Emacs logo
-  (setq inhibit-startup-message t)
+#+begin_src emacs-lisp :noweb yes
+  (use-package emacs
+    :custom
+    (inhibit-startup-message t)
+    (initial-scratch-message nil)
+    :init
+    ;; Emacs frame startup
+    <<fullscreen-alpha>>
 
-  ;; Disable the message on top of the Scratch buffer
-  (setq initial-scratch-message nil)
+    ;; Bell
+    <<bell>>
+
+    ;; Menus
+    <<menus>>)
 #+end_src
 
 However, we would like to see Emacs in full-screen if we are to use it
 
-#+begin_src emacs-lisp
+#+NAME: fullscreen-alpha
+#+begin_src emacs-lisp :tangle no
   ;; Maximize the Emacs frame at startup
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
   (ensure-emacs-version 29
@@ -465,7 +472,8 @@ However, we would like to see Emacs in full-screen if we are to use it
 
 We also don't want Emacs to be flashing and beeping at us whenver we do something wrong. Be quiet, please, error /messages/ are fine without VFX on top of them !
 
-#+begin_src emacs-lisp
+#+NAME: bell
+#+begin_src emacs-lisp :tangle no
   (setq ring-bell-function 'ignore)
   (setq visible-bell nil)
 #+end_src
@@ -474,13 +482,13 @@ We also don't want Emacs to be flashing and beeping at us whenver we do somethin
 
 Emacs is very much keyboard-oriented. As such, we have little-to-no use of the various menus, toolbars and scrollbars that Emacs provides.
 
-#+begin_src emacs-lisp
-  (scroll-bar-mode -1)        ; Disable visible scrollbar
-  (tool-bar-mode -1)          ; Disable the toolbar
-  (tooltip-mode -1)           ; Disable tooltips
-  (set-fringe-mode 10)        ; Give some breathing room
-
-  (menu-bar-mode -1)          ; Disable the menu bar
+#+NAME: menus
+#+begin_src emacs-lisp :tangle no
+  (scroll-bar-mode -1)
+  (tool-bar-mode -1)
+  (tooltip-mode -1)
+  (set-fringe-mode 10)
+  (menu-bar-mode -1)
 #+end_src
 
 *** Lines and columns
@@ -1960,6 +1968,8 @@ The previously defined commands, along with ~Swiper~, are great to navigate in a
     :defer t
     :bind
     ("M-é" . avy-goto-char-2)
+    (:map isearch-mode-map
+          ("M-é" . avy-isearch))
     :custom
     ;; Using an AZERTY keyboard home row
     (avy-keys '(?q ?s ?d ?f ?g ?h ?j ?k ?l ?m))
@@ -3855,9 +3865,9 @@ Not only is Org Mode great to write structured documents that can be exported to
                             ("Talk"         . "🔊")
                             ("Exam"         . "💯")
                             ("Seminar"      . "🪧")
-                            ("Workshop"     . "👥") ; same as conference
+                            ("Workshop"     . "👥") ; same icon as conference
                             ("Culture"      . "🎨")
-                            ("PhD Research" . "🎓")
+                            ("PhDResearch"  . "🎓")
                             ("Holidays"     . "☀️")
                             ("Science"      . "👩🏾‍🔬")
                             ("Banque"       . "💰")
@@ -3911,7 +3921,18 @@ Not only is Org Mode great to write structured documents that can be exported to
                   "")))
         (if (numberp len)
             (s-truncate len (s-pad-right len " " result))
-          result))))
+          result)))
+
+    (dolist (cmd '(("p" . "PhD related views")
+                   ("pp" "PhD (everything)"
+                    ((agenda) (tags-todo "phd"))
+                    ((org-agenda-tag-filter-preset '("+phd"))))
+                   ("pe" "PhD excluded"
+                    ((agenda) (tags-todo "-phd"))
+                    ((org-agenda-tag-filter-preset '("-phd"))))))
+      (cl-pushnew cmd
+                  org-agenda-custom-commands
+                  :test 'equal)))
 #+end_src
 
 ** Org Capture
@@ -5198,7 +5219,7 @@ We integrate all the previous stuff with org-roam. This means that we can store 
     (defun lps/org-roam-capture-set-category ()
       (save-excursion
         (goto-char (point-min))
-        (org-set-property "CATEGORY" "PhD Research")))
+        (org-set-property "CATEGORY" "PhDResearch")))
 
     (defun lps/org-roam-bibtex-dispatch-change-file (citekey)
       (ignore citekey)

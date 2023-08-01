@@ -169,7 +169,6 @@ fboundp."
 (system-case
  (gnu/linux
   (use-package password-cache
-    :ensure nil
     :custom
     (password-cache t)
     (password-cache-expiry 300))
@@ -181,7 +180,6 @@ fboundp."
     (pinentry-start))
 
   (use-package auth-source
-    :ensure nil
     :custom
     (auth-sources (remove "~/.authinfo" auth-sources))
     (auth-source-cache-expiry 86400) ;; All day
@@ -303,27 +301,28 @@ fboundp."
                     (lps/set-default-fonts))))
     (lps/set-default-fonts)))
 
-;; Disable the annoying startup message and Emacs logo
-(setq inhibit-startup-message t)
+(use-package emacs
+  :custom
+  (inhibit-startup-message t)
+  (initial-scratch-message nil)
+  :init
+  ;; Emacs frame startup
+  ;; Maximize the Emacs frame at startup
+  (add-to-list 'default-frame-alist '(fullscreen . maximized))
+  (ensure-emacs-version 29
+   (add-to-list 'default-frame-alist '(alpha-background . 95))
+   (set-frame-parameter nil 'alpha-background 95))
 
-;; Disable the message on top of the Scratch buffer
-(setq initial-scratch-message nil)
+  ;; Bell
+  (setq ring-bell-function 'ignore)
+  (setq visible-bell nil)
 
-;; Maximize the Emacs frame at startup
-(add-to-list 'default-frame-alist '(fullscreen . maximized))
-(ensure-emacs-version 29
- (add-to-list 'default-frame-alist '(alpha-background . 95))
- (set-frame-parameter nil 'alpha-background 95))
-
-(setq ring-bell-function 'ignore)
-(setq visible-bell nil)
-
-(scroll-bar-mode -1)        ; Disable visible scrollbar
-(tool-bar-mode -1)          ; Disable the toolbar
-(tooltip-mode -1)           ; Disable tooltips
-(set-fringe-mode 10)        ; Give some breathing room
-
-(menu-bar-mode -1)          ; Disable the menu bar
+  ;; Menus
+  (scroll-bar-mode -1)
+  (tool-bar-mode -1)
+  (tooltip-mode -1)
+  (set-fringe-mode 10)
+  (menu-bar-mode -1))
 
 (use-package emacs
   :init
@@ -1488,6 +1487,8 @@ If called with a prefix argument, also kills the current buffer"
   :defer t
   :bind
   ("M-é" . avy-goto-char-2)
+  (:map isearch-mode-map
+        ("M-é" . avy-isearch))
   :custom
   ;; Using an AZERTY keyboard home row
   (avy-keys '(?q ?s ?d ?f ?g ?h ?j ?k ?l ?m))
@@ -2984,9 +2985,9 @@ call the associated function interactively. Otherwise, call the
                           ("Talk"         . "🔊")
                           ("Exam"         . "💯")
                           ("Seminar"      . "🪧")
-                          ("Workshop"     . "👥") ; same as conference
+                          ("Workshop"     . "👥") ; same icon as conference
                           ("Culture"      . "🎨")
-                          ("PhD Research" . "🎓")
+                          ("PhDResearch"  . "🎓")
                           ("Holidays"     . "☀️")
                           ("Science"      . "👩🏾‍🔬")
                           ("Banque"       . "💰")
@@ -3040,7 +3041,18 @@ Refer to `org-agenda-prefix-format' for more information."
                 "")))
       (if (numberp len)
           (s-truncate len (s-pad-right len " " result))
-        result))))
+        result)))
+
+  (dolist (cmd '(("p" . "PhD related views")
+                 ("pp" "PhD (everything)"
+                  ((agenda) (tags-todo "phd"))
+                  ((org-agenda-tag-filter-preset '("+phd"))))
+                 ("pe" "PhD excluded"
+                  ((agenda) (tags-todo "-phd"))
+                  ((org-agenda-tag-filter-preset '("-phd"))))))
+    (cl-pushnew cmd
+                org-agenda-custom-commands
+                :test 'equal)))
 
 (use-package org-capture
   :bind
@@ -4251,7 +4263,7 @@ present in the list of authors or in the title of the article"
   (defun lps/org-roam-capture-set-category ()
     (save-excursion
       (goto-char (point-min))
-      (org-set-property "CATEGORY" "PhD Research")))
+      (org-set-property "CATEGORY" "PhDResearch")))
 
   (defun lps/org-roam-bibtex-dispatch-change-file (citekey)
     (ignore citekey)

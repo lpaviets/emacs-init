@@ -46,6 +46,7 @@
         org-delete-char
         org-emphasize
         org-end-of-line
+        org-kill-line
         org-self-insert-command
         org-yank
         paredit-backslash
