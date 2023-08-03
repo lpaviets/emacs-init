@@ -106,23 +106,25 @@
   `(ensure-version emacs ,version
      ,@body))
 
-(defmacro version-case (&rest cases)
+(defmacro version-case (package &rest cases)
   "CASES is a list of (VERSION BODY) where version is a version
 number or a string. The macro expands to the code associated the
 latest possible version.
 As a special case, the version T is considered to be smaller than
 all the other versions"
+  (declare (indent 1))
   (let ((versions (sort cases (lambda (v1 v2)
                                 (version<= (lps/versionify (car v1))
                                            (lps/versionify (car v2))))))
         (gver (make-symbol "version"))
+        (package-version (intern (concat (symbol-name package) "-version")))
         version-conds)
     (dolist (ver versions)
       (let ((v-num (car ver))
             (v-body (cdr ver)))
         (push (cons `(version<= ,(lps/versionify v-num) ,gver) v-body)
               version-conds)))
-    `(let ((,gver emacs-version))
+    `(let ((,gver ,package-version))
        (cond
         ,@version-conds))))
 
@@ -1094,9 +1096,9 @@ If called with a prefix argument, also kills the current buffer"
   (keycast-mode-line-format "%10s%k%c%r%10s"))
 
 ;; Type "y" instead of "yes RET" for confirmation
-(version-case
- (28 (setq use-short-answers t))
- (t (defalias 'yes-or-no-p 'y-or-n-p)))
+(version-case emacs
+  (28 (setq use-short-answers t))
+  (t (defalias 'yes-or-no-p 'y-or-n-p)))
 
 (use-package consult
   :defer t
@@ -3055,6 +3057,7 @@ Refer to `org-agenda-prefix-format' for more information."
                 :test 'equal)))
 
 (use-package org-capture
+  :after org
   :bind
   ("C-c o" . org-capture)
   (:map org-capture-mode-map
@@ -3063,23 +3066,23 @@ Refer to `org-agenda-prefix-format' for more information."
   (org-capture-templates
    `(("t" "Tasks / Projects")
      ("tt" "Task" entry
-      (file+olp ,(concat org-directory "agenda/Tasks.org") "Inbox")
+      (file+olp ,(lps/org-expand-file-name "agenda/Tasks.org") "Inbox")
       "* TODO %?\n  %U\n  %a\n  %i"
       :empty-lines 1)
 
      ("m" "Meeting" entry
-      (file+olp+datetree ,(concat org-directory "agenda/Meetings.org"))
+      (file+olp+datetree ,(lps/org-expand-file-name "agenda/Meetings.org"))
       "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
       :empty-lines 1)
 
      ("w" "Workflows")
      ("we" "Checking Email" entry
-      (file+olp+datetree ,(concat org-directory "agenda/Tasks.org"))
+      (file+olp+datetree ,(lps/org-expand-file-name "agenda/Tasks.org"))
       "* Checking Email :email:\n\n%?"
       :empty-lines 1)
 
      ("a" "Agenda (others)" entry
-      (file ,(concat org-directory "agenda/Others.org"))
+      (file ,(lps/org-expand-file-name "agenda/Others.org"))
       "* %(call-interactively #'org-time-stamp) %? :agenda:\n"
       :empty-lines 1)
 
@@ -4742,6 +4745,22 @@ The return string is always 6 characters wide."
                          (:from-or-to . 22)
                          (:subject . 100)))
   :config
+  ;; Redefine everything here
+  (setq mu4e-headers-draft-mark     '("D" . "⚒"))
+  (setq mu4e-headers-flagged-mark   '("F" . "✚"))
+  (setq mu4e-headers-new-mark       '("N" . "✱"))
+  (setq mu4e-headers-passed-mark    '("P" . "❯"))
+  (setq mu4e-headers-replied-mark   '("R" . "❮"))
+  (setq mu4e-headers-seen-mark      '("S" . "✔"))
+  (setq mu4e-headers-trashed-mark   '("T" . "⏚"))
+  (setq mu4e-headers-attach-mark    '("a" . "≡"))
+  (setq mu4e-headers-encrypted-mark '("x" . "⸮"))
+  (setq mu4e-headers-signed-mark    '("s" . "☡"))
+  (setq mu4e-headers-unread-mark    '("u" . "⎕"))
+  (setq mu4e-headers-list-mark      '("s" . "⁞"))
+  (setq mu4e-headers-personal-mark  '("p" . "⍟"))
+  (setq mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
+
   ;; Useless as long as I have not configured GPG properly
   (defvar lps/safe-mail-send nil "If non-nil, ask for a signature, an encryption, and ask confirmation when sending a non-multipart MIME mail")
 
@@ -4772,7 +4791,7 @@ The return string is always 6 characters wide."
                                             (:from-or-to . 22)
                                             (:subject . ,(- width (+ 20 6 10 22 15))))))))
 
-  (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
+  ;; (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
 
   ;; Change: obsolete variable
   (setq mu4e-maildir "~/Mail")
@@ -5030,7 +5049,91 @@ by hand if needed"
       (mu4e-view-mime-part-action (cdr (assoc
                                         (completing-read "MIME-part: "
                                                          attachments nil t)
-                                        attachments))))))
+                                        attachments)))))
+
+  ;; Slightly change interface
+  ;; Inspired by mu4e-column-faces-mode
+  (defun lps/mu4e~headers-field-handler (f-w msg)
+    "Create a description of the field of MSG described by F-W."
+    (let* ((field (car f-w))
+           (width (cdr f-w))
+           (face (cadr (assoc field lps/mu4e-headers-fields-propertize)))
+           (val (mu4e~headers-field-value msg field))
+           (val (and val (cond
+                          ((facep face)
+                           (propertize val 'face face))
+                          ((functionp face)
+                           (funcall face val msg))
+                          (t val))))
+           (val (and val (if width (mu4e~headers-truncate-field field val width) val))))
+      val))
+
+  (defun lps/mu4e~headers-format-subject (sub msg)
+    (with-temp-buffer
+      (insert sub)
+      (goto-char (point-min))
+      (when (re-search-forward "\\(Re:\\|Fwd:\\| \\)*\\[\\([-a-zA-Z0-9., ]+?\\)\\]"
+                               nil t 1)
+        (add-face-text-property (match-beginning 2)
+                                (match-end 2)
+                                '(:weight bold :underline t)))
+      (buffer-substring (point-min) (point-max))))
+
+  ;; Taken from mu4e-column-faces
+  (defvar lps/mu4e-headers-fields-propertize
+    `((:human-date font-lock-string-face)
+      (:flags font-lock-type-face)
+      (:mailing-list font-lock-builtin-face)
+      (:from-or-to font-lock-variable-name-face)
+      (:subject lps/mu4e~headers-format-subject)
+      (:bcc font-lock-variable-name-face)
+      (:cc font-lock-variable-name-face)
+      (:changed)
+      (:date font-lock-string-face)
+      (:from font-lock-variable-name-face)
+      (:maildir font-lock-function-name-face)
+      (:list font-lock-builtin-face)
+      (:message-id font-lock-keyword-face)
+      (:path font-lock-function-name-face)
+      (:size font-lock-string-face)
+      (:tags font-lock-keyword-face)
+      (:thread-subject font-lock-doc-face)
+      (:to font-lock-variable-name-face))
+    "Alist of (FIELD-NAME FACE-OR-FUNCTION).
+
+In case the second element is a function, it will be called with
+two elements: the field content, and the message itself.")
+
+  ;; This overrides the previous definition of this function, inlines
+  ;; everything called by the original function, and replace an internal
+  ;; function call by our own function.
+  (defun mu4e~headers-append-handler (msglst)
+    "Append one-line descriptions of messages in MSGLIST.
+Do this at the end of the headers-buffer."
+    (when (buffer-live-p (mu4e-get-headers-buffer))
+      (with-current-buffer (mu4e-get-headers-buffer)
+        (save-excursion
+          (let ((inhibit-read-only t))
+            (seq-do
+             (lambda (msg)
+               (when-let
+                   ((line (unless (and mu4e-headers-hide-predicate
+                                       (funcall mu4e-headers-hide-predicate msg))
+                            (mu4e~headers-apply-flags
+                             msg
+                             (mapconcat
+                              (lambda (f-w)
+                                (lps/mu4e~headers-field-handler f-w msg))
+                              mu4e-headers-fields " "))))
+                    (docid (plist-get msg :docid)))
+                 (goto-char (point-max))
+                 (insert
+                  (propertize
+                   (concat
+                    (mu4e~headers-docid-cookie docid)
+                    mu4e--mark-fringe line "\n")
+                   'docid docid 'msg msg))))
+             msglst)))))))
 
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired
@@ -5104,12 +5207,6 @@ by hand if needed"
                  "pièce-jointe"
                  "t'envoie"
                  "vous envoie"))))
-
-(use-package mu4e-column-faces
-  :after mu4e
-  :config
-  (ensure-version mu4e-mu 1.8
-    (mu4e-column-faces-mode)))
 
 (use-package elpher
   :defer t)
@@ -5679,6 +5776,17 @@ insert as many blank lines as necessary."
       map)
     "Keymap for the *elfeed-dashboard* buffer.")
 
+  ;; Temporary remappings while mu4e is normalizing names
+  (defvar lps/mu4e-main-action-str
+    (version-case mu4e-mu
+      ("1.8" 'mu4e--main-action-str)
+      (t 'mu4e~main-action-str)))
+
+  (defvar lps/mu4e-key-val
+    (version-case mu4e-mu
+      ("1.8" 'mu4e--key-val)
+      (t 'mu4e~key-val)))
+
   (defun lps/elfeed-ask-bookmark (prompt)
     "Ask the user for a bookmark (using PROMPT) as defined in
 `lps/elfeed-bookmarks', then return the corresponding query."
@@ -5742,9 +5850,9 @@ insert as many blank lines as necessary."
              when (not (plist-get bm :hide))
              concat (concat
                      ;; menu entry
-                     (mu4e~main-action-str
-                      (concat "\t* [b" key "] " name)
-                      (concat "b" key))
+                     (funcall lps/mu4e-main-action-str
+                              (concat "\t* [b" key "] " name)
+                              (concat "b" key))
                      ;; append all/unread numbers, if available.
                      (if (and count count-u)
                          (format
@@ -5774,36 +5882,36 @@ insert as many blank lines as necessary."
            (propertize update 'face 'mu4e-header-key-face))
          "\n\n"
          (propertize "  Basics\n\n" 'face 'mu4e-title-face)
-         ;; (mu4e~main-action-str
+         ;; (funcall lps/mu4e-main-action-str
          ;;  "\t* [j]ump to some maildir\n" 'mu4e-jump-to-maildir)
-         (mu4e~main-action-str
-          "\t* enter a [s]earch query interactively\n"
-          'lps/elfeed-search-filter-interactive)
+         (funcall lps/mu4e-main-action-str
+                  "\t* enter a [s]earch query interactively\n"
+                  'lps/elfeed-search-filter-interactive)
          "\n"
-         (mu4e~main-action-str
-          "\t* modify the [S]earch query\n" 'elfeed-search-set-filter)
+         (funcall lps/mu4e-main-action-str
+                  "\t* modify the [S]earch query\n" 'elfeed-search-set-filter)
          "\n"
          (propertize "  Bookmarks\n\n" 'face 'mu4e-title-face)
          (lps/elfeed-bookmarks-dashboard)
          "\n"
          (propertize "  Misc\n\n" 'face 'mu4e-title-face)
 
-         (mu4e~main-action-str "\t* [U]pdate feeds & database\n"
-                               (lambda ()
-                                 (interactive)
-                                 (elfeed-update)
-                                 (lps/elfeed-dashboard--redraw nil nil)))
-         (mu4e~main-action-str "\t* [r]ead elfeed-org files" 'lps/elfeed-org-reread)
+         (funcall lps/mu4e-main-action-str "\t* [U]pdate feeds & database\n"
+                  (lambda ()
+                    (interactive)
+                    (elfeed-update)
+                    (lps/elfeed-dashboard--redraw nil nil)))
+         (funcall lps/mu4e-main-action-str "\t* [r]ead elfeed-org files" 'lps/elfeed-org-reread)
          "\n"
-         ;; (mu4e~main-action-str "\t* [H]elp\n" 'mu4e-display-manual)
-         (mu4e~main-action-str "\t* [q]uit\n" 'bury-buffer)
+         ;; (funcall lps/mu4e-main-action-str "\t* [H]elp\n" 'mu4e-display-manual)
+         (funcall lps/mu4e-main-action-str "\t* [q]uit\n" 'bury-buffer)
 
          "\n"
          (propertize "  Info\n\n" 'face 'mu4e-title-face)
-         (mu4e~key-val "database-path" elfeed-db-directory)
-         (mu4e~key-val "in store"
-                       (format "%d" (elfeed-db-size))
-                       "entries"))
+         (funcall lps/mu4e-key-val "database-path" elfeed-db-directory)
+         (funcall lps/mu4e-key-val "in store"
+                  (format "%d" (elfeed-db-size))
+                  "entries"))
         (goto-char pos))
       (lps/elfeed-dashboard-mode))
     (pop-to-buffer lps/elfeed-dashboard-buffer))
