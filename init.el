@@ -2267,25 +2267,6 @@ call the associated function interactively. Otherwise, call the
   (with-eval-after-load 'paredit
    (eldoc-add-command-completions "paredit-")))
 
-(use-package devdocs
-  :defer t
-  :bind
-  (:map prog-mode-map
-        ("<f6>" . devdocs-lookup))
-  :init
-  (defvar lps/devdocs-alist
-    '((python-mode-hook . "python~3.8")
-      (haskell-mode-hook . "haskell~8")
-      (c-mode-hook . "c")
-      (c++-mode-hook . "cpp")
-      (tuareg-mode-hook . "ocaml")
-      (LaTeX-mode-hook . "latex")))
-
-  (dolist (pair lps/devdocs-alist)
-    (let ((hook (car pair))
-          (doc (cdr pair)))
-      (add-hook hook `(lambda () (setq-local devdocs-current-docs (list ,doc)))))))
-
 (use-package emacs
   :ensure nil
   :custom
@@ -3255,7 +3236,6 @@ move to the end of the document, and search backward instead."
   (:map TeX-mode-map
         ("C-c '" . TeX-error-overview)
         ("<f5>" . lps/auto-compile)
-        ("<f6>" . devdocs-lookup)
         ("<backtab>" . indent-for-tab-command)
         ("C-c M-%" . LaTeX-replace-in-math)
         ([remap beginning-of-defun] . LaTeX-find-matching-begin)
@@ -4734,14 +4714,14 @@ The return string is always 6 characters wide."
   (mu4e-get-mail-command "mbsync -a")
   (mu4e-index-update-in-background t)
   (mu4e-hide-index-messages t)
-  (mu4e-headers-date-format "%d-%m-%Y %H:%M") ; Always show full date and time
+  (mu4e-headers-date-format "%d-%m-%Y [%H:%M]") ; Always show full date and time
   (mu4e-search-threads t)             ; Also show full message threads
   (mu4e-headers-include-related t)
   ;; Keep one mail per line
   ;; Todo: fix so that it updates when window is resized
-  (mu4e-headers-fields '((:human-date . 20)
+  (mu4e-headers-fields '((:human-date . 22)
                          (:flags . 6)
-                         (:mailing-list . 10)
+                         (:mailing-list . 12)
                          (:from-or-to . 22)
                          (:subject . 100)))
   :config
