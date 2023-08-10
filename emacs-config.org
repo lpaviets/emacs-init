@@ -1273,6 +1273,34 @@ By default, Emacs performs a lot of backups, allowing to recover both from unwan
       (auto-save-mode -1)))
 #+end_src
 
+*** Temporary files
+Emacs mainly works with /buffers/, but some programs and tools require things to be written to /files/. Sometimes, you only care about the content itself, and don't want the file to actually persist on disk: this is were temporary files come to the rescue !
+Emacs already offers convenience functions to create, save and work with temp files; we only make some wrappers around them.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :bind
+    (:map ctl-x-x-map
+          ("s" . lps/save-as-temp-file))
+    :init
+    (defun lps/save-as-temp-file ()
+      "Save the current buffer to a temporary file.
+
+  If the buffer name is NAME.EXT (where EXT is optional), the
+  resulting temporary file will use NAME as a prefix and EXT as an
+  extension.
+
+  The code is not very robust, and more or less assumes that the
+  buffer name already resembles a file name"
+      (interactive)
+      (let* ((name (buffer-name))
+             (ext (file-name-extension name))
+             (name-sans (file-name-base name)))
+        (write-file (make-temp-file (or name-sans "")
+                                    nil
+                                    (and ext (concat "." ext)))))))
+#+end_src
+
 ** Outline and folding
 Sometimes, when documents get bigger and bigger, it is useful to be able to temporarily hide stuff. The built-in ~narrow-to-\*~ commands can be useful to really focus on a part of the document, but we might want to be able to get a rough outline of the /whole/ document at any time, but in a less cluttered way.
 
@@ -2629,6 +2657,7 @@ Now, in order to work with structured text, such as source code, we want to be a
           ("M-s M-s" . paredit-splice-sexp)
           ("C-M-;" . paredit-convolute-sexp)
           ([remap newline] . paredit-newline)
+          ("C-j" . nil)
           ("<C-backspace>" . paredit-delete-region)
           ("M-S-<left>" . lps/transpose-sexp-backward)
           ("M-S-<right>" . lps/transpose-sexp-forward))
@@ -6607,6 +6636,22 @@ Emacs comes with a builtin calendar. Being French, I decide to format dates usin
     :custom
     (calendar-view-holidays-initially-flag t)
     (calendar-mark-holidays-flag t)
+    (cal-tex-preamble-extra (mapconcat 'identity
+                                       '("\\usepackage[utf8]{inputenc}"
+                                         "\\usepackage[T1]{fontenc}")
+                                       "\n"))
+    :hook
+    (calendar-mode . lps/windmove-mode-local-off)
+    :bind
+    (:map calendar-mode-map          ; Mimic bindings from org-read-date
+          ("M-S-<left>"  . calendar-backward-month)
+          ("M-S-<right>" . calendar-forward-month)
+          ("M-S-<up>"    . calendar-backward-year)
+          ("M-S-<down>"  . calendar-forward-year)
+          ("S-<up>"      . calendar-backward-week)
+          ("S-<down>"    . calendar-forward-week)
+          ("S-<left>"    . calendar-backward-day)
+          ("S-<right>"   . calendar-forward-day))
     :config
     (calendar-set-date-style 'european)
 
@@ -6616,13 +6661,12 @@ Emacs comes with a builtin calendar. Being French, I decide to format dates usin
         (holiday-fixed 2 2 "Chandeleur")
         (holiday-fixed 2 14 "Saint Valentin")
         (holiday-fixed 5 1 "Fête du travail")
-        (holiday-fixed 5 8 "Commémoration de la capitulation de l'Allemagne en 1945")
+        (holiday-fixed 5 8 "Fête de la Victoire")
         (holiday-fixed 6 21 "Fête de la musique")
-        (holiday-fixed 7 14 "Fête nationale - Prise de la Bastille")
+        (holiday-fixed 7 14 "Fête nationale")
         (holiday-fixed 8 15 "Assomption (Religieux)")
         (holiday-fixed 11 11 "Armistice de 1918")
         (holiday-fixed 11 1 "Toussaint")
-        (holiday-fixed 11 2 "Commémoration des fidèles défunts")
         (holiday-fixed 12 25 "Noël")
         ;; Not fixed
         (holiday-easter-etc 0 "Pâques")

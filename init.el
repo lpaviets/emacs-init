@@ -966,6 +966,28 @@ If called with a prefix argument, also kills the current buffer"
   (defun lps/disable-auto-save-mode ()
     (auto-save-mode -1)))
 
+(use-package emacs
+  :bind
+  (:map ctl-x-x-map
+        ("s" . lps/save-as-temp-file))
+  :init
+  (defun lps/save-as-temp-file ()
+    "Save the current buffer to a temporary file.
+
+If the buffer name is NAME.EXT (where EXT is optional), the
+resulting temporary file will use NAME as a prefix and EXT as an
+extension.
+
+The code is not very robust, and more or less assumes that the
+buffer name already resembles a file name"
+    (interactive)
+    (let* ((name (buffer-name))
+           (ext (file-name-extension name))
+           (name-sans (file-name-base name)))
+      (write-file (make-temp-file (or name-sans "")
+                                  nil
+                                  (and ext (concat "." ext)))))))
+
 (use-package outline
   :ensure nil
   :defer t
@@ -2021,6 +2043,7 @@ If it is non-nil, replace it by an underscore _"
         ("M-s M-s" . paredit-splice-sexp)
         ("C-M-;" . paredit-convolute-sexp)
         ([remap newline] . paredit-newline)
+        ("C-j" . nil)
         ("<C-backspace>" . paredit-delete-region)
         ("M-S-<left>" . lps/transpose-sexp-backward)
         ("M-S-<right>" . lps/transpose-sexp-forward))
@@ -5481,6 +5504,22 @@ insert as many blank lines as necessary."
   :custom
   (calendar-view-holidays-initially-flag t)
   (calendar-mark-holidays-flag t)
+  (cal-tex-preamble-extra (mapconcat 'identity
+                                     '("\\usepackage[utf8]{inputenc}"
+                                       "\\usepackage[T1]{fontenc}")
+                                     "\n"))
+  :hook
+  (calendar-mode . lps/windmove-mode-local-off)
+  :bind
+  (:map calendar-mode-map          ; Mimic bindings from org-read-date
+        ("M-S-<left>"  . calendar-backward-month)
+        ("M-S-<right>" . calendar-forward-month)
+        ("M-S-<up>"    . calendar-backward-year)
+        ("M-S-<down>"  . calendar-forward-year)
+        ("S-<up>"      . calendar-backward-week)
+        ("S-<down>"    . calendar-forward-week)
+        ("S-<left>"    . calendar-backward-day)
+        ("S-<right>"   . calendar-forward-day))
   :config
   (calendar-set-date-style 'european)
 
@@ -5490,13 +5529,12 @@ insert as many blank lines as necessary."
       (holiday-fixed 2 2 "Chandeleur")
       (holiday-fixed 2 14 "Saint Valentin")
       (holiday-fixed 5 1 "Fête du travail")
-      (holiday-fixed 5 8 "Commémoration de la capitulation de l'Allemagne en 1945")
+      (holiday-fixed 5 8 "Fête de la Victoire")
       (holiday-fixed 6 21 "Fête de la musique")
-      (holiday-fixed 7 14 "Fête nationale - Prise de la Bastille")
+      (holiday-fixed 7 14 "Fête nationale")
       (holiday-fixed 8 15 "Assomption (Religieux)")
       (holiday-fixed 11 11 "Armistice de 1918")
       (holiday-fixed 11 1 "Toussaint")
-      (holiday-fixed 11 2 "Commémoration des fidèles défunts")
       (holiday-fixed 12 25 "Noël")
       ;; Not fixed
       (holiday-easter-etc 0 "Pâques")
