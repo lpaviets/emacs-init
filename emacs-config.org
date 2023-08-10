@@ -1267,7 +1267,10 @@ By default, Emacs performs a lot of backups, allowing to recover both from unwan
     (unless (file-exists-p lps/backup-directory)
       (make-directory lps/backup-directory))
 
-    (setq backup-directory-alist `(("." . ,lps/backup-directory))))
+    (setq backup-directory-alist `(("." . ,lps/backup-directory)))
+
+    (defun lps/disable-auto-save-mode ()
+      (auto-save-mode -1)))
 #+end_src
 
 ** Outline and folding
@@ -5712,19 +5715,59 @@ Emacs already comes with a builtin mail client, =gnus=. We use another client in
 
 #+begin_src emacs-lisp
   (use-package message
+    :init
+    ;; Useless as long as I have not configured GPG properly
+    (defvar lps/safe-mail-send nil
+      "If non-nil, ask for a signature, an encryption, and ask
+  confirmation when sending a non-multipart MIME mail")
     :bind
     (:map message-mode-map
           ([remap message-tab] . lps/message-tab))
+    :hook
+    (message-send . lps/sign-or-encrypt-message)
     :custom
     (read-mail-command 'mu4e)
     (mail-user-agent 'mu4e-user-agent)
     (message-send-mail-function 'smtpmail-send-it)
     (message-kill-buffer-on-exit t)
+    ;; Adapted from https://jherrlin.github.io/posts/emacs-mu4e/
+    ;; See also https://etienne.depar.is/emacs.d/mu4e.html
+    (mml-secure-cache-passphrase nil)
+    (mml-secure-openpgp-encrypt-to-self t)
+    (mml-smime-encrypt-to-self t) ;; encryption is not ready yet
+    (mm-sign-option 'guided)
+    ;;(mml-secure-openpgp-sign-with-sender t)
+    ;;(mml-secure-smime-sign-with-sender t)
     :config
+    ;; Prefer text compared to html
+    (add-to-list 'mm-discouraged-alternatives "text/html")
+
     (defun lps/message-tab ()
       (interactive nil message-mode)
       (lps/with-completing-read-in-region
-          (message-tab))))
+          (message-tab)))
+
+    (defun lps/sign-or-encrypt-message ()
+      (when lps/safe-mail-send
+        (let ((answer (read-from-minibuffer
+                       (concat "Sign or encrypt?\n"
+                               "Empty to do nothing.\n[s/e]: "))))
+          (cond
+           ((string-equal answer "s")
+            (progn
+              (message "Sign this message.")
+              ;; Why doesn't mml-secure-message-sign-pgpmime work ... ?
+              (mml-secure-message-sign-pgpmime) ;; Works but only signs a
+              ;; part of the message.
+              (message "Done trying to sign the message")))
+           ((string-equal answer "e")
+            (progn
+              (message "Encrypt and sign this message.")
+              (mml-secure-message-encrypt-pgpmime)
+              (message "Done trying to encrypt the message")))
+           (t (progn
+                (message "Not signing or encrypting this message.")
+                nil)))))))
 #+end_src
 
 ** mbsync
@@ -5768,7 +5811,15 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
            (:map mu4e-search-minor-mode-map
                  ("C-S-s" . lps/mu4e-build-query))
            (:map mu4e-view-mode-map
-                 ("A" . lps/mu4e-view-mime-part-action)))
+                 ("A" . lps/mu4e-view-mime-part-action))
+           (:map mu4e-headers-mode-map
+                 ("<backspace>" . lps/mu4e-unmark-backward)))
+    :hook
+    ;; Security issues
+    (mu4e-main-mode . lps/auth-source-define-cache-expiry)
+
+    ;; Might avoid unwanted drafts
+    (mu4e-compose-mode . lps/disable-auto-save-mode)
     :custom
     (mu4e-compose-context-policy 'always-ask)
     (mu4e-context-policy 'pick-first)
@@ -5785,6 +5836,7 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     (mu4e-headers-date-format "%d-%m-%Y [%H:%M]") ; Always show full date and time
     (mu4e-search-threads t)             ; Also show full message threads
     (mu4e-headers-include-related t)
+    (mu4e-headers-precise-alignment t)
     ;; Keep one mail per line
     ;; Todo: fix so that it updates when window is resized
     (mu4e-headers-fields '((:human-date . 22)
@@ -5792,34 +5844,24 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
                            (:mailing-list . 12)
                            (:from-or-to . 22)
                            (:subject . 100)))
+    ;; Improve completion
+    (mu4e-completing-read-function 'completing-read)
     :config
     ;; Redefine everything here
-    (setq mu4e-headers-draft-mark     '("D" . "⚒"))
-    (setq mu4e-headers-flagged-mark   '("F" . "✚"))
-    (setq mu4e-headers-new-mark       '("N" . "✱"))
-    (setq mu4e-headers-passed-mark    '("P" . "❯"))
-    (setq mu4e-headers-replied-mark   '("R" . "❮"))
-    (setq mu4e-headers-seen-mark      '("S" . "✔"))
-    (setq mu4e-headers-trashed-mark   '("T" . "⏚"))
-    (setq mu4e-headers-attach-mark    '("a" . "≡"))
-    (setq mu4e-headers-encrypted-mark '("x" . "⸮"))
-    (setq mu4e-headers-signed-mark    '("s" . "☡"))
-    (setq mu4e-headers-unread-mark    '("u" . "⎕"))
-    (setq mu4e-headers-list-mark      '("s" . "⁞"))
-    (setq mu4e-headers-personal-mark  '("p" . "⍟"))
-    (setq mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
-
-    ;; Useless as long as I have not configured GPG properly
-    (defvar lps/safe-mail-send nil "If non-nil, ask for a signature, an encryption, and ask confirmation when sending a non-multipart MIME mail")
-
-    ;; Improve completion
-    (setq mu4e-completing-read-function 'completing-read)
-
-    ;; Security issues
-    (add-hook 'mu4e-main-mode-hook #'lps/auth-source-define-cache-expiry)
-
-    ;; Might avoid unwanted drafts
-    (add-hook 'mu4e-compose-mode-hook #'(lambda () (auto-save-mode -1)))
+    (setq mu4e-headers-draft-mark     '("D" . "⚒")
+          mu4e-headers-flagged-mark   '("F" . "✚")
+          mu4e-headers-new-mark       '("N" . "✱")
+          mu4e-headers-passed-mark    '("P" . "❯")
+          mu4e-headers-replied-mark   '("R" . "❮")
+          mu4e-headers-seen-mark      '("S" . "✔")
+          mu4e-headers-trashed-mark   '("T" . "⏚")
+          mu4e-headers-attach-mark    '("a" . "≡")
+          mu4e-headers-encrypted-mark '("x" . "⸮")
+          mu4e-headers-signed-mark    '("s" . "☡")
+          mu4e-headers-unread-mark    '("u" . "⎕")
+          mu4e-headers-list-mark      '("s" . "⁞")
+          mu4e-headers-personal-mark  '("p" . "⍟")
+          mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
 
     ;; View images
     (when (version< mu4e-mu-version "1.7")
@@ -5827,8 +5869,11 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     (when (fboundp 'imagemagick-register-types)
       (imagemagick-register-types))
 
-    ;; but prefer text compared to html
-    (add-to-list 'mm-discouraged-alternatives "text/html")
+    (defun lps/mu4e-unmark-backward ()
+      (interactive)
+      (mu4e-headers-prev)
+      (let ((mu4e-headers-advance-after-mark nil))
+        (mu4e-headers-mark-for-unmark)))
 
     (defun lps/resize-headers-fields ()
       (if (eq major-mode 'mu4e-headers-mode)
@@ -5840,40 +5885,6 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
                                               (:subject . ,(- width (+ 20 6 10 22 15))))))))
 
     ;; (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
-
-    ;; Change: obsolete variable
-    (setq mu4e-maildir "~/Mail")
-
-    ;; Adapted from https://jherrlin.github.io/posts/emacs-mu4e/
-    ;; See also https://etienne.depar.is/emacs.d/mu4e.html
-    (setq mml-secure-cache-passphrase nil)
-    ;;(setq mml-secure-openpgp-sign-with-sender t)
-    (setq mml-secure-openpgp-encrypt-to-self t)
-    ;;(setq mml-secure-smime-sign-with-sender t)
-    (setq mml-smime-encrypt-to-self t) ;; encryption is not ready yet
-
-    (setq mm-sign-option 'guided)
-
-    (defun lps/sign-or-encrypt-message ()
-      (when lps/safe-mail-send
-        (let ((answer (read-from-minibuffer (concat "Sign or encrypt?\n"
-                                                    "Empty to do nothing.\n[s/e]: "))))
-          (cond
-           ((string-equal answer "s") (progn
-                                        (message "Sign this message.")
-                                        ;; Why doesn't mml-secure-message-sign-pgpmime work ... ?
-                                        (mml-secure-message-sign-pgpmime) ;;Works but only signs a part of the message.
-                                        (message "Done trying to sign the message")))
-           ((string-equal answer "e") (progn
-                                        (message "Encrypt and sign this message.")
-                                        (mml-secure-message-encrypt-pgpmime)
-                                        (message "Done trying to encrypt the message")))
-           (t (progn
-                (message "Not signing or encrypting this message.")
-                nil))))))
-
-    (add-hook 'message-send-hook 'lps/sign-or-encrypt-message)
-
 
     ;; Before making a new context:
     ;; - Make sure that the [sent/trash/drafts] folders are correctly named, to avoid duplicates
