@@ -2317,6 +2317,7 @@ call the associated function interactively. Otherwise, call the
   :defer t)
 
 (use-package python-mls
+  :disabled t
   :after python
   :config
   (python-mls-setup)
@@ -2468,7 +2469,6 @@ call the associated function interactively. Otherwise, call the
   ;;              '(lisp-mode . lps/desktop-restore-lisp-file-no-repl)
   ;;              nil 'equal)
 
-  (add-hook 'sly-editing-mode-hook 'lps/sly-start-repl)
   (add-hook 'sly-mode-hook 'lps/sly-company-setup)
   (add-hook 'sly-minibuffer-setup-hook 'paredit-mode)
 
@@ -2537,6 +2537,8 @@ call the associated function interactively. Otherwise, call the
   :config
   (defun lps/sly-mrepl-other-window ()
     (interactive)
+    (require 'sly-mrepl)
+    (lps/sly-start-repl)
     (sly-mrepl #'pop-to-buffer))
 
   ;; Redefinition: do not pop-up or show the MREPL buffer
