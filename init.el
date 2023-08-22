@@ -3760,8 +3760,9 @@ Return non-nil if a frame was found and folded, nil otherwise."
     (unless (assoc-string "frametitle" reftex-section-levels)
       (setq-local reftex-section-levels
                   (append reftex-section-levels
-                          '(("frametitle" . -2)
-                            ("framesubtitle" . -3))))))
+                          '(("frametitle" . -4)
+                            ("framesubtitle" . -5)))))
+    (reftex-reset-mode))
 
   (defun lps/LaTeX-beamer-remove-frame-as-section ()
     (require 'reftex)
@@ -3771,7 +3772,8 @@ Return non-nil if a frame was found and folded, nil otherwise."
                    (lambda (item)
                      (let ((name (car item)))
                        (assoc-string name '("frametitle" "framesubtitle"))))
-                   reftex-section-levels))))
+                   reftex-section-levels)))
+    (reftex-reset-mode))
 
   (defun lps/LaTeX-beamer-fold-all-frames ()
     (interactive)

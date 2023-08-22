@@ -4697,8 +4697,9 @@ Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
       (unless (assoc-string "frametitle" reftex-section-levels)
         (setq-local reftex-section-levels
                     (append reftex-section-levels
-                            '(("frametitle" . -2)
-                              ("framesubtitle" . -3))))))
+                            '(("frametitle" . -4)
+                              ("framesubtitle" . -5)))))
+      (reftex-reset-mode))
 
     (defun lps/LaTeX-beamer-remove-frame-as-section ()
       (require 'reftex)
@@ -4708,7 +4709,8 @@ Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
                      (lambda (item)
                        (let ((name (car item)))
                          (assoc-string name '("frametitle" "framesubtitle"))))
-                     reftex-section-levels))))
+                     reftex-section-levels)))
+      (reftex-reset-mode))
 
     (defun lps/LaTeX-beamer-fold-all-frames ()
       (interactive)
