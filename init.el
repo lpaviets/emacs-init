@@ -2363,6 +2363,23 @@ call the associated function interactively. Otherwise, call the
   (:map c-mode-base-map
         ("C-c C-d" . disaster)))
 
+(use-package rustic
+  :ensure nil
+  :custom
+  (rustic-popup-commands
+   '((?b "build"      build)
+     (?f "fmt"        fmt)
+     (?r "run"        run)
+     (?i "comint-run" comint-run)
+     (?c "clippy"     clippy)
+     (?o "outdated"   outdated)
+     (?e "clean"      clean)
+     (?k "check"      check)
+     (?t "test"       test)
+     (?d "doc"        doc)))
+
+  (rustic-lsp-client 'eglot))
+
 (use-package emacs
   :after hexl
   :bind

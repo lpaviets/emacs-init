@@ -38,6 +38,7 @@
         lps/eval-and-replace-last-sexp
         lps/exchange-point-and-mark
         lps/insert-parentheses
+        lps/lisp-indent-adjust-parens
         lps/select-line
         lps/transpose-sexp-forward
         lps/yank-indent
@@ -71,6 +72,7 @@
         paredit-raise-sexp
         paredit-semicolon
         paredit-splice-sexp
+        paredit-splice-sexp-killing-backward
         paredit-wrap-round
         reftex-label
         reindent-then-newline-and-indent

@@ -3100,6 +3100,29 @@ As C and C++ are also quite "close to the metal", it is often useful (for optimi
           ("C-c C-d" . disaster)))
 #+end_src
 
+*** Rust
+
+Orange Crab Language.
+
+#+begin_src emacs-lisp
+  (use-package rustic
+    :ensure nil
+    :custom
+    (rustic-popup-commands
+     '((?b "build"      build)
+       (?f "fmt"        fmt)
+       (?r "run"        run)
+       (?i "comint-run" comint-run)
+       (?c "clippy"     clippy)
+       (?o "outdated"   outdated)
+       (?e "clean"      clean)
+       (?k "check"      check)
+       (?t "test"       test)
+       (?d "doc"        doc)))
+
+    (rustic-lsp-client 'eglot))
+#+end_src
+
 *** Assembly
 As mentioned in the previous sections, there are already a few tools to work with assembly code within Emacs. We add a few functions wrapping some command-line utilities from the GNU binutils package.
 
