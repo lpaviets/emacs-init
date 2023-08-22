@@ -3592,18 +3592,127 @@ return `nil'."
     "A minor mode for editing LaTeX document using the beamer class.
 It defines the following commands:
 
-\\{beamer-mode-map}")
+\\{beamer-mode-map}"
+    :keymap beamer-mode-map
+    (if beamer-mode
+        (progn
+          (advice-add 'TeX-fold-item :override 'lps/TeX-fold-item-beamer)
+          (lps/LaTeX-beamer-frame-as-section)
+          (lps/LaTeX-beamer-fold-all-frames))
+      (progn
+        (advice-remove 'TeX-fold-item 'lps/TeX-fold-item-beamer)
+        (lps/LaTeX-beamer-remove-frame-as-section)
+        (TeX-fold-clearout-buffer))))
   :bind
   (:map beamer-mode-map
         ("C-M-x" . lps/LaTeX-beamer-compile-frame)
         ("C-c M-r" . lps/LaTeX-beamer-change-all-pauses)
         ("C-x n f" . lps/LaTeX-beamer-narrow-to-frame))
-  :hook
-  (beamer-mode . lps/LaTeX-beamer-frame-as-section)
-  (beamer-mode . lps/LaTeX-beamer-fold-all-frames)
   :config
   ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
 
+  ;; Folding
+  (defun lps/TeX-fold-frame (type)
+    "Hide the frame at point.
+
+Return non-nil if a frame was found and folded, nil otherwise."
+    (when (and (eq type 'env)
+               (eq major-mode 'latex-mode)
+               (string= (LaTeX-current-environment) "frame"))
+      (when-let ((item-start (condition-case nil
+                                 (save-excursion
+                                   (LaTeX-find-matching-begin) (point))
+                               (error nil)))
+                 (item-end (TeX-fold-item-end item-start type))
+                 (item-name (or (save-excursion
+                                  (goto-char item-start)
+                                  (re-search-forward
+                                   (concat (regexp-quote TeX-esc)
+                                           "begin[ \t]*{"
+                                           "[A-Za-z*]+}[ \t\n]*"
+                                           (regexp-quote TeX-esc)
+                                           "frametitle[ \t]*{"
+                                           "\\([[:ascii:]]+?\\)}\n"))
+                                  (match-string-no-properties 1))
+                                "frame"))
+                 (display-string-spec (if (string= item-name "frame")
+                                          "[frame]"
+                                        (concat "[frame:"
+                                                (truncate-string-to-width item-name 12 0 nil "…")
+                                                "]")))
+                 (ov (TeX-fold-make-overlay item-start item-end type
+                                            display-string-spec)))
+        (TeX-fold-hide-item ov))))
+
+  (defun lps/TeX-fold-item-beamer (type)
+    (or (lps/TeX-fold-frame type)
+        ;; Copy of TeX-fold-env code:
+        ;; Can't directly call it, as this is the function we advice,
+        ;; as it is used as the entry point in most other functions
+        ;; rather than the wrapper TeX-fold-<env/macro> ...
+        (if (and (eq type 'env)
+                 (eq major-mode 'plain-tex-mode))
+            (message
+             "Folding of environments is not supported in current mode")
+          (let ((item-start (cond ((and (eq type 'env)
+                                        (eq major-mode 'context-mode))
+                                   (save-excursion
+                                     (ConTeXt-find-matching-start) (point)))
+                                  ((and (eq type 'env)
+                                        (eq major-mode 'texinfo-mode))
+                                   (save-excursion
+                                     (Texinfo-find-env-start) (point)))
+                                  ((eq type 'env)
+                                   (condition-case nil
+                                       (save-excursion
+                                         (LaTeX-find-matching-begin) (point))
+                                     (error nil)))
+                                  (t
+                                   (TeX-find-macro-start)))))
+            (when item-start
+              (let* ((item-name (save-excursion
+                                  (goto-char item-start)
+                                  (looking-at
+                                   (cond ((and (eq type 'env)
+                                               (eq major-mode 'context-mode))
+                                          (concat (regexp-quote TeX-esc)
+                                                  "start\\([A-Za-z]+\\)"))
+                                         ((and (eq type 'env)
+                                               (eq major-mode 'texinfo-mode))
+                                          (concat (regexp-quote TeX-esc)
+                                                  "\\([A-Za-z]+\\)"))
+                                         ((eq type 'env)
+                                          (concat (regexp-quote TeX-esc)
+                                                  "begin[ \t]*{"
+                                                  "\\([A-Za-z*]+\\)}"))
+                                         (t
+                                          (concat (regexp-quote TeX-esc)
+                                                  "\\([A-Za-z@*]+\\)"))))
+                                  (match-string-no-properties 1)))
+                     (fold-list (cond ((eq type 'env) TeX-fold-env-spec-list-internal)
+                                      ((eq type 'math)
+                                       TeX-fold-math-spec-list-internal)
+                                      (t TeX-fold-macro-spec-list-internal)))
+                     fold-item
+                     (display-string-spec
+                      (or (catch 'found
+                            (while fold-list
+                              (setq fold-item (car fold-list))
+                              (setq fold-list (cdr fold-list))
+                              (when (member item-name (cadr fold-item))
+                                (throw 'found (car fold-item)))))
+                          ;; Item is not specified.
+                          (if TeX-fold-unspec-use-name
+                              (concat "[" item-name "]")
+                            (if (eq type 'env)
+                                TeX-fold-unspec-env-display-string
+                              TeX-fold-unspec-macro-display-string))))
+                     (item-end (TeX-fold-item-end item-start type))
+                     (ov (TeX-fold-make-overlay item-start item-end type
+                                                display-string-spec)))
+                (TeX-fold-hide-item ov)))))))
+
+  ;; Mark
   (defun lps/LaTeX-beamer-mark-frame ()
     (interactive)
     (unless (member "beamer" TeX-active-styles)
@@ -3637,15 +3746,25 @@ It defines the following commands:
                           '(("frametitle" . -2)
                             ("framesubtitle" . -3))))))
 
+  (defun lps/LaTeX-beamer-remove-frame-as-section ()
+    (require 'reftex)
+    (when (assoc-string "frametitle" reftex-section-levels)
+      (setq-local reftex-section-levels
+                  (cl-remove-if
+                   (lambda (item)
+                     (let ((name (car item)))
+                       (assoc-string name '("frametitle" "framesubtitle"))))
+                   reftex-section-levels))))
+
   (defun lps/LaTeX-beamer-fold-all-frames ()
     (interactive)
     (lps/TeX-fold-all-of-env "frame"))
 
   (defvar lps/LaTeX-beamer-pause-macros '("pause["
-                                         "only<"
-                                         "onslide<"
-                                         "alt<"
-                                         "item<")
+                                          "only<"
+                                          "onslide<"
+                                          "alt<"
+                                          "item<")
     "List of LaTeX macros that specifying pauses or overlays in a beamer
 frame, and whose syntax rougly follows the one used by \\onslide<...>
 
