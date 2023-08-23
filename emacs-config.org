@@ -2883,6 +2883,7 @@ LSP-mode is the most featureful client for Emacs. It provides a lot of fancy stu
 
   ;; LSP mode. Useful IDE-like features
   (use-package lsp-mode
+    :disabled t
     :commands (lsp lsp-deferred)
     :custom
     (lsp-diagnostics-provider :flycheck)  ; :none if none wanted
@@ -2929,16 +2930,30 @@ There exists another implementation of the Language Server Protocol in Emacs, ca
 
 ** Errors and syntax checking
 
-[[https://www.flycheck.org/en/latest/][Flycheck]] is a modern on-the-fly syntax checking extension to Emacs, working for several languages, showing different level of errors (warnings, errors ...), and which has a natural integration to =lsp-mode=.
+Although there exists [[https://www.flycheck.org/en/latest/][Flycheck]], a modern on-the-fly syntax checking extension to Emacs, the built-in Flymake is sufficient for my purposes.
 
 #+begin_src emacs-lisp
   ;; Flycheck
-  (use-package flycheck
-    :defer t
-    :custom
-    ;; (setq flycheck-relevant-error-other-file-show nil) ;might be useful
-    (flycheck-indication-mode 'left-margin)
-    (flycheck-display-errors-delay 0.3))
+  (use-package flymake
+    :bind-keymap
+    ("C-c !" . flymake-mode-map)
+    :bind
+    (:map flymake-mode-map
+          ("C-c ! c".	flymake-start)
+          ("C-c ! l".	flymake-show-buffer-diagnostics)
+          ("C-c ! n".	flymake-goto-next-error)
+          ("C-c ! p".	flymake-goto-prev-error))
+    :config
+    (defvar flymake-repeat-map
+      (let ((map (make-sparse-keymap)))
+        (define-key map (kbd "n") #'flymake-goto-next-error)
+        (define-key map (kbd "p") #'flymake-goto-prev-error)
+        (define-key map (kbd "l") #'flymake-show-buffer-diagnostics)
+        map))
+    (dolist (cmd '(flymake-goto-next-error
+                   flymake-goto-prev-error
+                   flymake-show-buffer-diagnostics))
+      (put cmd 'repeat-map 'flymake-repeat-map)))
 #+end_src
 
 ** Compilation
@@ -3591,7 +3606,7 @@ We also a language server to help us with refactoring, completion and other fanc
       "Set up Tide mode."
       (interactive)
       (tide-setup)
-      (flycheck-mode)
+      (flymake-mode 1)
       (tide-hl-identifier-mode 1)
       (if (and tide-completion-setup-company-backend
                (not (or (eq 'company-tide (car company-backends))
@@ -4195,7 +4210,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
 
 **** General configuration
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :noweb yes
   ;; AUCTeX initialization
   (use-package tex-site
     :ensure auctex) ;; Don't defer, buggy ?
@@ -4503,7 +4518,10 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
       (let ((TeX-debug-bad-boxes t)
             (TeX-debug-warnings t)
             (TeX-error-overview-open-after-TeX-run t))
-        (TeX-command-sequence t t))))
+        (TeX-command-sequence t t)))
+
+    ;; Beamer-related stuff
+    <<beamer-mode>>)
 #+end_src
 
 **** Folding
@@ -4536,192 +4554,189 @@ AUCTeX comes with a built-in way to temporarily hide ("fold") environments, macr
 **** Beamer
 Beamer, a (the !) LaTeX document class used to produce presentations, slideshows and so on, is a beast in itself. We configure it separately in this section.
 
-#+begin_src emacs-lisp
-  (use-package tex
-    :ensure auctex
-    :defer t
-    :init
-    (defvar beamer-mode-map (make-sparse-keymap))
-    (define-minor-mode beamer-mode
-      "A minor mode for editing LaTeX document using the beamer class.
+#+NAME: beamer-mode
+#+begin_src emacs-lisp :tangle no
+  (defvar beamer-mode-map
+    (define-keymap
+      "C-M-x"   'lps/LaTeX-beamer-compile-frame
+      "C-c M-r" 'lps/LaTeX-beamer-change-all-pauses
+      "C-x n f" 'lps/LaTeX-beamer-narrow-to-frame))
+
+  (define-minor-mode beamer-mode
+    "A minor mode for editing LaTeX document using the beamer class.
   It defines the following commands:
 
   \\{beamer-mode-map}"
-      :keymap beamer-mode-map
-      (if beamer-mode
-          (progn
-            (advice-add 'TeX-fold-item :override 'lps/TeX-fold-item-beamer)
-            (lps/LaTeX-beamer-frame-as-section)
-            (lps/LaTeX-beamer-fold-all-frames))
+    :keymap beamer-mode-map
+    (if beamer-mode
         (progn
-          (advice-remove 'TeX-fold-item 'lps/TeX-fold-item-beamer)
-          (lps/LaTeX-beamer-remove-frame-as-section)
-          (TeX-fold-clearout-buffer))))
-    :bind
-    (:map beamer-mode-map
-          ("C-M-x" . lps/LaTeX-beamer-compile-frame)
-          ("C-c M-r" . lps/LaTeX-beamer-change-all-pauses)
-          ("C-x n f" . lps/LaTeX-beamer-narrow-to-frame))
-    :config
-    ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
+          (advice-add 'TeX-fold-item :override 'lps/TeX-fold-item-beamer)
+          (lps/LaTeX-beamer-frame-as-section)
+          (lps/LaTeX-beamer-fold-all-frames))
+      (progn
+        (advice-remove 'TeX-fold-item 'lps/TeX-fold-item-beamer)
+        (lps/LaTeX-beamer-remove-frame-as-section)
+        (TeX-fold-clearout-buffer))))
 
-    ;; Folding
-    (defun lps/TeX-fold-frame (type)
-      "Hide the frame at point.
+  ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
+
+  ;; Folding
+  (defun lps/TeX-fold-frame (type)
+    "Hide the frame at point.
 
   Return non-nil if a frame was found and folded, nil otherwise."
-      (when (and (eq type 'env)
-                 (eq major-mode 'latex-mode)
-                 (string= (LaTeX-current-environment) "frame"))
-        (when-let ((item-start (condition-case nil
+    (when (and (eq type 'env)
+               (eq major-mode 'latex-mode)
+               (string= (LaTeX-current-environment) "frame"))
+      (when-let ((item-start (condition-case nil
+                                 (save-excursion
+                                   (LaTeX-find-matching-begin) (point))
+                               (error nil)))
+                 (item-end (TeX-fold-item-end item-start type))
+                 (item-name (or (save-excursion
+                                  (goto-char item-start)
+                                  (re-search-forward
+                                   (concat (regexp-quote TeX-esc)
+                                           "begin[ \t]*{"
+                                           "[A-Za-z*]+}[ \t\n]*"
+                                           (regexp-quote TeX-esc)
+                                           "frametitle[ \t]*{"
+                                           "\\([[:ascii:]]+?\\)}\n"))
+                                  (match-string-no-properties 1))
+                                "frame"))
+                 (display-string-spec (if (string= item-name "frame")
+                                          "[frame]"
+                                        (concat "[frame:"
+                                                (truncate-string-to-width item-name 12 0 nil "…")
+                                                "]")))
+                 (ov (TeX-fold-make-overlay item-start item-end type
+                                            display-string-spec)))
+        (TeX-fold-hide-item ov))))
+
+  (defun lps/TeX-fold-item-beamer (type)
+    (or (lps/TeX-fold-frame type)
+        ;; Copy of TeX-fold-env code:
+        ;; Can't directly call it, as this is the function we advice,
+        ;; as it is used as the entry point in most other functions
+        ;; rather than the wrapper TeX-fold-<env/macro> ...
+        (if (and (eq type 'env)
+                 (eq major-mode 'plain-tex-mode))
+            (message
+             "Folding of environments is not supported in current mode")
+          (let ((item-start (cond ((and (eq type 'env)
+                                        (eq major-mode 'context-mode))
                                    (save-excursion
-                                     (LaTeX-find-matching-begin) (point))
-                                 (error nil)))
-                   (item-end (TeX-fold-item-end item-start type))
-                   (item-name (or (save-excursion
-                                    (goto-char item-start)
-                                    (re-search-forward
-                                     (concat (regexp-quote TeX-esc)
-                                             "begin[ \t]*{"
-                                             "[A-Za-z*]+}[ \t\n]*"
-                                             (regexp-quote TeX-esc)
-                                             "frametitle[ \t]*{"
-                                             "\\([[:ascii:]]+?\\)}\n"))
-                                    (match-string-no-properties 1))
-                                  "frame"))
-                   (display-string-spec (if (string= item-name "frame")
-                                            "[frame]"
-                                          (concat "[frame:"
-                                                  (truncate-string-to-width item-name 12 0 nil "…")
-                                                  "]")))
-                   (ov (TeX-fold-make-overlay item-start item-end type
-                                              display-string-spec)))
-          (TeX-fold-hide-item ov))))
+                                     (ConTeXt-find-matching-start) (point)))
+                                  ((and (eq type 'env)
+                                        (eq major-mode 'texinfo-mode))
+                                   (save-excursion
+                                     (Texinfo-find-env-start) (point)))
+                                  ((eq type 'env)
+                                   (condition-case nil
+                                       (save-excursion
+                                         (LaTeX-find-matching-begin) (point))
+                                     (error nil)))
+                                  (t
+                                   (TeX-find-macro-start)))))
+            (when item-start
+              (let* ((item-name (save-excursion
+                                  (goto-char item-start)
+                                  (looking-at
+                                   (cond ((and (eq type 'env)
+                                               (eq major-mode 'context-mode))
+                                          (concat (regexp-quote TeX-esc)
+                                                  "start\\([A-Za-z]+\\)"))
+                                         ((and (eq type 'env)
+                                               (eq major-mode 'texinfo-mode))
+                                          (concat (regexp-quote TeX-esc)
+                                                  "\\([A-Za-z]+\\)"))
+                                         ((eq type 'env)
+                                          (concat (regexp-quote TeX-esc)
+                                                  "begin[ \t]*{"
+                                                  "\\([A-Za-z*]+\\)}"))
+                                         (t
+                                          (concat (regexp-quote TeX-esc)
+                                                  "\\([A-Za-z@*]+\\)"))))
+                                  (match-string-no-properties 1)))
+                     (fold-list (cond ((eq type 'env) TeX-fold-env-spec-list-internal)
+                                      ((eq type 'math)
+                                       TeX-fold-math-spec-list-internal)
+                                      (t TeX-fold-macro-spec-list-internal)))
+                     fold-item
+                     (display-string-spec
+                      (or (catch 'found
+                            (while fold-list
+                              (setq fold-item (car fold-list))
+                              (setq fold-list (cdr fold-list))
+                              (when (member item-name (cadr fold-item))
+                                (throw 'found (car fold-item)))))
+                          ;; Item is not specified.
+                          (if TeX-fold-unspec-use-name
+                              (concat "[" item-name "]")
+                            (if (eq type 'env)
+                                TeX-fold-unspec-env-display-string
+                              TeX-fold-unspec-macro-display-string))))
+                     (item-end (TeX-fold-item-end item-start type))
+                     (ov (TeX-fold-make-overlay item-start item-end type
+                                                display-string-spec)))
+                (TeX-fold-hide-item ov)))))))
 
-    (defun lps/TeX-fold-item-beamer (type)
-      (or (lps/TeX-fold-frame type)
-          ;; Copy of TeX-fold-env code:
-          ;; Can't directly call it, as this is the function we advice,
-          ;; as it is used as the entry point in most other functions
-          ;; rather than the wrapper TeX-fold-<env/macro> ...
-          (if (and (eq type 'env)
-                   (eq major-mode 'plain-tex-mode))
-              (message
-               "Folding of environments is not supported in current mode")
-            (let ((item-start (cond ((and (eq type 'env)
-                                          (eq major-mode 'context-mode))
-                                     (save-excursion
-                                       (ConTeXt-find-matching-start) (point)))
-                                    ((and (eq type 'env)
-                                          (eq major-mode 'texinfo-mode))
-                                     (save-excursion
-                                       (Texinfo-find-env-start) (point)))
-                                    ((eq type 'env)
-                                     (condition-case nil
-                                         (save-excursion
-                                           (LaTeX-find-matching-begin) (point))
-                                       (error nil)))
-                                    (t
-                                     (TeX-find-macro-start)))))
-              (when item-start
-                (let* ((item-name (save-excursion
-                                    (goto-char item-start)
-                                    (looking-at
-                                     (cond ((and (eq type 'env)
-                                                 (eq major-mode 'context-mode))
-                                            (concat (regexp-quote TeX-esc)
-                                                    "start\\([A-Za-z]+\\)"))
-                                           ((and (eq type 'env)
-                                                 (eq major-mode 'texinfo-mode))
-                                            (concat (regexp-quote TeX-esc)
-                                                    "\\([A-Za-z]+\\)"))
-                                           ((eq type 'env)
-                                            (concat (regexp-quote TeX-esc)
-                                                    "begin[ \t]*{"
-                                                    "\\([A-Za-z*]+\\)}"))
-                                           (t
-                                            (concat (regexp-quote TeX-esc)
-                                                    "\\([A-Za-z@*]+\\)"))))
-                                    (match-string-no-properties 1)))
-                       (fold-list (cond ((eq type 'env) TeX-fold-env-spec-list-internal)
-                                        ((eq type 'math)
-                                         TeX-fold-math-spec-list-internal)
-                                        (t TeX-fold-macro-spec-list-internal)))
-                       fold-item
-                       (display-string-spec
-                        (or (catch 'found
-                              (while fold-list
-                                (setq fold-item (car fold-list))
-                                (setq fold-list (cdr fold-list))
-                                (when (member item-name (cadr fold-item))
-                                  (throw 'found (car fold-item)))))
-                            ;; Item is not specified.
-                            (if TeX-fold-unspec-use-name
-                                (concat "[" item-name "]")
-                              (if (eq type 'env)
-                                  TeX-fold-unspec-env-display-string
-                                TeX-fold-unspec-macro-display-string))))
-                       (item-end (TeX-fold-item-end item-start type))
-                       (ov (TeX-fold-make-overlay item-start item-end type
-                                                  display-string-spec)))
-                  (TeX-fold-hide-item ov)))))))
+  ;; Mark
+  (defun lps/LaTeX-beamer-mark-frame ()
+    (interactive)
+    (unless (member "beamer" TeX-active-styles)
+      (error "Not in a beamer document"))
+    (beginning-of-line)
+    (while (not (looking-at-p "\\\\begin *{frame}"))
+      (LaTeX-find-matching-begin))
+    (forward-char)
+    (LaTeX-mark-environment))
 
-    ;; Mark
-    (defun lps/LaTeX-beamer-mark-frame ()
-      (interactive)
-      (unless (member "beamer" TeX-active-styles)
-        (error "Not in a beamer document"))
-      (beginning-of-line)
-      (while (not (looking-at-p "\\\\begin *{frame}"))
-        (LaTeX-find-matching-begin))
-      (forward-char)
-      (LaTeX-mark-environment))
+  ;; Adapted from:
+  ;; https://mbork.pl/2016-07-04_Compiling_a_single_Beamer_frame_in_AUCTeX
+  (defun lps/LaTeX-beamer-compile-frame ()
+    "Compile the current frame"
+    (interactive)
+    (save-mark-and-excursion
+      (lps/LaTeX-beamer-mark-frame)
+      (TeX-command-run-all-region)))
 
-    ;; Adapted from:
-    ;; https://mbork.pl/2016-07-04_Compiling_a_single_Beamer_frame_in_AUCTeX
-    (defun lps/LaTeX-beamer-compile-frame ()
-      "Compile the current frame"
-      (interactive)
-      (save-mark-and-excursion
-        (lps/LaTeX-beamer-mark-frame)
-        (TeX-command-run-all-region)))
+  (defun lps/LaTeX-beamer-narrow-to-frame ()
+    (interactive)
+    (save-mark-and-excursion
+      (lps/LaTeX-beamer-mark-frame)
+      (narrow-to-region (region-beginning) (region-end))))
 
-    (defun lps/LaTeX-beamer-narrow-to-frame ()
-      (interactive)
-      (save-mark-and-excursion
-        (lps/LaTeX-beamer-mark-frame)
-        (narrow-to-region (region-beginning) (region-end))))
+  (defun lps/LaTeX-beamer-frame-as-section ()
+    (require 'reftex)
+    (unless (assoc-string "frametitle" reftex-section-levels)
+      (setq-local reftex-section-levels
+                  (append reftex-section-levels
+                          '(("frametitle" . -4)
+                            ("framesubtitle" . -5)))))
+    (reftex-reset-mode))
 
-    (defun lps/LaTeX-beamer-frame-as-section ()
-      (require 'reftex)
-      (unless (assoc-string "frametitle" reftex-section-levels)
-        (setq-local reftex-section-levels
-                    (append reftex-section-levels
-                            '(("frametitle" . -4)
-                              ("framesubtitle" . -5)))))
-      (reftex-reset-mode))
+  (defun lps/LaTeX-beamer-remove-frame-as-section ()
+    (require 'reftex)
+    (when (assoc-string "frametitle" reftex-section-levels)
+      (setq-local reftex-section-levels
+                  (cl-remove-if
+                   (lambda (item)
+                     (let ((name (car item)))
+                       (assoc-string name '("frametitle" "framesubtitle"))))
+                   reftex-section-levels)))
+    (reftex-reset-mode))
 
-    (defun lps/LaTeX-beamer-remove-frame-as-section ()
-      (require 'reftex)
-      (when (assoc-string "frametitle" reftex-section-levels)
-        (setq-local reftex-section-levels
-                    (cl-remove-if
-                     (lambda (item)
-                       (let ((name (car item)))
-                         (assoc-string name '("frametitle" "framesubtitle"))))
-                     reftex-section-levels)))
-      (reftex-reset-mode))
+  (defun lps/LaTeX-beamer-fold-all-frames ()
+    (interactive)
+    (lps/TeX-fold-all-of-env "frame"))
 
-    (defun lps/LaTeX-beamer-fold-all-frames ()
-      (interactive)
-      (lps/TeX-fold-all-of-env "frame"))
-
-    (defvar lps/LaTeX-beamer-pause-macros '("pause["
-                                            "only<"
-                                            "onslide<"
-                                            "alt<"
-                                            "item<")
-      "List of LaTeX macros that specifying pauses or overlays in a beamer
+  (defvar lps/LaTeX-beamer-pause-macros '("pause["
+                                          "only<"
+                                          "onslide<"
+                                          "alt<"
+                                          "item<")
+    "List of LaTeX macros that specifying pauses or overlays in a beamer
   frame, and whose syntax rougly follows the one used by \\onslide<...>
 
   Time specifications in those macros will be modified by the
@@ -4732,8 +4747,8 @@ Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
   attached to items in an itemize environment, add \"item<\" to this
   variable")
 
-    (defun lps/LaTeX-beamer-change-all-pauses (n &optional from-here)
-      "Increase by N all the pauses and overlays timesteps specified by
+  (defun lps/LaTeX-beamer-change-all-pauses (n &optional from-here)
+    "Increase by N all the pauses and overlays timesteps specified by
   the macros of `lps/LaTeX-beamer-pause-macros' contained in the
   current frame.
 
@@ -4741,28 +4756,28 @@ Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
 
   If the region is active, ignore FROM-HERE and only act on the region
   instead."
-      (interactive "*nChange by steps: \nP")
-      (save-mark-and-excursion
-        (save-restriction
-          (let ((beg (cond
-                      (from-here (point))
-                      ((region-active-p) (region-beginning))
-                      (t nil))))
-            (unless (region-active-p)
-              (lps/LaTeX-beamer-mark-frame)
-              (setq beg (or beg (region-beginning))))
-            (narrow-to-region beg (region-end))
-            (goto-char (point-min))
-            (while (re-search-forward
-                    (concat "\\\\" (regexp-opt lps/LaTeX-beamer-pause-macros))
-                    nil t)
-              (let ((point (point))
-                    (end (re-search-forward "[[:space:]]*]\\|>\\|}" nil t)))
-                (when (and end (not (texmathp)))
-                  (goto-char point)
-                  (while (re-search-forward "[[:digit:]]+" end t)
-                    (let ((num (string-to-number (match-string 0))))
-                      (replace-match (number-to-string (+ num n)))))))))))))
+    (interactive "*nChange by steps: \nP")
+    (save-mark-and-excursion
+      (save-restriction
+        (let ((beg (cond
+                    (from-here (point))
+                    ((region-active-p) (region-beginning))
+                    (t nil))))
+          (unless (region-active-p)
+            (lps/LaTeX-beamer-mark-frame)
+            (setq beg (or beg (region-beginning))))
+          (narrow-to-region beg (region-end))
+          (goto-char (point-min))
+          (while (re-search-forward
+                  (concat "\\\\" (regexp-opt lps/LaTeX-beamer-pause-macros))
+                  nil t)
+            (let ((point (point))
+                  (end (re-search-forward "[[:space:]]*]\\|>\\|}" nil t)))
+              (when (and end (not (texmathp)))
+                (goto-char point)
+                (while (re-search-forward "[[:digit:]]+" end t)
+                  (let ((num (string-to-number (match-string 0))))
+                    (replace-match (number-to-string (+ num n))))))))))))
 #+end_src
 
 **** References
@@ -4857,6 +4872,7 @@ Another useful package to deal with references, bibliography, citations and so o
     :custom
     (reftex-plug-into-AUCTeX t)
     (reftex-toc-split-windows-horizontally nil)
+    (reftex-toc-split-windows-fraction 0.5)
     (reftex-label-alist
      '(("section"     ?s "sec:"   "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"))
        ("definition"  ?d "def:"   "~\\ref{%s}" 1 (regexp "[Dd]efinition\\(s\\)?"))

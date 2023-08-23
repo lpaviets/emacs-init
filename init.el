@@ -2222,6 +2222,7 @@ Does not insert a space before the inserted opening parenthesis"
 
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
+  :disabled t
   :commands (lsp lsp-deferred)
   :custom
   (lsp-diagnostics-provider :flycheck)  ; :none if none wanted
@@ -2260,12 +2261,26 @@ Does not insert a space before the inserted opening parenthesis"
   (define-key eglot-mode-map (kbd "C-c l") lps/eglot-prefix-map))
 
 ;; Flycheck
-(use-package flycheck
-  :defer t
-  :custom
-  ;; (setq flycheck-relevant-error-other-file-show nil) ;might be useful
-  (flycheck-indication-mode 'left-margin)
-  (flycheck-display-errors-delay 0.3))
+(use-package flymake
+  :bind-keymap
+  ("C-c !" . flymake-mode-map)
+  :bind
+  (:map flymake-mode-map
+        ("C-c ! c".	flymake-start)
+        ("C-c ! l".	flymake-show-buffer-diagnostics)
+        ("C-c ! n".	flymake-goto-next-error)
+        ("C-c ! p".	flymake-goto-prev-error))
+  :config
+  (defvar flymake-repeat-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map (kbd "n") #'flymake-goto-next-error)
+      (define-key map (kbd "p") #'flymake-goto-prev-error)
+      (define-key map (kbd "l") #'flymake-show-buffer-diagnostics)
+      map))
+  (dolist (cmd '(flymake-goto-next-error
+                 flymake-goto-prev-error
+                 flymake-show-buffer-diagnostics))
+    (put cmd 'repeat-map 'flymake-repeat-map)))
 
 (use-package emacs
   :ensure nil
@@ -2768,7 +2783,7 @@ call the associated function interactively. Otherwise, call the
     "Set up Tide mode."
     (interactive)
     (tide-setup)
-    (flycheck-mode)
+    (flymake-mode 1)
     (tide-hl-identifier-mode 1)
     (if (and tide-completion-setup-company-backend
              (not (or (eq 'company-tide (car company-backends))
@@ -3577,39 +3592,20 @@ return `nil'."
     (let ((TeX-debug-bad-boxes t)
           (TeX-debug-warnings t)
           (TeX-error-overview-open-after-TeX-run t))
-      (TeX-command-sequence t t))))
+      (TeX-command-sequence t t)))
 
-(use-package tex-fold
-  :defer t
-  :hook (LaTeX-mode . TeX-fold-mode)
-  :bind
-  (:map TeX-fold-keymap
-        ("C-a" . lps/TeX-fold-all-of-env))
-  :custom
-  ;; Folding
-  (TeX-fold-command-prefix "\C-o")
-  (TeX-fold-env-spec-list '(("[frame]" ("frame"))
-                            ("[comment]" ("comment"))))
-  :config
-  ;; Not very robust
-  (defun lps/TeX-fold-all-of-env (env)
-    (interactive "MFold environment: ")
-    (save-excursion
-      (goto-char (point-min))
-      (let ((env-start (format "\\begin{%s}" env)))
-        (while (search-forward env-start nil t)
-          (TeX-fold-env))))))
+  ;; Beamer-related stuff
+  (defvar beamer-mode-map
+    (define-keymap
+      "C-M-x"   'lps/LaTeX-beamer-compile-frame
+      "C-c M-r" 'lps/LaTeX-beamer-change-all-pauses
+      "C-x n f" 'lps/LaTeX-beamer-narrow-to-frame))
 
-(use-package tex
-  :ensure auctex
-  :defer t
-  :init
-  (defvar beamer-mode-map (make-sparse-keymap))
   (define-minor-mode beamer-mode
     "A minor mode for editing LaTeX document using the beamer class.
-It defines the following commands:
+  It defines the following commands:
 
-\\{beamer-mode-map}"
+  \\{beamer-mode-map}"
     :keymap beamer-mode-map
     (if beamer-mode
         (progn
@@ -3620,19 +3616,14 @@ It defines the following commands:
         (advice-remove 'TeX-fold-item 'lps/TeX-fold-item-beamer)
         (lps/LaTeX-beamer-remove-frame-as-section)
         (TeX-fold-clearout-buffer))))
-  :bind
-  (:map beamer-mode-map
-        ("C-M-x" . lps/LaTeX-beamer-compile-frame)
-        ("C-c M-r" . lps/LaTeX-beamer-change-all-pauses)
-        ("C-x n f" . lps/LaTeX-beamer-narrow-to-frame))
-  :config
+
   ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
 
   ;; Folding
   (defun lps/TeX-fold-frame (type)
     "Hide the frame at point.
 
-Return non-nil if a frame was found and folded, nil otherwise."
+  Return non-nil if a frame was found and folded, nil otherwise."
     (when (and (eq type 'env)
                (eq major-mode 'latex-mode)
                (string= (LaTeX-current-environment) "frame"))
@@ -3785,25 +3776,25 @@ Return non-nil if a frame was found and folded, nil otherwise."
                                           "alt<"
                                           "item<")
     "List of LaTeX macros that specifying pauses or overlays in a beamer
-frame, and whose syntax rougly follows the one used by \\onslide<...>
+  frame, and whose syntax rougly follows the one used by \\onslide<...>
 
-Time specifications in those macros will be modified by the
-`lps/LaTeX-beamer-change-all-pauses' function.
+  Time specifications in those macros will be modified by the
+  `lps/LaTeX-beamer-change-all-pauses' function.
 
-The character introducting the parameter list, usually [, < or {, has
-to be added to the end, e.g. if you want to recognize the overlays
-attached to items in an itemize environment, add \"item<\" to this
-variable")
+  The character introducting the parameter list, usually [, < or {, has
+  to be added to the end, e.g. if you want to recognize the overlays
+  attached to items in an itemize environment, add \"item<\" to this
+  variable")
 
   (defun lps/LaTeX-beamer-change-all-pauses (n &optional from-here)
     "Increase by N all the pauses and overlays timesteps specified by
-the macros of `lps/LaTeX-beamer-pause-macros' contained in the
-current frame.
+  the macros of `lps/LaTeX-beamer-pause-macros' contained in the
+  current frame.
 
-If FROM-HERE is non-nil, only change the ones after the point.
+  If FROM-HERE is non-nil, only change the ones after the point.
 
-If the region is active, ignore FROM-HERE and only act on the region
-instead."
+  If the region is active, ignore FROM-HERE and only act on the region
+  instead."
     (interactive "*nChange by steps: \nP")
     (save-mark-and-excursion
       (save-restriction
@@ -3826,6 +3817,27 @@ instead."
                 (while (re-search-forward "[[:digit:]]+" end t)
                   (let ((num (string-to-number (match-string 0))))
                     (replace-match (number-to-string (+ num n)))))))))))))
+
+(use-package tex-fold
+  :defer t
+  :hook (LaTeX-mode . TeX-fold-mode)
+  :bind
+  (:map TeX-fold-keymap
+        ("C-a" . lps/TeX-fold-all-of-env))
+  :custom
+  ;; Folding
+  (TeX-fold-command-prefix "\C-o")
+  (TeX-fold-env-spec-list '(("[frame]" ("frame"))
+                            ("[comment]" ("comment"))))
+  :config
+  ;; Not very robust
+  (defun lps/TeX-fold-all-of-env (env)
+    (interactive "MFold environment: ")
+    (save-excursion
+      (goto-char (point-min))
+      (let ((env-start (format "\\begin{%s}" env)))
+        (while (search-forward env-start nil t)
+          (TeX-fold-env))))))
 
 (use-package bibtex
   :defer t
@@ -3910,6 +3922,7 @@ instead."
   :custom
   (reftex-plug-into-AUCTeX t)
   (reftex-toc-split-windows-horizontally nil)
+  (reftex-toc-split-windows-fraction 0.5)
   (reftex-label-alist
    '(("section"     ?s "sec:"   "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"))
      ("definition"  ?d "def:"   "~\\ref{%s}" 1 (regexp "[Dd]efinition\\(s\\)?"))
