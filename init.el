@@ -1889,7 +1889,35 @@ If it is non-nil, replace it by an underscore _"
 (use-package project
   :custom
   ;; Difficulties with symlinks, which I use a lot
-  (project-vc-merge-submodules nil))
+  (project-vc-merge-submodules nil)
+  :bind
+  ([remap project-list-buffers] . project-ibuffer-list-buffers)
+  :config
+  (require 'ibuffer)
+  (require 'ibuf-macs)
+  (require 'ibuf-ext)
+  (define-ibuffer-filter project
+      "Limit current view to buffers belonging to project QUALIFIER"
+    (:description "Project: "
+                  :reader
+                  (project-current t))
+    (member buf (project-buffers qualifier)))
+
+  (defun project-ibuffer-list-buffers (&optional arg)
+    "Display a list of project buffers using `ibuffer'.
+
+By default, all project buffers are listed except those whose names
+start with a space (which are for internal use).  With prefix argument
+ARG, show only buffers that are visiting files."
+    (interactive "P")
+    (let* ((pr (project-current t))
+           (filter-proj `(project . ,pr))
+           (filter-file `(filename . ".*")))
+      (display-buffer
+       (ibuffer nil nil (if arg
+                            (list filter-proj filter-file)
+                          (list filter-proj))
+                t nil)))))
 
 (use-package magit
   :defer t
@@ -2541,11 +2569,13 @@ call the associated function interactively. Otherwise, call the
   ;; When REPL triggers an error, pop create debugger below it
   ;; Otherwise, pop to the window
 
-  (add-to-list 'display-buffer-alist
-               '("*sly-db" . ((display-buffer-reuse-mode-window
-                               display-buffer-below-selected)
-                              . ((inhibit-same-window . nil)
-                                 (mode . sly-db-mode))))))
+  ;; Bugged for now
+  ;; (add-to-list 'display-buffer-alist
+  ;;              '("*sly-db" . ((display-buffer-reuse-mode-window
+  ;;                              display-buffer-below-selected)
+  ;;                             . ((inhibit-same-window . nil)
+  ;;                                (mode . sly-db-mode)))))
+  )
 
 (use-package sly-mrepl
   :ensure nil
