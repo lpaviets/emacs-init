@@ -1886,18 +1886,10 @@ If it is non-nil, replace it by an underscore _"
         (unless (= (char-before) ?*)
           (insert ?*))))))
 
-(use-package projectile
-  :diminish
-  :disabled t ;; try Project.el instead
-  :bind-keymap
-  ("C-c p" . projectile-command-map)
+(use-package project
   :custom
-  (projectile-switch-project-action #'projectile-dired)
-  :config
-  (let ((path-project "~/Documents/Projects"))
-    (when (file-directory-p path-project)
-      (setq projectile-project-search-path (list path-project))))
-  (projectile-mode))
+  ;; Difficulties with symlinks, which I use a lot
+  (project-vc-merge-submodules nil))
 
 (use-package magit
   :defer t
@@ -2225,7 +2217,7 @@ Does not insert a space before the inserted opening parenthesis"
   :disabled t
   :commands (lsp lsp-deferred)
   :custom
-  (lsp-diagnostics-provider :flycheck)  ; :none if none wanted
+  (lsp-diagnostics-provider :flymake)  ; :none if none wanted
   :config
   (define-key lsp-mode-map (kbd "C-c l") lsp-command-map)
   (lsp-enable-which-key-integration t)
@@ -2251,9 +2243,14 @@ Does not insert a space before the inserted opening parenthesis"
   (defvar lps/eglot-prefix-map (make-sparse-keymap))
   :bind
   (:map lps/eglot-prefix-map
-        ("r" . eglot-rename)
+        ("r"   . eglot-rename)
         ("g g" . xref-find-definitions)
         ("g r" . xref-find-references)
+        ("g a" . xref-find-apropos)
+        ("g d" . eglot-find-declaration)
+        ("g i" . eglot-find-implementation)
+        ("g t" . eglot-find-typeDefinition)
+        ("a" . eglot-code-actions)
         ("h" . eldoc))
   :custom
   (eglot-ignored-server-capabilities '(:documentHighlightProvider))
@@ -2266,10 +2263,11 @@ Does not insert a space before the inserted opening parenthesis"
   ("C-c !" . flymake-mode-map)
   :bind
   (:map flymake-mode-map
-        ("C-c ! c".	flymake-start)
-        ("C-c ! l".	flymake-show-buffer-diagnostics)
-        ("C-c ! n".	flymake-goto-next-error)
-        ("C-c ! p".	flymake-goto-prev-error))
+        ("c" . flymake-start)
+        ("l" . flymake-show-buffer-diagnostics)
+        ("L" . flymake-show-project-diagnostics)
+        ("n" . flymake-goto-next-error)
+        ("p" . flymake-goto-prev-error))
   :config
   (defvar flymake-repeat-map
     (let ((map (make-sparse-keymap)))
