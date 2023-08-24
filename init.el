@@ -3665,10 +3665,11 @@ return `nil'."
                                   (re-search-forward
                                    (concat (regexp-quote TeX-esc)
                                            "begin[ \t]*{"
-                                           "[A-Za-z*]+}[ \t\n]*"
+                                           "[A-Za-z*]+}[ \t\n%]*"
                                            (regexp-quote TeX-esc)
                                            "frametitle[ \t]*{"
-                                           "\\([[:ascii:]]+?\\)}\n"))
+                                           "\\([[:ascii:]]+?\\)}\n")
+                                   item-end t 1)
                                   (match-string-no-properties 1))
                                 "frame"))
                  (display-string-spec (if (string= item-name "frame")
