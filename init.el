@@ -759,12 +759,12 @@ It might be buggy with some backend, so use at your own risk"
     "Kill the current buffer if no ARG. Otherwise, prompt for a
 buffer to kill. If ARG is nil and the function is called from the
 minibuffer, exit recursive edit with `abort-recursive-edit'"
-  (interactive "P")
-  (if arg
-      (call-interactively 'kill-buffer)
-    (if (minibufferp)
-        (abort-recursive-edit)
-      (kill-buffer (current-buffer)))))
+    (interactive "P")
+    (if arg
+        (call-interactively 'kill-buffer)
+      (if (minibufferp)
+          (abort-recursive-edit)
+        (kill-buffer (current-buffer)))))
 
   ;; Display all the "help" buffers in the same window
   (defvar lps/help-modes '(helpful-mode
@@ -778,12 +778,13 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
 
   (defun lps/buffer-help-p (buffer &optional action)
     "Return t if BUFFER is an help buffer, nil otherwise"
-    (or (member (buffer-local-value 'major-mode (get-buffer buffer))
-                lps/help-modes)
-        (member (if (stringp buffer)
-                    buffer
-                  (buffer-name buffer))
-                lps/help-buffers)))
+    (when buffer
+      (or (member (buffer-local-value 'major-mode (get-buffer buffer))
+                  lps/help-modes)
+          (member (if (stringp buffer)
+                      buffer
+                    (buffer-name buffer))
+                  lps/help-buffers))))
 
   (add-to-list 'display-buffer-alist
                `(lps/buffer-help-p
@@ -1656,14 +1657,14 @@ Move point in the last duplicated string (line or region)."
         (progn
           (save-excursion
             (let* ((bor (region-beginning))
-                  (eor (region-end))
-                  (content (buffer-substring bor eor)))
+                   (eor (region-end))
+                   (content (buffer-substring bor eor)))
               (goto-char eor)
               (end-of-line) ; necessary if region is inside longer line
               (dotimes (i arg)
                 (newline)
                 (insert content))))
-          (next-line (* arg (count-lines-region (region-beginning) (region-end)))))
+          (next-line (* arg (count-lines (region-beginning) (region-end)))))
 
       (save-excursion
         ;; local variables for start and end of line
@@ -1678,11 +1679,12 @@ Move point in the last duplicated string (line or region)."
   (defun lps/collapse-line-up (arg)
     "Delete the current line and move point on the previous line"
     (interactive "*p")
-    (save-excursion
-      (previous-logical-line arg)
-      (setq final (point)))
-    (kill-whole-line (- arg))
-    (goto-char final)))
+    (let (final)
+      (save-excursion
+        (previous-logical-line arg)
+        (setq final (point)))
+      (kill-whole-line (- arg))
+      (goto-char final))))
 
 (use-package undo-tree
   :diminish
@@ -1912,12 +1914,11 @@ ARG, show only buffers that are visiting files."
     (interactive "P")
     (let* ((pr (project-current t))
            (filter-proj `(project . ,pr))
-           (filter-file `(filename . ".*")))
-      (display-buffer
-       (ibuffer nil nil (if arg
-                            (list filter-proj filter-file)
-                          (list filter-proj))
-                t nil)))))
+           (filter-file `(visiting-file)))
+      (ibuffer nil nil (if arg
+                           (list filter-proj filter-file)
+                         (list filter-proj))
+               t nil))))
 
 (use-package magit
   :defer t
@@ -3627,7 +3628,8 @@ return `nil'."
     (define-keymap
       "C-M-x"   'lps/LaTeX-beamer-compile-frame
       "C-c M-r" 'lps/LaTeX-beamer-change-all-pauses
-      "C-x n f" 'lps/LaTeX-beamer-narrow-to-frame))
+      "C-x n f" 'lps/LaTeX-beamer-narrow-to-frame
+      "<remap> <mark-paragraph>" 'lps/LaTeX-beamer-mark-frame))
 
   (define-minor-mode beamer-mode
     "A minor mode for editing LaTeX document using the beamer class.
