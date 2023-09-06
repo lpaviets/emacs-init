@@ -1891,34 +1891,26 @@ If it is non-nil, replace it by an underscore _"
 (use-package project
   :custom
   ;; Difficulties with symlinks, which I use a lot
-  (project-vc-merge-submodules nil)
+  (project-vc-merge-submodules nil))
+
+(use-package projection
+  :hook (after-init . global-projection-hook-mode)
+  :bind-keymap
+  ("C-x P" . projection-map)
   :bind
-  ([remap project-list-buffers] . project-ibuffer-list-buffers)
+  ([remap project-list-buffers] . ibuffer-projection-current-project)
   :config
-  (require 'ibuffer)
-  (require 'ibuf-macs)
-  (require 'ibuf-ext)
-  (define-ibuffer-filter project
-      "Limit current view to buffers belonging to project QUALIFIER"
-    (:description "Project: "
-                  :reader
-                  (project-current t))
-    (member buf (project-buffers qualifier)))
+  ;; Override, I believe it's buggy
+  ;; Replaced PROJECTION-FILES with PROJECTION-ROOT
+  (defun lps/projection-ibuffer--current-project (project)
+    "Open an IBuffer window showing only buffers in PROJECT."
+    (ibuffer nil (format "*%s Buffers*" (project-name project))
+             (list (cons 'projection-root project))))
 
-  (defun project-ibuffer-list-buffers (&optional arg)
-    "Display a list of project buffers using `ibuffer'.
+  (advice-add 'projection-ibuffer--current-project
+              :override 'lps/projection-ibuffer--current-project))
 
-By default, all project buffers are listed except those whose names
-start with a space (which are for internal use).  With prefix argument
-ARG, show only buffers that are visiting files."
-    (interactive "P")
-    (let* ((pr (project-current t))
-           (filter-proj `(project . ,pr))
-           (filter-file `(visiting-file)))
-      (ibuffer nil nil (if arg
-                           (list filter-proj filter-file)
-                         (list filter-proj))
-               t nil))))
+(use-package projection-multi)
 
 (use-package magit
   :defer t

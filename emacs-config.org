@@ -2453,38 +2453,37 @@ We also define a bunch of functions and commands related to editing text that ar
 
 * Programming
 ** Project management
+
+There used to be a fancy and recommended package named [[https://github.com/bbatsov/projectile][Projectile]]. However, Emacs evolved and some code to work with "projects" has been added and is now built-in. As such, I rely on this basic core of functionalities, upgraded (or not) with various packages that try to build on top of it, rather than reimplementing everything as Projectile did.
+
 #+begin_src emacs-lisp
   (use-package project
     :custom
     ;; Difficulties with symlinks, which I use a lot
-    (project-vc-merge-submodules nil)
+    (project-vc-merge-submodules nil))
+#+end_src
+
+One package that extends the functionalities provided by the builtin ~project.el~ is [[https://github.com/mohkale/projection][Projection]]. In particular, it provides ways to compile, run, package, test the current project using some handcrafted rules to detect the "build manager" (.NET, CMake, meson and so on).
+
+#+begin_src emacs-lisp
+  (use-package projection
+    :hook (after-init . global-projection-hook-mode)
+    :bind-keymap
+    ("C-x P" . projection-map)
     :bind
-    ([remap project-list-buffers] . project-ibuffer-list-buffers)
+    ([remap project-list-buffers] . ibuffer-projection-current-project)
     :config
-    (require 'ibuffer)
-    (require 'ibuf-macs)
-    (require 'ibuf-ext)
-    (define-ibuffer-filter project
-        "Limit current view to buffers belonging to project QUALIFIER"
-      (:description "Project: "
-                    :reader
-                    (project-current t))
-      (member buf (project-buffers qualifier)))
+    ;; Override, I believe it's buggy
+    ;; Replaced PROJECTION-FILES with PROJECTION-ROOT
+    (defun lps/projection-ibuffer--current-project (project)
+      "Open an IBuffer window showing only buffers in PROJECT."
+      (ibuffer nil (format "*%s Buffers*" (project-name project))
+               (list (cons 'projection-root project))))
 
-    (defun project-ibuffer-list-buffers (&optional arg)
-      "Display a list of project buffers using `ibuffer'.
+    (advice-add 'projection-ibuffer--current-project
+                :override 'lps/projection-ibuffer--current-project))
 
-  By default, all project buffers are listed except those whose names
-  start with a space (which are for internal use).  With prefix argument
-  ARG, show only buffers that are visiting files."
-      (interactive "P")
-      (let* ((pr (project-current t))
-             (filter-proj `(project . ,pr))
-             (filter-file `(visiting-file)))
-        (ibuffer nil nil (if arg
-                             (list filter-proj filter-file)
-                           (list filter-proj))
-                 t nil))))
+  (use-package projection-multi)
 #+end_src
 
 ** Git
