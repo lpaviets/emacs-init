@@ -3840,10 +3840,11 @@ In order for Org Mode to feel like a document instead of code, we use a differen
 
 #+end_src
 
-** Org Babel
+** Org Babel and blocks
 
-Org babel is what allows us to write code and execute it, all within the same document.
-We also add templates to insert code blocks with a few key presses
+Org babel is what allows us to write code and execute it, all within the same document. More generally, Org has a notion of structured "block", with various templates, serving various purposes (code snippets in programming languages, quotations, examples ...).
+
+We also add templates to insert code blocks with a few key presses.
 
 #+NAME: org-babel
 #+begin_src emacs-lisp :tangle no
@@ -4248,7 +4249,6 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
           ("C-c '" . TeX-error-overview)
           ("<f5>" . lps/auto-compile)
           ("<backtab>" . indent-for-tab-command)
-          ("C-c M-%" . LaTeX-replace-in-math)
           ([remap beginning-of-defun] . LaTeX-find-matching-begin)
           ([remap end-of-defun] . LaTeX-find-matching-end)
           ("C-S-b" . lps/LaTeX-prev-math)
@@ -4304,6 +4304,9 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     :config
     (add-to-list 'lps/auto-compile-command-alist
                  (cons 'latex-mode 'lps/TeX-recompile-all))
+
+    (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
+                 nil 'equal)
 
     ;; Auto-insert
     (with-eval-after-load 'autoinsert

@@ -3326,7 +3326,6 @@ move to the end of the document, and search backward instead."
         ("C-c '" . TeX-error-overview)
         ("<f5>" . lps/auto-compile)
         ("<backtab>" . indent-for-tab-command)
-        ("C-c M-%" . LaTeX-replace-in-math)
         ([remap beginning-of-defun] . LaTeX-find-matching-begin)
         ([remap end-of-defun] . LaTeX-find-matching-end)
         ("C-S-b" . lps/LaTeX-prev-math)
@@ -3382,6 +3381,9 @@ move to the end of the document, and search backward instead."
   :config
   (add-to-list 'lps/auto-compile-command-alist
                (cons 'latex-mode 'lps/TeX-recompile-all))
+
+  (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
+               nil 'equal)
 
   ;; Auto-insert
   (with-eval-after-load 'autoinsert
