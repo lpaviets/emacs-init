@@ -3132,6 +3132,11 @@ Refer to `org-agenda-prefix-format' for more information."
       "* TODO %?\n  %U\n  %a\n  %i"
       :empty-lines 1)
 
+     ("ts" "Science Todo" entry
+      (file+olp ,(lps/org-expand-file-name "agenda/Science.org") "Ideas")
+      "** TODO %?\n"
+      :empty-lines 1)
+
      ("m" "Meeting" entry
       (file+olp+datetree ,(lps/org-expand-file-name "agenda/Meetings.org"))
       "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
@@ -3875,7 +3880,8 @@ return `nil'."
                                                           lps/bib-directory)))
   :bind
   (:map bibtex-mode-map
-        ("C-c C-?" . bibtex-print-help-message))
+        ("C-c C-?" . bibtex-print-help-message)
+        ([remap bibtex-clean-entry] . org-ref-clean-bibtex-entry))
   :custom
   (bibtex-entry-format '(realign
                          unify-case
@@ -3936,7 +3942,34 @@ return `nil'."
               (insert " ")
             (indent-to-column bibtex-text-indentation))))))
 
-  (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-file-field-format))
+  (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-file-field-format)
+
+  (defvar *lps/bibtex-tags* '(("Topological Full Group" . "tfg")
+                              ("Projective Fundamental Group" . "pfg")
+                              ("Cocycles" . "coc")
+                              ("Recursion Theory" . "rec")
+                              ("Subshift" . "shf")
+                              ("Group Theory" . "grp")
+                              ("Graph Theory" . "gph")
+                              ("Substitution" . "sub")
+                              ("Hom-Shifts" . "hom")))
+
+  (defun lps/bibtex-tag-description-to-tag (desc)
+    (cdr (assoc-string str *lps/bibtex-tags*)))
+
+  (defun lps/bibtex-replace-tags (key beg end)
+    (let* ((descs (completing-read-multiple (format-prompt key nil)
+                                            *lps/bibtex-tags*))
+           (tags (mapcar 'lps/bibtex-tag-description-to-tag descs)))
+      (bibtex-set-field "tags" (mapconcat 'identity tags ","))))
+
+  (defun lps/bibtex-filter-by-tags (tags)
+    (interactive (list
+                  (let ((descs (completing-read-multiple
+                                (format-prompt "Tags: " nil)
+                                *lps/bibtex-tags*)))
+                    (mapcar 'lps/bibtex-tag-description-to-tag descs))))
+    ()))
 
 (use-package reftex
   :after latex
@@ -4057,11 +4090,31 @@ Return a list of regular expressions."
         (user-error "No direct URL (try arXiv or HAL)")))))
 
 (use-package bibtex-completion
+  :init
+  (defvar bibtex-completion-candidates-filter-functions nil
+    "List of functions called to filter the candidates returned
+by `bibtex-completion-candidates'
+
+Each function will be called with the entire list of candidates.
+It should return the list of filtered candidates, modifying the
+entries if needed.")
   :commands bibtex-completion-key-at-point
   :custom
   (bibtex-completion-bibliography lps/bib-bibliography-files)
   (bibtex-completion-library-path lps/bib-bibliography-library)
+  (bibtex-completion-display-formats
+   '((t . "${author:30} ${title:*} ${year:4} ${=has-pdf=:1}${=has-note=:1} ${=type=:7}")))
   :config
+  (defun bibtex-completion--filter-candidates (fun &rest args)
+    (let ((res (apply fun args)))
+      (cl-reduce (lambda (candidates filter-fun)
+                   (funcall filter-fun candidates))
+                 bibtex-completion-candidates-filter-functions
+                 :initial-value res)))
+
+  (advice-add 'bibtex-completion-candidates
+              :around 'bibtex-completion--filter-candidates)
+
   ;; Rewrite: shortcuts the evaluation !
   ;; Now only executes up until finding a non-NIL return value
   (defun bibtex-completion-key-at-point ()
@@ -4126,7 +4179,8 @@ The functions used to match the keys are defined in
   (defvar lps/bibtex-completion-format-entry-properties
     '(("author" face elfeed-search-arxiv-authors)
       ("date" face elfeed-search-date-face)
-      ("year" face elfeed-search-date-face))
+      ("year" face elfeed-search-date-face)
+      ("tags" face elfeed-search-tag-face))
     "Alist of (FIELD-NAME (PROPERTIES)*).
 The properties will be applied as if by
 (apply 'propertize STRING PROPERTIES)")
@@ -4181,8 +4235,8 @@ governed by the variable `bibtex-completion-display-formats'."
   ;; Redefine here, superset
   (setq org-ref-lower-case-words lps/do-not-capitalize-list)
   :custom
-  (doi-utils-download-pdf t)
-  (doi-utils-async-download t)
+  (doi-utils-download-pdf nil) ; buggy
+  (doi-utils-async-download ) ; buggy
   (doi-utils-open-pdf-after-download t)
   :config
   (advice-add 'org-ref-read-key :around 'lps/completing-read-char-fold)
@@ -5770,7 +5824,8 @@ insert as many blank lines as necessary."
   (:map elfeed-search-mode-map
         ("w" . elfeed-search-browse-url)
         ("C-S-s" . lps/elfeed-search-filter-interactive)
-        ("*" . lps/elfeed-toggle-star))
+        ("*" . lps/elfeed-toggle-star)
+        ("U" . elfeed-update))
   (:map elfeed-show-mode-map
         ("D" . lps/elfeed-arxiv-get-pdf-add-bibtex-entry))
   :init

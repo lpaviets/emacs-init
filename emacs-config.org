@@ -4027,6 +4027,11 @@ Not only is Org Mode great to write structured documents that can be exported to
         "* TODO %?\n  %U\n  %a\n  %i"
         :empty-lines 1)
 
+       ("ts" "Science Todo" entry
+        (file+olp ,(lps/org-expand-file-name "agenda/Science.org") "Ideas")
+        "** TODO %?\n"
+        :empty-lines 1)
+
        ("m" "Meeting" entry
         (file+olp+datetree ,(lps/org-expand-file-name "agenda/Meetings.org"))
         "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
@@ -4813,7 +4818,7 @@ Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
 
 We also configure BibTeX and other packages that allow us to insert quickly bibliography, labels, and various kinds of references in our documents.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :noweb yes
   (use-package bibtex
     :defer t
     :init
@@ -4825,7 +4830,8 @@ We also configure BibTeX and other packages that allow us to insert quickly bibl
                                                             lps/bib-directory)))
     :bind
     (:map bibtex-mode-map
-          ("C-c C-?" . bibtex-print-help-message))
+          ("C-c C-?" . bibtex-print-help-message)
+          ([remap bibtex-clean-entry] . org-ref-clean-bibtex-entry))
     :custom
     (bibtex-entry-format '(realign
                            unify-case
@@ -4886,7 +4892,41 @@ We also configure BibTeX and other packages that allow us to insert quickly bibl
                 (insert " ")
               (indent-to-column bibtex-text-indentation))))))
 
-    (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-file-field-format))
+    (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-file-field-format)
+
+    <<bibtex-tags>>)
+#+end_src
+
+We slightly extend BibTeX so that it can work with tags !
+
+#+NAME: bibtex-tags
+#+begin_src emacs-lisp :tangle no
+  (defvar *lps/bibtex-tags* '(("Topological Full Group" . "tfg")
+                              ("Projective Fundamental Group" . "pfg")
+                              ("Cocycles" . "coc")
+                              ("Recursion Theory" . "rec")
+                              ("Subshift" . "shf")
+                              ("Group Theory" . "grp")
+                              ("Graph Theory" . "gph")
+                              ("Substitution" . "sub")
+                              ("Hom-Shifts" . "hom")))
+
+  (defun lps/bibtex-tag-description-to-tag (desc)
+    (cdr (assoc-string str *lps/bibtex-tags*)))
+
+  (defun lps/bibtex-replace-tags (key beg end)
+    (let* ((descs (completing-read-multiple (format-prompt key nil)
+                                            *lps/bibtex-tags*))
+           (tags (mapcar 'lps/bibtex-tag-description-to-tag descs)))
+      (bibtex-set-field "tags" (mapconcat 'identity tags ","))))
+
+  (defun lps/bibtex-filter-by-tags (tags)
+    (interactive (list
+                  (let ((descs (completing-read-multiple
+                                (format-prompt "Tags: " nil)
+                                *lps/bibtex-tags*)))
+                    (mapcar 'lps/bibtex-tag-description-to-tag descs))))
+    ())
 #+end_src
 
 Another useful package to deal with references, bibliography, citations and so on, is [[https://www.gnu.org/software/emacs/manual/html_mono/reftex.html][RefTeX]].
@@ -5019,11 +5059,31 @@ The next packages are used to manage the bibliography in itself: download articl
 
 #+begin_src emacs-lisp
   (use-package bibtex-completion
+    :init
+    (defvar bibtex-completion-candidates-filter-functions nil
+      "List of functions called to filter the candidates returned
+  by `bibtex-completion-candidates'
+
+  Each function will be called with the entire list of candidates.
+  It should return the list of filtered candidates, modifying the
+  entries if needed.")
     :commands bibtex-completion-key-at-point
     :custom
     (bibtex-completion-bibliography lps/bib-bibliography-files)
     (bibtex-completion-library-path lps/bib-bibliography-library)
+    (bibtex-completion-display-formats
+     '((t . "${author:30} ${title:*} ${year:4} ${=has-pdf=:1}${=has-note=:1} ${=type=:7}")))
     :config
+    (defun bibtex-completion--filter-candidates (fun &rest args)
+      (let ((res (apply fun args)))
+        (cl-reduce (lambda (candidates filter-fun)
+                     (funcall filter-fun candidates))
+                   bibtex-completion-candidates-filter-functions
+                   :initial-value res)))
+
+    (advice-add 'bibtex-completion-candidates
+                :around 'bibtex-completion--filter-candidates)
+
     ;; Rewrite: shortcuts the evaluation !
     ;; Now only executes up until finding a non-NIL return value
     (defun bibtex-completion-key-at-point ()
@@ -5088,7 +5148,8 @@ The next packages are used to manage the bibliography in itself: download articl
     (defvar lps/bibtex-completion-format-entry-properties
       '(("author" face elfeed-search-arxiv-authors)
         ("date" face elfeed-search-date-face)
-        ("year" face elfeed-search-date-face))
+        ("year" face elfeed-search-date-face)
+        ("tags" face elfeed-search-tag-face))
       "Alist of (FIELD-NAME (PROPERTIES)*).
   The properties will be applied as if by
   (apply 'propertize STRING PROPERTIES)")
@@ -5147,8 +5208,8 @@ Because =bibtex-completion= is mainly an interface, we use a wrapper around it t
     ;; Redefine here, superset
     (setq org-ref-lower-case-words lps/do-not-capitalize-list)
     :custom
-    (doi-utils-download-pdf t)
-    (doi-utils-async-download t)
+    (doi-utils-download-pdf nil) ; buggy
+    (doi-utils-async-download ) ; buggy
     (doi-utils-open-pdf-after-download t)
     :config
     (advice-add 'org-ref-read-key :around 'lps/completing-read-char-fold)
@@ -6922,7 +6983,8 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
     (:map elfeed-search-mode-map
           ("w" . elfeed-search-browse-url)
           ("C-S-s" . lps/elfeed-search-filter-interactive)
-          ("*" . lps/elfeed-toggle-star))
+          ("*" . lps/elfeed-toggle-star)
+          ("U" . elfeed-update))
     (:map elfeed-show-mode-map
           ("D" . lps/elfeed-arxiv-get-pdf-add-bibtex-entry))
     :init
@@ -7408,12 +7470,16 @@ Finally, and because we might use this on old computers or with bad network, we 
         t)))
 #+end_src
 
-* TODO Small things to do or to fix
+* TODO Things to do or to fix
 ** Elfeed
 - Find a neat way to have bookmarks/pre-configured filters.
 - Have a split window like mu4e when browsing feed (need to change ~elfeed-show-entry-switch~)
 ** Biblio
 - Fix auto titles/key in biblio: ~org-ref-title-case~ and ~org-ref-lower-case-words~, ~bibtex-autokey-titlewords~ and ~bibtex-autokey-titleword-ignore~, and my own variable ~lps/do-not-capitalize-list~
+- Add a way to "tag" bibtex entries. Likely a decent solution: add a TAGS field to entries, as a list of coma-separated tags.
+  - Add function to add/remove tag
+  - Add function to search only articles of a given tag (or tag combination ?)
+  - Maybe change bibtex-format-entry functions to show tags (more or less succintly ?)
 ** Generic
 Use functions that have been added to Emacs rather than mine, or use a macro to decide according to the version:
 - [ ] duplicate-dwim (29.1)

@@ -19,6 +19,7 @@
         cdlatex-sub-superscript
         company-indent-or-complete-common
         counsel-M-x
+        cycle-spacing
         delete-indentation
         delete-region
         downcase-dwim
@@ -40,6 +41,7 @@
         lps/insert-parentheses
         lps/lisp-indent-adjust-parens
         lps/select-line
+        lps/transpose-sexp-backward
         lps/transpose-sexp-forward
         lps/yank-indent
         mark-sexp
