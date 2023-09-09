@@ -3322,22 +3322,8 @@ move to the end of the document, and search backward instead."
   (:map TeX-mode-map
         ("C-c '" . TeX-error-overview)
         ("<f5>" . lps/auto-compile)
-        ("<backtab>" . indent-for-tab-command)
-        ([remap beginning-of-defun] . LaTeX-find-matching-begin)
-        ([remap end-of-defun] . LaTeX-find-matching-end)
-        ("C-S-b" . lps/LaTeX-prev-math)
-        ("C-S-f" . lps/LaTeX-next-math))
-  :hook
-  (LaTeX-mode . outline-minor-mode)
-  (LaTeX-mode . lps/latex-fontification)
-  ;; (LaTeX-mode . lps/latex-company-setup)
-  ;; (LaTeX-mode . LaTeX-math-mode)
-  (LaTeX-mode . cdlatex-mode)
-  (LaTeX-mode . auto-insert)
-
+        ("<backtab>" . indent-for-tab-command))
   :custom
-  ;; Automatically insert closing brackets
-  (LaTeX-electric-left-right-brace t)
   ;; Parse documents to provide completion
   (TeX-parse-self t)
   ;; Automatically save style information
@@ -3354,8 +3340,6 @@ move to the end of the document, and search backward instead."
   (TeX-insert-braces nil)
   ;; But do insert closing $ when inserting the first one
   (TeX-electric-math '("$" . "$"))
-  ;; Also change the key to access LaTeX-math-mode
-  (LaTeX-math-abbrev-prefix "°")
   ;; Don't ask for confirmation when cleaning
   (TeX-clean-confirm nil)
   ;; AucTeX doesn't search subdirectories for input/include ...
@@ -3378,9 +3362,6 @@ move to the end of the document, and search backward instead."
   :config
   (add-to-list 'lps/auto-compile-command-alist
                (cons 'latex-mode 'lps/TeX-recompile-all))
-
-  (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
-               nil 'equal)
 
   ;; Auto-insert
   (with-eval-after-load 'autoinsert
@@ -3847,6 +3828,30 @@ return `nil'."
                 (while (re-search-forward "[[:digit:]]+" end t)
                   (let ((num (string-to-number (match-string 0))))
                     (replace-match (number-to-string (+ num n)))))))))))))
+
+(use-package latex
+  :defer t
+  :bind
+  (:map LaTeX-mode-map
+        ([remap beginning-of-defun] . LaTeX-find-matching-begin)
+        ([remap end-of-defun] . LaTeX-find-matching-end)
+        ("C-S-b" . lps/LaTeX-prev-math)
+        ("C-S-f" . lps/LaTeX-next-math))
+  :hook
+  (LaTeX-mode . outline-minor-mode)
+  (LaTeX-mode . lps/latex-fontification)
+  ;; (LaTeX-mode . lps/latex-company-setup)
+  ;; (LaTeX-mode . LaTeX-math-mode)
+  (LaTeX-mode . cdlatex-mode)
+  (LaTeX-mode . auto-insert)
+  :custom
+  ;; Automatically insert closing brackets
+  (LaTeX-electric-left-right-brace t)
+  ;; Also change the key to access LaTeX-math-mode
+  (LaTeX-math-abbrev-prefix "°")
+  :config
+  (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
+               nil 'equal))
 
 (use-package tex-fold
   :defer t

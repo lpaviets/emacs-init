@@ -130,3 +130,4 @@ flycheck_*.el
 /extra-packages/private/*
 /desktop/
 /.saveplaces
+/multisession/
