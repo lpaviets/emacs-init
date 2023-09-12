@@ -3873,11 +3873,10 @@ return `nil'."
   :defer t
   :init
   (defvar lps/bib-directory (lps/org-expand-file-name "biblio" t))
-  (defvar lps/bib-bibliography-files (list (expand-file-name "biblio.bib"
-                                                             lps/bib-directory)))
-  (defvar lps/bib-bibliography-library (file-name-as-directory
-                                        (expand-file-name "articles"
-                                                          lps/bib-directory)))
+  (defvar lps/bib-bibliography-files
+    (list (expand-file-name "biblio.bib" lps/bib-directory)))
+  (defvar lps/bib-bibliography-library
+    (file-name-as-directory (expand-file-name "articles" lps/bib-directory)))
   :bind
   (:map bibtex-mode-map
         ("C-c C-?" . bibtex-print-help-message)
@@ -3891,6 +3890,7 @@ return `nil'."
                          last-comma))
   (bibtex-unify-case-function 'downcase)
   (bibtex-comma-after-last-field t)
+  (bibtex-autokey-title-terminators "[.!?;]\\|--") ; removed : from default
   ;; minor changes + also re-specify in case default changes
   (bibtex-autokey-prefix-string "")
   (bibtex-autokey-names 3)
@@ -3955,9 +3955,19 @@ return `nil'."
                               ("Hom-Shifts" . "hom")))
 
   (defun lps/bibtex-tag-description-to-tag (desc)
-    (cdr (assoc-string str *lps/bibtex-tags*)))
+    (cdr (assoc-string desc *lps/bibtex-tags*)))
 
   (defun lps/bibtex-replace-tags (key beg end)
+    (interactive (list (save-excursion
+                         (bibtex-beginning-of-entry)
+                         (and (looking-at bibtex-entry-maybe-empty-head)
+                              (bibtex-key-in-head)))
+                       (save-excursion
+                         (bibtex-beginning-of-entry)
+                         (point))
+                       (save-excursion
+                         (bibtex-end-of-entry)
+                         (point))))
     (let* ((descs (completing-read-multiple (format-prompt key nil)
                                             *lps/bibtex-tags*))
            (tags (mapcar 'lps/bibtex-tag-description-to-tag descs)))
@@ -4357,10 +4367,16 @@ If none is found, loops through the functions in
   abstract =      {%s},
   url =           {%s},
 }\n")
+  (org-ref-title-case-types '(("misc" "title")
+                              ("phdthesis" "title")
+                              ("article" "title")
+                              ("book" "booktitle")))
   :config
   ;; Turn on other modes when loaded
   (require 'bibtex-completion)
   (org-roam-bibtex-mode 1)
+
+  (add-to-list 'org-ref-clean-bibtex-entry-hook 'org-ref-title-case)
 
   (dolist (pair org-ref-nonascii-latex-replacements)
     (let ((in (car pair))
