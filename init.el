@@ -3126,7 +3126,7 @@ Refer to `org-agenda-prefix-format' for more information."
         ([remap save-buffer] . org-capture-finalize))
   :custom
   (org-capture-templates
-   `(("t" "Tasks / Projects")
+   `(("t" "Tasks")
      ("tt" "Task" entry
       (file+olp ,(lps/org-expand-file-name "agenda/Tasks.org") "Inbox")
       "* TODO %?\n  %U\n  %a\n  %i"
@@ -3137,20 +3137,21 @@ Refer to `org-agenda-prefix-format' for more information."
       "** TODO %?\n"
       :empty-lines 1)
 
-     ("m" "Meeting" entry
-      (file+olp+datetree ,(lps/org-expand-file-name "agenda/Meetings.org"))
-      "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
+     ("a" "Agenda")
+     ("at" "Teaching" entry
+      (file+function ,(lps/org-expand-file-name "agenda/Teaching.org"))
+      "* %(call-interactively #'org-time-stamp) %?\n"
       :empty-lines 1)
 
-     ("w" "Workflows")
-     ("we" "Checking Email" entry
-      (file+olp+datetree ,(lps/org-expand-file-name "agenda/Tasks.org"))
-      "* Checking Email :email:\n\n%?"
+     ("as" "Science Event" entry
+      (file+function ,(lps/org-expand-file-name "agenda/Science.org")
+                     lps/org-ask-location)
+      "** %?\n"
       :empty-lines 1)
 
-     ("a" "Agenda (others)" entry
+     ("ao" "Others" entry
       (file ,(lps/org-expand-file-name "agenda/Others.org"))
-      "* %(call-interactively #'org-time-stamp) %? :agenda:\n"
+      "* %(call-interactively #'org-time-stamp) %?\n"
       :empty-lines 1)
 
      ("r" "Random")
