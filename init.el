@@ -3955,7 +3955,8 @@ return `nil'."
                               ("Group Theory" . "grp")
                               ("Graph Theory" . "gph")
                               ("Substitution" . "sub")
-                              ("Hom-Shifts" . "hom")))
+                              ("Hom-Shifts" . "hom")
+                              ("Complexity Theory" . "cpl")))
 
   (defun lps/bibtex-tag-description-to-tag (desc)
     (cdr (assoc-string desc *lps/bibtex-tags*)))
@@ -4029,27 +4030,25 @@ return `nil'."
     "Query for regexps for searching entries using DEFAULT as default.
 Return a list of regular expressions."
     (split-string
-     (let ((orderless-component-separator "[ \t]*&&[ \t]*"))
-       (completing-read
-        (concat
-         "Regex { && Regex...}: "
-         "[" default "]: ")
-        ;; Ensure default is always in the completion list.
-        (let ((def (when default (list default)))
-              (coll (if reftex-mode
-                        (if (fboundp 'LaTeX-bibitem-list)
-                            (progn
-                              ;; FIXME: don't do it every time ?
-                              (lps/LaTeX-add-all-bibitems-from-bibtex)
-                              (LaTeX-bibitem-list))
-                          (cdr (assoc 'bibview-cache
-                                      (symbol-value reftex-docstruct-symbol))))
-                      nil)))
-          (if (and def (member def coll))
-              coll
-            (cons def coll)))
-        nil nil nil 'reftex-cite-regexp-hist))
-     "[ \t]*&&[ \t]*")))
+     (completing-read
+      (concat
+       "Search bibliography for: "
+       "[" default "]: ")
+      ;; Ensure default is always in the completion list.
+      (let ((def (when default (list default)))
+            (coll (if reftex-mode
+                      (if (fboundp 'LaTeX-bibitem-list)
+                          (progn
+                            ;; FIXME: don't do it every time ?
+                            (lps/LaTeX-add-all-bibitems-from-bibtex)
+                            (LaTeX-bibitem-list))
+                        (cdr (assoc 'bibview-cache
+                                    (symbol-value reftex-docstruct-symbol))))
+                    nil)))
+        (if (and def (member def coll))
+            coll
+          (cons def coll)))
+      nil nil nil 'reftex-cite-regexp-hist))))
 
 (use-package biblio-core
   :defer t
