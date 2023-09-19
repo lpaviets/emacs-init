@@ -763,7 +763,7 @@ Some packages are used lated in the configuration, and we want to be able to use
     :defer t)
 
   (use-package highlight-numbers
-    :hook (prog-mode . highlight-numbers-mode))
+    :hook ((prog-mode LaTeX-mode) . highlight-numbers-mode))
 #+end_src
 
 Another built-in and useful package that often comes up is =hl-line=. When enabled, it simply highlights the current line (/i.e./ the one on which the point is). When dealing with tables, or "rigidly organized" data, it is often useful to be able to quickly tell what is on which line.
@@ -4956,6 +4956,7 @@ Another useful package to deal with references, bibliography, citations and so o
     (reftex-plug-into-AUCTeX t)
     (reftex-toc-split-windows-horizontally nil)
     (reftex-toc-split-windows-fraction 0.5)
+    (reftex-cite-format "~\\cite[]{%l}")
     (reftex-label-alist
      '(("section"     ?s "sec:"   "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"))
        ("definition"  ?d "def:"   "~\\ref{%s}" 1 (regexp "[Dd]efinition\\(s\\)?"))
@@ -6162,6 +6163,9 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
           mu4e-headers-list-mark      '("s" . "⁞")
           mu4e-headers-personal-mark  '("p" . "⍟")
           mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
+
+    ;; Change this face to make it more visible, at least for kaolin-ocean theme
+    (set-face-attribute 'mu4e-replied-face nil :inherit 'font-lock-function-name-face)
 
     (defun lps/mu4e-unmark-backward ()
       (interactive)

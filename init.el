@@ -559,7 +559,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
   :defer t)
 
 (use-package highlight-numbers
-  :hook (prog-mode . highlight-numbers-mode))
+  :hook ((prog-mode LaTeX-mode) . highlight-numbers-mode))
 
 (use-package hl-line
   :hook ((tabulated-list-mode
@@ -3995,6 +3995,7 @@ return `nil'."
   (reftex-plug-into-AUCTeX t)
   (reftex-toc-split-windows-horizontally nil)
   (reftex-toc-split-windows-fraction 0.5)
+  (reftex-cite-format "~\\cite[]{%l}")
   (reftex-label-alist
    '(("section"     ?s "sec:"   "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"))
      ("definition"  ?d "def:"   "~\\ref{%s}" 1 (regexp "[Dd]efinition\\(s\\)?"))
@@ -5068,6 +5069,9 @@ confirmation when sending a non-multipart MIME mail")
         mu4e-headers-list-mark      '("s" . "⁞")
         mu4e-headers-personal-mark  '("p" . "⍟")
         mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
+
+  ;; Change this face to make it more visible, at least for kaolin-ocean theme
+  (set-face-attribute 'mu4e-replied-face nil :inherit 'font-lock-function-name-face)
 
   (defun lps/mu4e-unmark-backward ()
     (interactive)
