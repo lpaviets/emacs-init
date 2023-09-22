@@ -559,7 +559,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
   :defer t)
 
 (use-package highlight-numbers
-  :hook (prog-mode . highlight-numbers-mode))
+  :hook ((prog-mode LaTeX-mode) . highlight-numbers-mode))
 
 (use-package hl-line
   :hook ((tabulated-list-mode
@@ -3126,7 +3126,7 @@ Refer to `org-agenda-prefix-format' for more information."
         ([remap save-buffer] . org-capture-finalize))
   :custom
   (org-capture-templates
-   `(("t" "Tasks / Projects")
+   `(("t" "Tasks")
      ("tt" "Task" entry
       (file+olp ,(lps/org-expand-file-name "agenda/Tasks.org") "Inbox")
       "* TODO %?\n  %U\n  %a\n  %i"
@@ -3137,20 +3137,21 @@ Refer to `org-agenda-prefix-format' for more information."
       "** TODO %?\n"
       :empty-lines 1)
 
-     ("m" "Meeting" entry
-      (file+olp+datetree ,(lps/org-expand-file-name "agenda/Meetings.org"))
-      "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
+     ("a" "Agenda")
+     ("at" "Teaching" entry
+      (file+function ,(lps/org-expand-file-name "agenda/Teaching.org"))
+      "* %(call-interactively #'org-time-stamp) %?\n"
       :empty-lines 1)
 
-     ("w" "Workflows")
-     ("we" "Checking Email" entry
-      (file+olp+datetree ,(lps/org-expand-file-name "agenda/Tasks.org"))
-      "* Checking Email :email:\n\n%?"
+     ("as" "Science Event" entry
+      (file+function ,(lps/org-expand-file-name "agenda/Science.org")
+                     lps/org-ask-location)
+      "** %?\n"
       :empty-lines 1)
 
-     ("a" "Agenda (others)" entry
+     ("ao" "Others" entry
       (file ,(lps/org-expand-file-name "agenda/Others.org"))
-      "* %(call-interactively #'org-time-stamp) %? :agenda:\n"
+      "* %(call-interactively #'org-time-stamp) %?\n"
       :empty-lines 1)
 
      ("r" "Random")
@@ -3346,11 +3347,9 @@ move to the end of the document, and search backward instead."
   (TeX-arg-input-file-search 'ask)
   ;; Ask for note when inserting citations
   (TeX-arg-cite-note-p t)
-
   (TeX-source-correlate-method 'synctex)
   (TeX-source-correlate-start-server t)
   (TeX-view-program-selection '((output-pdf "PDF tools")))
-
   ;; Compilation
   ;; Automatically open the error buffer if errors happened
   ;; But don't collect bad-boxes by default
@@ -3358,10 +3357,75 @@ move to the end of the document, and search backward instead."
   (TeX-debug-bad-boxes nil)
   (TeX-debug-warnings nil)
   (TeX-error-overview-open-after-TeX-run t)
-
   :config
   (add-to-list 'lps/auto-compile-command-alist
                (cons 'latex-mode 'lps/TeX-recompile-all))
+
+<<<<<<< HEAD
+  ;; Auto-insert
+  (with-eval-after-load 'autoinsert
+    (add-to-list 'auto-insert-alist
+                 '(latex-mode
+                   nil
+                   (LaTeX-environment-menu "document")
+                   '(if (y-or-n-p "Insert default packages and commands ?")
+                        (save-excursion
+                          (forward-line -2)
+                          (insert "\n\\usepackage[T1]{fontenc}\n"
+                                  "\\usepackage[utf8]{inputenc}\n\n"
+                                  "\\usepackage{tikz}\n"
+                                  "\\usepackage{amsmath, amssymb, amsthm}\n"
+                                  "\\usepackage{stmaryrd}\n"
+                                  "\\usepackage{thm-restate}\n"
+                                  "\\usepackage{hyperref}\n"
+                                  ;; "\\usepackage{autoref}\n"
+                                  "\\usepackage{cleveref}\n"
+                                  "\\usepackage{url}\n\n"
+                                  "\\newtheorem{conjecture}{Conjecture}\n"
+                                  "\\newtheorem{proposition}{Proposition}\n"
+                                  "\\newtheorem{definition}{Definition}\n"
+                                  "\\newtheorem{corollary}{Corollary}\n"
+                                  "\\newtheorem{lemma}{Lemma}\n"
+                                  "\\newtheorem{theorem}{Theorem}\n"
+                                  "\\newtheorem*{example}{Example}\n"
+                                  "\\newtheorem*{notation}{Notation}\n"
+                                  "\\newtheorem*{remark}{Remark}\n\n"
+                                  "\\crefname{lemma}{Lemma}{Lemmas}\n"
+                                  "\\crefname{theorem}{Theorem}{Theorems}"
+                                  "\n\n")))
+                   '(indent-region (point-min) (point-max)))))
+
+;;;  Navigation
+  ;; Slow: could be made faster by searching $ or \] characters
+  ;; rather than calling `texmathp' at each step.
+  ;; However, this is the most robust, and fast enough.
+  (defun lps/LaTeX-prev-math ()
+    (interactive)
+    (while (not (texmathp))
+      (backward-char 1)))
+
+  (defun lps/LaTeX-next-math ()
+    (interactive)
+    (while (not (texmathp))
+      (forward-char 1)))
+
+  ;; Improve fontification
+  (defun lps/latex-fontification ()
+    (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8")
+    (font-latex-add-keywords '(("newenvironment" "*{[[")
+                               ("renewenvironment" "*{[[")
+                               ("newcommand" "*|{\\[[")
+                               ("renewcommand" "*|{\\[[")
+                               ("providecommand" "*|{\\[[")
+                               ("fbox" "")
+                               ("mbox" "")
+                               ("sbox" ""))
+                             'function))
+
+  ;; SyncTeX forward and inverse search
+||||||| 7435a9c
+  (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
+               nil 'equal)
 
   ;; Auto-insert
   (with-eval-after-load 'autoinsert
@@ -3424,6 +3488,9 @@ move to the end of the document, and search backward instead."
                              'function))
 
   ;; SyncTeX forward and inverse search
+=======
+;; SyncTeX forward and inverse search
+>>>>>>> 4f1727329b674f2e9b9597216e6d42cd2aec6bb1
   (setq TeX-source-correlate-mode t
         ;; Produce a PDF by default
         TeX-PDF-mode t)
@@ -3829,6 +3896,7 @@ return `nil'."
                   (let ((num (string-to-number (match-string 0))))
                     (replace-match (number-to-string (+ num n)))))))))))))
 
+<<<<<<< HEAD
 (use-package latex
   :defer t
   :bind
@@ -3853,6 +3921,93 @@ return `nil'."
   (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
                nil 'equal))
 
+||||||| 7435a9c
+=======
+(use-package latex
+  :after tex
+  :bind
+  (:map LaTeX-mode-map
+        ([remap beginning-of-defun] . LaTeX-find-matching-begin)
+        ([remap end-of-defun] . LaTeX-find-matching-end)
+        ("C-S-b" . lps/LaTeX-prev-math)
+        ("C-S-f" . lps/LaTeX-next-math))
+  :hook
+  (LaTeX-mode . outline-minor-mode)
+  (LaTeX-mode . lps/latex-fontification)
+  ;; (LaTeX-mode . lps/latex-company-setup)
+  ;; (LaTeX-mode . LaTeX-math-mode)
+  (LaTeX-mode . cdlatex-mode)
+  (LaTeX-mode . auto-insert)
+  :custom
+  ;; Automatically insert closing brackets
+  (LaTeX-electric-left-right-brace t)
+  ;; Also change the key to access LaTeX-math-mode
+  (LaTeX-math-abbrev-prefix "°")
+  :config
+  (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
+               nil 'equal)
+
+  ;; Auto-insert
+  (with-eval-after-load 'autoinsert
+    (add-to-list 'auto-insert-alist
+                 '(latex-mode
+                   nil
+                   (LaTeX-environment-menu "document")
+                   '(if (y-or-n-p "Insert default packages and commands ?")
+                        (save-excursion
+                          (forward-line -2)
+                          (insert "\n\\usepackage[T1]{fontenc}\n"
+                                  "\\usepackage[utf8]{inputenc}\n\n"
+                                  "\\usepackage{tikz}\n"
+                                  "\\usepackage{amsmath, amssymb, amsthm}\n"
+                                  "\\usepackage{stmaryrd}\n"
+                                  "\\usepackage{thm-restate}\n"
+                                  "\\usepackage{hyperref}\n"
+                                  ;; "\\usepackage{autoref}\n"
+                                  "\\usepackage{cleveref}\n"
+                                  "\\usepackage{url}\n\n"
+                                  "\\newtheorem{conjecture}{Conjecture}\n"
+                                  "\\newtheorem{proposition}{Proposition}\n"
+                                  "\\newtheorem{definition}{Definition}\n"
+                                  "\\newtheorem{corollary}{Corollary}\n"
+                                  "\\newtheorem{lemma}{Lemma}\n"
+                                  "\\newtheorem{theorem}{Theorem}\n"
+                                  "\\newtheorem*{example}{Example}\n"
+                                  "\\newtheorem*{notation}{Notation}\n"
+                                  "\\newtheorem*{remark}{Remark}\n\n"
+                                  "\\crefname{lemma}{Lemma}{Lemmas}\n"
+                                  "\\crefname{theorem}{Theorem}{Theorems}"
+                                  "\n\n")))
+                   '(indent-region (point-min) (point-max)))))
+
+;;;  Navigation
+  ;; Slow: could be made faster by searching $ or \] characters
+  ;; rather than calling `texmathp' at each step.
+  ;; However, this is the most robust, and fast enough.
+  (defun lps/LaTeX-prev-math ()
+    (interactive)
+    (while (not (texmathp))
+      (backward-char 1)))
+
+  (defun lps/LaTeX-next-math ()
+    (interactive)
+    (while (not (texmathp))
+      (forward-char 1)))
+
+  ;; Improve fontification
+  (defun lps/latex-fontification ()
+    (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8")
+    (font-latex-add-keywords '(("newenvironment" "*{[[")
+                               ("renewenvironment" "*{[[")
+                               ("newcommand" "*|{\\[[")
+                               ("renewcommand" "*|{\\[[")
+                               ("providecommand" "*|{\\[[")
+                               ("fbox" "")
+                               ("mbox" "")
+                               ("sbox" ""))
+                             'function)))
+
+>>>>>>> 4f1727329b674f2e9b9597216e6d42cd2aec6bb1
 (use-package tex-fold
   :defer t
   :hook (LaTeX-mode . TeX-fold-mode)
@@ -3878,11 +4033,10 @@ return `nil'."
   :defer t
   :init
   (defvar lps/bib-directory (lps/org-expand-file-name "biblio" t))
-  (defvar lps/bib-bibliography-files (list (expand-file-name "biblio.bib"
-                                                             lps/bib-directory)))
-  (defvar lps/bib-bibliography-library (file-name-as-directory
-                                        (expand-file-name "articles"
-                                                          lps/bib-directory)))
+  (defvar lps/bib-bibliography-files
+    (list (expand-file-name "biblio.bib" lps/bib-directory)))
+  (defvar lps/bib-bibliography-library
+    (file-name-as-directory (expand-file-name "articles" lps/bib-directory)))
   :bind
   (:map bibtex-mode-map
         ("C-c C-?" . bibtex-print-help-message)
@@ -3896,6 +4050,7 @@ return `nil'."
                          last-comma))
   (bibtex-unify-case-function 'downcase)
   (bibtex-comma-after-last-field t)
+  (bibtex-autokey-title-terminators "[.!?;]\\|--") ; removed : from default
   ;; minor changes + also re-specify in case default changes
   (bibtex-autokey-prefix-string "")
   (bibtex-autokey-names 3)
@@ -3957,12 +4112,23 @@ return `nil'."
                               ("Group Theory" . "grp")
                               ("Graph Theory" . "gph")
                               ("Substitution" . "sub")
-                              ("Hom-Shifts" . "hom")))
+                              ("Hom-Shifts" . "hom")
+                              ("Complexity Theory" . "cpl")))
 
   (defun lps/bibtex-tag-description-to-tag (desc)
-    (cdr (assoc-string str *lps/bibtex-tags*)))
+    (cdr (assoc-string desc *lps/bibtex-tags*)))
 
   (defun lps/bibtex-replace-tags (key beg end)
+    (interactive (list (save-excursion
+                         (bibtex-beginning-of-entry)
+                         (and (looking-at bibtex-entry-maybe-empty-head)
+                              (bibtex-key-in-head)))
+                       (save-excursion
+                         (bibtex-beginning-of-entry)
+                         (point))
+                       (save-excursion
+                         (bibtex-end-of-entry)
+                         (point))))
     (let* ((descs (completing-read-multiple (format-prompt key nil)
                                             *lps/bibtex-tags*))
            (tags (mapcar 'lps/bibtex-tag-description-to-tag descs)))
@@ -3986,6 +4152,7 @@ return `nil'."
   (reftex-plug-into-AUCTeX t)
   (reftex-toc-split-windows-horizontally nil)
   (reftex-toc-split-windows-fraction 0.5)
+  (reftex-cite-format "~\\cite[]{%l}")
   (reftex-label-alist
    '(("section"     ?s "sec:"   "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"))
      ("definition"  ?d "def:"   "~\\ref{%s}" 1 (regexp "[Dd]efinition\\(s\\)?"))
@@ -4021,27 +4188,25 @@ return `nil'."
     "Query for regexps for searching entries using DEFAULT as default.
 Return a list of regular expressions."
     (split-string
-     (let ((orderless-component-separator "[ \t]*&&[ \t]*"))
-       (completing-read
-        (concat
-         "Regex { && Regex...}: "
-         "[" default "]: ")
-        ;; Ensure default is always in the completion list.
-        (let ((def (when default (list default)))
-              (coll (if reftex-mode
-                        (if (fboundp 'LaTeX-bibitem-list)
-                            (progn
-                              ;; FIXME: don't do it every time ?
-                              (lps/LaTeX-add-all-bibitems-from-bibtex)
-                              (LaTeX-bibitem-list))
-                          (cdr (assoc 'bibview-cache
-                                      (symbol-value reftex-docstruct-symbol))))
-                      nil)))
-          (if (and def (member def coll))
-              coll
-            (cons def coll)))
-        nil nil nil 'reftex-cite-regexp-hist))
-     "[ \t]*&&[ \t]*")))
+     (completing-read
+      (concat
+       "Search bibliography for: "
+       "[" default "]: ")
+      ;; Ensure default is always in the completion list.
+      (let ((def (when default (list default)))
+            (coll (if reftex-mode
+                      (if (fboundp 'LaTeX-bibitem-list)
+                          (progn
+                            ;; FIXME: don't do it every time ?
+                            (lps/LaTeX-add-all-bibitems-from-bibtex)
+                            (LaTeX-bibitem-list))
+                        (cdr (assoc 'bibview-cache
+                                    (symbol-value reftex-docstruct-symbol))))
+                    nil)))
+        (if (and def (member def coll))
+            coll
+          (cons def coll)))
+      nil nil nil 'reftex-cite-regexp-hist))))
 
 (use-package biblio-core
   :defer t
@@ -4362,10 +4527,16 @@ If none is found, loops through the functions in
   abstract =      {%s},
   url =           {%s},
 }\n")
+  (org-ref-title-case-types '(("misc" "title")
+                              ("phdthesis" "title")
+                              ("article" "title")
+                              ("book" "booktitle")))
   :config
   ;; Turn on other modes when loaded
   (require 'bibtex-completion)
   (org-roam-bibtex-mode 1)
+
+  (add-to-list 'org-ref-clean-bibtex-entry-hook 'org-ref-title-case)
 
   (dolist (pair org-ref-nonascii-latex-replacements)
     (let ((in (car pair))
@@ -5055,6 +5226,9 @@ confirmation when sending a non-multipart MIME mail")
         mu4e-headers-list-mark      '("s" . "⁞")
         mu4e-headers-personal-mark  '("p" . "⍟")
         mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
+
+  ;; Change this face to make it more visible, at least for kaolin-ocean theme
+  (set-face-attribute 'mu4e-replied-face nil :inherit 'font-lock-function-name-face)
 
   (defun lps/mu4e-unmark-backward ()
     (interactive)

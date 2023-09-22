@@ -763,7 +763,7 @@ Some packages are used lated in the configuration, and we want to be able to use
     :defer t)
 
   (use-package highlight-numbers
-    :hook (prog-mode . highlight-numbers-mode))
+    :hook ((prog-mode LaTeX-mode) . highlight-numbers-mode))
 #+end_src
 
 Another built-in and useful package that often comes up is =hl-line=. When enabled, it simply highlights the current line (/i.e./ the one on which the point is). When dealing with tables, or "rigidly organized" data, it is often useful to be able to quickly tell what is on which line.
@@ -4021,7 +4021,7 @@ Not only is Org Mode great to write structured documents that can be exported to
           ([remap save-buffer] . org-capture-finalize))
     :custom
     (org-capture-templates
-     `(("t" "Tasks / Projects")
+     `(("t" "Tasks")
        ("tt" "Task" entry
         (file+olp ,(lps/org-expand-file-name "agenda/Tasks.org") "Inbox")
         "* TODO %?\n  %U\n  %a\n  %i"
@@ -4032,20 +4032,21 @@ Not only is Org Mode great to write structured documents that can be exported to
         "** TODO %?\n"
         :empty-lines 1)
 
-       ("m" "Meeting" entry
-        (file+olp+datetree ,(lps/org-expand-file-name "agenda/Meetings.org"))
-        "* %<%I:%M %p> - %a :meetings:\n\n%?\n\n"
+       ("a" "Agenda")
+       ("at" "Teaching" entry
+        (file+function ,(lps/org-expand-file-name "agenda/Teaching.org"))
+        "* %(call-interactively #'org-time-stamp) %?\n"
         :empty-lines 1)
 
-       ("w" "Workflows")
-       ("we" "Checking Email" entry
-        (file+olp+datetree ,(lps/org-expand-file-name "agenda/Tasks.org"))
-        "* Checking Email :email:\n\n%?"
+       ("as" "Science Event" entry
+        (file+function ,(lps/org-expand-file-name "agenda/Science.org")
+                       lps/org-ask-location)
+        "** %?\n"
         :empty-lines 1)
 
-       ("a" "Agenda (others)" entry
+       ("ao" "Others" entry
         (file ,(lps/org-expand-file-name "agenda/Others.org"))
-        "* %(call-interactively #'org-time-stamp) %? :agenda:\n"
+        "* %(call-interactively #'org-time-stamp) %?\n"
         :empty-lines 1)
 
        ("r" "Random")
@@ -4276,11 +4277,9 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (TeX-arg-input-file-search 'ask)
     ;; Ask for note when inserting citations
     (TeX-arg-cite-note-p t)
-
     (TeX-source-correlate-method 'synctex)
     (TeX-source-correlate-start-server t)
     (TeX-view-program-selection '((output-pdf "PDF tools")))
-
     ;; Compilation
     ;; Automatically open the error buffer if errors happened
     ;; But don't collect bad-boxes by default
@@ -4288,72 +4287,11 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (TeX-debug-bad-boxes nil)
     (TeX-debug-warnings nil)
     (TeX-error-overview-open-after-TeX-run t)
-
     :config
     (add-to-list 'lps/auto-compile-command-alist
                  (cons 'latex-mode 'lps/TeX-recompile-all))
 
-    ;; Auto-insert
-    (with-eval-after-load 'autoinsert
-      (add-to-list 'auto-insert-alist
-                   '(latex-mode
-                     nil
-                     (LaTeX-environment-menu "document")
-                     '(if (y-or-n-p "Insert default packages and commands ?")
-                          (save-excursion
-                            (forward-line -2)
-                            (insert "\n\\usepackage[T1]{fontenc}\n"
-                                    "\\usepackage[utf8]{inputenc}\n\n"
-                                    "\\usepackage{tikz}\n"
-                                    "\\usepackage{amsmath, amssymb, amsthm}\n"
-                                    "\\usepackage{stmaryrd}\n"
-                                    "\\usepackage{thm-restate}\n"
-                                    "\\usepackage{hyperref}\n"
-                                    ;; "\\usepackage{autoref}\n"
-                                    "\\usepackage{cleveref}\n"
-                                    "\\usepackage{url}\n\n"
-                                    "\\newtheorem{conjecture}{Conjecture}\n"
-                                    "\\newtheorem{proposition}{Proposition}\n"
-                                    "\\newtheorem{definition}{Definition}\n"
-                                    "\\newtheorem{corollary}{Corollary}\n"
-                                    "\\newtheorem{lemma}{Lemma}\n"
-                                    "\\newtheorem{theorem}{Theorem}\n"
-                                    "\\newtheorem*{example}{Example}\n"
-                                    "\\newtheorem*{notation}{Notation}\n"
-                                    "\\newtheorem*{remark}{Remark}\n\n"
-                                    "\\crefname{lemma}{Lemma}{Lemmas}\n"
-                                    "\\crefname{theorem}{Theorem}{Theorems}"
-                                    "\n\n")))
-                     '(indent-region (point-min) (point-max)))))
-
-  ;;;  Navigation
-    ;; Slow: could be made faster by searching $ or \] characters
-    ;; rather than calling `texmathp' at each step.
-    ;; However, this is the most robust, and fast enough.
-    (defun lps/LaTeX-prev-math ()
-      (interactive)
-      (while (not (texmathp))
-        (backward-char 1)))
-
-    (defun lps/LaTeX-next-math ()
-      (interactive)
-      (while (not (texmathp))
-        (forward-char 1)))
-
-    ;; Improve fontification
-    (defun lps/latex-fontification ()
-      (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8")
-      (font-latex-add-keywords '(("newenvironment" "*{[[")
-                                 ("renewenvironment" "*{[[")
-                                 ("newcommand" "*|{\\[[")
-                                 ("renewcommand" "*|{\\[[")
-                                 ("providecommand" "*|{\\[[")
-                                 ("fbox" "")
-                                 ("mbox" "")
-                                 ("sbox" ""))
-                               'function))
-
-    ;; SyncTeX forward and inverse search
+    ;; SyncTeX forward and inverse Search
     (setq TeX-source-correlate-mode t
           ;; Produce a PDF by default
           TeX-PDF-mode t)
@@ -4537,7 +4475,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     <<beamer-mode>>)
 
   (use-package latex
-    :defer t
+    :after tex
     :bind
     (:map LaTeX-mode-map
           ([remap beginning-of-defun] . LaTeX-find-matching-begin)
@@ -4558,7 +4496,67 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (LaTeX-math-abbrev-prefix "°")
     :config
     (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
-                 nil 'equal))
+                 nil 'equal)
+
+    ;; Auto-insert
+    (with-eval-after-load 'autoinsert
+      (add-to-list 'auto-insert-alist
+                   '(latex-mode
+                     nil
+                     (LaTeX-environment-menu "document")
+                     '(if (y-or-n-p "Insert default packages and commands ?")
+                          (save-excursion
+                            (forward-line -2)
+                            (insert "\n\\usepackage[T1]{fontenc}\n"
+                                    "\\usepackage[utf8]{inputenc}\n\n"
+                                    "\\usepackage{tikz}\n"
+                                    "\\usepackage{amsmath, amssymb, amsthm}\n"
+                                    "\\usepackage{stmaryrd}\n"
+                                    "\\usepackage{thm-restate}\n"
+                                    "\\usepackage{hyperref}\n"
+                                    ;; "\\usepackage{autoref}\n"
+                                    "\\usepackage{cleveref}\n"
+                                    "\\usepackage{url}\n\n"
+                                    "\\newtheorem{conjecture}{Conjecture}\n"
+                                    "\\newtheorem{proposition}{Proposition}\n"
+                                    "\\newtheorem{definition}{Definition}\n"
+                                    "\\newtheorem{corollary}{Corollary}\n"
+                                    "\\newtheorem{lemma}{Lemma}\n"
+                                    "\\newtheorem{theorem}{Theorem}\n"
+                                    "\\newtheorem*{example}{Example}\n"
+                                    "\\newtheorem*{notation}{Notation}\n"
+                                    "\\newtheorem*{remark}{Remark}\n\n"
+                                    "\\crefname{lemma}{Lemma}{Lemmas}\n"
+                                    "\\crefname{theorem}{Theorem}{Theorems}"
+                                    "\n\n")))
+                     '(indent-region (point-min) (point-max)))))
+
+  ;;;  Navigation
+    ;; Slow: could be made faster by searching $ or \] characters
+    ;; rather than calling `texmathp' at each step.
+    ;; However, this is the most robust, and fast enough.
+    (defun lps/LaTeX-prev-math ()
+      (interactive)
+      (while (not (texmathp))
+        (backward-char 1)))
+
+    (defun lps/LaTeX-next-math ()
+      (interactive)
+      (while (not (texmathp))
+        (forward-char 1)))
+
+    ;; Improve fontification
+    (defun lps/latex-fontification ()
+      (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8")
+      (font-latex-add-keywords '(("newenvironment" "*{[[")
+                                 ("renewenvironment" "*{[[")
+                                 ("newcommand" "*|{\\[[")
+                                 ("renewcommand" "*|{\\[[")
+                                 ("providecommand" "*|{\\[[")
+                                 ("fbox" "")
+                                 ("mbox" "")
+                                 ("sbox" ""))
+                               'function)))
 #+end_src
 
 **** Folding
@@ -4828,11 +4826,10 @@ We also configure BibTeX and other packages that allow us to insert quickly bibl
     :defer t
     :init
     (defvar lps/bib-directory (lps/org-expand-file-name "biblio" t))
-    (defvar lps/bib-bibliography-files (list (expand-file-name "biblio.bib"
-                                                               lps/bib-directory)))
-    (defvar lps/bib-bibliography-library (file-name-as-directory
-                                          (expand-file-name "articles"
-                                                            lps/bib-directory)))
+    (defvar lps/bib-bibliography-files
+      (list (expand-file-name "biblio.bib" lps/bib-directory)))
+    (defvar lps/bib-bibliography-library
+      (file-name-as-directory (expand-file-name "articles" lps/bib-directory)))
     :bind
     (:map bibtex-mode-map
           ("C-c C-?" . bibtex-print-help-message)
@@ -4846,6 +4843,7 @@ We also configure BibTeX and other packages that allow us to insert quickly bibl
                            last-comma))
     (bibtex-unify-case-function 'downcase)
     (bibtex-comma-after-last-field t)
+    (bibtex-autokey-title-terminators "[.!?;]\\|--") ; removed : from default
     ;; minor changes + also re-specify in case default changes
     (bibtex-autokey-prefix-string "")
     (bibtex-autokey-names 3)
@@ -4914,14 +4912,25 @@ We slightly extend BibTeX so that it can work with tags !
                               ("Group Theory" . "grp")
                               ("Graph Theory" . "gph")
                               ("Substitution" . "sub")
-                              ("Hom-Shifts" . "hom")))
+                              ("Hom-Shifts" . "hom")
+                              ("Complexity Theory" . "cpl")))
 
   (defun lps/bibtex-tag-description-to-tag (desc)
-    (cdr (assoc-string str *lps/bibtex-tags*)))
+    (cdr (assoc-string desc *lps/bibtex-tags*)))
 
   (defun lps/bibtex-replace-tags (key beg end)
+    (interactive (list (save-excursion
+                         (bibtex-beginning-of-entry)
+                         (and (looking-at bibtex-entry-maybe-empty-head)
+                              (bibtex-key-in-head)))
+                       (save-excursion
+                         (bibtex-beginning-of-entry)
+                         (point))
+                       (save-excursion
+                         (bibtex-end-of-entry)
+                         (point))))
     (let* ((descs (completing-read-multiple (format-prompt key nil)
-                                            *lps/bibtex-tags*))
+                                            ,*lps/bibtex-tags*))
            (tags (mapcar 'lps/bibtex-tag-description-to-tag descs)))
       (bibtex-set-field "tags" (mapconcat 'identity tags ","))))
 
@@ -4929,7 +4938,7 @@ We slightly extend BibTeX so that it can work with tags !
     (interactive (list
                   (let ((descs (completing-read-multiple
                                 (format-prompt "Tags: " nil)
-                                *lps/bibtex-tags*)))
+                                ,*lps/bibtex-tags*)))
                     (mapcar 'lps/bibtex-tag-description-to-tag descs))))
     ())
 #+end_src
@@ -4947,6 +4956,7 @@ Another useful package to deal with references, bibliography, citations and so o
     (reftex-plug-into-AUCTeX t)
     (reftex-toc-split-windows-horizontally nil)
     (reftex-toc-split-windows-fraction 0.5)
+    (reftex-cite-format "~\\cite[]{%l}")
     (reftex-label-alist
      '(("section"     ?s "sec:"   "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"))
        ("definition"  ?d "def:"   "~\\ref{%s}" 1 (regexp "[Dd]efinition\\(s\\)?"))
@@ -4982,27 +4992,25 @@ Another useful package to deal with references, bibliography, citations and so o
       "Query for regexps for searching entries using DEFAULT as default.
   Return a list of regular expressions."
       (split-string
-       (let ((orderless-component-separator "[ \t]*&&[ \t]*"))
-         (completing-read
-          (concat
-           "Regex { && Regex...}: "
-           "[" default "]: ")
-          ;; Ensure default is always in the completion list.
-          (let ((def (when default (list default)))
-                (coll (if reftex-mode
-                          (if (fboundp 'LaTeX-bibitem-list)
-                              (progn
-                                ;; FIXME: don't do it every time ?
-                                (lps/LaTeX-add-all-bibitems-from-bibtex)
-                                (LaTeX-bibitem-list))
-                            (cdr (assoc 'bibview-cache
-                                        (symbol-value reftex-docstruct-symbol))))
-                        nil)))
-            (if (and def (member def coll))
-                coll
-              (cons def coll)))
-          nil nil nil 'reftex-cite-regexp-hist))
-       "[ \t]*&&[ \t]*")))
+       (completing-read
+        (concat
+         "Search bibliography for: "
+         "[" default "]: ")
+        ;; Ensure default is always in the completion list.
+        (let ((def (when default (list default)))
+              (coll (if reftex-mode
+                        (if (fboundp 'LaTeX-bibitem-list)
+                            (progn
+                              ;; FIXME: don't do it every time ?
+                              (lps/LaTeX-add-all-bibitems-from-bibtex)
+                              (LaTeX-bibitem-list))
+                          (cdr (assoc 'bibview-cache
+                                      (symbol-value reftex-docstruct-symbol))))
+                      nil)))
+          (if (and def (member def coll))
+              coll
+            (cons def coll)))
+        nil nil nil 'reftex-cite-regexp-hist))))
 #+end_src
 
 Finally, we also want a way to do everything from Emacs, and it starts with /finding/ the BibTeX entry that we want to put in our =.bib= file. Hence, we use a package that will look on the Internet for us, and automatically insert the BibTex entries where we need them.
@@ -5335,10 +5343,16 @@ Because =bibtex-completion= is mainly an interface, we use a wrapper around it t
     abstract =      {%s},
     url =           {%s},
   }\n")
+    (org-ref-title-case-types '(("misc" "title")
+                                ("phdthesis" "title")
+                                ("article" "title")
+                                ("book" "booktitle")))
     :config
     ;; Turn on other modes when loaded
     (require 'bibtex-completion)
     (org-roam-bibtex-mode 1)
+
+    (add-to-list 'org-ref-clean-bibtex-entry-hook 'org-ref-title-case)
 
     (dolist (pair org-ref-nonascii-latex-replacements)
       (let ((in (car pair))
@@ -6149,6 +6163,9 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
           mu4e-headers-list-mark      '("s" . "⁞")
           mu4e-headers-personal-mark  '("p" . "⍟")
           mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
+
+    ;; Change this face to make it more visible, at least for kaolin-ocean theme
+    (set-face-attribute 'mu4e-replied-face nil :inherit 'font-lock-function-name-face)
 
     (defun lps/mu4e-unmark-backward ()
       (interactive)
