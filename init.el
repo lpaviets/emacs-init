@@ -3787,6 +3787,8 @@ return `nil'."
   (LaTeX-electric-left-right-brace t)
   ;; Also change the key to access LaTeX-math-mode
   (LaTeX-math-abbrev-prefix "°")
+  ;; Improve fontification
+  (font-latex-fontify-script 'multi-level)
   :config
   (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
                nil 'equal)

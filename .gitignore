@@ -131,3 +131,4 @@ flycheck_*.el
 /desktop/
 /.saveplaces
 /multisession/
+/tutorial/
