@@ -3361,136 +3361,7 @@ move to the end of the document, and search backward instead."
   (add-to-list 'lps/auto-compile-command-alist
                (cons 'latex-mode 'lps/TeX-recompile-all))
 
-<<<<<<< HEAD
-  ;; Auto-insert
-  (with-eval-after-load 'autoinsert
-    (add-to-list 'auto-insert-alist
-                 '(latex-mode
-                   nil
-                   (LaTeX-environment-menu "document")
-                   '(if (y-or-n-p "Insert default packages and commands ?")
-                        (save-excursion
-                          (forward-line -2)
-                          (insert "\n\\usepackage[T1]{fontenc}\n"
-                                  "\\usepackage[utf8]{inputenc}\n\n"
-                                  "\\usepackage{tikz}\n"
-                                  "\\usepackage{amsmath, amssymb, amsthm}\n"
-                                  "\\usepackage{stmaryrd}\n"
-                                  "\\usepackage{thm-restate}\n"
-                                  "\\usepackage{hyperref}\n"
-                                  ;; "\\usepackage{autoref}\n"
-                                  "\\usepackage{cleveref}\n"
-                                  "\\usepackage{url}\n\n"
-                                  "\\newtheorem{conjecture}{Conjecture}\n"
-                                  "\\newtheorem{proposition}{Proposition}\n"
-                                  "\\newtheorem{definition}{Definition}\n"
-                                  "\\newtheorem{corollary}{Corollary}\n"
-                                  "\\newtheorem{lemma}{Lemma}\n"
-                                  "\\newtheorem{theorem}{Theorem}\n"
-                                  "\\newtheorem*{example}{Example}\n"
-                                  "\\newtheorem*{notation}{Notation}\n"
-                                  "\\newtheorem*{remark}{Remark}\n\n"
-                                  "\\crefname{lemma}{Lemma}{Lemmas}\n"
-                                  "\\crefname{theorem}{Theorem}{Theorems}"
-                                  "\n\n")))
-                   '(indent-region (point-min) (point-max)))))
-
-;;;  Navigation
-  ;; Slow: could be made faster by searching $ or \] characters
-  ;; rather than calling `texmathp' at each step.
-  ;; However, this is the most robust, and fast enough.
-  (defun lps/LaTeX-prev-math ()
-    (interactive)
-    (while (not (texmathp))
-      (backward-char 1)))
-
-  (defun lps/LaTeX-next-math ()
-    (interactive)
-    (while (not (texmathp))
-      (forward-char 1)))
-
-  ;; Improve fontification
-  (defun lps/latex-fontification ()
-    (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8")
-    (font-latex-add-keywords '(("newenvironment" "*{[[")
-                               ("renewenvironment" "*{[[")
-                               ("newcommand" "*|{\\[[")
-                               ("renewcommand" "*|{\\[[")
-                               ("providecommand" "*|{\\[[")
-                               ("fbox" "")
-                               ("mbox" "")
-                               ("sbox" ""))
-                             'function))
-
-  ;; SyncTeX forward and inverse search
-||||||| 7435a9c
-  (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
-               nil 'equal)
-
-  ;; Auto-insert
-  (with-eval-after-load 'autoinsert
-    (add-to-list 'auto-insert-alist
-                 '(latex-mode
-                   nil
-                   (LaTeX-environment-menu "document")
-                   '(if (y-or-n-p "Insert default packages and commands ?")
-                        (save-excursion
-                          (forward-line -2)
-                          (insert "\n\\usepackage[T1]{fontenc}\n"
-                                  "\\usepackage[utf8]{inputenc}\n\n"
-                                  "\\usepackage{tikz}\n"
-                                  "\\usepackage{amsmath, amssymb, amsthm}\n"
-                                  "\\usepackage{stmaryrd}\n"
-                                  "\\usepackage{thm-restate}\n"
-                                  "\\usepackage{hyperref}\n"
-                                  ;; "\\usepackage{autoref}\n"
-                                  "\\usepackage{cleveref}\n"
-                                  "\\usepackage{url}\n\n"
-                                  "\\newtheorem{conjecture}{Conjecture}\n"
-                                  "\\newtheorem{proposition}{Proposition}\n"
-                                  "\\newtheorem{definition}{Definition}\n"
-                                  "\\newtheorem{corollary}{Corollary}\n"
-                                  "\\newtheorem{lemma}{Lemma}\n"
-                                  "\\newtheorem{theorem}{Theorem}\n"
-                                  "\\newtheorem*{example}{Example}\n"
-                                  "\\newtheorem*{notation}{Notation}\n"
-                                  "\\newtheorem*{remark}{Remark}\n\n"
-                                  "\\crefname{lemma}{Lemma}{Lemmas}\n"
-                                  "\\crefname{theorem}{Theorem}{Theorems}"
-                                  "\n\n")))
-                   '(indent-region (point-min) (point-max)))))
-
-;;;  Navigation
-  ;; Slow: could be made faster by searching $ or \] characters
-  ;; rather than calling `texmathp' at each step.
-  ;; However, this is the most robust, and fast enough.
-  (defun lps/LaTeX-prev-math ()
-    (interactive)
-    (while (not (texmathp))
-      (backward-char 1)))
-
-  (defun lps/LaTeX-next-math ()
-    (interactive)
-    (while (not (texmathp))
-      (forward-char 1)))
-
-  ;; Improve fontification
-  (defun lps/latex-fontification ()
-    (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8")
-    (font-latex-add-keywords '(("newenvironment" "*{[[")
-                               ("renewenvironment" "*{[[")
-                               ("newcommand" "*|{\\[[")
-                               ("renewcommand" "*|{\\[[")
-                               ("providecommand" "*|{\\[[")
-                               ("fbox" "")
-                               ("mbox" "")
-                               ("sbox" ""))
-                             'function))
-
-  ;; SyncTeX forward and inverse search
-=======
-;; SyncTeX forward and inverse search
->>>>>>> 4f1727329b674f2e9b9597216e6d42cd2aec6bb1
+  ;; SyncTeX forward and inverse Search
   (setq TeX-source-correlate-mode t
         ;; Produce a PDF by default
         TeX-PDF-mode t)
@@ -3896,33 +3767,6 @@ return `nil'."
                   (let ((num (string-to-number (match-string 0))))
                     (replace-match (number-to-string (+ num n)))))))))))))
 
-<<<<<<< HEAD
-(use-package latex
-  :defer t
-  :bind
-  (:map LaTeX-mode-map
-        ([remap beginning-of-defun] . LaTeX-find-matching-begin)
-        ([remap end-of-defun] . LaTeX-find-matching-end)
-        ("C-S-b" . lps/LaTeX-prev-math)
-        ("C-S-f" . lps/LaTeX-next-math))
-  :hook
-  (LaTeX-mode . outline-minor-mode)
-  (LaTeX-mode . lps/latex-fontification)
-  ;; (LaTeX-mode . lps/latex-company-setup)
-  ;; (LaTeX-mode . LaTeX-math-mode)
-  (LaTeX-mode . cdlatex-mode)
-  (LaTeX-mode . auto-insert)
-  :custom
-  ;; Automatically insert closing brackets
-  (LaTeX-electric-left-right-brace t)
-  ;; Also change the key to access LaTeX-math-mode
-  (LaTeX-math-abbrev-prefix "°")
-  :config
-  (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
-               nil 'equal))
-
-||||||| 7435a9c
-=======
 (use-package latex
   :after tex
   :bind
@@ -4007,7 +3851,6 @@ return `nil'."
                                ("sbox" ""))
                              'function)))
 
->>>>>>> 4f1727329b674f2e9b9597216e6d42cd2aec6bb1
 (use-package tex-fold
   :defer t
   :hook (LaTeX-mode . TeX-fold-mode)
