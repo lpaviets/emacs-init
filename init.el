@@ -1582,6 +1582,7 @@ buffer name already resembles a file name"
   ("M-à" . lps/mark-line)
   ("<C-backspace>" . delete-region)
   ([remap yank] . lps/yank-indent)
+  ([remap kill-region] . lps/kill-region-or-word-dwim)
   :custom
   (kill-read-only-ok t)
   (kill-ring-max 100)
@@ -1589,7 +1590,9 @@ buffer name already resembles a file name"
   :config
   (defun lps/copy-line-at-point (arg)
     "Copy lines in the kill ring, starting from the line at point.
-If ARG is not specified or equalt to 1, do not copy the indentation.
+
+If ARG is not specified or equal to 1, do not copy the indentation.
+
 If ARG > 1, copy subsequent lines and indentation."
     (interactive "p")
     (let ((beg (if (equal 1 arg)
@@ -1601,7 +1604,8 @@ If ARG > 1, copy subsequent lines and indentation."
       (copy-region-as-kill beg end)))
 
   (defun lps/mark-line ()
-    "Select the current line. If the region is already active, extends the current selection by line."
+    "Select the current line. If the region is already active, extend
+the current selection by line."
     (interactive)
     (if (region-active-p)
         (progn
@@ -1616,7 +1620,18 @@ If ARG > 1, copy subsequent lines and indentation."
     (let ((point (point)))
       (yank arg)
       (when (-some 'derived-mode-p lps/yank-indent-modes)
-        (indent-region point (point))))))
+        (indent-region point (point)))))
+
+  ;; Make `C-w' consistent with readline
+  ;;
+  ;; Should not change things as you *usually* (personnally, at least)
+  ;; don't want to kill an inactive region, the bounds of which are
+  ;; unclear.
+  (defun lps/kill-region-or-word-dwim ()
+    (interactive)
+    (if (region-active-p)
+        (kill-region (region-beginning) (region-end))
+      (backward-kill-word 1))))
 
 (use-package emacs
   :ensure nil
