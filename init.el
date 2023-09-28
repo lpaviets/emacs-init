@@ -147,7 +147,17 @@ fboundp."
     `(when (or (and ,version (version<= emacs-version ,version))
                (not (fboundp ',name)))
        (defun ,name ,args
-         ,@body))))
+         ,@body)))
+
+  ;; Macro used to advice a function so that it is always called with
+  ;; some lexical bindings
+  (defmacro advice-ensure-bindings (fun bindings)
+    (let ((wrap-fun (gensym "fun"))
+          (wrap-args (gensym "args")))
+      `(advice-add ',fun
+                   :around (lambda (,wrap-fun &rest ,wrap-args)
+                             (let ,bindings
+                               (apply ,wrap-fun ,wrap-args)))))))
 
 (use-package emacs
   :ensure nil
@@ -2360,7 +2370,9 @@ call the associated function interactively. Otherwise, call the
       (call-interactively 'run-python)))
 
   (add-to-list 'lps/auto-compile-command-alist
-               (cons 'python-mode 'python-shell-send-buffer)))
+               (cons 'python-mode 'python-shell-send-buffer))
+
+  (push 'company-indent-or-complete-common python-indent-trigger-commands))
 
 (use-package lsp-pyright
   :defer t)
@@ -4513,7 +4525,10 @@ present in the list of authors or in the title of the article"
                 (cdr (assoc "=key=" (assoc choice candidates))))
               choices)))
 
-  (add-to-list 'org-ref-clean-bibtex-entry-hook 'bibtex-clean-entry t))
+  (add-to-list 'org-ref-clean-bibtex-entry-hook 'bibtex-clean-entry t)
+
+  ;; Ensure org-ref-replace-nonascii does not case fold
+  (advice-ensure-bindings org-ref-replace-nonascii ((case-fold-search nil))))
 
 (use-package org-roam-bibtex
   :bind
