@@ -1283,11 +1283,6 @@ buffer name already resembles a file name"
                                  lps/orderless-without-if-bang))
 
   :config
-  (defun lps/completing-read-char-fold (fun &rest args)
-    (let ((orderless-matching-styles
-           (cons 'char-fold-to-regexp orderless-matching-styles)))
-      (apply fun args)))
-
   ;; From the Orderless package documentation
   (defun lps/orderless-flex-if-twiddle (pattern _index _total)
     "Use `orderless-flex' if the input starts with a ~"
@@ -1387,11 +1382,9 @@ buffer name already resembles a file name"
 
   :config
   ;; Don't use orderless for company
-  (defun lps/company-set-completion-styles (fun &rest args)
-    (let ((completion-styles '(basic partial-completion emacs22)))
-      (apply fun args)))
-
-  (advice-add 'company--perform :around #'lps/company-set-completion-styles)
+  (advice-ensure-bindings company--perform ((completion-styles '(basic
+                                                                 partial-completion
+                                                                 emacs22))))
 
   ;; Use our personal default backends
   (defun lps/company-default-backends-prog ()
@@ -1420,7 +1413,7 @@ buffer name already resembles a file name"
                         (8 . ?_)
                         (9 . ?ç)))
       (define-key map (kbd (format "M-%c" (cdr key-char)))
-        `(lambda () (interactive) (company-complete-number ,(car key-char)))))))
+                  `(lambda () (interactive) (company-complete-number ,(car key-char)))))))
 
 (use-package company-box
   :after company
@@ -2252,11 +2245,7 @@ Does not insert a space before the inserted opening parenthesis"
 
   ;; Fix documentation: don't want to start a server to view some
   ;; C code in helpful buffers !
-  (defun lps/--no-lsp-here (fun &rest args)
-    (let ((lps/--default-lsp-mode -1))
-      (apply fun args)))
-
-  (advice-add 'helpful-update :around 'lps/--no-lsp-here))
+  (advice-ensure-bindings helpful-update ((lps/--default-lsp-mode -1))))
 
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
@@ -4034,6 +4023,9 @@ return `nil'."
      ("theorem"     ?h "thm:"   "~\\ref{%s}" 1 (regexp "[Tt]heorem\\(s\\)?"))
      ("remark"      ?r "rem:"   "~\\ref{%s}" t (regexp "[Rr]emark\\(s\\)?"))
      ("corollary"   ?c "cor:"   "~\\ref{%s}" 1 (regexp "[Cc]orollar\\(y\\|ies\\)"))
+     ("conjecture"  ?c "conj:"  "~\\ref{%s}" 1 (regexp "[Cc]onjecture\\(s\\)?"))
+     ("claim"       ?c "claim:" "~\\ref{%s}" 1 (regexp "[Cc]laim\\(s\\)?"))
+     ("observation" ?o "obs:"   "~\\ref{%s}" 1 (regexp "[Oo]bservation\\(s\\)?"))
      ("proof"       ?p "proof:" "~\\ref{%s}" 1 (regexp "[Pp]roof\\(s\\)?"))))
   (reftex-insert-label-flags '(t t))
   (reftex-derive-label-parameters `(4 25 t 1 "-"
@@ -4281,7 +4273,9 @@ governed by the variable `bibtex-completion-display-formats'."
   (doi-utils-async-download ) ; buggy
   (doi-utils-open-pdf-after-download t)
   :config
-  (advice-add 'org-ref-read-key :around 'lps/completing-read-char-fold)
+  (advice-ensure-bindings org-ref-read-key ((orderless-matching-styles
+                                             (cons 'char-fold-to-regexp
+                                                   orderless-matching-styles))))
 
   ;; Define custom functions to download from math websites
   (defun aom-pdf-url (*doi-utils-redirect*)
