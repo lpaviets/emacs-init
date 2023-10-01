@@ -147,17 +147,17 @@ fboundp."
     `(when (or (and ,version (version<= emacs-version ,version))
                (not (fboundp ',name)))
        (defun ,name ,args
-         ,@body)))
+         ,@body))))
 
-  ;; Macro used to advice a function so that it is always called with
-  ;; some lexical bindings
-  (defmacro advice-ensure-bindings (fun bindings)
-    (let ((wrap-fun (gensym "fun"))
-          (wrap-args (gensym "args")))
-      `(advice-add ',fun
-                   :around (lambda (,wrap-fun &rest ,wrap-args)
-                             (let ,bindings
-                               (apply ,wrap-fun ,wrap-args)))))))
+;; Macro used to advice a function so that it is always called with
+;; some lexical bindings
+(defmacro advice-ensure-bindings (fun bindings)
+  (let ((wrap-fun (gensym "fun"))
+        (wrap-args (gensym "args")))
+    `(advice-add ',fun
+                 :around (lambda (,wrap-fun &rest ,wrap-args)
+                           (let ,bindings
+                             (apply ,wrap-fun ,wrap-args))))))
 
 (use-package emacs
   :ensure nil
