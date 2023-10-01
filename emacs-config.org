@@ -1606,7 +1606,20 @@ If we need to define repeat maps, we will do it in the corresponding package rat
       (:map lps/quick-edit-map
             ("z" . repeat))
       :init
-      (repeat-mode 1)))
+      (repeat-mode 1)
+
+      ;; Add visual indicator when repeat-mode is "activated"
+      (defvar lps/default-cursor-background (face-background 'cursor))
+
+      (defun lps/repeat-in-progress-change-cursor ()
+        (set-cursor-color
+         (if repeat-in-progress
+             (face-foreground 'error)
+           lps/default-cursor-background)))
+
+      (add-hook 'post-command-hook
+                'lps/repeat-in-progress-change-cursor
+                90)))
 #+end_src
 
 *** Remapping and better defaults

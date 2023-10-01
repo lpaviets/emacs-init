@@ -1190,7 +1190,20 @@ buffer name already resembles a file name"
     (:map lps/quick-edit-map
           ("z" . repeat))
     :init
-    (repeat-mode 1)))
+    (repeat-mode 1)
+
+    ;; Add visual indicator when repeat-mode is "activated"
+    (defvar lps/default-cursor-background (face-background 'cursor))
+
+    (defun lps/repeat-in-progress-change-cursor ()
+      (set-cursor-color
+       (if repeat-in-progress
+           (face-foreground 'error)
+         lps/default-cursor-background)))
+
+    (add-hook 'post-command-hook
+              'lps/repeat-in-progress-change-cursor
+              90)))
 
 (use-package emacs
   :ensure nil
