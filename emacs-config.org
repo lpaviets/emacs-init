@@ -1425,6 +1425,18 @@ We can also improve some of the other help commands:
                         :inherit font-lock-variable-name-face
                         :underline t))
 #+end_src
+*** Info-mode
+
+Another useful built-in tool to read documentation is ~info-mode~. This is convenient major-mode used to read =.info= files, a GNU file format mainly used to write technical documentation; several GNU (and non-GNU) utilities and softwares have an Info manual, readable using this mode.
+
+#+begin_src emacs-lisp
+  ;;; Add some colours to Info nodes
+  (use-package info-colors
+    :hook (Info-selection . info-colors-fontify-node)
+    :config
+    ;; Just to see better lisp code block
+    (set-face-attribute 'info-colors-lisp-code-block nil :weight 'bold))
+#+end_src
 
 *** Which-key
 
@@ -5599,15 +5611,17 @@ AucTeX already includes a lot of shortcuts and ways to be more efficient when ty
     (cdlatex-takeover-parenthesis nil)
     (cdlatex-math-symbol-prefix ?°)
     (cdlatex-math-symbol-alist
-     '((?< ("\\leq"))
-       (?> ("\\geq"))
+     '((?< ("\\leq" "\\iff"))
+       (?> ("\\geq" "\\implies"))
        (?\[ ("\\subseteq" "\\sqsubseteq" "\\sqsubset"))
        (?\] ("\\supseteq" "\\sqsupseteq" "\\sqsupset"))
        (?: ("\\colon"))
        (?  ("\\," "\\:" "\\;"))
        (?- ("\\cap" "\\bigcap"))
        (?+ ("\\cup" "\\bigcup" "\\sqcup" "\\bigsqcup"))
-       (?* ("\\times" "^{\\ast}"))
+       (?v ("\\vee" "\\bigvee"))
+       (?& ("\\wedge" "\\bigwedge"))
+       (?* ("\\times" "\\ast"))
        (?L ("\\Lambda" "\\limits"))
        (?c ("\\mathcal{?}" "\\mathbb{?}" "\\mathfrak{?}"))
        (?\( ("\\langle ?\\rangle" "\\left"))
@@ -5899,6 +5913,14 @@ Now, we try to add things on top of the built-in file manager, Dired.
     (wdired-allow-to-change-permissions t)
     (dired-dwim-target t))
 
+  (use-package dired-x
+    :ensure nil
+    :after dired)
+#+end_src
+
+There are other useful packages, that either improve the visual appearance of Dired, or give more functionalities.
+
+#+begin_src emacs-lisp
   ;; Make things prettier
   (use-package all-the-icons-dired
     :diminish
@@ -5906,9 +5928,17 @@ Now, we try to add things on top of the built-in file manager, Dired.
     :custom
     (all-the-icons-dired-monochrome nil))
 
-  (use-package dired-x
-    :ensure nil
-    :after dired)
+  (use-package dired-git-info
+    :after dired
+    :hook (dired-after-readin . dired-git-info-auto-enable)
+    :bind
+    (:map dired-mode-map
+          (")" . dired-git-info-mode))
+    :custom
+    (dgi-auto-hide-details-p nil)
+    (set-face-attribute 'dgi-commit-message-face nil
+                        :inherit 'font-lock-constant-face
+                        :slant 'italic))
 #+end_src
 
 Dired can also be used to search for files, using their names or their content.

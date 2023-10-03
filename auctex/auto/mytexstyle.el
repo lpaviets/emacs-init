@@ -3,12 +3,12 @@
  (lambda ()
    (TeX-add-to-alist 'LaTeX-provided-package-options
                      '(("fontenc" "T1") ("inputenc" "utf8")))
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "href")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "hyperimage")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "hyperbaseurl")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "nolinkurl")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "url")
    (add-to-list 'LaTeX-verbatim-macros-with-braces-local "path")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "url")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "nolinkurl")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "hyperbaseurl")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "hyperimage")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "href")
    (add-to-list 'LaTeX-verbatim-macros-with-delims-local "path")
    (TeX-run-style-hooks
     "fontenc"
@@ -33,6 +33,7 @@
     '("tileUR" ["argument"] 0)
     '("tileUL" ["argument"] 0)
     '("tileUP" ["argument"] 0)
+    '("shiftlang" ["argument"] 1)
     '("zeropoint" ["argument"] 0)
     '("tfg" 1)
     '("homom" 2)
@@ -44,7 +45,6 @@
     '("word" 1)
     '("sqcover" 1)
     '("cover" 1)
-    '("shiftlang" 1)
     '("decproblem" 1)
     '("compclass" 1)
     '("lift" 1)
@@ -58,6 +58,8 @@
     "subpattern"
     "argmax"
     "argmin")
+   (LaTeX-add-environments
+    '("subproof" LaTeX-env-args ["argument"] 0))
    (LaTeX-add-amsthm-newtheorems
     "conjecture"
     "proposition"

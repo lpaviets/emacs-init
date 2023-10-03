@@ -1083,6 +1083,13 @@ buffer name already resembles a file name"
                       :inherit font-lock-variable-name-face
                       :underline t))
 
+;;; Add some colours to Info nodes
+(use-package info-colors
+  :hook (Info-selection . info-colors-fontify-node)
+  :config
+  ;; Just to see better lisp code block
+  (set-face-attribute 'info-colors-lisp-code-block nil :weight 'bold))
+
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
   :init
@@ -4610,15 +4617,17 @@ present in the list of authors or in the title of the article"
   (cdlatex-takeover-parenthesis nil)
   (cdlatex-math-symbol-prefix ?°)
   (cdlatex-math-symbol-alist
-   '((?< ("\\leq"))
-     (?> ("\\geq"))
+   '((?< ("\\leq" "\\iff"))
+     (?> ("\\geq" "\\implies"))
      (?\[ ("\\subseteq" "\\sqsubseteq" "\\sqsubset"))
      (?\] ("\\supseteq" "\\sqsupseteq" "\\sqsupset"))
      (?: ("\\colon"))
      (?  ("\\," "\\:" "\\;"))
      (?- ("\\cap" "\\bigcap"))
      (?+ ("\\cup" "\\bigcup" "\\sqcup" "\\bigsqcup"))
-     (?* ("\\times" "^{\\ast}"))
+     (?v ("\\vee" "\\bigvee"))
+     (?& ("\\wedge" "\\bigwedge"))
+     (?* ("\\times" "\\ast"))
      (?L ("\\Lambda" "\\limits"))
      (?c ("\\mathcal{?}" "\\mathbb{?}" "\\mathfrak{?}"))
      (?\( ("\\langle ?\\rangle" "\\left"))
@@ -4864,6 +4873,10 @@ PWD is not in a git repo (or the git command is not found)."
   (wdired-allow-to-change-permissions t)
   (dired-dwim-target t))
 
+(use-package dired-x
+  :ensure nil
+  :after dired)
+
 ;; Make things prettier
 (use-package all-the-icons-dired
   :diminish
@@ -4871,9 +4884,17 @@ PWD is not in a git repo (or the git command is not found)."
   :custom
   (all-the-icons-dired-monochrome nil))
 
-(use-package dired-x
-  :ensure nil
-  :after dired)
+(use-package dired-git-info
+  :after dired
+  :hook (dired-after-readin . dired-git-info-auto-enable)
+  :bind
+  (:map dired-mode-map
+        (")" . dired-git-info-mode))
+  :custom
+  (dgi-auto-hide-details-p nil)
+  (set-face-attribute 'dgi-commit-message-face nil
+                      :inherit 'font-lock-constant-face
+                      :slant 'italic))
 
 (use-package find-dired
   :ensure nil
