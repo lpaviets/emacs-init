@@ -1425,6 +1425,7 @@ We can also improve some of the other help commands:
                         :inherit font-lock-variable-name-face
                         :underline t))
 #+end_src
+
 *** Info-mode
 
 Another useful built-in tool to read documentation is ~info-mode~. This is convenient major-mode used to read =.info= files, a GNU file format mainly used to write technical documentation; several GNU (and non-GNU) utilities and softwares have an Info manual, readable using this mode.
@@ -1436,6 +1437,14 @@ Another useful built-in tool to read documentation is ~info-mode~. This is conve
     :config
     ;; Just to see better lisp code block
     (set-face-attribute 'info-colors-lisp-code-block nil :weight 'bold))
+#+end_src
+
+We also use a minor mode which renames info buffers into clearer names, rather than having =*info*= for every info page !
+
+#+begin_src emacs-lisp
+  (use-package info-rename-buffer
+    :init
+    (info-rename-buffer-mode 1))
 #+end_src
 
 *** Which-key
@@ -3816,8 +3825,6 @@ We change the general feel of Org Mode documents by using other indentation rule
     (org-priority-highest ?A)
     (org-priority-lowest ?E)
     (org-priority-default ?C)
-    (org-archive-location (concat (lps/org-expand-file-name "archive" t)
-                                  "%s_archive::"))
     (org-archive-subtree-save-file-p t)
     (org-ellipsis " ▾")
     :config
@@ -3939,6 +3946,9 @@ Not only is Org Mode great to write structured documents that can be exported to
            (lps/org-expand-file-name "RoamNotes/articles-notes" t)))
     (org-log-into-drawer t)
     (org-log-done 'time)
+    (org-archive-location (concat (lps/org-expand-file-name "archive" t)
+                                  "%s_archive::")) ; not technically
+                                                   ; part of org-agenda
     (org-agenda-start-with-log-mode t)
     (org-agenda-show-inherited-tags nil)
     ;; Window configuration

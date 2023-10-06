@@ -1090,6 +1090,10 @@ buffer name already resembles a file name"
   ;; Just to see better lisp code block
   (set-face-attribute 'info-colors-lisp-code-block nil :weight 'bold))
 
+(use-package info-rename-buffer
+  :init
+  (info-rename-buffer-mode 1))
+
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
   :init
@@ -2946,8 +2950,6 @@ call the associated function interactively. Otherwise, call the
   (org-priority-highest ?A)
   (org-priority-lowest ?E)
   (org-priority-default ?C)
-  (org-archive-location (concat (lps/org-expand-file-name "archive" t)
-                                "%s_archive::"))
   (org-archive-subtree-save-file-p t)
   (org-ellipsis " ▾")
   :config
@@ -3043,6 +3045,9 @@ call the associated function interactively. Otherwise, call the
          (lps/org-expand-file-name "RoamNotes/articles-notes" t)))
   (org-log-into-drawer t)
   (org-log-done 'time)
+  (org-archive-location (concat (lps/org-expand-file-name "archive" t)
+                                "%s_archive::")) ; not technically
+                                                 ; part of org-agenda
   (org-agenda-start-with-log-mode t)
   (org-agenda-show-inherited-tags nil)
   ;; Window configuration
