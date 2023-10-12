@@ -523,6 +523,9 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
 
     (dolist (hook lps/truncate-lines-modes-hook)
       (add-hook hook 'lps/activate-truncate-lines))
+
+    (defun lps/enable-auto-hscroll-scroll ()
+      (setq-local auto-hscroll-mode t))
     :custom
     (hscroll-margin 10)
     (hscroll-step 10)
@@ -2269,13 +2272,14 @@ Because we added other, more "Emacs-y" bindings to move by paragraphs, we are fr
 
 ** Undo
 
-Another very useful package is undo-tree, which allows you to visualize the previous "Undos" and navigate them.
+Another very useful package is =undo-tree=, which allows you to visualize the previous "Undos" and navigate them.
 
 It can act as a small, local version control system due to how Undos are managed by Emacs.
 
 #+begin_src emacs-lisp
   (use-package undo-tree
     :diminish
+    :disabled t
     :custom
     (undo-tree-visualizer-timestamps t)
     (undo-tree-enable-undo-in-region t)
@@ -2283,7 +2287,22 @@ It can act as a small, local version control system due to how Undos are managed
     (undo-tree-auto-save-history nil)
     :config
     (global-undo-tree-mode))
+#+end_src
 
+Another light-weight option, which tends to work better with some built-in Emacs features such as as "undo-in-region", is =vundo=. It has become much more usable in newer versions of Emacs, where the undo systems has gained some new commands, making it behave more like in most other tools.
+
+#+begin_src emacs-lisp
+  (use-package vundo
+    :defer t
+    :hook (vundo-mode . lps/enable-auto-hscroll-scroll)
+    :bind
+    ("C-_" . undo)
+    ("M-_" . undo-redo)
+    ("C-x u" . vundo)
+    :custom
+    (vundo-glyph-alist vundo-unicode-symbols)
+    (vundo-compact-display nil)
+    (vundo-window-max-height 5))
 #+end_src
 
 ** Regexp
@@ -2626,54 +2645,31 @@ Whenever we use version control, merge conflicts will unavoidably arise. Hence, 
     :defer t
     :hook
     (find-file . lps/smerge-maybe-start)
-    :bind
-    (:map lps/all-hydras-map
-          ("s" . hydra-smerge/body))
     :bind-keymap
     ("C-c m" . smerge-basic-map)
     :init
+    (defvar smerge-repeat-map
+      (let ((map (make-sparse-keymap)))
+        (dolist (key-cmd '(("n" smerge-next)
+                           ("p" smerge-prev)
+                           ("a" smerge-keep-all)
+                           ("l" smerge-keep-lower)
+                           ("u" smerge-keep-upper)
+                           ("b" smerge-keep-base)
+                           ("r" smerge-resolve)))
+          (let ((key (car key-cmd))
+                (cmd (cadr key-cmd)))
+            (define-key map (kbd key) cmd)
+            (put cmd 'repeat-map 'smerge-repeat-map)))
+        map))
+    :config
     (defun lps/smerge-maybe-start ()
       (when (and buffer-file-name (vc-backend buffer-file-name))
         (save-excursion
           (goto-char (point-min))
-          (when (re-search-forward "^<<<<<< " nil t)
+          (when (re-search-forward smerge-begin-re nil t)
             (message "Smerge-mode automatically enabled: there seem to be conflicts !")
-            (smerge-mode 1)))))
-
-    :config
-    (pretty-hydra-define hydra-smerge (:title "Smerge Hydra"
-                                              :post (smerge-auto-leave)
-                                              :color pink
-                                              :hint nil
-                                              :quit-key "q")
-      ("Move"
-       (("n" smerge-next "Next")
-        ("p" smerge-prev "Prev"))
-       "Keep"
-       (("b" smerge-keep-base "Base")
-        ("u" smerge-keep-upper "Upper")
-        ("m" smerge-keep-upper "Upper")
-        ("l" smerge-keep-lower "Lower")
-        ("o" smerge-keep-lower "Lower")
-        ("a" smerge-keep-all "All")
-        ("RET" smerge-keep-current "Current")
-        ("\C-m" smerge-keep-current "Current"))
-       "Diff"
-       (("<" smerge-diff-base-upper "Upper/Base")
-        ("=" smerge-diff-upper-lower "Upper/Lower")
-        (">" smerge-diff-base-lower "Lower/Base")
-        ("R" smerge-refine "Refine")
-        ("E" smerge-ediff "Ediff"))
-       "Other"
-       (("C" smerge-combine-with-next "Combine")
-        ("r" smerge-resolve "Resolve")
-        ("k" smerge-kill-current "Kill current")
-        ("ZZ" (lambda ()
-                (interactive)
-                (save-buffer)
-                (bury-buffer))
-         "Save and bury buffer" :color blue)
-        ("q" nil "Cancel" :color blue)))))
+            (smerge-mode 1))))))
 #+end_src
 
 ** Parenthesis
