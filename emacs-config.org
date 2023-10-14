@@ -114,7 +114,7 @@ It makes both installation and customization easier, and the code is also simple
     :custom
     ;; Comment this line if you don't want to automatically install
     ;; all the packages that you are missing
-    ;; (setq use-package-always-ensure t)
+    (setq use-package-always-ensure t)
     ;; Uncomment the folllowing line to have a detailed startup log
     (use-package-verbose t)
     ;; (use-package-compute-statistics t)
@@ -3931,6 +3931,7 @@ Not only is Org Mode great to write structured documents that can be exported to
 #+begin_src emacs-lisp
   (use-package org-agenda
     :after org
+    :ensure nil
     :hook (org-agenda-mode . lps/windmove-mode-local-off)
     :bind
     ("C-c a" . org-agenda)
@@ -4066,6 +4067,7 @@ Not only is Org Mode great to write structured documents that can be exported to
 #+begin_src emacs-lisp
   (use-package org-capture
     :after org
+    :ensure nil
     :bind
     ("C-c o" . org-capture)
     (:map org-capture-mode-map
@@ -4527,6 +4529,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
 
   (use-package latex
     :after tex
+    :ensure nil
     :bind
     (:map LaTeX-mode-map
           ([remap beginning-of-defun] . LaTeX-find-matching-begin)
@@ -4619,6 +4622,7 @@ AUCTeX comes with a built-in way to temporarily hide ("fold") environments, macr
 #+begin_src emacs-lisp
   (use-package tex-fold
     :defer t
+    :ensure nil
     :hook (LaTeX-mode . TeX-fold-mode)
     :bind
     (:map TeX-fold-keymap
@@ -5271,6 +5275,7 @@ Because =bibtex-completion= is mainly an interface, we use a wrapper around it t
 #+begin_src emacs-lisp
   (use-package doi-utils
     :after org-ref-bibtex
+    :ensure nil
     :init
     (defvar doi-utils-pdf-url-functions-from-doi '(doi-to-arxiv-pdf
                                                    doi-to-hal-pdf))
@@ -5384,6 +5389,7 @@ Because =bibtex-completion= is mainly an interface, we use a wrapper around it t
 
   (use-package org-ref-bibtex
     :defer t
+    :ensure nil
     :commands org-ref-bibtex-hydra/body
     :bind
     ("C-c b" . org-ref-bibtex-hydra/body)
@@ -6094,6 +6100,7 @@ Emacs already comes with a builtin mail client, =gnus=. We use another client in
 
 #+begin_src emacs-lisp
   (use-package message
+    :ensure nil
     :init
     ;; Useless as long as I have not configured GPG properly
     (defvar lps/safe-mail-send nil
@@ -6611,6 +6618,7 @@ To patch this, we use a few tricks with ~gnus-dired~
   ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
   (use-package gnus-dired
     :after mu4e
+    :ensure nil
     :hook (dired-mode . turn-on-gnus-dired-mode)
     :config
     ;; This overrides a function !
@@ -6629,6 +6637,7 @@ To patch this, we use a few tricks with ~gnus-dired~
 
   (use-package dired
     :after gnus-dired
+    :ensure nil
     :bind
     (:map dired-mode-map
           ("E" . gnus-dired-attach)))
