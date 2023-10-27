@@ -23,6 +23,7 @@
         delete-indentation
         delete-region
         dired-next-line
+        down-list
         downcase-dwim
         drag-stuff-down
         end-of-buffer
@@ -73,6 +74,7 @@
         paredit-newline
         paredit-open-round
         paredit-raise-sexp
+        paredit-reindent-defun
         paredit-semicolon
         paredit-splice-sexp
         paredit-splice-sexp-killing-backward

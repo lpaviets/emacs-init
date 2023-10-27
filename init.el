@@ -929,6 +929,11 @@ one if none exists."
     (add-to-list 'recentf-exclude excl)))
 
 (use-package emacs
+  :custom
+  (require-final-newline t)
+  (view-read-only t))
+
+(use-package emacs
   :ensure nil
   :custom
   (delete-by-moving-to-trash t)
@@ -1539,7 +1544,38 @@ buffer name already resembles a file name"
         ("<return>" . act))
   (:map lps/quick-edit-map
         ("%" . replace-string)
-        ("C-%" . replace-regexp)))
+        ("C-%" . replace-regexp))
+  :config
+  (defun query-replace-number (num to-expr &optional delimited start end
+                                   backward region-noncontiguous-p)
+    (declare (interactive-args
+              (start (use-region-beginning))
+              (end (use-region-end))
+              (region-noncontiguous-p (use-region-noncontiguous-p))))
+    (interactive
+     (let* ((query-replace-lazy-highlight nil)
+            (common
+             (query-replace-read-args
+              (concat "Query replace num"
+                      (if (eq current-prefix-arg '-) " backward" "")
+                      (if (use-region-p) " in region" ""))
+              t)))
+       (list (nth 0 common) ;; num variable
+             (query-replace-compile-replacement
+              (concat "\\,(let ((" (nth 0 common) " \\#&))"
+                      (nth 1 common)
+                      ")")
+              t)
+             (nth 2 common)
+             ;; These are done separately here
+             ;; so that command-history will record these expressions
+             ;; rather than the values they had this time.
+             (use-region-beginning) (use-region-end)
+             (nth 3 common)
+             (use-region-noncontiguous-p))))
+    (perform-replace "[+-]?\\([[:digit:]]*\\.\\)?[[:digit:]]+"
+                     to-expr t t delimited
+                     nil nil start end backward region-noncontiguous-p)))
 
 (use-package avy
   :defer t
@@ -2905,7 +2941,8 @@ call the associated function interactively. Otherwise, call the
         ("<C-S-down>" . nil)
         ("C-," . nil)
         ("C-a" . org-beginning-of-line)
-        ("C-e" . org-end-of-line))
+        ("C-e" . org-end-of-line)
+        ([remap org-insert-structure-template] . 'lps/org-insert-structure-template))
   (:map org-src-mode-map
         ("C-c C-c" . org-edit-src-exit))
   (:map org-cdlatex-mode-map
@@ -3011,6 +3048,11 @@ call the associated function interactively. Otherwise, call the
           (push key-template org-structure-template-alist)))))
 
   (add-hook 'org-babel-post-tangle-hook 'delete-trailing-whitespace)
+
+  (defun lps/org-insert-structure-template ()
+    (interactive)
+    (call-interactively 'org-insert-structure-template)
+    (call-interactively 'org-edit-special))
 
   (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
 
@@ -4033,6 +4075,11 @@ return `nil'."
         ("C-c M-n" . reftex-parse-all))
   :custom
   (reftex-plug-into-AUCTeX t)
+  (reftex-trust-label-prefix '("sec:" "def:" "ex:"
+                               "lem:" "prop:" "thm:"
+                               "rem:" "cor:" "conj:"
+                               "claim:" "obs:" "proof:"
+                               "fig:"))
   (reftex-toc-split-windows-horizontally nil)
   (reftex-toc-split-windows-fraction 0.5)
   (reftex-cite-format "~\\cite[]{%l}")
@@ -5372,8 +5419,32 @@ by hand if needed"
                           ((functionp face)
                            (funcall face val msg))
                           (t val))))
-           (val (and val (if width (mu4e~headers-truncate-field field val width) val))))
+           (val (and val
+                     width
+                     (mu4e~headers-truncate-field field val width))))
       val))
+
+  (defun lps/mu4e-headers-prettify-message (msg)
+    (let* ((msg-prop-fields (mapconcat
+                             (lambda (f-w)
+                               (lps/mu4e~headers-field-handler f-w msg))
+                             mu4e-headers-fields " "))
+           (context (mu4e-context-name (mu4e-context-determine msg)))
+           (face (cadr (assoc-string context lps/mu4e-headers-propertize-context)))
+           (new-msg (cond
+                     ((facep face)
+                      (propertize msg-prop-fields 'face face))
+                     ((functionp face)
+                      (funcall face msg-prop-fields))
+                     ((stringp face)
+                      (add-face-text-property 0 (1- (length msg-prop-fields))
+                                              `(:underline (:color ,face
+                                                                   :position -4))
+                                              nil
+                                              msg-prop-fields)
+                      msg-prop-fields)
+                     (t msg-prop-fields))))
+      new-msg))
 
   (defun lps/mu4e~headers-format-subject (sub msg)
     (with-temp-buffer
@@ -5408,9 +5479,22 @@ by hand if needed"
       (:to font-lock-variable-name-face))
     "Alist of (FIELD-NAME FACE-OR-FUNCTION).
 
-In case the second element is a function, it will be called with
-two elements: the field content, and the message itself.")
+If the second element is a function, it will be called with two
+elements: the field content, and the message itself.")
 
+  (defvar lps/mu4e-headers-propertize-context
+    '(("Orange" "red4")
+      ("Unicaen" "blue3")
+      ("ENS_Lyon" "green4"))
+    "Alist of (CONTEXT-NAME FACE-OR-FUNCTION)
+
+If the second element is a function, it will be called with the
+header corresponding to the current message.
+
+If it is a string, it will be assumed to be a colour; in that
+case, header will be underlined with that colour.
+
+Otherwise, it is a symbol naming a face.")
   ;; This overrides the previous definition of this function, inlines
   ;; everything called by the original function, and replace an internal
   ;; function call by our own function.
@@ -5433,10 +5517,7 @@ Do this at the end of the headers-buffer."
                                           (funcall mu4e-headers-hide-predicate msg))
                                (mu4e~headers-apply-flags
                                 msg
-                                (mapconcat
-                                 (lambda (f-w)
-                                   (lps/mu4e~headers-field-handler f-w msg))
-                                 mu4e-headers-fields " "))))
+                                (lps/mu4e-headers-prettify-message msg))))
                        (docid (plist-get msg :docid)))
                     (goto-char (point-max))
                     (insert
@@ -5455,14 +5536,12 @@ if provided, or at the end of the buffer otherwise."
          (with-current-buffer (mu4e-get-headers-buffer)
            (save-excursion
              (let ((inhibit-read-only t))
-               (when-let ((line (unless (and mu4e-headers-hide-predicate
-                                             (funcall mu4e-headers-hide-predicate msg))
-                                  (mu4e~headers-apply-flags
-                                   msg
-                                   (mapconcat
-                                    (lambda (f-w)
-                                      (lps/mu4e~headers-field-handler f-w msg))
-                                    mu4e-headers-fields " "))))
+               (when-let ((line
+                           (unless (and mu4e-headers-hide-predicate
+                                        (funcall mu4e-headers-hide-predicate msg))
+                             (mu4e~headers-apply-flags
+                              msg
+                              (lps/mu4e-headers-prettify-message msg))))
                           (docid (plist-get msg :docid)))
                  (when line
                    (goto-char (if point point (point-max)))
