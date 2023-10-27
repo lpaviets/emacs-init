@@ -929,6 +929,11 @@ one if none exists."
     (add-to-list 'recentf-exclude excl)))
 
 (use-package emacs
+  :custom
+  (require-final-newline t)
+  (view-read-only t))
+
+(use-package emacs
   :ensure nil
   :custom
   (delete-by-moving-to-trash t)

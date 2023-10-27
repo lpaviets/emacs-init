@@ -1223,6 +1223,11 @@ We often want to visit links. If the point is on a file path, for example, it is
                         "bookmarks$"
                         (expand-file-name "~/Mail/")))
       (add-to-list 'recentf-exclude excl)))
+
+  (use-package emacs
+    :custom
+    (require-final-newline t)
+    (view-read-only t))
 #+end_src
 
 *** Rename and delete file
