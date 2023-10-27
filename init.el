@@ -67,7 +67,7 @@
   :custom
   ;; Comment this line if you don't want to automatically install
   ;; all the packages that you are missing
-  ;; (setq use-package-always-ensure t)
+  (setq use-package-always-ensure t)
   ;; Uncomment the folllowing line to have a detailed startup log
   (use-package-verbose t)
   ;; (use-package-compute-statistics t)
@@ -3060,6 +3060,7 @@ call the associated function interactively. Otherwise, call the
 
 (use-package org-agenda
   :after org
+  :ensure nil
   :hook (org-agenda-mode . lps/windmove-mode-local-off)
   :bind
   ("C-c a" . org-agenda)
@@ -3191,6 +3192,7 @@ Refer to `org-agenda-prefix-format' for more information."
 
 (use-package org-capture
   :after org
+  :ensure nil
   :bind
   ("C-c o" . org-capture)
   (:map org-capture-mode-map
@@ -3840,6 +3842,7 @@ return `nil'."
 
 (use-package latex
   :after tex
+  :ensure nil
   :bind
   (:map LaTeX-mode-map
         ([remap beginning-of-defun] . LaTeX-find-matching-begin)
@@ -3926,6 +3929,7 @@ return `nil'."
 
 (use-package tex-fold
   :defer t
+  :ensure nil
   :hook (LaTeX-mode . TeX-fold-mode)
   :bind
   (:map TeX-fold-keymap
@@ -4323,6 +4327,7 @@ governed by the variable `bibtex-completion-display-formats'."
 
 (use-package doi-utils
   :after org-ref-bibtex
+  :ensure nil
   :init
   (defvar doi-utils-pdf-url-functions-from-doi '(doi-to-arxiv-pdf
                                                  doi-to-hal-pdf))
@@ -4436,6 +4441,7 @@ If none is found, loops through the functions in
 
 (use-package org-ref-bibtex
   :defer t
+  :ensure nil
   :commands org-ref-bibtex-hydra/body
   :bind
   ("C-c b" . org-ref-bibtex-hydra/body)
@@ -5039,6 +5045,7 @@ The return string is always 6 characters wide."
         ("i i" . transient-extras-lp-menu)))
 
 (use-package message
+  :ensure nil
   :init
   ;; Useless as long as I have not configured GPG properly
   (defvar lps/safe-mail-send nil
@@ -5287,37 +5294,16 @@ confirmation when sending a non-multipart MIME mail")
                  (process-live-p (get-buffer-process mu4e--update-buffer)))
       (mu4e-update-mail-and-index t)))
 
-  ;; Override this function to have a more friendly name
-  ;; for viewed message
-  (defun mu4e-view (msg)
-    "Display the message MSG in a new buffer, and keep in sync with HDRSBUF.
-'In sync' here means that moving to the next/previous message in
-the the message view affects HDRSBUF, as does marking etc.
+  ;; Better name for mu4e-view buffers
+  (ensure-version mu4e-mu "1.10"
+    (defun lps/mu4e-view-buffer-name-func (buf)
+      (with-current-buffer buf
+        (let ((name (mu4e-message-field (mu4e-message-at-point)
+                                        :subject)))
+          (when name
+            (concat "*mu4e-view* " (truncate-string-to-width name 10))))))
 
-As a side-effect, a message that is being viewed loses its 'unread'
-marking if it still had that."
-
-    (mu4e~headers-update-handler msg nil nil) ;; update headers, if necessary.
-
-    (when (get-buffer gnus-article-buffer) ; modify: BUFFERP to GET-BUFFER
-      (kill-buffer gnus-article-buffer))
-    ;; add this expression compared to the original function
-    (setq gnus-article-buffer (let* ((subj (mu4e-msg-field msg :subject))
-                                     (subj (unless (and subj (string-match "^[:blank:]*$" subj)) subj))
-                                     (str (or subj
-                                              "*Article*")))
-                                (generate-new-buffer-name
-                                 (truncate-string-to-width str mu4e~compose-buffer-max-name-length)
-                                 gnus-article-buffer)))
-    (with-current-buffer (get-buffer-create gnus-article-buffer)
-      (let ((inhibit-read-only t))
-        (remove-overlays (point-min)(point-max) 'mu4e-overlay t)
-        (erase-buffer)
-        (insert-file-contents-literally
-         (mu4e-message-field msg :path) nil nil nil t)))
-    (switch-to-buffer gnus-article-buffer)
-    (setq mu4e~view-message msg)
-    (mu4e~view-render-buffer msg))
+    (setq mu4e-view-buffer-name-func 'lps/mu4e-view-buffer-name-func))
 
   (defun lps/--mu4e-read-date (&optional prompt)
     (let ((time (decode-time (org-read-date nil t))))
@@ -5564,6 +5550,7 @@ if provided, or at the end of the buffer otherwise."
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired
   :after mu4e
+  :ensure nil
   :hook (dired-mode . turn-on-gnus-dired-mode)
   :config
   ;; This overrides a function !
@@ -5582,6 +5569,7 @@ if provided, or at the end of the buffer otherwise."
 
 (use-package dired
   :after gnus-dired
+  :ensure nil
   :bind
   (:map dired-mode-map
         ("E" . gnus-dired-attach)))
