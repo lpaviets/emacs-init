@@ -1539,7 +1539,38 @@ buffer name already resembles a file name"
         ("<return>" . act))
   (:map lps/quick-edit-map
         ("%" . replace-string)
-        ("C-%" . replace-regexp)))
+        ("C-%" . replace-regexp))
+  :config
+  (defun query-replace-number (num to-expr &optional delimited start end
+                                   backward region-noncontiguous-p)
+    (declare (interactive-args
+              (start (use-region-beginning))
+              (end (use-region-end))
+              (region-noncontiguous-p (use-region-noncontiguous-p))))
+    (interactive
+     (let* ((query-replace-lazy-highlight nil)
+            (common
+             (query-replace-read-args
+              (concat "Query replace num"
+                      (if (eq current-prefix-arg '-) " backward" "")
+                      (if (use-region-p) " in region" ""))
+              t)))
+       (list (nth 0 common) ;; num variable
+             (query-replace-compile-replacement
+              (concat "\\,(let ((" (nth 0 common) " \\#&))"
+                      (nth 1 common)
+                      ")")
+              t)
+             (nth 2 common)
+             ;; These are done separately here
+             ;; so that command-history will record these expressions
+             ;; rather than the values they had this time.
+             (use-region-beginning) (use-region-end)
+             (nth 3 common)
+             (use-region-noncontiguous-p))))
+    (perform-replace "[+-]?\\([[:digit:]]*\\.\\)?[[:digit:]]+"
+                     to-expr t t delimited
+                     nil nil start end backward region-noncontiguous-p)))
 
 (use-package avy
   :defer t
@@ -2905,7 +2936,8 @@ call the associated function interactively. Otherwise, call the
         ("<C-S-down>" . nil)
         ("C-," . nil)
         ("C-a" . org-beginning-of-line)
-        ("C-e" . org-end-of-line))
+        ("C-e" . org-end-of-line)
+        ([remap org-insert-structure-template] . 'lps/org-insert-structure-template))
   (:map org-src-mode-map
         ("C-c C-c" . org-edit-src-exit))
   (:map org-cdlatex-mode-map
@@ -3011,6 +3043,11 @@ call the associated function interactively. Otherwise, call the
           (push key-template org-structure-template-alist)))))
 
   (add-hook 'org-babel-post-tangle-hook 'delete-trailing-whitespace)
+
+  (defun lps/org-insert-structure-template ()
+    (interactive)
+    (call-interactively 'org-insert-structure-template)
+    (call-interactively 'org-edit-special))
 
   (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
 
