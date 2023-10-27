@@ -4066,6 +4066,11 @@ return `nil'."
         ("C-c M-n" . reftex-parse-all))
   :custom
   (reftex-plug-into-AUCTeX t)
+  (reftex-trust-label-prefix '("sec:" "def:" "ex:"
+                               "lem:" "prop:" "thm:"
+                               "rem:" "cor:" "conj:"
+                               "claim:" "obs:" "proof:"
+                               "fig:"))
   (reftex-toc-split-windows-horizontally nil)
   (reftex-toc-split-windows-fraction 0.5)
   (reftex-cite-format "~\\cite[]{%l}")
