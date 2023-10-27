@@ -6258,7 +6258,7 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
                            (:subject . 100)))
     ;; Improve completion
     (mu4e-completing-read-function 'completing-read)
-    (mu4e-headers-auto-update nil) ; somewhat confusing otherwise
+    (mu4e-headers-auto-update nil)        ; somewhat confusing otherwise
     :config
     ;; Redefine everything here
     (setq mu4e-headers-draft-mark     '("D" . "⚒")
@@ -6534,8 +6534,32 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
                             ((functionp face)
                              (funcall face val msg))
                             (t val))))
-             (val (and val (if width (mu4e~headers-truncate-field field val width) val))))
+             (val (and val
+                       width
+                       (mu4e~headers-truncate-field field val width))))
         val))
+
+    (defun lps/mu4e-headers-prettify-message (msg)
+      (let* ((msg-prop-fields (mapconcat
+                               (lambda (f-w)
+                                 (lps/mu4e~headers-field-handler f-w msg))
+                               mu4e-headers-fields " "))
+             (context (mu4e-context-name (mu4e-context-determine msg)))
+             (face (cadr (assoc-string context lps/mu4e-headers-propertize-context)))
+             (new-msg (cond
+                       ((facep face)
+                        (propertize msg-prop-fields 'face face))
+                       ((functionp face)
+                        (funcall face msg-prop-fields))
+                       ((stringp face)
+                        (add-face-text-property 0 (1- (length msg-prop-fields))
+                                                `(:underline (:color ,face
+                                                                     :position -4))
+                                                nil
+                                                msg-prop-fields)
+                        msg-prop-fields)
+                       (t msg-prop-fields))))
+        new-msg))
 
     (defun lps/mu4e~headers-format-subject (sub msg)
       (with-temp-buffer
@@ -6570,9 +6594,22 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
         (:to font-lock-variable-name-face))
       "Alist of (FIELD-NAME FACE-OR-FUNCTION).
 
-  In case the second element is a function, it will be called with
-  two elements: the field content, and the message itself.")
+  If the second element is a function, it will be called with two
+  elements: the field content, and the message itself.")
 
+    (defvar lps/mu4e-headers-propertize-context
+      '(("Orange" "red4")
+        ("Unicaen" "blue3")
+        ("ENS_Lyon" "green4"))
+      "Alist of (CONTEXT-NAME FACE-OR-FUNCTION)
+
+  If the second element is a function, it will be called with the
+  header corresponding to the current message.
+
+  If it is a string, it will be assumed to be a colour; in that
+  case, header will be underlined with that colour.
+
+  Otherwise, it is a symbol naming a face.")
     ;; This overrides the previous definition of this function, inlines
     ;; everything called by the original function, and replace an internal
     ;; function call by our own function.
@@ -6595,10 +6632,7 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
                                             (funcall mu4e-headers-hide-predicate msg))
                                  (mu4e~headers-apply-flags
                                   msg
-                                  (mapconcat
-                                   (lambda (f-w)
-                                     (lps/mu4e~headers-field-handler f-w msg))
-                                   mu4e-headers-fields " "))))
+                                  (lps/mu4e-headers-prettify-message msg))))
                          (docid (plist-get msg :docid)))
                       (goto-char (point-max))
                       (insert
@@ -6617,14 +6651,12 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
            (with-current-buffer (mu4e-get-headers-buffer)
              (save-excursion
                (let ((inhibit-read-only t))
-                 (when-let ((line (unless (and mu4e-headers-hide-predicate
-                                               (funcall mu4e-headers-hide-predicate msg))
-                                    (mu4e~headers-apply-flags
-                                     msg
-                                     (mapconcat
-                                      (lambda (f-w)
-                                        (lps/mu4e~headers-field-handler f-w msg))
-                                      mu4e-headers-fields " "))))
+                 (when-let ((line
+                             (unless (and mu4e-headers-hide-predicate
+                                          (funcall mu4e-headers-hide-predicate msg))
+                               (mu4e~headers-apply-flags
+                                msg
+                                (lps/mu4e-headers-prettify-message msg))))
                             (docid (plist-get msg :docid)))
                    (when line
                      (goto-char (if point point (point-max)))
