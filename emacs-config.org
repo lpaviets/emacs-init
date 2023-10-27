@@ -2555,6 +2555,10 @@ One package that extends the functionalities provided by the builtin ~project.el
                 :override 'lps/projection-ibuffer--current-project))
 
   (use-package projection-multi)
+  (use-package projection-multi-embark
+    :after (embark projection-multi)
+    :config
+    (projection-multi-embark-setup-command-map))
 #+end_src
 
 ** Git
@@ -5942,12 +5946,12 @@ There are other useful packages, that either improve the visual appearance of Di
 
   (use-package dired-git-info
     :after dired
-    :hook (dired-after-readin . dired-git-info-auto-enable)
     :bind
     (:map dired-mode-map
           (")" . dired-git-info-mode))
     :custom
     (dgi-auto-hide-details-p nil)
+    :config
     (set-face-attribute 'dgi-commit-message-face nil
                         :inherit 'font-lock-constant-face
                         :slant 'italic))

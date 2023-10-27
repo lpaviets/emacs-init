@@ -22,6 +22,7 @@
         cycle-spacing
         delete-indentation
         delete-region
+        dired-next-line
         downcase-dwim
         drag-stuff-down
         end-of-buffer
@@ -81,6 +82,7 @@
         transpose-sexps
         wdired--self-insert
         wdired-capitalize-word
+        wdired-set-bit
         zap-up-to-char
         ))
 
