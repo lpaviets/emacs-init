@@ -2005,6 +2005,10 @@ If it is non-nil, replace it by an underscore _"
               :override 'lps/projection-ibuffer--current-project))
 
 (use-package projection-multi)
+(use-package projection-multi-embark
+  :after (embark projection-multi)
+  :config
+  (projection-multi-embark-setup-command-map))
 
 (use-package magit
   :defer t
@@ -2468,6 +2472,7 @@ call the associated function interactively. Otherwise, call the
 
 (use-package rustic
   :ensure nil
+  :defer t
   :custom
   (rustic-popup-commands
    '((?b "build"      build)
@@ -4937,12 +4942,12 @@ PWD is not in a git repo (or the git command is not found)."
 
 (use-package dired-git-info
   :after dired
-  :hook (dired-after-readin . dired-git-info-auto-enable)
   :bind
   (:map dired-mode-map
         (")" . dired-git-info-mode))
   :custom
   (dgi-auto-hide-details-p nil)
+  :config
   (set-face-attribute 'dgi-commit-message-face nil
                       :inherit 'font-lock-constant-face
                       :slant 'italic))

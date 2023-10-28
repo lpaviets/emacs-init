@@ -3230,6 +3230,7 @@ Orange Crab Language.
 #+begin_src emacs-lisp
   (use-package rustic
     :ensure nil
+    :defer t
     :custom
     (rustic-popup-commands
      '((?b "build"      build)
