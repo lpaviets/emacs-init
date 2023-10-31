@@ -23,6 +23,17 @@
 (add-hook 'emacs-startup-hook #'lps/display-garbage-collection)
 (add-hook 'emacs-startup-hook #'lps/restore-gc-cons)
 
+(defvar *only-built-in-p* nil
+  "Variable indicating if we can load, or even download, packages
+that are not built-in.
+
+Should be non-nil to only allow built-in packages.")
+
+(when (member "--only-built-in" command-line-args)
+  (message "Using only built-in packages")
+  (setq command-line-args (delete "--only-built-in" command-line-args))
+  (setq *only-built-in-p* t))
+
 ;; Initialize package sources
 (require 'package)
 
@@ -34,7 +45,7 @@
 (package-initialize)
 
 (unless package-archive-contents
-  (package-refresh-contents t)) ; Async
+  (package-refresh-contents t))       ; Async
 
 (setq package-native-compile t)
 
@@ -49,7 +60,8 @@
 ;; personal-<private-shared>autoloads.el file
 ;; TODO: fix this with new autoloads as of version 29 !
 
-;; (let* ((extra-package-dir (expand-file-name "extra-packages" user-emacs-directory))
+;; (let* ((extra-package-dir (expand-file-name "extra-packages"
+;;                                             user-emacs-directory))
 ;;        (extra-package-dir-shared (expand-file-name "shared" extra-package-dir))
 ;;        (extra-package-dir-private (expand-file-name "private" extra-package-dir))
 ;;        (extra-autoloads (list (expand-file-name "personal-private-autoloads.el"
@@ -65,14 +77,36 @@
 (require 'use-package)
 (use-package use-package
   :custom
+  (use-package-keywords (add-to-list 'use-package-keywords :only-built-in))
+  (use-package-defaults (add-to-list 'use-package-defaults
+                                     '(:only-built-in ''absent t)
+                                     nil 'equal))
   ;; Comment this line if you don't want to automatically install
   ;; all the packages that you are missing
-  (setq use-package-always-ensure t)
+  (use-package-always-ensure t)
   ;; Uncomment the folllowing line to have a detailed startup log
   (use-package-verbose t)
   ;; (use-package-compute-statistics t)
   ;; (use-package-always-defer t)
-  )
+  :config
+  (defun use-package-normalize/:only-built-in (_name-symbol keyword args)
+    (use-package-only-one (symbol-name keyword) args
+      #'use-package-normalize-value))
+
+  ;; We could use the function `package-built-in-p'
+  ;;
+  ;; However, we might not want to load /all/ the built-in packages in
+  ;; a "debug"/fresh install session, and reciprocally, we might have
+  ;; some local features/packages configured with `use-package' that
+  ;; are not built-in, although their code is already
+  ;; present/tested/whatever.
+  (defun use-package-handler/:only-built-in (name _keyword arg rest state)
+    (let ((body (use-package-process-keywords name rest state)))
+      `((when (or (not *only-built-in-p*)
+                  (eq ,arg t)
+                  (and (eq ',name 'emacs)
+                       (eq ,arg 'absent)))
+          ,@body)))))
 
 (use-package benchmark-init
   :disabled t
@@ -374,6 +408,9 @@ fboundp."
   (kaolin-themes-hl-line-colored t)
   (kaolin-themes-org-scale-headings nil))
 
+(when *only-built-in-p*
+  (load-theme 'deeper-blue))
+
 (use-package emacs
   :after kaolin-themes
   :init
@@ -546,6 +583,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
 
 (use-package battery
   :ensure nil
+  :only-built-in t
   :config
   (when (and battery-status-function
               (let ((status (battery-format "%B" (funcall battery-status-function))))
@@ -555,6 +593,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
 
 (use-package time
   :ensure nil
+  :only-built-in t
   :custom
   (display-time-24hr-format t)
   (display-time-format "[%H:%M]")
@@ -575,6 +614,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
   :hook ((prog-mode LaTeX-mode) . highlight-numbers-mode))
 
 (use-package hl-line
+  :only-built-in t
   :hook ((tabulated-list-mode
           ibuffer-mode
           dired-mode
@@ -648,6 +688,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
 
 (use-package emacs
   :ensure nil
+  :only-built-in nil
   :after pretty-hydra
   :bind (:map lps/all-hydras-map
               ("a" . hydra-appearance/body))
@@ -719,6 +760,16 @@ It might be buggy with some backend, so use at your own risk"
     (declare (indent 1))
     `(let ((completion-in-region-function 'lps/completing-read-in-region))
        ,@body)))
+
+(use-package icomplete
+  :ensure nil
+  :when *only-built-in-p*
+  :only-built-in t
+  :custom
+  (icomplete-show-matches-on-no-input t)
+  (icomplete-compute-delay 0.05)
+  :config
+  (icomplete-vertical-mode 1))
 
 (use-package vertico
   :ensure t
@@ -814,6 +865,7 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
 
 (use-package ibuffer
   :defer t
+  :only-built-in t
   :bind ("C-x C-b" . ibuffer)
   :custom
   (ibuffer-saved-filter-groups
@@ -850,6 +902,7 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
   (add-hook 'ibuffer-mode-hook #'lps/ibuffer-switch-to-default-filter))
 
 (use-package winner
+  :only-built-in t
   :custom
   (winner-boring-buffers '("*Completions*"
                            "*Compile-Log*"
@@ -863,6 +916,7 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
 
 (use-package windmove
   ;; Make windmove work in Org mode:
+  :only-built-in t
   :hook
   (org-shiftup-final . windmove-up)
   (org-shiftleft-final . windmove-left)
@@ -898,6 +952,7 @@ buffer in current window."
 
 (use-package ffap
   :ensure nil
+  :only-built-in t
   :bind ("C-c C-f" . ffap-menu)
   :init
   (ffap-bindings)
@@ -935,6 +990,7 @@ one if none exists."
 
 (use-package emacs
   :ensure nil
+  :only-built-in t
   :custom
   (delete-by-moving-to-trash t)
   :init
@@ -975,6 +1031,8 @@ If called with a prefix argument, also kills the current buffer"
         ("D" . lps/delete-current-buffer-file)))
 
 (use-package emacs
+  :ensure nil
+  :only-built-in t
   :init
   (defvar lps/backup-directory (locate-user-emacs-file".backups/"))
   (unless (file-exists-p lps/backup-directory)
@@ -1076,6 +1134,7 @@ buffer name already resembles a file name"
         ("C-k" . describe-keymap)))
 
 (use-package man
+  :only-built-in t
   :bind
   (:map help-map
         ("M" . man))
@@ -1113,6 +1172,7 @@ buffer name already resembles a file name"
   (which-key-idle-secondary-delay 0.05))
 
 (use-package help-at-pt
+  :only-built-in t
   :ensure nil
   :custom
   (help-at-pt-display-when-idle t)
@@ -1140,6 +1200,7 @@ buffer name already resembles a file name"
 
 (use-package savehist
   :ensure nil
+  :only-built-in t
   :init
   (savehist-mode))
 
@@ -1205,6 +1266,7 @@ buffer name already resembles a file name"
 
 (ensure-emacs-version 28.0
   (use-package repeat
+    :only-built-in t
     :bind
     (:map lps/quick-edit-map
           ("z" . repeat))
@@ -1301,6 +1363,12 @@ buffer name already resembles a file name"
   :defer t
   :bind
   ("C-;" . iedit-mode))
+
+(use-package emacs
+  :ensure nil
+  :when *only-built-in-p*
+  :custom
+  (completion-styles '(basic partial-completion substring)))
 
 (use-package orderless
   :custom
@@ -1487,11 +1555,12 @@ buffer name already resembles a file name"
                 (buffer-name))))))))
 
 (use-package emacs
+  :only-built-in nil
   :bind (:map lps/all-hydras-map
               ("m" . hydra-move/body))
   :config
   (defhydra hydra-move ()
-    "Movement" ; m as in movement
+    "Movement"                        ; m as in movement
     ("n" next-line)
     ("p" previous-line)
     ("f" forward-char)
@@ -1516,6 +1585,7 @@ buffer name already resembles a file name"
 
 (use-package isearch
   :ensure nil
+  :only-built-in t
   :bind
   (:map isearch-mode-map
         ("M-." . isearch-forward-thing-at-point))
@@ -1538,6 +1608,7 @@ buffer name already resembles a file name"
 
 (use-package replace
   :ensure nil
+  :only-built-in t
   :bind
   (:map query-replace-map
         ("RET" . act)
@@ -1592,6 +1663,7 @@ buffer name already resembles a file name"
   (avy-translate-char-function '(lambda (c) (if (= c 32) ?q c))))
 
 (use-package emacs
+  :only-built-in nil
   :bind
   (:map lps/all-hydras-map
         ("r" . hydra-rectangle/body))
@@ -2093,6 +2165,7 @@ If it is non-nil, replace it by an underscore _"
 ;; Always highlight matching parenthesis
 (use-package paren
   :ensure nil
+  :only-built-in t
   :init
   (show-paren-mode t)
   :custom
@@ -2165,6 +2238,7 @@ This ensures that no space is inserted after e.g. #2A or #C"
   'lps/paredit-no-space-insert-after-sharp-dispatch))
 
 (use-package elec-pair
+  :only-built-in t
   :hook ((prog-mode
           org-mode
           inferior-python-mode)
@@ -2265,6 +2339,7 @@ Does not insert a space before the inserted opening parenthesis"
 
 (use-package emacs
   :ensure nil
+  :only-built-in nil
   :hook ((python-mode
           c-mode
           c++-mode
@@ -2331,6 +2406,7 @@ Does not insert a space before the inserted opening parenthesis"
 (use-package eglot
   ;;:hook ((python-mode c-mode c++-mode) . eglot-ensure)
   :ensure nil
+  :only-built-in t
   :init
   (defvar lps/eglot-prefix-map (make-sparse-keymap))
   :bind
@@ -2351,6 +2427,7 @@ Does not insert a space before the inserted opening parenthesis"
 
 ;; Flycheck
 (use-package flymake
+  :only-built-in t
   :bind-keymap
   ("C-c !" . flymake-mode-map)
   :bind
@@ -2935,6 +3012,7 @@ call the associated function interactively. Otherwise, call the
    ))
 
 (use-package org
+  :only-built-in t
   :defer t
   :hook (org-mode . lps/org-mode-setup)
   :bind
@@ -4914,6 +4992,7 @@ PWD is not in a git repo (or the git command is not found)."
 
 (use-package dired
   :ensure nil
+  :only-built-in t
   :defer t
   :bind
   (:map dired-mode-map
@@ -4931,6 +5010,7 @@ PWD is not in a git repo (or the git command is not found)."
 
 (use-package dired-x
   :ensure nil
+  :only-built-in t
   :after dired)
 
 ;; Make things prettier
@@ -5005,6 +5085,7 @@ PWD is not in a git repo (or the git command is not found)."
 
 (use-package proced
   :ensure nil
+  :only-built-in t
   :bind
   (:map lps/system-tools-map
         ("p p" . proced))

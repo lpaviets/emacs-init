@@ -66,8 +66,22 @@ Then, we need to configure how we will install packages. We use another package 
 
 It makes both installation and customization easier, and the code is also simpler to read.
 
-*MANUAL* You might want to configure =use-package= differently, as it is the tool used everywhere else in this configuration file to install and setup other packages. For example, the line
-=(setq use-package-always-ensure t)= is used to install all the packages mentioned in this file automatically if you do not already have them. Depending on your environment, you might want to consider another, more appropriate behaviour (/e.g./  if you lack space, time, if you use another OS, if you are already compiling some of those packages by yourself, and so on).
+The first thing we do is check for a CLI argument, telling us that we should only use builtin packages; this might be useful to start Emacs in a "nice" state for us, e.g. during a fresh install or when debugging, while not loading any packages.
+
+#+begin_src emacs-lisp
+  (defvar *only-built-in-p* nil
+    "Variable indicating if we can load, or even download, packages
+  that are not built-in.
+
+  Should be non-nil to only allow built-in packages.")
+
+  (when (member "--only-built-in" command-line-args)
+    (message "Using only built-in packages")
+    (setq command-line-args (delete "--only-built-in" command-line-args))
+    (setq *only-built-in-p* t))
+#+end_src
+
+We now setup the built-in package manager, adding some online repositories to its available sources, and some personal extra packages that are too big to fit within this configuration file:
 
 #+begin_src emacs-lisp
   ;; Initialize package sources
@@ -81,7 +95,7 @@ It makes both installation and customization easier, and the code is also simple
   (package-initialize)
 
   (unless package-archive-contents
-    (package-refresh-contents t)) ; Async
+    (package-refresh-contents t))       ; Async
 
   (setq package-native-compile t)
 
@@ -96,7 +110,8 @@ It makes both installation and customization easier, and the code is also simple
   ;; personal-<private-shared>autoloads.el file
   ;; TODO: fix this with new autoloads as of version 29 !
 
-  ;; (let* ((extra-package-dir (expand-file-name "extra-packages" user-emacs-directory))
+  ;; (let* ((extra-package-dir (expand-file-name "extra-packages"
+  ;;                                             user-emacs-directory))
   ;;        (extra-package-dir-shared (expand-file-name "shared" extra-package-dir))
   ;;        (extra-package-dir-private (expand-file-name "private" extra-package-dir))
   ;;        (extra-autoloads (list (expand-file-name "personal-private-autoloads.el"
@@ -108,18 +123,45 @@ It makes both installation and customization easier, and the code is also simple
   ;;   (dolist (file extra-autoloads)
   ;;     (when (file-exists-p file)
   ;;       (load file))))
+#+end_src
 
+*MANUAL* You might want to configure =use-package= differently, as it is the tool used everywhere else in this configuration file to install and setup other packages. For example, the line
+=(setq use-package-always-ensure t)= is used to install all the packages mentioned in this file automatically if you do not already have them. Depending on your environment, you might want to consider another, more appropriate behaviour (/e.g./  if you lack space, time, if you use another OS, if you are already compiling some of those packages by yourself, and so on).
+
+#+begin_src emacs-lisp
   (require 'use-package)
   (use-package use-package
     :custom
+    (use-package-keywords (add-to-list 'use-package-keywords :only-built-in))
+    (use-package-defaults (add-to-list 'use-package-defaults
+                                       '(:only-built-in ''absent t)
+                                       nil 'equal))
     ;; Comment this line if you don't want to automatically install
     ;; all the packages that you are missing
-    (setq use-package-always-ensure t)
+    (use-package-always-ensure t)
     ;; Uncomment the folllowing line to have a detailed startup log
     (use-package-verbose t)
     ;; (use-package-compute-statistics t)
     ;; (use-package-always-defer t)
-    )
+    :config
+    (defun use-package-normalize/:only-built-in (_name-symbol keyword args)
+      (use-package-only-one (symbol-name keyword) args
+        #'use-package-normalize-value))
+
+    ;; We could use the function `package-built-in-p'
+    ;;
+    ;; However, we might not want to load /all/ the built-in packages in
+    ;; a "debug"/fresh install session, and reciprocally, we might have
+    ;; some local features/packages configured with `use-package' that
+    ;; are not built-in, although their code is already
+    ;; present/tested/whatever.
+    (defun use-package-handler/:only-built-in (name _keyword arg rest state)
+      (let ((body (use-package-process-keywords name rest state)))
+        `((when (or (not *only-built-in-p*)
+                    (eq ,arg t)
+                    (and (eq ',name 'emacs)
+                         (eq ,arg 'absent)))
+            ,@body)))))
 #+end_src
 
 In order to benchmark the package loading, we use [[https://github.com/dholm/benchmark-init-el][benchmark-init.el]]
@@ -558,6 +600,9 @@ This is simply a way to change how Emacs looks. Some themes are more complete th
 As we tend to use ~beamer~ to make presentations (and therefore, the slides are in fact a PDF file), we wish to use Emacs as a nice viewer /for slideshows/. This includes hiding as much of the UI as possible, using full screen, and so on.
 
 #+begin_src emacs-lisp
+  (when *only-built-in-p*
+    (load-theme 'deeper-blue))
+
   (use-package emacs
     :after kaolin-themes
     :init
@@ -744,6 +789,7 @@ We also want to add some extra information on the modeline, of the kind that we 
 #+begin_src emacs-lisp
   (use-package battery
     :ensure nil
+    :only-built-in t
     :config
     (when (and battery-status-function
                 (let ((status (battery-format "%B" (funcall battery-status-function))))
@@ -753,6 +799,7 @@ We also want to add some extra information on the modeline, of the kind that we 
 
   (use-package time
     :ensure nil
+    :only-built-in t
     :custom
     (display-time-24hr-format t)
     (display-time-format "[%H:%M]")
@@ -783,6 +830,7 @@ Another built-in and useful package that often comes up is =hl-line=. When enabl
 
 #+begin_src emacs-lisp
   (use-package hl-line
+    :only-built-in t
     :hook ((tabulated-list-mode
             ibuffer-mode
             dired-mode
@@ -890,6 +938,7 @@ This is one moment where a pretty hydra could help us change general UI paramete
 #+begin_src emacs-lisp
   (use-package emacs
     :ensure nil
+    :only-built-in nil
     :after pretty-hydra
     :bind (:map lps/all-hydras-map
                 ("a" . hydra-appearance/body))
@@ -978,6 +1027,16 @@ However, it is /bloated/, and can feel slow at times. Moreover, if you only real
 For this reason, we might want to take a look at some lightweight alternatives, built on top of the default completion/narrowing tools that Emacs provide, instead of using ~ivy~ or ~helm~ which use their own massive framework.
 
 #+begin_src emacs-lisp
+  (use-package icomplete
+    :ensure nil
+    :when *only-built-in-p*
+    :only-built-in t
+    :custom
+    (icomplete-show-matches-on-no-input t)
+    (icomplete-compute-delay 0.05)
+    :config
+    (icomplete-vertical-mode 1))
+
   (use-package vertico
     :ensure t
     :custom
@@ -1088,6 +1147,7 @@ We also improve the appearance (and functionalities) of the buffer that we get w
 
   (use-package ibuffer
     :defer t
+    :only-built-in t
     :bind ("C-x C-b" . ibuffer)
     :custom
     (ibuffer-saved-filter-groups
@@ -1131,6 +1191,7 @@ Because window management can be a bit tedious with the basic Emacs functionalit
 
 #+begin_src emacs-lisp
   (use-package winner
+    :only-built-in t
     :custom
     (winner-boring-buffers '("*Completions*"
                              "*Compile-Log*"
@@ -1147,6 +1208,7 @@ Because window management can be a bit tedious with the basic Emacs functionalit
 #+begin_src emacs-lisp
   (use-package windmove
     ;; Make windmove work in Org mode:
+    :only-built-in t
     :hook
     (org-shiftup-final . windmove-up)
     (org-shiftleft-final . windmove-left)
@@ -1194,6 +1256,7 @@ We often want to visit links. If the point is on a file path, for example, it is
 #+begin_src emacs-lisp
   (use-package ffap
     :ensure nil
+    :only-built-in t
     :bind ("C-c C-f" . ffap-menu)
     :init
     (ffap-bindings)
@@ -1236,6 +1299,7 @@ Dired (or even your prefered shell) is the prefered way to deal with large amoun
 #+begin_src emacs-lisp
   (use-package emacs
     :ensure nil
+    :only-built-in t
     :custom
     (delete-by-moving-to-trash t)
     :init
@@ -1281,6 +1345,8 @@ By default, Emacs performs a lot of backups, allowing to recover both from unwan
 
 #+begin_src emacs-lisp
   (use-package emacs
+    :ensure nil
+    :only-built-in t
     :init
     (defvar lps/backup-directory (locate-user-emacs-file".backups/"))
     (unless (file-exists-p lps/backup-directory)
@@ -1418,6 +1484,7 @@ We can also improve some of the other help commands:
           ("C-k" . describe-keymap)))
 
   (use-package man
+    :only-built-in t
     :bind
     (:map help-map
           ("M" . man))
@@ -1481,6 +1548,7 @@ However, we tend not to use the mouse at all, and in particular having to use th
 
 #+begin_src emacs-lisp
   (use-package help-at-pt
+    :only-built-in t
     :ensure nil
     :custom
     (help-at-pt-display-when-idle t)
@@ -1539,6 +1607,7 @@ Another lighter and built-in solution is the simpler package ~savehist~. If you 
 #+begin_src emacs-lisp
   (use-package savehist
     :ensure nil
+    :only-built-in t
     :init
     (savehist-mode))
 #+end_src
@@ -1631,6 +1700,7 @@ If we need to define repeat maps, we will do it in the corresponding package rat
 #+begin_src emacs-lisp
   (ensure-emacs-version 28.0
     (use-package repeat
+      :only-built-in t
       :bind
       (:map lps/quick-edit-map
             ("z" . repeat))
@@ -1765,6 +1835,12 @@ We fundamentally use Emacs to write text. What would writing be without some kin
 Emacs has a lot of built-in completions styles, telling it how to interpret the input: as a regexp, as initials, as a substring ... We add some other ones, and some possibilities to customize them or even change them on the fly. In order to separate how those styles work for in-buffer completion compared to their behaviour in minibuffer, we add hooks to the completion to change the completion styles on the fly.
 
 #+begin_src emacs-lisp
+  (use-package emacs
+    :ensure nil
+    :when *only-built-in-p*
+    :custom
+    (completion-styles '(basic partial-completion substring)))
+
   (use-package orderless
     :custom
     (completion-styles '(basic partial-completion orderless))
@@ -1967,11 +2043,12 @@ Because movement keys are the most frequently used ones, it might be useful to c
 
 #+begin_src emacs-lisp
   (use-package emacs
+    :only-built-in nil
     :bind (:map lps/all-hydras-map
                 ("m" . hydra-move/body))
     :config
     (defhydra hydra-move ()
-      "Movement" ; m as in movement
+      "Movement"                        ; m as in movement
       ("n" next-line)
       ("p" previous-line)
       ("f" forward-char)
@@ -2009,6 +2086,7 @@ Hence, we add a few bindings to an already existing keymap, to make them easily 
 #+begin_src emacs-lisp
   (use-package isearch
     :ensure nil
+    :only-built-in t
     :bind
     (:map isearch-mode-map
           ("M-." . isearch-forward-thing-at-point))
@@ -2031,6 +2109,7 @@ Hence, we add a few bindings to an already existing keymap, to make them easily 
 
   (use-package replace
     :ensure nil
+    :only-built-in t
     :bind
     (:map query-replace-map
           ("RET" . act)
@@ -2100,6 +2179,7 @@ There is even a hidden gem in Emacs, which usually goes unknown for a (IMO) stup
 
 #+begin_src emacs-lisp
   (use-package emacs
+    :only-built-in nil
     :bind
     (:map lps/all-hydras-map
           ("r" . hydra-rectangle/body))
@@ -2720,6 +2800,7 @@ First of all, we want to easily be able to tell with a quick glance which parent
   ;; Always highlight matching parenthesis
   (use-package paren
     :ensure nil
+    :only-built-in t
     :init
     (show-paren-mode t)
     :custom
@@ -2796,6 +2877,7 @@ Now, in order to work with structured text, such as source code, we want to be a
     'lps/paredit-no-space-insert-after-sharp-dispatch))
 
   (use-package elec-pair
+    :only-built-in t
     :hook ((prog-mode
             org-mode
             inferior-python-mode)
@@ -2936,6 +3018,7 @@ Most of the time, when writing text, we are going to use words over and over aga
 #+begin_src emacs-lisp
   (use-package emacs
     :ensure nil
+    :only-built-in nil
     :hook ((python-mode
             c-mode
             c++-mode
@@ -3014,6 +3097,7 @@ There exists another implementation of the Language Server Protocol in Emacs, ca
   (use-package eglot
     ;;:hook ((python-mode c-mode c++-mode) . eglot-ensure)
     :ensure nil
+    :only-built-in t
     :init
     (defvar lps/eglot-prefix-map (make-sparse-keymap))
     :bind
@@ -3040,6 +3124,7 @@ Although there exists [[https://www.flycheck.org/en/latest/][Flycheck]], a moder
 #+begin_src emacs-lisp
   ;; Flycheck
   (use-package flymake
+    :only-built-in t
     :bind-keymap
     ("C-c !" . flymake-mode-map)
     :bind
@@ -3813,6 +3898,7 @@ We change the general feel of Org Mode documents by using other indentation rule
      ))
 
   (use-package org
+    :only-built-in t
     :defer t
     :hook (org-mode . lps/org-mode-setup)
     :bind
@@ -5962,6 +6048,7 @@ Now, we try to add things on top of the built-in file manager, Dired.
 #+begin_src emacs-lisp
   (use-package dired
     :ensure nil
+    :only-built-in t
     :defer t
     :bind
     (:map dired-mode-map
@@ -5979,6 +6066,7 @@ Now, we try to add things on top of the built-in file manager, Dired.
 
   (use-package dired-x
     :ensure nil
+    :only-built-in t
     :after dired)
 #+end_src
 
@@ -6085,6 +6173,7 @@ There are two usual ways to interact with processes via Emacs. The first one is 
 #+begin_src emacs-lisp
   (use-package proced
     :ensure nil
+    :only-built-in t
     :bind
     (:map lps/system-tools-map
           ("p p" . proced))
