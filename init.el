@@ -83,7 +83,7 @@ Should be non-nil to only allow built-in packages.")
                                      nil 'equal))
   ;; Comment this line if you don't want to automatically install
   ;; all the packages that you are missing
-  (use-package-always-ensure t)
+  (use-package-always-ensure nil)
   ;; Uncomment the folllowing line to have a detailed startup log
   (use-package-verbose t)
   ;; (use-package-compute-statistics t)
