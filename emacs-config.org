@@ -4682,6 +4682,8 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     :config
     (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
                  nil 'equal)
+    (add-to-list 'LaTeX-indent-environment-list '("scope") ; used in TikZ
+                 nil 'equal)
 
     ;; Auto-insert
     (with-eval-after-load 'autoinsert
@@ -4803,6 +4805,14 @@ Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
   ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
 
   ;; Folding
+  (defvar lps/TeX-beamer-fold-frame-overlay-regexp
+    (concat (regexp-quote TeX-esc)
+            "begin[ \t]*{"
+            "[A-Za-z*]+}.*?[ \t\n]*?"
+            (regexp-quote TeX-esc)
+            "frametitle[ \t]*{"
+            "\\([[:ascii:]]+?\\)}\n"))
+
   (defun lps/TeX-fold-frame (type)
     "Hide the frame at point.
 
@@ -4818,12 +4828,7 @@ Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
                  (item-name (or (save-excursion
                                   (goto-char item-start)
                                   (re-search-forward
-                                   (concat (regexp-quote TeX-esc)
-                                           "begin[ \t]*{"
-                                           "[A-Za-z*]+}[ \t\n%]*"
-                                           (regexp-quote TeX-esc)
-                                           "frametitle[ \t]*{"
-                                           "\\([[:ascii:]]+?\\)}\n")
+                                   lps/TeX-beamer-fold-frame-overlay-regexp
                                    item-end t 1)
                                   (match-string-no-properties 1))
                                 "frame"))
@@ -7732,12 +7737,14 @@ Finally, and because we might use this on old computers or with bad network, we 
 ** Elfeed
 - Find a neat way to have bookmarks/pre-configured filters.
 - Have a split window like mu4e when browsing feed (need to change ~elfeed-show-entry-switch~)
+- Fix dashboard for newer mu4e versions !
 ** Biblio
 - Fix auto titles/key in biblio: ~org-ref-title-case~ and ~org-ref-lower-case-words~, ~bibtex-autokey-titlewords~ and ~bibtex-autokey-titleword-ignore~, and my own variable ~lps/do-not-capitalize-list~
 - Add a way to "tag" bibtex entries. Likely a decent solution: add a TAGS field to entries, as a list of coma-separated tags.
   - Add function to add/remove tag
   - Add function to search only articles of a given tag (or tag combination ?)
   - Maybe change bibtex-format-entry functions to show tags (more or less succintly ?)
+- Fix autoloading of =bibtex-completion= when calling ~org-ref-read-key~.
 ** Generic
 Use functions that have been added to Emacs rather than mine, or use a macro to decide according to the version:
 - [ ] duplicate-dwim (29.1)
@@ -7757,6 +7764,10 @@ To explore:
 ** Printing
 Not particularly Emacs-related, but: find a way to specify a username/password to ~lp~ when printing using either the built-in functions or ~transient-extras-lp-*~
 
-** Beamer template
-- Add a template to fill new Beamer documents with my usual stuff (Warsaw, improved footers, etc).
+
+** PDF/LaTeX
+*** Beamer
+- [X] Add a template to fill new Beamer documents with my usual stuff (Warsaw, improved footers, etc). /Somewhat done: created a tex style, probably a more natural option than using Emacs to insert text/
 - Fix =beamer-mode= overriding the builtin beamer style when added via =TeX-add-style-hook=
+*** Documentation
+- Improve the documentation function: jump to a manual depending on current packages (not word at point ...), /then/ look in index for word at point (using personal function ~lps/pdf-maybe-goto-index~), possibly streamlining the experience using a modified version of ~pdf-read-links-*~ if possible so that the word at point is automatically pre-selected and I only need to press enter if it is "automatically" found in the Index.

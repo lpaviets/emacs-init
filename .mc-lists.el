@@ -41,6 +41,7 @@
         lps/eval-and-replace-last-sexp
         lps/exchange-point-and-mark
         lps/insert-parentheses
+        lps/kill-region-or-word-dwim
         lps/lisp-indent-adjust-parens
         lps/select-line
         lps/transpose-sexp-backward

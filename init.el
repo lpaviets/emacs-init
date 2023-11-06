@@ -3729,6 +3729,14 @@ return `nil'."
   ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
 
   ;; Folding
+  (defvar lps/TeX-beamer-fold-frame-overlay-regexp
+    (concat (regexp-quote TeX-esc)
+            "begin[ \t]*{"
+            "[A-Za-z*]+}.*?[ \t\n]*?"
+            (regexp-quote TeX-esc)
+            "frametitle[ \t]*{"
+            "\\([[:ascii:]]+?\\)}\n"))
+
   (defun lps/TeX-fold-frame (type)
     "Hide the frame at point.
 
@@ -3744,12 +3752,7 @@ return `nil'."
                  (item-name (or (save-excursion
                                   (goto-char item-start)
                                   (re-search-forward
-                                   (concat (regexp-quote TeX-esc)
-                                           "begin[ \t]*{"
-                                           "[A-Za-z*]+}[ \t\n%]*"
-                                           (regexp-quote TeX-esc)
-                                           "frametitle[ \t]*{"
-                                           "\\([[:ascii:]]+?\\)}\n")
+                                   lps/TeX-beamer-fold-frame-overlay-regexp
                                    item-end t 1)
                                   (match-string-no-properties 1))
                                 "frame"))
@@ -3953,6 +3956,8 @@ return `nil'."
   (font-latex-fontify-script 'multi-level)
   :config
   (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
+               nil 'equal)
+  (add-to-list 'LaTeX-indent-environment-list '("scope") ; used in TikZ
                nil 'equal)
 
   ;; Auto-insert
