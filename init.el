@@ -5528,12 +5528,8 @@ by hand if needed"
                      ((functionp face)
                       (funcall face msg-prop-fields))
                      ((stringp face)
-                      (add-face-text-property 0 (1- (length msg-prop-fields))
-                                              `(:underline (:color ,face
-                                                                   :position -4))
-                                              nil
-                                              msg-prop-fields)
-                      msg-prop-fields)
+                      (let ((boxes (propertize "█ " 'face `(:foreground ,face))))
+                        (concat boxes msg-prop-fields)))
                      (t msg-prop-fields))))
       new-msg))
 
@@ -5583,7 +5579,8 @@ If the second element is a function, it will be called with the
 header corresponding to the current message.
 
 If it is a string, it will be assumed to be a colour; in that
-case, header will be underlined with that colour.
+case, header will be prefixed with \"█ \", coloured in this
+colour.
 
 Otherwise, it is a symbol naming a face.")
   ;; This overrides the previous definition of this function, inlines
