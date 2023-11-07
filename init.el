@@ -3484,7 +3484,8 @@ move to the end of the document, and search backward instead."
   (:map TeX-mode-map
         ("C-c '" . TeX-error-overview)
         ("<f5>" . lps/auto-compile)
-        ("<backtab>" . indent-for-tab-command))
+        ("<backtab>" . indent-for-tab-command)
+        ([remap TeX-documentation-texdoc] . lps/TeX-documentation-texdoc))
   :custom
   ;; Parse documents to provide completion
   (TeX-parse-self t)
@@ -3534,7 +3535,7 @@ move to the end of the document, and search backward instead."
   (add-hook 'TeX-after-compilation-finished-functions #'TeX-revert-document-buffer)
 
   ;; Redefine TeX-documentation-texdoc to open the doc in Emacs
-  (defun TeX-documentation-texdoc (&optional arg)
+  (defun lps/TeX-documentation-texdoc (&optional arg)
     "Run texdoc to read documentation.
 
 Prompt for selection of the package of which to show the
@@ -3544,15 +3545,18 @@ If called with a prefix argument ARG, after selecting the
 package, prompt for selection of the manual of that package to
 show."
     (interactive "P")
-    (let ((pkg (thing-at-point 'symbol))
+    (let ((at-point (thing-at-point 'symbol))
           (pkgs TeX-active-styles)
+          (pkg nil)
           buffer list doc)
       ;; Strip off properties.  XXX: XEmacs doesn't have
       ;; `substring-no-properties'.
       (set-text-properties 0 (length pkg) nil pkg)
-      (setq pkg (completing-read "View documentation for: "
-                                 (cons pkg pkgs)
-                                 nil nil pkg nil nil t))
+      (setq pkg (completing-read (concat "View documentation in manual (default "
+                                         at-point
+                                         "): ")
+                                 pkgs
+                                 nil nil nil nil at-point t))
       (unless (zerop (length pkg))
         (progn
           ;; Create the buffer, insert the result of the command, and
