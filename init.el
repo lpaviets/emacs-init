@@ -3216,7 +3216,8 @@ call the associated function interactively. Otherwise, call the
                           ("Science"      . "👩🏾‍🔬")
                           ("Banque"       . "💰")
                           ("Informatique" . "🖱️")
-                          ("Santé"        . "⚕️")))
+                          ("Santé"        . "⚕️")
+                          ("Social"       . "🎉")))
     (cl-pushnew (list (car tag-and-icon)
                       (list (substring-no-properties (cdr tag-and-icon)))
                       nil nil

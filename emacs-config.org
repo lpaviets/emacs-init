@@ -4128,7 +4128,8 @@ Not only is Org Mode great to write structured documents that can be exported to
                             ("Science"      . "👩🏾‍🔬")
                             ("Banque"       . "💰")
                             ("Informatique" . "🖱️")
-                            ("Santé"        . "⚕️")))
+                            ("Santé"        . "⚕️")
+                            ("Social"       . "🎉")))
       (cl-pushnew (list (car tag-and-icon)
                         (list (substring-no-properties (cdr tag-and-icon)))
                         nil nil
