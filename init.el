@@ -3045,6 +3045,8 @@ call the associated function interactively. Otherwise, call the
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
   (org-use-speed-commands t)
+  (org-blank-before-new-entry '((heading . t)
+                                (plain-list-item . auto)))
   (org-special-ctrl-a/e t) ;; With visual-line-mode, need to bind C-a/C-e too
   (org-return-follows-link t)
   (org-imenu-depth 4)
@@ -3079,7 +3081,6 @@ call the associated function interactively. Otherwise, call the
 
     ;; Set faces for heading levels
     ;; For non-headers: org-default
-
     (dolist (face '((org-level-1 . 1.1)
                     (org-level-2 . 1.08)
                     (org-level-3 . 1.06)
@@ -3091,17 +3092,18 @@ call the associated function interactively. Otherwise, call the
       (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'fixed-pitch))
 
     ;; Ensure that anything that should be fixed-pitch in Org files appears that way
-    (set-face-attribute 'org-block nil :foreground 'unspecified :inherit 'fixed-pitch :extend t)
-    (set-face-attribute 'org-block-begin-line nil :slant 'italic :foreground "dark gray" :background "#1d1d2b" :inherit 'fixed-pitch :height 1.0)
-    (set-face-attribute 'org-code nil   :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-table nil   :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-verbatim nil :inherit '(shadow fixed-pitch))
-    (set-face-attribute 'org-special-keyword nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-meta-line nil :inherit '(font-lock-comment-face fixed-pitch))
-    (set-face-attribute 'org-checkbox nil :inherit 'fixed-pitch)
-    (set-face-attribute 'org-formula nil :inherit 'fixed-pitch)
-    (set-face-attribute 'org-link nil :inherit '(link fixed-pitch)))
-
+    (dolist (face '((org-block fixed-pitch :foreground unspecified :extend t)
+                    (org-block-begin-line italic :foreground "dark gray" :background "#1d1d2b" :inherit fixed-pitch :height 1.0)
+                    (org-code (shadow fixed-pitch))
+                    (org-table (shadow fixed-pitch))
+                    (org-verbatim (shadow fixed-pitch))
+                    (org-special-keyword (font-lock-comment-face fixed-pitch))
+                    (org-meta-line (font-lock-comment-face fixed-pitch))
+                    (org-checkbox fixed-pitch)
+                    (org-formula fixed-pitch)
+                    (org-link (link fixed-pitch))))
+      (cl-destructuring-bind (name inherit &rest args) face
+        (apply 'set-face-attribute name nil :inherit inherit args))))
 
   ;; Babel configuration
   (org-babel-do-load-languages
@@ -3954,7 +3956,6 @@ return `nil'."
   ;; (LaTeX-mode . lps/latex-company-setup)
   ;; (LaTeX-mode . LaTeX-math-mode)
   (LaTeX-mode . cdlatex-mode)
-  (LaTeX-mode . auto-insert)
   :custom
   ;; Automatically insert closing brackets
   (LaTeX-electric-left-right-brace t)
@@ -3963,48 +3964,14 @@ return `nil'."
   ;; Improve fontification
   (font-latex-fontify-script 'multi-level)
   :config
-  (add-to-list 'LaTeX-indent-environment-list '("tikzpicture")
-               nil 'equal)
-  (add-to-list 'LaTeX-indent-environment-list '("scope") ; used in TikZ
-               nil 'equal)
+  (dolist (env '(("tikzpicture") ("scope")))
+    (add-to-list 'LaTeX-indent-environment-list env
+                 nil 'equal))
 
-  ;; Auto-insert
-  (with-eval-after-load 'autoinsert
-    (add-to-list 'auto-insert-alist
-                 '(latex-mode
-                   nil
-                   (LaTeX-environment-menu "document")
-                   '(if (y-or-n-p "Insert default packages and commands ?")
-                        (save-excursion
-                          (forward-line -2)
-                          (insert "\n\\usepackage[T1]{fontenc}\n"
-                                  "\\usepackage[utf8]{inputenc}\n\n"
-                                  "\\usepackage{tikz}\n"
-                                  "\\usepackage{amsmath, amssymb, amsthm}\n"
-                                  "\\usepackage{stmaryrd}\n"
-                                  "\\usepackage{thm-restate}\n"
-                                  "\\usepackage{hyperref}\n"
-                                  ;; "\\usepackage{autoref}\n"
-                                  "\\usepackage{cleveref}\n"
-                                  "\\usepackage{url}\n\n"
-                                  "\\newtheorem{conjecture}{Conjecture}\n"
-                                  "\\newtheorem{proposition}{Proposition}\n"
-                                  "\\newtheorem{definition}{Definition}\n"
-                                  "\\newtheorem{corollary}{Corollary}\n"
-                                  "\\newtheorem{lemma}{Lemma}\n"
-                                  "\\newtheorem{theorem}{Theorem}\n"
-                                  "\\newtheorem*{example}{Example}\n"
-                                  "\\newtheorem*{notation}{Notation}\n"
-                                  "\\newtheorem*{remark}{Remark}\n\n"
-                                  "\\crefname{lemma}{Lemma}{Lemmas}\n"
-                                  "\\crefname{theorem}{Theorem}{Theorems}"
-                                  "\n\n")))
-                   '(indent-region (point-min) (point-max)))))
-
-;;;  Navigation
-  ;; Slow: could be made faster by searching $ or \] characters
-  ;; rather than calling `texmathp' at each step.
-  ;; However, this is the most robust, and fast enough.
+  ;;;  Navigation
+  ;; Slow: could be made faster by searching $ or \] characters rather
+  ;; than calling `texmathp' at each step. However, this is the most
+  ;; robust, and fast enough.
   (defun lps/LaTeX-prev-math ()
     (interactive)
     (while (not (texmathp))
