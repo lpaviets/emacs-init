@@ -3282,6 +3282,15 @@ Refer to `org-agenda-prefix-format' for more information."
 (use-package org-capture
   :after org
   :ensure nil
+  :init
+  (defun lps/org-capture-make-generic-timestamp-template (abbrev name file &optional extra)
+    `(,abbrev
+      ,name entry
+      (file+function ,(lps/org-expand-file-name file)
+                     lps/org-ask-location)
+      ,(concat "* %?\n%^t" (or extra "\n"))
+      :empty-lines 1))
+
   :bind
   ("C-c o" . org-capture)
   (:map org-capture-mode-map
@@ -3300,21 +3309,15 @@ Refer to `org-agenda-prefix-format' for more information."
       :empty-lines 1)
 
      ("a" "Agenda")
-     ("at" "Teaching" entry
-      (file+function ,(lps/org-expand-file-name "agenda/Teaching.org"))
-      "* %(call-interactively #'org-time-stamp) %?\n"
-      :empty-lines 1)
+     ,(lps/org-capture-make-generic-timestamp-template "at" "Teaching"
+                                                       "agenda/Teaching.org")
 
-     ("as" "Science Event" entry
-      (file+function ,(lps/org-expand-file-name "agenda/Science.org")
-                     lps/org-ask-location)
-      "** %?\n"
-      :empty-lines 1)
+     ,(lps/org-capture-make-generic-timestamp-template "as" "Science Event"
+                                                       "agenda/Science.org"
+                                                       "%i")
 
-     ("ao" "Others" entry
-      (file ,(lps/org-expand-file-name "agenda/Others.org"))
-      "* %(call-interactively #'org-time-stamp) %?\n"
-      :empty-lines 1)
+     ,(lps/org-capture-make-generic-timestamp-template "ao" "Others"
+                                                       "agenda/Others.org")
 
      ("r" "Random")
      ("rr" "Random" plain
