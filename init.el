@@ -1554,6 +1554,27 @@ buffer name already resembles a file name"
                     (derived-mode-p 'helpful-mode))
                 (buffer-name))))))))
 
+(use-package company-yasnippet
+  :ensure nil
+  :after company yasnippet
+  :bind
+  (:map yas-minor-mode-map
+        ("<C-tab>" . lps/company-yasnippet-show-or-complete))
+  :config
+  (defun lps/company-yasnippet-show-or-complete ()
+    (interactive)
+    (let ((company-backends '(company-yasnippet)))
+      (call-interactively 'company-complete))))
+
+(use-package company-dabbrev
+  :ensure nil
+  :after company
+  :custom
+  (company-dabbrev-other-buffers t)
+  (company-dabbrev-ignore-case 'keep-prefix)
+  (company-dabbrev-downcase nil)
+  (company-dabbrev-minimum-length 4))
+
 (use-package emacs
   :only-built-in nil
   :bind (:map lps/all-hydras-map
@@ -2316,26 +2337,6 @@ Does not insert a space before the inserted opening parenthesis"
 
 (use-package yasnippet-snippets
   :after yasnippet)
-
-(use-package company-yasnippet
-  :ensure nil
-  :after company yasnippet
-  :bind
-  (:map yas-minor-mode-map
-        ("<C-tab>" . lps/company-yasnippet-show-or-complete))
-  :config
-  (defun lps/company-yasnippet-show-or-complete ()
-    (interactive)
-    (let ((company-backends '(company-yasnippet)))
-      (call-interactively 'company-complete))))
-
-(use-package company-dabbrev
-  :ensure nil
-  :after company
-  :custom
-  (company-dabbrev-other-buffers t)
-  (company-dabbrev-ignore-case 'keep-prefix)
-  (company-dabbrev-downcase nil))
 
 (use-package emacs
   :ensure nil
@@ -3518,7 +3519,7 @@ pre-filled with WORD."
   ;; Don't insert magic quotes right away.
   (TeX-quote-after-quote t)
   ;; Don't insert braces by default
-  (TeX-insert-braces nil)
+  (TeX-insert-braces t)
   ;; But do insert closing $ when inserting the first one
   (TeX-electric-math '("$" . "$"))
   ;; Don't ask for confirmation when cleaning
