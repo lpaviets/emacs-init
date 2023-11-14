@@ -3474,7 +3474,19 @@ move to the end of the document, and search backward instead."
                 (pdf-outline-quit)))
             (isearch-forward))
         (pdf-view-goto-page (pdf-cache-number-of-pages))
-        (isearch-backward))))))
+        (isearch-backward)))
+
+    (defun lps/pdf-maybe-search-doc-dwim (word)
+      "Tries to guess where the documentation of WORD is in the current
+manual.
+
+It first jumps to the index, then searches for a match. If it is
+the only match, it highlights it and asks for confirmation before
+jumping to the relevant link.
+
+Otherwise, give control back to the user with a `isearch' session
+pre-filled with WORD."
+      ()))))
 
 (use-package saveplace-pdf-view
   :after pdf-view)

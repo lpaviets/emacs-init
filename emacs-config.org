@@ -4413,7 +4413,19 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
                   (pdf-outline-quit)))
               (isearch-forward))
           (pdf-view-goto-page (pdf-cache-number-of-pages))
-          (isearch-backward))))))
+          (isearch-backward)))
+
+      (defun lps/pdf-maybe-search-doc-dwim (word)
+        "Tries to guess where the documentation of WORD is in the current
+  manual.
+
+  It first jumps to the index, then searches for a match. If it is
+  the only match, it highlights it and asks for confirmation before
+  jumping to the relevant link.
+
+  Otherwise, give control back to the user with a `isearch' session
+  pre-filled with WORD."
+        ()))))
 #+end_src
 
 We also add the (generally useful) feature of remembering where we left a PDF when we last closed it. This is especially useful for longer documents, such as manuals, books, or especially long articles.
@@ -7082,8 +7094,10 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
         (lps/flyspell-on-for-buffer-type)))
 
     (defun lps/ispell-change-personal-dictionary (code &optional kill-ispell)
-      (setq ispell-personal-dictionary
-            (expand-file-name code lps/ispell-personal-dictionaries-dir))
+      (let ((perso-dict (expand-file-name code lps/ispell-personal-dictionaries-dir)))
+        (when (file-exists-p perso-dict)
+          (setq ispell-personal-dictionary perso-dict
+                ispell-current-personal-dictionary (print perso-dict))))
       (when (and ispell-process kill-ispell)
         (ispell-kill-ispell)))
 
@@ -7095,9 +7109,8 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
          (and (fboundp 'ispell-valid-dictionary-list)
               (mapcar #'list (ispell-valid-dictionary-list)))
          nil t)))
-      (when (member dict (directory-files lps/ispell-personal-dictionaries-dir))
-        (lps/ispell-change-personal-dictionary dict)
-        (ispell-change-dictionary dict))))
+      (ispell-change-dictionary dict)
+      (lps/ispell-change-personal-dictionary dict)))
 #+end_src
 
 * Other
