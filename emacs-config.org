@@ -1915,7 +1915,7 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
 
 *** Company
 
-     Several packages are available to make auto-completion more efficient and intuitive than the built-in =completion-at-point= function. We use [[https://company-mode.github.io/][Company]] (stands for "comp[lete] any[thing]") as it integrates nicely with other packages that we use, is well-maintained and has a more modern interface than most of its counterparts such as =auto-complete=.
+Several packages are available to make auto-completion more efficient and intuitive than the built-in =completion-at-point= function. We use [[https://company-mode.github.io/][Company]] (stands for "comp[lete] any[thing]") as it integrates nicely with other packages that we use, is well-maintained and has a more modern interface than most of its counterparts such as =auto-complete=.
 
 #+begin_src emacs-lisp
   ;; Company. Auto-completion package
@@ -2035,6 +2035,37 @@ To have a cleaner interface and also a bit of documentation added to the suggest
                       (derived-mode-p 'helpful-mode))
                   (buffer-name))))))))
 
+#+end_src
+
+*** Company backends
+
+A first backend that we want to consider is the one using snippets provided by ~yasnippet~
+
+#+begin_src emacs-lisp
+  (use-package company-yasnippet
+    :ensure nil
+    :after company yasnippet
+    :bind
+    (:map yas-minor-mode-map
+          ("<C-tab>" . lps/company-yasnippet-show-or-complete))
+    :config
+    (defun lps/company-yasnippet-show-or-complete ()
+      (interactive)
+      (let ((company-backends '(company-yasnippet)))
+        (call-interactively 'company-complete))))
+#+end_src
+
+Most of the time, when writing text, we are going to use words over and over again in the same buffer. ~company-dabbrev~ will return completion candidates based on this content.
+
+#+begin_src emacs-lisp
+  (use-package company-dabbrev
+    :ensure nil
+    :after company
+    :custom
+    (company-dabbrev-other-buffers t)
+    (company-dabbrev-ignore-case 'keep-prefix)
+    (company-dabbrev-downcase nil)
+    (company-dabbrev-minimum-length 4))
 #+end_src
 
 ** Navigation
@@ -2978,36 +3009,6 @@ It is even possible to define your own snippets. The following package contains 
 #+begin_src emacs-lisp
   (use-package yasnippet-snippets
     :after yasnippet)
-#+end_src
-
-*** Company backends
-
-A first backend that we want to consider is the one using snippets provided by ~yasnippet~
-
-#+begin_src emacs-lisp
-  (use-package company-yasnippet
-    :ensure nil
-    :after company yasnippet
-    :bind
-    (:map yas-minor-mode-map
-          ("<C-tab>" . lps/company-yasnippet-show-or-complete))
-    :config
-    (defun lps/company-yasnippet-show-or-complete ()
-      (interactive)
-      (let ((company-backends '(company-yasnippet)))
-        (call-interactively 'company-complete))))
-#+end_src
-
-Most of the time, when writing text, we are going to use words over and over again in the same buffer. ~company-dabbrev~ will return completion candidates based on this content.
-
-#+begin_src emacs-lisp
-  (use-package company-dabbrev
-    :ensure nil
-    :after company
-    :custom
-    (company-dabbrev-other-buffers t)
-    (company-dabbrev-ignore-case 'keep-prefix)
-    (company-dabbrev-downcase nil))
 #+end_src
 
 ** Language Server Protocol
@@ -4457,7 +4458,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     ;; Don't insert magic quotes right away.
     (TeX-quote-after-quote t)
     ;; Don't insert braces by default
-    (TeX-insert-braces nil)
+    (TeX-insert-braces t)
     ;; But do insert closing $ when inserting the first one
     (TeX-electric-math '("$" . "$"))
     ;; Don't ask for confirmation when cleaning
