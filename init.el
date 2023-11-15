@@ -5245,48 +5245,88 @@ confirmation when sending a non-multipart MIME mail")
   (mu4e-completing-read-function 'completing-read)
   (mu4e-headers-auto-update nil)        ; somewhat confusing otherwise
   :config
-  ;; Redefine everything here
-  (setq mu4e-headers-draft-mark     '("D" . "⚒")
-        mu4e-headers-flagged-mark   '("F" . "✚")
-        mu4e-headers-new-mark       '("N" . "✱")
-        mu4e-headers-passed-mark    '("P" . "❯")
-        mu4e-headers-replied-mark   '("R" . "❮")
-        mu4e-headers-seen-mark      '("S" . "✔")
-        mu4e-headers-trashed-mark   '("T" . "⏚")
-        mu4e-headers-attach-mark    '("a" . "≡")
-        mu4e-headers-encrypted-mark '("x" . "⸮")
-        mu4e-headers-signed-mark    '("s" . "☡")
-        mu4e-headers-unread-mark    '("u" . "⎕")
-        mu4e-headers-list-mark      '("s" . "⁞")
-        mu4e-headers-personal-mark  '("p" . "⍟")
-        mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
-
-  ;; Change this face to make it more visible, at least for kaolin-ocean theme
-  (set-face-attribute 'mu4e-replied-face nil :inherit 'font-lock-function-name-face)
-
   (defun lps/mu4e-unmark-backward ()
     (interactive)
     (mu4e-headers-prev)
     (let ((mu4e-headers-advance-after-mark nil))
       (mu4e-headers-mark-for-unmark)))
 
-  (defun lps/resize-headers-fields ()
-    (if (eq major-mode 'mu4e-headers-mode)
-        (let ((width (window-body-width)))
-          (setq-local mu4e-headers-fields `((:human-date . 20)
-                                            (:flags . 6)
-                                            (:mailing-list . 10)
-                                            (:from-or-to . 22)
-                                            (:subject . ,(- width (+ 20 6 10 22 15))))))))
+  (defun lps/mu4e-view-mime-part-action ()
+    "Wrapper around `mu4e-view-mime-part-action' with better prompt"
+    (interactive)
+    (let* ((parts (mu4e~view-gather-mime-parts))
+           attachments)
+      (cl-loop for part in parts
+               for num = (car part)
+               for fn = (or (cdr (assoc 'filename
+                                        (assoc "attachment" (cdr part))))
+                            (cl-loop for item in part
+                                     for name = (and (listp item)
+                                                     (assoc-default 'name item))
+                                     thereis (and (stringp name) name)))
+               when fn
+               do (push (cons fn num) attachments))
+      (mu4e-view-mime-part-action (cdr (assoc
+                                        (completing-read "MIME-part: "
+                                                         attachments nil t)
+                                        attachments)))))
 
-  ;; (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
+  ;;; Main view and global stuff
+  ;; Bookmarks
+  (add-to-list 'mu4e-bookmarks `(:name
+                                 "Important"
+                                 :query ,(concat "maildir:/Orange/Important"
+                                                 " OR "
+                                                 "maildir:/Unicaen/Important"
+                                                 " OR "
+                                                 "maildir:/ENS_Lyon/Important")
+                                 :key   ?i)
+               t)
 
+  ;; Taken from mu4e~stop in mu4e-utils.el
+  ;; Do not kill mu process
+  (defun lps/mu4e-kill-buffers ()
+    "Kill all mu4e buffers"
+    (interactive)
+    ;; kill all mu4e buffers
+    (mapc
+     (lambda (buf)
+       ;; When using the Gnus-based viewer, the view buffer has the
+       ;; kill-buffer-hook function mu4e~view-kill-buffer-hook-fn which kills the
+       ;; mm-* buffers created by Gnus' article mode.  Those have been returned by
+       ;; `buffer-list' but might already be deleted in case the view buffer has
+       ;; been killed first.  So we need a `buffer-live-p' check here.
+       (when (buffer-live-p buf)
+         (with-current-buffer buf
+           (when (member major-mode
+                         '(mu4e-headers-mode mu4e-view-mode mu4e-main-mode))
+             (kill-buffer)))))
+     (buffer-list))
+
+    ;; Update mail and index when leaving
+    (unless (and (buffer-live-p mu4e--update-buffer)
+                 (process-live-p (get-buffer-process mu4e--update-buffer)))
+      (mu4e-update-mail-and-index t)))
+
+  ;; Better name for mu4e-view buffers
+  (ensure-version mu4e-mu "1.10"
+    (defun lps/mu4e-view-buffer-name-func (buf)
+      (with-current-buffer buf
+        (let ((name (mu4e-message-field (mu4e-message-at-point)
+                                        :subject)))
+          (when name
+            (concat "*mu4e-view* " (truncate-string-to-width name 10))))))
+
+    (setq mu4e-view-buffer-name-func 'lps/mu4e-view-buffer-name-func))
+
+  ;;; Contexts
   ;; Before making a new context:
   ;; - Make sure that the [sent/trash/drafts] folders are correctly named, to avoid duplicates
   ;; - Don't forget to modify .mbsyncrc and .authinfo.gpg to correctly authenticate against
   ;; the IMAP and SMTP servers
   ;; - Make sure that your smpt-user ID, the port (smtp-service), etc, are the right ones; different
   ;; SMTP servers have different expectations, and there is no universal configuration
+
   (setq mu4e-contexts
         (list
          ;; School account
@@ -5342,53 +5382,7 @@ confirmation when sending a non-multipart MIME mail")
                   (smtpmail-smtp-service . 587)
                   (smtpmail-stream-type  . starttls)))))
 
-  ;; Bookmarks
-  (add-to-list 'mu4e-bookmarks `(:name
-                                 "Important"
-                                 :query ,(concat "maildir:/Orange/Important"
-                                                 " OR "
-                                                 "maildir:/Unicaen/Important"
-                                                 " OR "
-                                                 "maildir:/ENS_Lyon/Important")
-                                 :key   ?i)
-               t)
-
-  ;; Taken from mu4e~stop in mu4e-utils.el
-  ;; Do not kill mu process
-  (defun lps/mu4e-kill-buffers ()
-    "Kill all mu4e buffers"
-    (interactive)
-    ;; kill all mu4e buffers
-    (mapc
-     (lambda (buf)
-       ;; When using the Gnus-based viewer, the view buffer has the
-       ;; kill-buffer-hook function mu4e~view-kill-buffer-hook-fn which kills the
-       ;; mm-* buffers created by Gnus' article mode.  Those have been returned by
-       ;; `buffer-list' but might already be deleted in case the view buffer has
-       ;; been killed first.  So we need a `buffer-live-p' check here.
-       (when (buffer-live-p buf)
-         (with-current-buffer buf
-           (when (member major-mode
-                         '(mu4e-headers-mode mu4e-view-mode mu4e-main-mode))
-             (kill-buffer)))))
-     (buffer-list))
-
-    ;; Update mail and index when leaving
-    (unless (and (buffer-live-p mu4e--update-buffer)
-                 (process-live-p (get-buffer-process mu4e--update-buffer)))
-      (mu4e-update-mail-and-index t)))
-
-  ;; Better name for mu4e-view buffers
-  (ensure-version mu4e-mu "1.10"
-    (defun lps/mu4e-view-buffer-name-func (buf)
-      (with-current-buffer buf
-        (let ((name (mu4e-message-field (mu4e-message-at-point)
-                                        :subject)))
-          (when name
-            (concat "*mu4e-view* " (truncate-string-to-width name 10))))))
-
-    (setq mu4e-view-buffer-name-func 'lps/mu4e-view-buffer-name-func))
-
+  ;;; Queries
   (defun lps/--mu4e-read-date (&optional prompt)
     (let ((time (decode-time (org-read-date nil t))))
       (format "%04d%02d%02d"
@@ -5445,9 +5439,9 @@ confirmation when sending a non-multipart MIME mail")
 
   (defun lps/mu4e-build-query (&optional start-query)
     "Provides a simpler interface to build mu4e search queries.
-A caveat is that it does not insert logical separators (NOT, AND,
-OR ...) between expressions, so the expression has to be modified
-by hand if needed"
+    A caveat is that it does not insert logical separators (NOT, AND,
+    OR ...) between expressions, so the expression has to be modified
+    by hand if needed"
     (interactive "P")
     (let ((choices lps/--mu4e-build-query-alist)
           (query-list (if start-query
@@ -5464,27 +5458,39 @@ by hand if needed"
       (let ((query (mapconcat 'identity (reverse query-list) " ")))
         (mu4e-search query "Search for: " t))))
 
-  (defun lps/mu4e-view-mime-part-action ()
-    "Wrapper around `mu4e-view-mime-part-action' with better prompt"
-    (interactive)
-    (let* ((parts (mu4e~view-gather-mime-parts))
-           attachments)
-      (cl-loop for part in parts
-               for num = (car part)
-               for fn = (or (cdr (assoc 'filename
-                                        (assoc "attachment" (cdr part))))
-                            (cl-loop for item in part
-                                     for name = (and (listp item)
-                                                     (assoc-default 'name item))
-                                     thereis (and (stringp name) name)))
-               when fn
-               do (push (cons fn num) attachments))
-      (mu4e-view-mime-part-action (cdr (assoc
-                                        (completing-read "MIME-part: "
-                                                         attachments nil t)
-                                        attachments)))))
+  ;;; Appearance
+  ;; Redefine everything here
+  (setq mu4e-headers-draft-mark     '("D" . "⚒")
+        mu4e-headers-flagged-mark   '("F" . "✚")
+        mu4e-headers-new-mark       '("N" . "✱")
+        mu4e-headers-passed-mark    '("P" . "❯")
+        mu4e-headers-replied-mark   '("R" . "❮")
+        mu4e-headers-seen-mark      '("S" . "✔")
+        mu4e-headers-trashed-mark   '("T" . "⏚")
+        mu4e-headers-attach-mark    '("a" . "≡")
+        mu4e-headers-encrypted-mark '("x" . "⸮")
+        mu4e-headers-signed-mark    '("s" . "☡")
+        mu4e-headers-unread-mark    '("u" . "⎕")
+        mu4e-headers-list-mark      '("s" . "⁞")
+        mu4e-headers-personal-mark  '("p" . "⍟")
+        mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
 
-  ;; Slightly change interface
+  ;; Change this face to make it more visible, at least for kaolin-ocean theme
+  (set-face-attribute 'mu4e-replied-face nil :inherit 'font-lock-function-name-face)
+
+
+  (defun lps/resize-headers-fields ()
+    (if (eq major-mode 'mu4e-headers-mode)
+        (let ((width (window-body-width)))
+          (setq-local mu4e-headers-fields `((:human-date . 20)
+                                            (:flags . 6)
+                                            (:mailing-list . 10)
+                                            (:from-or-to . 22)
+                                            (:subject . ,(- width
+                                                            (+ 20 6 10 22 15))))))))
+
+  ;; (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
+
   ;; Inspired by mu4e-column-faces-mode
   (defun lps/mu4e~headers-field-handler (f-w msg)
     "Create a description of the field of MSG described by F-W."
@@ -5554,8 +5560,8 @@ by hand if needed"
       (:to font-lock-variable-name-face))
     "Alist of (FIELD-NAME FACE-OR-FUNCTION).
 
-If the second element is a function, it will be called with two
-elements: the field content, and the message itself.")
+    If the second element is a function, it will be called with two
+    elements: the field content, and the message itself.")
 
   (defvar lps/mu4e-headers-propertize-context
     '(("Orange" "red4")
@@ -5563,14 +5569,14 @@ elements: the field content, and the message itself.")
       ("ENS_Lyon" "green4"))
     "Alist of (CONTEXT-NAME FACE-OR-FUNCTION)
 
-If the second element is a function, it will be called with the
-header corresponding to the current message.
+    If the second element is a function, it will be called with the
+    header corresponding to the current message.
 
-If it is a string, it will be assumed to be a colour; in that
-case, header will be prefixed with \"█ \", coloured in this
-colour.
+    If it is a string, it will be assumed to be a colour; in that
+    case, header will be prefixed with \"█ \", coloured in this
+    colour.
 
-Otherwise, it is a symbol naming a face.")
+    Otherwise, it is a symbol naming a face.")
   ;; This overrides the previous definition of this function, inlines
   ;; everything called by the original function, and replace an internal
   ;; function call by our own function.
@@ -5581,7 +5587,7 @@ Otherwise, it is a symbol naming a face.")
     ("1.8"
      (defun mu4e~headers-append-handler (msglst)
        "Append one-line descriptions of messages in MSGLIST.
-Do this at the end of the headers-buffer."
+    Do this at the end of the headers-buffer."
        (when (buffer-live-p (mu4e-get-headers-buffer))
          (with-current-buffer (mu4e-get-headers-buffer)
            (save-excursion
@@ -5607,7 +5613,7 @@ Do this at the end of the headers-buffer."
     ("1.7"
      (defun mu4e~headers-header-handler (msg &optional point)
        "Create a one line description of MSG in this buffer, at POINT,
-if provided, or at the end of the buffer otherwise."
+    if provided, or at the end of the buffer otherwise."
        (when (buffer-live-p (mu4e-get-headers-buffer))
          (with-current-buffer (mu4e-get-headers-buffer)
            (save-excursion
@@ -5932,8 +5938,10 @@ is handled appropriately."
       (lps/flyspell-on-for-buffer-type)))
 
   (defun lps/ispell-change-personal-dictionary (code &optional kill-ispell)
-    (setq ispell-personal-dictionary
-          (expand-file-name code lps/ispell-personal-dictionaries-dir))
+    (let ((perso-dict (expand-file-name code lps/ispell-personal-dictionaries-dir)))
+      (when (file-exists-p perso-dict)
+        (setq ispell-personal-dictionary perso-dict
+              ispell-current-personal-dictionary (print perso-dict))))
     (when (and ispell-process kill-ispell)
       (ispell-kill-ispell)))
 
@@ -5945,9 +5953,8 @@ is handled appropriately."
        (and (fboundp 'ispell-valid-dictionary-list)
             (mapcar #'list (ispell-valid-dictionary-list)))
        nil t)))
-    (when (member dict (directory-files lps/ispell-personal-dictionaries-dir))
-      (lps/ispell-change-personal-dictionary dict)
-      (ispell-change-dictionary dict))))
+    (ispell-change-dictionary dict)
+    (lps/ispell-change-personal-dictionary dict)))
 
 (use-package artist
   :ensure nil

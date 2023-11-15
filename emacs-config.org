@@ -6302,7 +6302,7 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
 
 *MANUAL* You need to install ~mu4e~ separately, either from the standard repositories of your distribution or directly from source. Once installed, you will need to execute a few commands to initialize everything, so please refer to the package documentation.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :noweb yes
   (use-package smtpmail
     :ensure nil
     :after mu4e
@@ -6364,224 +6364,11 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     (mu4e-completing-read-function 'completing-read)
     (mu4e-headers-auto-update nil)        ; somewhat confusing otherwise
     :config
-    ;; Redefine everything here
-    (setq mu4e-headers-draft-mark     '("D" . "⚒")
-          mu4e-headers-flagged-mark   '("F" . "✚")
-          mu4e-headers-new-mark       '("N" . "✱")
-          mu4e-headers-passed-mark    '("P" . "❯")
-          mu4e-headers-replied-mark   '("R" . "❮")
-          mu4e-headers-seen-mark      '("S" . "✔")
-          mu4e-headers-trashed-mark   '("T" . "⏚")
-          mu4e-headers-attach-mark    '("a" . "≡")
-          mu4e-headers-encrypted-mark '("x" . "⸮")
-          mu4e-headers-signed-mark    '("s" . "☡")
-          mu4e-headers-unread-mark    '("u" . "⎕")
-          mu4e-headers-list-mark      '("s" . "⁞")
-          mu4e-headers-personal-mark  '("p" . "⍟")
-          mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
-
-    ;; Change this face to make it more visible, at least for kaolin-ocean theme
-    (set-face-attribute 'mu4e-replied-face nil :inherit 'font-lock-function-name-face)
-
     (defun lps/mu4e-unmark-backward ()
       (interactive)
       (mu4e-headers-prev)
       (let ((mu4e-headers-advance-after-mark nil))
         (mu4e-headers-mark-for-unmark)))
-
-    (defun lps/resize-headers-fields ()
-      (if (eq major-mode 'mu4e-headers-mode)
-          (let ((width (window-body-width)))
-            (setq-local mu4e-headers-fields `((:human-date . 20)
-                                              (:flags . 6)
-                                              (:mailing-list . 10)
-                                              (:from-or-to . 22)
-                                              (:subject . ,(- width (+ 20 6 10 22 15))))))))
-
-    ;; (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
-
-    ;; Before making a new context:
-    ;; - Make sure that the [sent/trash/drafts] folders are correctly named, to avoid duplicates
-    ;; - Don't forget to modify .mbsyncrc and .authinfo.gpg to correctly authenticate against
-    ;; the IMAP and SMTP servers
-    ;; - Make sure that your smpt-user ID, the port (smtp-service), etc, are the right ones; different
-    ;; SMTP servers have different expectations, and there is no universal configuration
-    (setq mu4e-contexts
-          (list
-           ;; School account
-           (make-mu4e-context
-            :name "Unicaen"
-            :match-func
-            (lambda (msg)
-              (when msg
-                (string-prefix-p "/Unicaen" (mu4e-message-field msg :maildir))))
-            :vars '((user-mail-address  . "leo.paviet-salomon@unicaen.fr")
-                    (user-full-name     . "Leo Paviet Salomon")
-                    (mu4e-drafts-folder . "/Unicaen/Drafts")
-                    (mu4e-sent-folder   . "/Unicaen/Sent")
-                    (mu4e-refile-folder . "/Unicaen/Archive")
-                    (mu4e-trash-folder  . "/Unicaen/Trash")
-                    (smtpmail-smtp-user    . "paviets201")
-                    (smtpmail-smtp-server  . "smtp.unicaen.fr")
-                    (smtpmail-smtp-service . 465)
-                    (smtpmail-stream-type  . ssl)))
-
-           (make-mu4e-context
-            :name "Orange"
-            :match-func
-            (lambda (msg)
-              (when msg
-                (string-prefix-p "/Orange" (mu4e-message-field msg :maildir))))
-            :vars '((user-mail-address  . "leo.paviet.salomon@orange.fr")
-                    (user-full-name     . "Leo Paviet Salomon")
-                    (mu4e-drafts-folder . "/Orange/DRAFT")
-                    (mu4e-sent-folder   . "/Orange/OUTBOX")
-                    (mu4e-refile-folder . "/Orange/Archive")
-                    (mu4e-trash-folder  . "/Orange/TRASH")
-                    (smtpmail-smtp-user    . "leo.paviet.salomon@orange.fr")
-                    (smtpmail-smtp-server  . "smtp.orange.fr")
-                    (smtpmail-smtp-service . 465)
-                    (smtpmail-stream-type  . ssl)))
-
-           (make-mu4e-context
-            :name "ENS_Lyon"
-            :match-func
-            (lambda (msg)
-              (when msg
-                (string-prefix-p "/ENS_Lyon" (mu4e-message-field msg :maildir))))
-            :vars '((user-mail-address  . "leo.paviet-salomon@ens-lyon.fr")
-                    (user-full-name     . "Leo Paviet Salomon")
-                    (mu4e-drafts-folder . "/ENS_Lyon/Brouillons")
-                    (mu4e-sent-folder   . "/ENS_Lyon/Elements_envoyes")
-                    ;;(mu4e-sent-messages-behavior . 'delete) ;; Not sure yet, better be safe
-                    (mu4e-refile-folder . "/ENS_Lyon/Archive")
-                    (mu4e-trash-folder  . "/ENS_Lyon/Corbeille")
-                    (smtpmail-smtp-user    . "lpaviets")
-                    (smtpmail-smtp-server  . "smtp.ens-lyon.fr")
-                    (smtpmail-smtp-service . 587)
-                    (smtpmail-stream-type  . starttls)))))
-
-    ;; Bookmarks
-    (add-to-list 'mu4e-bookmarks `(:name
-                                   "Important"
-                                   :query ,(concat "maildir:/Orange/Important"
-                                                   " OR "
-                                                   "maildir:/Unicaen/Important"
-                                                   " OR "
-                                                   "maildir:/ENS_Lyon/Important")
-                                   :key   ?i)
-                 t)
-
-    ;; Taken from mu4e~stop in mu4e-utils.el
-    ;; Do not kill mu process
-    (defun lps/mu4e-kill-buffers ()
-      "Kill all mu4e buffers"
-      (interactive)
-      ;; kill all mu4e buffers
-      (mapc
-       (lambda (buf)
-         ;; When using the Gnus-based viewer, the view buffer has the
-         ;; kill-buffer-hook function mu4e~view-kill-buffer-hook-fn which kills the
-         ;; mm-* buffers created by Gnus' article mode.  Those have been returned by
-         ;; `buffer-list' but might already be deleted in case the view buffer has
-         ;; been killed first.  So we need a `buffer-live-p' check here.
-         (when (buffer-live-p buf)
-           (with-current-buffer buf
-             (when (member major-mode
-                           '(mu4e-headers-mode mu4e-view-mode mu4e-main-mode))
-               (kill-buffer)))))
-       (buffer-list))
-
-      ;; Update mail and index when leaving
-      (unless (and (buffer-live-p mu4e--update-buffer)
-                   (process-live-p (get-buffer-process mu4e--update-buffer)))
-        (mu4e-update-mail-and-index t)))
-
-    ;; Better name for mu4e-view buffers
-    (ensure-version mu4e-mu "1.10"
-      (defun lps/mu4e-view-buffer-name-func (buf)
-        (with-current-buffer buf
-          (let ((name (mu4e-message-field (mu4e-message-at-point)
-                                          :subject)))
-            (when name
-              (concat "*mu4e-view* " (truncate-string-to-width name 10))))))
-
-      (setq mu4e-view-buffer-name-func 'lps/mu4e-view-buffer-name-func))
-
-    (defun lps/--mu4e-read-date (&optional prompt)
-      (let ((time (decode-time (org-read-date nil t))))
-        (format "%04d%02d%02d"
-                (decoded-time-year time)
-                (decoded-time-month time)
-                (decoded-time-day time))))
-
-    (defun lps/--mu4e-read-date-range (&optional prompt)
-      (concat (lps/--mu4e-read-date "Mail received or sent between ...")
-              ".."
-              (lps/--mu4e-read-date "... and ...")))
-
-    (defun lps/--mu4e-read-mime-type (&optional prompt)
-      (require 'mailcap)
-      (mailcap-parse-mimetypes)
-      (completing-read (or prompt "Mime type: ") (mailcap-mime-types)))
-
-    (defvar lps/--mu4e-build-query-alist
-      '((?q "confirm" "confirm")
-        (?\  " anything" "" read-string)
-        (?f "from" "from:" read-string)
-        (?t "to" "to:" read-string)
-        (?d "date" "date:" ((?d "date" "" lps/--mu4e-read-date)
-                            (?r "range" "" lps/--mu4e-read-date-range)))
-        (?F "Flag" "flag:" ((?u "unread" "unread")
-                            (?d "draft" "draft")
-                            (?f "flagged" "flagged")
-                            (?n "new" "new")
-                            (?p "passed" "passed")
-                            (?r "replied" "replied")
-                            (?s "seen" "seen")
-                            (?t "trashed" "trashed")
-                            (?a "attach" "attach")
-                            (?e "encrypted" "encrypted")
-                            (?S "Signed" "signed")))
-        (?s "subject" "subject:" read-string)
-        (?m "mime" "mime:" lps/--mu4e-read-mime-type)))
-
-    (defun lps/--mu4e-parse-query (choices)
-      (let* ((choice (read-multiple-choice "Query element: " choices))
-             (rest (cddr choice))
-             (str (car rest))
-             (read-fun-or-continue (cadr rest)))
-        (cond
-         ;; RETURN key sends 'return', and it is not a *character*, so
-         ;; we can't use it due to how read-multiple-choice is implemented ...
-         ((eq (car choice) ?q)
-          :quit)
-         ((functionp read-fun-or-continue)
-          (concat str (funcall read-fun-or-continue (concat str " "))))
-         ((consp read-fun-or-continue)
-          (concat str (lps/--mu4e-parse-query read-fun-or-continue)))
-         (t str))))
-
-    (defun lps/mu4e-build-query (&optional start-query)
-      "Provides a simpler interface to build mu4e search queries.
-  A caveat is that it does not insert logical separators (NOT, AND,
-  OR ...) between expressions, so the expression has to be modified
-  by hand if needed"
-      (interactive "P")
-      (let ((choices lps/--mu4e-build-query-alist)
-            (query-list (if start-query
-                            (list (completing-read "Search for: "
-                                                   mu4e--search-hist
-                                                   nil
-                                                   nil
-                                                   nil
-                                                   'mu4e--search-hist))
-                          nil))
-            (choice nil))
-        (while (not (eq (setq choice (lps/--mu4e-parse-query choices)) :quit))
-          (push choice query-list))
-        (let ((query (mapconcat 'identity (reverse query-list) " ")))
-          (mu4e-search query "Search for: " t))))
 
     (defun lps/mu4e-view-mime-part-action ()
       "Wrapper around `mu4e-view-mime-part-action' with better prompt"
@@ -6603,149 +6390,388 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
                                                            attachments nil t)
                                           attachments)))))
 
-    ;; Slightly change interface
-    ;; Inspired by mu4e-column-faces-mode
-    (defun lps/mu4e~headers-field-handler (f-w msg)
-      "Create a description of the field of MSG described by F-W."
-      (let* ((field (car f-w))
-             (width (cdr f-w))
-             (face (cadr (assoc field lps/mu4e-headers-fields-propertize)))
-             (val (mu4e~headers-field-value msg field))
-             (val (and val (cond
-                            ((facep face)
-                             (propertize val 'face face))
-                            ((functionp face)
-                             (funcall face val msg))
-                            (t val))))
-             (val (and val
-                       width
-                       (mu4e~headers-truncate-field field val width))))
-        val))
+    ;;; Main view and global stuff
+    <<mu4e-global>>
 
-    (defun lps/mu4e-headers-prettify-message (msg)
-      (let* ((msg-prop-fields (mapconcat
-                               (lambda (f-w)
-                                 (lps/mu4e~headers-field-handler f-w msg))
-                               mu4e-headers-fields " "))
-             (context (mu4e-context-name (mu4e-context-determine msg)))
-             (face (cadr (assoc-string context lps/mu4e-headers-propertize-context)))
-             (new-msg (cond
-                       ((facep face)
-                        (propertize msg-prop-fields 'face face))
-                       ((functionp face)
-                        (funcall face msg-prop-fields))
-                       ((stringp face)
-                        (let ((boxes (propertize "█ " 'face `(:foreground ,face))))
-                          (concat boxes msg-prop-fields)))
-                       (t msg-prop-fields))))
-        new-msg))
+    ;;; Contexts
+    <<mu4e-contexts>>
 
-    (defun lps/mu4e~headers-format-subject (sub msg)
-      (with-temp-buffer
-        (insert sub)
-        (goto-char (point-min))
-        (when (re-search-forward "\\(Re:\\|Fwd:\\| \\)*\\[\\([-a-zA-Z0-9., ]+?\\)\\]"
-                                 nil t 1)
-          (add-face-text-property (match-beginning 2)
-                                  (match-end 2)
-                                  '(:weight bold :underline t)))
-        (buffer-substring (point-min) (point-max))))
+    ;;; Queries
+    <<mu4e-build-query>>
 
-    ;; Taken from mu4e-column-faces
-    (defvar lps/mu4e-headers-fields-propertize
-      `((:human-date font-lock-string-face)
-        (:flags font-lock-type-face)
-        (:mailing-list font-lock-builtin-face)
-        (:from-or-to font-lock-variable-name-face)
-        (:subject lps/mu4e~headers-format-subject)
-        (:bcc font-lock-variable-name-face)
-        (:cc font-lock-variable-name-face)
-        (:changed)
-        (:date font-lock-string-face)
-        (:from font-lock-variable-name-face)
-        (:maildir font-lock-function-name-face)
-        (:list font-lock-builtin-face)
-        (:message-id font-lock-keyword-face)
-        (:path font-lock-function-name-face)
-        (:size font-lock-string-face)
-        (:tags font-lock-keyword-face)
-        (:thread-subject font-lock-doc-face)
-        (:to font-lock-variable-name-face))
-      "Alist of (FIELD-NAME FACE-OR-FUNCTION).
+    ;;; Appearance
+    <<mu4e-appearance>>)
+#+end_src
 
-  If the second element is a function, it will be called with two
-  elements: the field content, and the message itself.")
+#+NAME: mu4e-global
+#+begin_src emacs-lisp :tangle no
+  ;; Bookmarks
+  (add-to-list 'mu4e-bookmarks `(:name
+                                 "Important"
+                                 :query ,(concat "maildir:/Orange/Important"
+                                                 " OR "
+                                                 "maildir:/Unicaen/Important"
+                                                 " OR "
+                                                 "maildir:/ENS_Lyon/Important")
+                                 :key   ?i)
+               t)
 
-    (defvar lps/mu4e-headers-propertize-context
-      '(("Orange" "red4")
-        ("Unicaen" "blue3")
-        ("ENS_Lyon" "green4"))
-      "Alist of (CONTEXT-NAME FACE-OR-FUNCTION)
+  ;; Taken from mu4e~stop in mu4e-utils.el
+  ;; Do not kill mu process
+  (defun lps/mu4e-kill-buffers ()
+    "Kill all mu4e buffers"
+    (interactive)
+    ;; kill all mu4e buffers
+    (mapc
+     (lambda (buf)
+       ;; When using the Gnus-based viewer, the view buffer has the
+       ;; kill-buffer-hook function mu4e~view-kill-buffer-hook-fn which kills the
+       ;; mm-* buffers created by Gnus' article mode.  Those have been returned by
+       ;; `buffer-list' but might already be deleted in case the view buffer has
+       ;; been killed first.  So we need a `buffer-live-p' check here.
+       (when (buffer-live-p buf)
+         (with-current-buffer buf
+           (when (member major-mode
+                         '(mu4e-headers-mode mu4e-view-mode mu4e-main-mode))
+             (kill-buffer)))))
+     (buffer-list))
 
-  If the second element is a function, it will be called with the
-  header corresponding to the current message.
+    ;; Update mail and index when leaving
+    (unless (and (buffer-live-p mu4e--update-buffer)
+                 (process-live-p (get-buffer-process mu4e--update-buffer)))
+      (mu4e-update-mail-and-index t)))
 
-  If it is a string, it will be assumed to be a colour; in that
-  case, header will be prefixed with \"█ \", coloured in this
-  colour.
+  ;; Better name for mu4e-view buffers
+  (ensure-version mu4e-mu "1.10"
+    (defun lps/mu4e-view-buffer-name-func (buf)
+      (with-current-buffer buf
+        (let ((name (mu4e-message-field (mu4e-message-at-point)
+                                        :subject)))
+          (when name
+            (concat "*mu4e-view* " (truncate-string-to-width name 10))))))
 
-  Otherwise, it is a symbol naming a face.")
-    ;; This overrides the previous definition of this function, inlines
-    ;; everything called by the original function, and replace an internal
-    ;; function call by our own function.
+    (setq mu4e-view-buffer-name-func 'lps/mu4e-view-buffer-name-func))
+#+end_src
 
-    ;; Because mu4e is somewhat unstable, we need to duplicate some code
-    ;; depending on the installed version ...
-    (version-case mu4e-mu
-      ("1.8"
-       (defun mu4e~headers-append-handler (msglst)
-         "Append one-line descriptions of messages in MSGLIST.
-  Do this at the end of the headers-buffer."
-         (when (buffer-live-p (mu4e-get-headers-buffer))
-           (with-current-buffer (mu4e-get-headers-buffer)
-             (save-excursion
-               (let ((inhibit-read-only t))
-                 (seq-do
-                  (lambda (msg)
-                    (when-let
-                        ((line (unless (and mu4e-headers-hide-predicate
-                                            (funcall mu4e-headers-hide-predicate msg))
-                                 (mu4e~headers-apply-flags
-                                  msg
-                                  (lps/mu4e-headers-prettify-message msg))))
-                         (docid (plist-get msg :docid)))
-                      (goto-char (point-max))
-                      (insert
-                       (propertize
-                        (concat
-                         (mu4e~headers-docid-cookie docid)
-                         mu4e--mark-fringe line "\n")
-                        'docid docid 'msg msg))))
-                  msglst)))))))
+#+NAME: mu4e-contexts
+#+begin_src emacs-lisp :tangle no
+  ;; Before making a new context:
+  ;; - Make sure that the [sent/trash/drafts] folders are correctly named, to avoid duplicates
+  ;; - Don't forget to modify .mbsyncrc and .authinfo.gpg to correctly authenticate against
+  ;; the IMAP and SMTP servers
+  ;; - Make sure that your smpt-user ID, the port (smtp-service), etc, are the right ones; different
+  ;; SMTP servers have different expectations, and there is no universal configuration
 
-      ("1.7"
-       (defun mu4e~headers-header-handler (msg &optional point)
-         "Create a one line description of MSG in this buffer, at POINT,
-  if provided, or at the end of the buffer otherwise."
-         (when (buffer-live-p (mu4e-get-headers-buffer))
-           (with-current-buffer (mu4e-get-headers-buffer)
-             (save-excursion
-               (let ((inhibit-read-only t))
-                 (when-let ((line
-                             (unless (and mu4e-headers-hide-predicate
+  (setq mu4e-contexts
+        (list
+         ;; School account
+         (make-mu4e-context
+          :name "Unicaen"
+          :match-func
+          (lambda (msg)
+            (when msg
+              (string-prefix-p "/Unicaen" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address  . "leo.paviet-salomon@unicaen.fr")
+                  (user-full-name     . "Leo Paviet Salomon")
+                  (mu4e-drafts-folder . "/Unicaen/Drafts")
+                  (mu4e-sent-folder   . "/Unicaen/Sent")
+                  (mu4e-refile-folder . "/Unicaen/Archive")
+                  (mu4e-trash-folder  . "/Unicaen/Trash")
+                  (smtpmail-smtp-user    . "paviets201")
+                  (smtpmail-smtp-server  . "smtp.unicaen.fr")
+                  (smtpmail-smtp-service . 465)
+                  (smtpmail-stream-type  . ssl)))
+
+         (make-mu4e-context
+          :name "Orange"
+          :match-func
+          (lambda (msg)
+            (when msg
+              (string-prefix-p "/Orange" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address  . "leo.paviet.salomon@orange.fr")
+                  (user-full-name     . "Leo Paviet Salomon")
+                  (mu4e-drafts-folder . "/Orange/DRAFT")
+                  (mu4e-sent-folder   . "/Orange/OUTBOX")
+                  (mu4e-refile-folder . "/Orange/Archive")
+                  (mu4e-trash-folder  . "/Orange/TRASH")
+                  (smtpmail-smtp-user    . "leo.paviet.salomon@orange.fr")
+                  (smtpmail-smtp-server  . "smtp.orange.fr")
+                  (smtpmail-smtp-service . 465)
+                  (smtpmail-stream-type  . ssl)))
+
+         (make-mu4e-context
+          :name "ENS_Lyon"
+          :match-func
+          (lambda (msg)
+            (when msg
+              (string-prefix-p "/ENS_Lyon" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address  . "leo.paviet-salomon@ens-lyon.fr")
+                  (user-full-name     . "Leo Paviet Salomon")
+                  (mu4e-drafts-folder . "/ENS_Lyon/Brouillons")
+                  (mu4e-sent-folder   . "/ENS_Lyon/Elements_envoyes")
+                  ;;(mu4e-sent-messages-behavior . 'delete) ;; Not sure yet, better be safe
+                  (mu4e-refile-folder . "/ENS_Lyon/Archive")
+                  (mu4e-trash-folder  . "/ENS_Lyon/Corbeille")
+                  (smtpmail-smtp-user    . "lpaviets")
+                  (smtpmail-smtp-server  . "smtp.ens-lyon.fr")
+                  (smtpmail-smtp-service . 587)
+                  (smtpmail-stream-type  . starttls)))))
+#+end_src
+
+#+NAME: mu4e-build-query
+#+begin_src emacs-lisp :tangle no
+  (defun lps/--mu4e-read-date (&optional prompt)
+    (let ((time (decode-time (org-read-date nil t))))
+      (format "%04d%02d%02d"
+              (decoded-time-year time)
+              (decoded-time-month time)
+              (decoded-time-day time))))
+
+  (defun lps/--mu4e-read-date-range (&optional prompt)
+    (concat (lps/--mu4e-read-date "Mail received or sent between ...")
+            ".."
+            (lps/--mu4e-read-date "... and ...")))
+
+  (defun lps/--mu4e-read-mime-type (&optional prompt)
+    (require 'mailcap)
+    (mailcap-parse-mimetypes)
+    (completing-read (or prompt "Mime type: ") (mailcap-mime-types)))
+
+  (defvar lps/--mu4e-build-query-alist
+    '((?q "confirm" "confirm")
+      (?\  " anything" "" read-string)
+      (?f "from" "from:" read-string)
+      (?t "to" "to:" read-string)
+      (?d "date" "date:" ((?d "date" "" lps/--mu4e-read-date)
+                          (?r "range" "" lps/--mu4e-read-date-range)))
+      (?F "Flag" "flag:" ((?u "unread" "unread")
+                          (?d "draft" "draft")
+                          (?f "flagged" "flagged")
+                          (?n "new" "new")
+                          (?p "passed" "passed")
+                          (?r "replied" "replied")
+                          (?s "seen" "seen")
+                          (?t "trashed" "trashed")
+                          (?a "attach" "attach")
+                          (?e "encrypted" "encrypted")
+                          (?S "Signed" "signed")))
+      (?s "subject" "subject:" read-string)
+      (?m "mime" "mime:" lps/--mu4e-read-mime-type)))
+
+  (defun lps/--mu4e-parse-query (choices)
+    (let* ((choice (read-multiple-choice "Query element: " choices))
+           (rest (cddr choice))
+           (str (car rest))
+           (read-fun-or-continue (cadr rest)))
+      (cond
+       ;; RETURN key sends 'return', and it is not a *character*, so
+       ;; we can't use it due to how read-multiple-choice is implemented ...
+       ((eq (car choice) ?q)
+        :quit)
+       ((functionp read-fun-or-continue)
+        (concat str (funcall read-fun-or-continue (concat str " "))))
+       ((consp read-fun-or-continue)
+        (concat str (lps/--mu4e-parse-query read-fun-or-continue)))
+       (t str))))
+
+  (defun lps/mu4e-build-query (&optional start-query)
+    "Provides a simpler interface to build mu4e search queries.
+    A caveat is that it does not insert logical separators (NOT, AND,
+    OR ...) between expressions, so the expression has to be modified
+    by hand if needed"
+    (interactive "P")
+    (let ((choices lps/--mu4e-build-query-alist)
+          (query-list (if start-query
+                          (list (completing-read "Search for: "
+                                                 mu4e--search-hist
+                                                 nil
+                                                 nil
+                                                 nil
+                                                 'mu4e--search-hist))
+                        nil))
+          (choice nil))
+      (while (not (eq (setq choice (lps/--mu4e-parse-query choices)) :quit))
+        (push choice query-list))
+      (let ((query (mapconcat 'identity (reverse query-list) " ")))
+        (mu4e-search query "Search for: " t))))
+#+end_src
+
+#+NAME: mu4e-appearance
+#+begin_src emacs-lisp :tangle no
+  ;; Redefine everything here
+  (setq mu4e-headers-draft-mark     '("D" . "⚒")
+        mu4e-headers-flagged-mark   '("F" . "✚")
+        mu4e-headers-new-mark       '("N" . "✱")
+        mu4e-headers-passed-mark    '("P" . "❯")
+        mu4e-headers-replied-mark   '("R" . "❮")
+        mu4e-headers-seen-mark      '("S" . "✔")
+        mu4e-headers-trashed-mark   '("T" . "⏚")
+        mu4e-headers-attach-mark    '("a" . "≡")
+        mu4e-headers-encrypted-mark '("x" . "⸮")
+        mu4e-headers-signed-mark    '("s" . "☡")
+        mu4e-headers-unread-mark    '("u" . "⎕")
+        mu4e-headers-list-mark      '("s" . "⁞")
+        mu4e-headers-personal-mark  '("p" . "⍟")
+        mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
+
+  ;; Change this face to make it more visible, at least for kaolin-ocean theme
+  (set-face-attribute 'mu4e-replied-face nil :inherit 'font-lock-function-name-face)
+
+
+  (defun lps/resize-headers-fields ()
+    (if (eq major-mode 'mu4e-headers-mode)
+        (let ((width (window-body-width)))
+          (setq-local mu4e-headers-fields `((:human-date . 20)
+                                            (:flags . 6)
+                                            (:mailing-list . 10)
+                                            (:from-or-to . 22)
+                                            (:subject . ,(- width
+                                                            (+ 20 6 10 22 15))))))))
+
+  ;; (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
+
+  ;; Inspired by mu4e-column-faces-mode
+  (defun lps/mu4e~headers-field-handler (f-w msg)
+    "Create a description of the field of MSG described by F-W."
+    (let* ((field (car f-w))
+           (width (cdr f-w))
+           (face (cadr (assoc field lps/mu4e-headers-fields-propertize)))
+           (val (mu4e~headers-field-value msg field))
+           (val (and val (cond
+                          ((facep face)
+                           (propertize val 'face face))
+                          ((functionp face)
+                           (funcall face val msg))
+                          (t val))))
+           (val (and val
+                     width
+                     (mu4e~headers-truncate-field field val width))))
+      val))
+
+  (defun lps/mu4e-headers-prettify-message (msg)
+    (let* ((msg-prop-fields (mapconcat
+                             (lambda (f-w)
+                               (lps/mu4e~headers-field-handler f-w msg))
+                             mu4e-headers-fields " "))
+           (context (mu4e-context-name (mu4e-context-determine msg)))
+           (face (cadr (assoc-string context lps/mu4e-headers-propertize-context)))
+           (new-msg (cond
+                     ((facep face)
+                      (propertize msg-prop-fields 'face face))
+                     ((functionp face)
+                      (funcall face msg-prop-fields))
+                     ((stringp face)
+                      (let ((boxes (propertize "█ " 'face `(:foreground ,face))))
+                        (concat boxes msg-prop-fields)))
+                     (t msg-prop-fields))))
+      new-msg))
+
+  (defun lps/mu4e~headers-format-subject (sub msg)
+    (with-temp-buffer
+      (insert sub)
+      (goto-char (point-min))
+      (when (re-search-forward "\\(Re:\\|Fwd:\\| \\)*\\[\\([-a-zA-Z0-9., ]+?\\)\\]"
+                               nil t 1)
+        (add-face-text-property (match-beginning 2)
+                                (match-end 2)
+                                '(:weight bold :underline t)))
+      (buffer-substring (point-min) (point-max))))
+
+  ;; Taken from mu4e-column-faces
+  (defvar lps/mu4e-headers-fields-propertize
+    `((:human-date font-lock-string-face)
+      (:flags font-lock-type-face)
+      (:mailing-list font-lock-builtin-face)
+      (:from-or-to font-lock-variable-name-face)
+      (:subject lps/mu4e~headers-format-subject)
+      (:bcc font-lock-variable-name-face)
+      (:cc font-lock-variable-name-face)
+      (:changed)
+      (:date font-lock-string-face)
+      (:from font-lock-variable-name-face)
+      (:maildir font-lock-function-name-face)
+      (:list font-lock-builtin-face)
+      (:message-id font-lock-keyword-face)
+      (:path font-lock-function-name-face)
+      (:size font-lock-string-face)
+      (:tags font-lock-keyword-face)
+      (:thread-subject font-lock-doc-face)
+      (:to font-lock-variable-name-face))
+    "Alist of (FIELD-NAME FACE-OR-FUNCTION).
+
+    If the second element is a function, it will be called with two
+    elements: the field content, and the message itself.")
+
+  (defvar lps/mu4e-headers-propertize-context
+    '(("Orange" "red4")
+      ("Unicaen" "blue3")
+      ("ENS_Lyon" "green4"))
+    "Alist of (CONTEXT-NAME FACE-OR-FUNCTION)
+
+    If the second element is a function, it will be called with the
+    header corresponding to the current message.
+
+    If it is a string, it will be assumed to be a colour; in that
+    case, header will be prefixed with \"█ \", coloured in this
+    colour.
+
+    Otherwise, it is a symbol naming a face.")
+  ;; This overrides the previous definition of this function, inlines
+  ;; everything called by the original function, and replace an internal
+  ;; function call by our own function.
+
+  ;; Because mu4e is somewhat unstable, we need to duplicate some code
+  ;; depending on the installed version ...
+  (version-case mu4e-mu
+    ("1.8"
+     (defun mu4e~headers-append-handler (msglst)
+       "Append one-line descriptions of messages in MSGLIST.
+    Do this at the end of the headers-buffer."
+       (when (buffer-live-p (mu4e-get-headers-buffer))
+         (with-current-buffer (mu4e-get-headers-buffer)
+           (save-excursion
+             (let ((inhibit-read-only t))
+               (seq-do
+                (lambda (msg)
+                  (when-let
+                      ((line (unless (and mu4e-headers-hide-predicate
                                           (funcall mu4e-headers-hide-predicate msg))
                                (mu4e~headers-apply-flags
                                 msg
                                 (lps/mu4e-headers-prettify-message msg))))
-                            (docid (plist-get msg :docid)))
-                   (when line
-                     (goto-char (if point point (point-max)))
-                     (insert
-                      (propertize
-                       (concat
-                        (mu4e~headers-docid-cookie docid)
-                        mu4e~mark-fringe line "\n")
-                       'docid docid 'msg msg))))))))))))
+                       (docid (plist-get msg :docid)))
+                    (goto-char (point-max))
+                    (insert
+                     (propertize
+                      (concat
+                       (mu4e~headers-docid-cookie docid)
+                       mu4e--mark-fringe line "\n")
+                      'docid docid 'msg msg))))
+                msglst)))))))
+
+    ("1.7"
+     (defun mu4e~headers-header-handler (msg &optional point)
+       "Create a one line description of MSG in this buffer, at POINT,
+    if provided, or at the end of the buffer otherwise."
+       (when (buffer-live-p (mu4e-get-headers-buffer))
+         (with-current-buffer (mu4e-get-headers-buffer)
+           (save-excursion
+             (let ((inhibit-read-only t))
+               (when-let ((line
+                           (unless (and mu4e-headers-hide-predicate
+                                        (funcall mu4e-headers-hide-predicate msg))
+                             (mu4e~headers-apply-flags
+                              msg
+                              (lps/mu4e-headers-prettify-message msg))))
+                          (docid (plist-get msg :docid)))
+                 (when line
+                   (goto-char (if point point (point-max)))
+                   (insert
+                    (propertize
+                     (concat
+                      (mu4e~headers-docid-cookie docid)
+                      mu4e~mark-fringe line "\n")
+                     'docid docid 'msg msg)))))))))))
 #+end_src
 
 One point that is a bit infuriating with the current state of ~mu4e~ is how you are supposed to manage attachments. In particular, you have to navigate in a whole filetree, everytime you want to attach a file. To my knowledge, there is no "easy and immediate" way to /e.g./ attach several files at once.
