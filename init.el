@@ -3106,6 +3106,15 @@ call the associated function interactively. Otherwise, call the
       (cl-destructuring-bind (name inherit &rest args) face
         (apply 'set-face-attribute name nil :inherit inherit args))))
 
+  (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
+
+  (defun lps/org-mode-setup ()
+    (lps/org-font-setup)
+    (org-indent-mode 1)
+    ;; (variable-pitch-mode 1)
+    (visual-line-mode 1)
+    (lps/windmove-mode-local-off))
+
   ;; Babel configuration
   (org-babel-do-load-languages
    'org-babel-load-languages
@@ -3138,16 +3147,27 @@ call the associated function interactively. Otherwise, call the
   (defun lps/org-insert-structure-template ()
     (interactive)
     (call-interactively 'org-insert-structure-template)
-    (call-interactively 'org-edit-special))
+    (call-interactively 'org-edit-special)))
 
-  (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
-
-  (defun lps/org-mode-setup ()
-    (lps/org-font-setup)
-    (org-indent-mode 1)
-    ;; (variable-pitch-mode 1)
-    (visual-line-mode 1)
-    (lps/windmove-mode-local-off)))
+(use-package ox-html
+  :after org
+  :ensure nil
+  :custom
+  (org-html-postamble nil)
+  ;; A way to have the default face and background in HTML too ! By
+  ;; default, the "HTML fontification" step is done by looking at the
+  ;; text properties of each character in a buffer, but the default face
+  ;; is "without properties", in a sense.
+  (org-html-head (mapconcat 'identity
+                            (list "<style>"
+                                  "  pre {"
+                                  (format "    background-color: %s;"
+                                          (face-background 'org-block))
+                                  (format "    color: %s;"
+                                          (face-foreground 'default))
+                                  "  }"
+                                  "</style>")
+                            "\n")))
 
 (use-package org-agenda
   :after org
@@ -4768,10 +4788,14 @@ present in the list of authors or in the title of the article"
      (?\C-p ("\\uparrow" "\\Uparrow" "\\longuparrow" "\\Longuparrow"))
      (?\C-n ("\\downarrow" "\\Downarrow" "\\longdownarrow" "\\Longdownarrow"))))
   (cdlatex-command-alist
-   '(("prodl"       "Insert \\prod\\limits_{}^{}"
-      "\\prod\\limits_{?}^{}" cdlatex-position-cursor nil nil t)
-     ("lim"         "Insert \\lim\\limits_{}"
-      "\\lim\\limits_{?}" cdlatex-position-cursor nil nil t)
+   '(("prodl"       "Insert \\prod_{}^{}"
+      "\\prod_{?}^{}" cdlatex-position-cursor nil nil t)
+     ("suml"        "Insert \\sum_{}^{}"
+      "\\sum_{?}^{}" cdlatex-position-cursor nil nil t)
+     ("intl"        "Insert \\int_{}^{}"
+      "\\int_{?}^{}" cdlatex-position-cursor nil nil t)
+     ("lim"         "Insert \\lim_{}"
+      "\\lim_{?}" cdlatex-position-cursor nil nil t)
      ("invlim"      "Insert \\varprojlim_{}{}"
       "\\varprojlim_{?}{}" cdlatex-position-cursor nil nil t)
      ("dirlim"      "Insert \\varinjlim_{}{}"
