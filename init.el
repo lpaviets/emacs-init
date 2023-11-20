@@ -5688,9 +5688,9 @@ confirmation when sending a non-multipart MIME mail")
 (use-package org-mime
   :after mu4e
   :custom
-  (org-mime-export-options '(:section-numbers nil
-                                              :with-author nil
-                                              :with-toc nil))
+  (org-mime-export-options (list :section-numbers nil
+                                 :with-author nil
+                                 :with-toc nil))
   :config
   (defun lps/safe-org-mime-confirm-when-no-multipart ()
     (when lps/safe-mail-send
@@ -6075,11 +6075,13 @@ insert as many blank lines as necessary."
 (use-package elfeed
   :defer t
   :bind
+  ("C-c f" . lps/elfeed-dashboard)
   (:map elfeed-search-mode-map
         ("w" . elfeed-search-browse-url)
         ("C-S-s" . lps/elfeed-search-filter-interactive)
         ("*" . lps/elfeed-toggle-star)
-        ("U" . elfeed-update))
+        ("U" . elfeed-update)
+        ("b" . lps/elfeed-search-bookmark))
   (:map elfeed-show-mode-map
         ("D" . lps/elfeed-arxiv-get-pdf-add-bibtex-entry))
   :init
@@ -6095,6 +6097,7 @@ insert as many blank lines as necessary."
     (interactive)
     (elfeed-search-toggle-all 'star))
 
+  ;; Online science articles archives
   (defface elfeed-search-arxiv-authors
     '((t (:inherit message-header-to :weight normal)))
     "Faced used in *elfeed-search* buffer to show authors of Arxiv papers"
@@ -6237,33 +6240,9 @@ insert as many blank lines as necessary."
                     (t
                      (completing-read "PDF dir: "
                                       bibtex-completion-library-path)))))
-      (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir))))
+      (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir)))
 
-(use-package elfeed-org
-  :defer t
-  :custom
-  (rmh-elfeed-org-files (list
-                         (expand-file-name "elfeed.org"
-                                           org-directory)))
-  :init
-  (defun lps/elfeed-org-lazy-load ()
-    (elfeed-org)
-    (advice-remove 'elfeed 'lps/elfeed-org-lazy-load))
-
-  (advice-add 'elfeed :before 'lps/elfeed-org-lazy-load)
-  :config
-  (defun lps/elfeed-org-reread ()
-    (interactive)
-    (rmh-elfeed-org-process rmh-elfeed-org-files
-                            rmh-elfeed-org-tree-id)))
-
-(use-package elfeed
-  :bind
-  ("C-c f" . lps/elfeed-dashboard)
-  (:map elfeed-search-mode-map
-        ("b" . lps/elfeed-search-bookmark))
-  :init
-  ;; Ugly macro ... Lexical binding is a mess
+  ;; Dashboard
   (defmacro lps/elfeed-wrap-before-elfeed (fun)
     `(lambda ()
        (interactive)
@@ -6331,7 +6310,7 @@ insert as many blank lines as necessary."
 
   (defun lps/elfeed-ask-bookmark (prompt)
     "Ask the user for a bookmark (using PROMPT) as defined in
-`lps/elfeed-bookmarks', then return the corresponding query."
+  `lps/elfeed-bookmarks', then return the corresponding query."
     (unless lps/elfeed-bookmarks (mu4e-error "No bookmarks defined"))
     (let* ((prompt (mu4e-format "%s" prompt))
            (bmarks
@@ -6464,10 +6443,28 @@ insert as many blank lines as necessary."
 
   (define-derived-mode lps/elfeed-dashboard-mode special-mode "elfeed:dashboard"
     "Major mode for the elfeed dashboard.
-\\{lps/elfeed-dashboard-mode-map}."
+  \\{lps/elfeed-dashboard-mode-map}."
     (setq truncate-lines t)
     (setq-local revert-buffer-function #'lps/elfeed-dashboard--redraw)
     (read-only-mode 1)))
+
+(use-package elfeed-org
+  :defer t
+  :custom
+  (rmh-elfeed-org-files (list
+                         (expand-file-name "elfeed.org"
+                                           org-directory)))
+  :init
+  (defun lps/elfeed-org-lazy-load ()
+    (elfeed-org)
+    (advice-remove 'elfeed 'lps/elfeed-org-lazy-load))
+
+  (advice-add 'elfeed :before 'lps/elfeed-org-lazy-load)
+  :config
+  (defun lps/elfeed-org-reread ()
+    (interactive)
+    (rmh-elfeed-org-process rmh-elfeed-org-files
+                            rmh-elfeed-org-tree-id)))
 
 (use-package elfeed-tube
   :after elfeed

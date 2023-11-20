@@ -6847,9 +6847,9 @@ To deal with this problem, we use a ~org~ package, called [[https://github.com/o
   (use-package org-mime
     :after mu4e
     :custom
-    (org-mime-export-options '(:section-numbers nil
-                                                :with-author nil
-                                                :with-toc nil))
+    (org-mime-export-options (list :section-numbers nil
+                                   :with-author nil
+                                   :with-toc nil))
     :config
     (defun lps/safe-org-mime-confirm-when-no-multipart ()
       (when lps/safe-mail-send
@@ -7281,15 +7281,17 @@ Emacs comes with a builtin calendar. Being French, I decide to format dates usin
 
 Because it is text-oriented, Emacs is a completely viable option to be a RSS feed reader. Indeed, it can display, search, filter ... all the different information that you can expect when using RSS feeds, but you also have the whole power of Emacs to configure everything according to your need, /e.g./ infinite flexibility for search filters, bookmarks and so on.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :noweb yes
   (use-package elfeed
     :defer t
     :bind
+    ("C-c f" . lps/elfeed-dashboard)
     (:map elfeed-search-mode-map
           ("w" . elfeed-search-browse-url)
           ("C-S-s" . lps/elfeed-search-filter-interactive)
           ("*" . lps/elfeed-toggle-star)
-          ("U" . elfeed-update))
+          ("U" . elfeed-update)
+          ("b" . lps/elfeed-search-bookmark))
     (:map elfeed-show-mode-map
           ("D" . lps/elfeed-arxiv-get-pdf-add-bibtex-entry))
     :init
@@ -7305,149 +7307,160 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
       (interactive)
       (elfeed-search-toggle-all 'star))
 
-    (defface elfeed-search-arxiv-authors
-      '((t (:inherit message-header-to :weight normal)))
-      "Faced used in *elfeed-search* buffer to show authors of Arxiv papers"
-      :group 'elfeed)
+    ;; Online science articles archives
+    <<elfeed-arxiv>>
 
-    (defun lps/elfeed-search-format-arxiv-authors (entry)
-      (let* ((authors (elfeed-meta entry :authors))
-             (authors-no-dup (cl-remove-duplicates authors
-                                                   :test #'string-equal
-                                                   :key (lambda (author)
-                                                          (plist-get author :name))))
-             (formatted-authors
-              (mapconcat (lambda (author)
-                           (when-let ((auth (plist-get author :name))
-                                      (splitted (s-split-up-to " " auth 1)))
-                             (concat
-                              (substring (car splitted) 0 1)
-                              "."
-                              (cadr splitted))))
-                         authors-no-dup
-                         ", "))
-             (width (length formatted-authors))
-             (max-width (- lps/elfeed-search-arxiv-authors-max-width 6)))
-        (propertize
-         (if (<  max-width width)
-             (concat "[" (substring formatted-authors 0 max-width) "...] ")
-           (elfeed-format-column
-            (concat "[" formatted-authors "] ")
-            lps/elfeed-search-arxiv-authors-max-width
-            :left))
-         'face 'elfeed-search-arxiv-authors
-         'kbd-help formatted-authors)))
+    ;; Dashboard
+    <<elfeed-dashboard>>)
+#+end_src
 
-    (defun lps/elfeed-search-print-entry--arxiv (entry &optional format-title)
-      (let* ((date
-              (elfeed-search-format-date (elfeed-entry-date entry)))
-             (raw-title (or (elfeed-meta entry :title) (elfeed-entry-title entry) ""))
-             (title (if format-title (funcall format-title raw-title) raw-title))
-             (title-faces (elfeed-search--faces (elfeed-entry-tags entry)))
-             (feed (elfeed-entry-feed entry))
-             (feed-title
-              (when feed
-                (or (elfeed-meta feed :title) (elfeed-feed-title feed))))
-             (authors (lps/elfeed-search-format-arxiv-authors entry))
-             (tags (mapcar #'symbol-name (elfeed-entry-tags entry)))
-             (tags-str (mapconcat
-                        (lambda (s) (propertize s 'face 'elfeed-search-tag-face))
-                        tags ","))
-             (title-width (- (window-width)
-                             lps/elfeed-search-arxiv-authors-max-width
-                             10
-                             elfeed-search-trailing-width))
-             (title-column (elfeed-format-column
-                            title (elfeed-clamp
-                                   elfeed-search-title-min-width
-                                   title-width
-                                   (- elfeed-search-title-max-width
-                                      lps/elfeed-search-arxiv-authors-max-width))
-                            :left)))
-        (insert (propertize date 'face 'elfeed-search-date-face) " ")
-        (insert (propertize title-column 'face title-faces 'kbd-help title) " ")
-        (insert authors)
-        (when feed-title
-          (insert (propertize feed-title 'face 'elfeed-search-feed-face) " "))
-        (when tags
-          (insert "(" tags-str ")"))))
+We add a way to view and download articles from several online archives (Arxiv, HAL ...)
 
-    (defun lps/elfeed-search-print-entry--hal (entry)
-      (let* ((hal-prefix-regexp "^ *\\[[a-z]+-[0-9]+\\] *")
-             (format-title (lambda (title)
-                             (replace-regexp-in-string hal-prefix-regexp "" title))))
-        (lps/elfeed-search-print-entry--arxiv entry format-title)))
+#+NAME: elfeed-arxiv
+#+begin_src emacs-lisp :tangle no
+  (defface elfeed-search-arxiv-authors
+    '((t (:inherit message-header-to :weight normal)))
+    "Faced used in *elfeed-search* buffer to show authors of Arxiv papers"
+    :group 'elfeed)
 
-    (defun lps/elfeed-search-show-entry-function (entry)
-      (let ((tags (elfeed-entry-tags entry)))
-        (cond
-         ((member 'arxiv tags) (lps/elfeed-search-print-entry--arxiv entry))
-         ((member 'hal tags) (lps/elfeed-search-print-entry--hal entry))
-         (t (elfeed-search-print-entry--default entry)))))
+  (defun lps/elfeed-search-format-arxiv-authors (entry)
+    (let* ((authors (elfeed-meta entry :authors))
+           (authors-no-dup (cl-remove-duplicates authors
+                                                 :test #'string-equal
+                                                 :key (lambda (author)
+                                                        (plist-get author :name))))
+           (formatted-authors
+            (mapconcat (lambda (author)
+                         (when-let ((auth (plist-get author :name))
+                                    (splitted (s-split-up-to " " auth 1)))
+                           (concat
+                            (substring (car splitted) 0 1)
+                            "."
+                            (cadr splitted))))
+                       authors-no-dup
+                       ", "))
+           (width (length formatted-authors))
+           (max-width (- lps/elfeed-search-arxiv-authors-max-width 6)))
+      (propertize
+       (if (<  max-width width)
+           (concat "[" (substring formatted-authors 0 max-width) "...] ")
+         (elfeed-format-column
+          (concat "[" formatted-authors "] ")
+          lps/elfeed-search-arxiv-authors-max-width
+          :left))
+       'face 'elfeed-search-arxiv-authors
+       'kbd-help formatted-authors)))
 
-    (setq elfeed-search-print-entry-function
-          'lps/elfeed-search-show-entry-function)
+  (defun lps/elfeed-search-print-entry--arxiv (entry &optional format-title)
+    (let* ((date
+            (elfeed-search-format-date (elfeed-entry-date entry)))
+           (raw-title (or (elfeed-meta entry :title) (elfeed-entry-title entry) ""))
+           (title (if format-title (funcall format-title raw-title) raw-title))
+           (title-faces (elfeed-search--faces (elfeed-entry-tags entry)))
+           (feed (elfeed-entry-feed entry))
+           (feed-title
+            (when feed
+              (or (elfeed-meta feed :title) (elfeed-feed-title feed))))
+           (authors (lps/elfeed-search-format-arxiv-authors entry))
+           (tags (mapcar #'symbol-name (elfeed-entry-tags entry)))
+           (tags-str (mapconcat
+                      (lambda (s) (propertize s 'face 'elfeed-search-tag-face))
+                      tags ","))
+           (title-width (- (window-width)
+                           lps/elfeed-search-arxiv-authors-max-width
+                           10
+                           elfeed-search-trailing-width))
+           (title-column (elfeed-format-column
+                          title (elfeed-clamp
+                                 elfeed-search-title-min-width
+                                 title-width
+                                 (- elfeed-search-title-max-width
+                                    lps/elfeed-search-arxiv-authors-max-width))
+                          :left)))
+      (insert (propertize date 'face 'elfeed-search-date-face) " ")
+      (insert (propertize title-column 'face title-faces 'kbd-help title) " ")
+      (insert authors)
+      (when feed-title
+        (insert (propertize feed-title 'face 'elfeed-search-feed-face) " "))
+      (when tags
+        (insert "(" tags-str ")"))))
 
-    (defun lps/elfeed-search-filter-prompt-time-range ()
-      (let* ((default-time
-              (time-subtract (current-time)
-                             (days-to-time lps/elfeed-default-days-range)))
-             (from (org-read-date nil nil nil nil default-time)))
-        (concat "@" from)))
+  (defun lps/elfeed-search-print-entry--hal (entry)
+    (let* ((hal-prefix-regexp "^ *\\[[a-z]+-[0-9]+\\] *")
+           (format-title (lambda (title)
+                           (replace-regexp-in-string hal-prefix-regexp "" title))))
+      (lps/elfeed-search-print-entry--arxiv entry format-title)))
 
-    (defun lps/elfeed--org-tags ()
-      (let* ((elfeed-org-buffers (cl-loop for file in rmh-elfeed-org-files
-                                          for buffer = (get-file-buffer file)
-                                          when buffer
-                                          collect buffer))
-             (tags (cl-loop for buffer in elfeed-org-buffers
-                            append (with-current-buffer buffer
-                                     (org-get-buffer-tags)))))
-        (cl-remove-duplicates (mapcar #'car tags))))
+  (defun lps/elfeed-search-show-entry-function (entry)
+    (let ((tags (elfeed-entry-tags entry)))
+      (cond
+       ((member 'arxiv tags) (lps/elfeed-search-print-entry--arxiv entry))
+       ((member 'hal tags) (lps/elfeed-search-print-entry--hal entry))
+       (t (elfeed-search-print-entry--default entry)))))
 
-    (defun lps/elfeed-search-filter-add-tags ()
-      (let ((with-tags (completing-read-multiple "Add tags: " (lps/elfeed--org-tags))))
-        (if with-tags
-            (concat "+" (mapconcat #'identity with-tags " +"))
-          "")))
+  (setq elfeed-search-print-entry-function
+        'lps/elfeed-search-show-entry-function)
 
-    (defun lps/elfeed-search-filter-remove-tags ()
-      (let ((without-tags (completing-read-multiple "Remove tags: " (lps/elfeed--org-tags))))
-        (if without-tags
-            (concat "-" (mapconcat #'identity without-tags " -"))
-          "")))
+  (defun lps/elfeed-search-filter-prompt-time-range ()
+    (let* ((default-time
+            (time-subtract (current-time)
+                           (days-to-time lps/elfeed-default-days-range)))
+           (from (org-read-date nil nil nil nil default-time)))
+      (concat "@" from)))
 
-    (defun lps/elfeed-search-filter-interactive ()
-      (interactive)
-      (let ((time (lps/elfeed-search-filter-prompt-time-range))
-            (with-tags (lps/elfeed-search-filter-add-tags))
-            (without-tags (lps/elfeed-search-filter-remove-tags)))
-        (let ((filter (concat time " " with-tags " " without-tags ))
-              (elfeed-search-filter-active :non-interactive))
-          (elfeed-search--prompt filter)
-          (with-current-buffer (elfeed-search-buffer)
-            (setf elfeed-search-filter
-                  (or filter (default-value 'elfeed-search-filter)))
-            (elfeed-search-update :force)))))
+  (defun lps/elfeed--org-tags ()
+    (let* ((elfeed-org-buffers (cl-loop for file in rmh-elfeed-org-files
+                                        for buffer = (get-file-buffer file)
+                                        when buffer
+                                        collect buffer))
+           (tags (cl-loop for buffer in elfeed-org-buffers
+                          append (with-current-buffer buffer
+                                   (org-get-buffer-tags)))))
+      (cl-remove-duplicates (mapcar #'car tags))))
 
-    (defun lps/elfeed-arxiv-get-pdf-add-bibtex-entry ()
-      (interactive)
-      (require 'org-ref-bibtex)
-      (let* ((entry elfeed-show-entry)
-             (id (cdr (elfeed-entry-id entry)))
-             (num (progn
-                    (string-match "^https?://arxiv.org/abs/\\([0-9.]+\\)" id)
-                    (match-string 1 id)))
-             (bibfile (completing-read "Bibfile: " (org-ref-possible-bibfiles)))
-             (pdfdir (cond
-                      ((stringp bibtex-completion-library-path)
-                       bibtex-completion-library-path)
-                      ((= 1 (length bibtex-completion-library-path))
-                       (car bibtex-completion-library-path))
-                      (t
-                       (completing-read "PDF dir: "
-                                        bibtex-completion-library-path)))))
-        (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir))))
+  (defun lps/elfeed-search-filter-add-tags ()
+    (let ((with-tags (completing-read-multiple "Add tags: " (lps/elfeed--org-tags))))
+      (if with-tags
+          (concat "+" (mapconcat #'identity with-tags " +"))
+        "")))
+
+  (defun lps/elfeed-search-filter-remove-tags ()
+    (let ((without-tags (completing-read-multiple "Remove tags: " (lps/elfeed--org-tags))))
+      (if without-tags
+          (concat "-" (mapconcat #'identity without-tags " -"))
+        "")))
+
+  (defun lps/elfeed-search-filter-interactive ()
+    (interactive)
+    (let ((time (lps/elfeed-search-filter-prompt-time-range))
+          (with-tags (lps/elfeed-search-filter-add-tags))
+          (without-tags (lps/elfeed-search-filter-remove-tags)))
+      (let ((filter (concat time " " with-tags " " without-tags ))
+            (elfeed-search-filter-active :non-interactive))
+        (elfeed-search--prompt filter)
+        (with-current-buffer (elfeed-search-buffer)
+          (setf elfeed-search-filter
+                (or filter (default-value 'elfeed-search-filter)))
+          (elfeed-search-update :force)))))
+
+  (defun lps/elfeed-arxiv-get-pdf-add-bibtex-entry ()
+    (interactive)
+    (require 'org-ref-bibtex)
+    (let* ((entry elfeed-show-entry)
+           (id (cdr (elfeed-entry-id entry)))
+           (num (progn
+                  (string-match "^https?://arxiv.org/abs/\\([0-9.]+\\)" id)
+                  (match-string 1 id)))
+           (bibfile (completing-read "Bibfile: " (org-ref-possible-bibfiles)))
+           (pdfdir (cond
+                    ((stringp bibtex-completion-library-path)
+                     bibtex-completion-library-path)
+                    ((= 1 (length bibtex-completion-library-path))
+                     (car bibtex-completion-library-path))
+                    (t
+                     (completing-read "PDF dir: "
+                                      bibtex-completion-library-path)))))
+      (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir)))
 #+end_src
 
 As the default syntax to manage and organize the various RSS feeds is a bit tedious, we use another package which this whole process painless.
@@ -7474,218 +7487,212 @@ As the default syntax to manage and organize the various RSS feeds is a bit tedi
 
 Finally, because Elfeed is somewhat complicated to use, we also add a dashboard to make viewing the frequent and interesting queries easier.
 
-#+begin_src emacs-lisp
-  (use-package elfeed
-    :bind
-    ("C-c f" . lps/elfeed-dashboard)
-    (:map elfeed-search-mode-map
-          ("b" . lps/elfeed-search-bookmark))
-    :init
-    ;; Ugly macro ... Lexical binding is a mess
-    (defmacro lps/elfeed-wrap-before-elfeed (fun)
-      `(lambda ()
-         (interactive)
-         (call-interactively ,fun)
-         (elfeed)))
+#+NAME: elfeed-dashboard
+#+begin_src emacs-lisp :tangle no
+  (defmacro lps/elfeed-wrap-before-elfeed (fun)
+    `(lambda ()
+       (interactive)
+       (call-interactively ,fun)
+       (elfeed)))
 
-    (defvar lps/elfeed-dashboard-buffer "*elfeed-dashboard*")
-    (defcustom lps/elfeed-bookmarks
-      '(( :name  "All unread entries"
-          :query "+unread"
-          :key ?u)
-        ( :name "Today's entries"
-          :query "@1-day-ago"
-          :key ?t)
-        ( :name "Last 7 days"
-          :query "@1-week-ago"
-          :hide-unread t
-          :key ?w)
-        ( :name "Science articles"
-          :query "+unread +articles"
-          :key ?a)
-        ( :name "YT Videos"
-          :query "+unread +youtube"
-          :key ?y)
-        ( :name "Politique"
-          :query "+unread +politique"
-          :key ?p)
-        ( :name "Favourite"
-          :query "+star"
-          :key ?f))
-      "See `mu4e-bookmarks' for some documentation")
-    :config
-    ;; mu4e-like dashboard !
-    (require 'elfeed-org)
-    (require 'mu4e)
+  (defvar lps/elfeed-dashboard-buffer "*elfeed-dashboard*")
+  (defcustom lps/elfeed-bookmarks
+    '(( :name  "All unread entries"
+        :query "+unread"
+        :key ?u)
+      ( :name "Today's entries"
+        :query "@1-day-ago"
+        :key ?t)
+      ( :name "Last 7 days"
+        :query "@1-week-ago"
+        :hide-unread t
+        :key ?w)
+      ( :name "Science articles"
+        :query "+unread +articles"
+        :key ?a)
+      ( :name "YT Videos"
+        :query "+unread +youtube"
+        :key ?y)
+      ( :name "Politique"
+        :query "+unread +politique"
+        :key ?p)
+      ( :name "Favourite"
+        :query "+star"
+        :key ?f))
+    "See `mu4e-bookmarks' for some documentation")
+  :config
+  ;; mu4e-like dashboard !
+  (require 'elfeed-org)
+  (require 'mu4e)
 
-    (defvar lps/elfeed-dashboard-mode-map
-      (let ((map (make-sparse-keymap)))
-        (define-key map "U" (lambda ()
-                              (interactive)
-                              (elfeed-update)
-                              (lps/elfeed-dashboard--redraw nil nil)))
-        (define-key map "r" 'lps/elfeed-org-reread)
-        (define-key map "s" (lps/elfeed-wrap-before-elfeed
-                             #'lps/elfeed-search-filter-interactive))
-        (define-key map "S" (lps/elfeed-wrap-before-elfeed
-                             #'elfeed-search-set-filter))
-        (define-key map "b" 'lps/elfeed-search-bookmark)
-        (define-key map "$" (lambda ()
-                              (interactive)
-                              (pop-to-buffer (elfeed-log-buffer))))
-        map)
-      "Keymap for the *elfeed-dashboard* buffer.")
+  (defvar lps/elfeed-dashboard-mode-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map "U" (lambda ()
+                            (interactive)
+                            (elfeed-update)
+                            (lps/elfeed-dashboard--redraw nil nil)))
+      (define-key map "r" 'lps/elfeed-org-reread)
+      (define-key map "s" (lps/elfeed-wrap-before-elfeed
+                           #'lps/elfeed-search-filter-interactive))
+      (define-key map "S" (lps/elfeed-wrap-before-elfeed
+                           #'elfeed-search-set-filter))
+      (define-key map "b" 'lps/elfeed-search-bookmark)
+      (define-key map "$" (lambda ()
+                            (interactive)
+                            (pop-to-buffer (elfeed-log-buffer))))
+      map)
+    "Keymap for the *elfeed-dashboard* buffer.")
 
-    ;; Temporary remappings while mu4e is normalizing names
-    (defvar lps/mu4e-main-action-str
-      (version-case mu4e-mu
-        ("1.8" 'mu4e--main-action-str)
-        (t 'mu4e~main-action-str)))
+  ;; Temporary remappings while mu4e is normalizing names
+  (defvar lps/mu4e-main-action-str
+    (version-case mu4e-mu
+      ("1.8" 'mu4e--main-action-str)
+      (t 'mu4e~main-action-str)))
 
-    (defvar lps/mu4e-key-val
-      (version-case mu4e-mu
-        ("1.8" 'mu4e--key-val)
-        (t 'mu4e~key-val)))
+  (defvar lps/mu4e-key-val
+    (version-case mu4e-mu
+      ("1.8" 'mu4e--key-val)
+      (t 'mu4e~key-val)))
 
-    (defun lps/elfeed-ask-bookmark (prompt)
-      "Ask the user for a bookmark (using PROMPT) as defined in
+  (defun lps/elfeed-ask-bookmark (prompt)
+    "Ask the user for a bookmark (using PROMPT) as defined in
   `lps/elfeed-bookmarks', then return the corresponding query."
-      (unless lps/elfeed-bookmarks (mu4e-error "No bookmarks defined"))
-      (let* ((prompt (mu4e-format "%s" prompt))
-             (bmarks
-              (mapconcat
-               (lambda (bm)
-                 (concat
-                  "[" (propertize (make-string 1 (plist-get bm :key))
-                                  'face 'mu4e-highlight-face)
-                  "]"
-                  (plist-get bm :name)))
-               lps/elfeed-bookmarks ", "))
-             (kar (read-char (concat prompt bmarks))))
-        (let* ((chosen-bm
-                (or (cl-find-if
-                     (lambda (bm)
-                       (= kar (plist-get bm :key)))
-                     lps/elfeed-bookmarks)
-                    (error "Unknown shortcut '%c'" kar)))
-               (expr (plist-get chosen-bm :query))
-               (expr (if (not (functionp expr)) expr
-                       (funcall expr)))
-               (query (eval expr)))
-          (if (stringp query)
-              query
-            (error "Expression must evaluate to query string ('%S')" expr)))))
+    (unless lps/elfeed-bookmarks (mu4e-error "No bookmarks defined"))
+    (let* ((prompt (mu4e-format "%s" prompt))
+           (bmarks
+            (mapconcat
+             (lambda (bm)
+               (concat
+                "[" (propertize (make-string 1 (plist-get bm :key))
+                                'face 'mu4e-highlight-face)
+                "]"
+                (plist-get bm :name)))
+             lps/elfeed-bookmarks ", "))
+           (kar (read-char (concat prompt bmarks))))
+      (let* ((chosen-bm
+              (or (cl-find-if
+                   (lambda (bm)
+                     (= kar (plist-get bm :key)))
+                   lps/elfeed-bookmarks)
+                  (error "Unknown shortcut '%c'" kar)))
+             (expr (plist-get chosen-bm :query))
+             (expr (if (not (functionp expr)) expr
+                     (funcall expr)))
+             (query (eval expr)))
+        (if (stringp query)
+            query
+          (error "Expression must evaluate to query string ('%S')" expr)))))
 
-    (defun lps/elfeed-search-bookmark (&optional expr)
-      "Search using some bookmarked query EXPR."
-      (interactive)
-      (let ((expr
-             (or expr (lps/elfeed-ask-bookmark "Select bookmark: "))))
-        (elfeed-search-set-filter expr)
-        (elfeed)))
+  (defun lps/elfeed-search-bookmark (&optional expr)
+    "Search using some bookmarked query EXPR."
+    (interactive)
+    (let ((expr
+           (or expr (lps/elfeed-ask-bookmark "Select bookmark: "))))
+      (elfeed-search-set-filter expr)
+      (elfeed)))
 
-    (defun lps/elfeed-dashboard-query-count (query)
-      (let* ((count 0)
-             (filter
-              (elfeed-search-parse-filter query))
-             (func (byte-compile
-                    (elfeed-search-compile-filter filter))))
-        (with-elfeed-db-visit (entry feed)
-          (when (funcall func entry feed count)
-            (setf count (1+ count))))
-        count))
+  (defun lps/elfeed-dashboard-query-count (query)
+    (let* ((count 0)
+           (filter
+            (elfeed-search-parse-filter query))
+           (func (byte-compile
+                  (elfeed-search-compile-filter filter))))
+      (with-elfeed-db-visit (entry feed)
+        (when (funcall func entry feed count)
+          (setf count (1+ count))))
+      count))
 
-    (defun lps/elfeed-bookmarks-dashboard ()
-      (cl-loop with bmks = lps/elfeed-bookmarks
-               with longest = (cl-loop for b in lps/elfeed-bookmarks
-                                       maximize (string-width (plist-get b :name)))
-               ;; with queries = (mu4e-last-query-results)
-               for bm in bmks
-               for key = (string (plist-get bm :key))
-               for name = (plist-get bm :name)
-               for query = (plist-get bm :query)
-               for count-u = (lps/elfeed-dashboard-query-count (concat "+unread "
-                                                                       query))
-               for count = (lps/elfeed-dashboard-query-count query)
-               when (not (plist-get bm :hide))
-               concat (concat
-                       ;; menu entry
-                       (funcall lps/mu4e-main-action-str
-                                (concat "\t* [b" key "] " name)
-                                (concat "b" key))
-                       ;; append all/unread numbers, if available.
-                       (if (and count count-u)
-                           (format
-                            "%s (%s/%s)"
-                            (make-string (- longest (string-width name)) ? )
-                            (propertize (number-to-string count-u)
-                                        'face 'mu4e-header-key-face)
-                            count)
-                         "")
-                       "\n")))
+  (defun lps/elfeed-bookmarks-dashboard ()
+    (cl-loop with bmks = lps/elfeed-bookmarks
+             with longest = (cl-loop for b in lps/elfeed-bookmarks
+                                     maximize (string-width (plist-get b :name)))
+             ;; with queries = (mu4e-last-query-results)
+             for bm in bmks
+             for key = (string (plist-get bm :key))
+             for name = (plist-get bm :name)
+             for query = (plist-get bm :query)
+             for count-u = (lps/elfeed-dashboard-query-count (concat "+unread "
+                                                                     query))
+             for count = (lps/elfeed-dashboard-query-count query)
+             when (not (plist-get bm :hide))
+             concat (concat
+                     ;; menu entry
+                     (funcall lps/mu4e-main-action-str
+                              (concat "\t* [b" key "] " name)
+                              (concat "b" key))
+                     ;; append all/unread numbers, if available.
+                     (if (and count count-u)
+                         (format
+                          "%s (%s/%s)"
+                          (make-string (- longest (string-width name)) ? )
+                          (propertize (number-to-string count-u)
+                                      'face 'mu4e-header-key-face)
+                          count)
+                       "")
+                     "\n")))
 
-    (defun lps/elfeed-dashboard ()
-      (interactive)
-      (with-current-buffer (get-buffer-create lps/elfeed-dashboard-buffer)
-        (let ((inhibit-read-only t)
-              (pos (point)))
-          (erase-buffer)
-          (insert
-           "* "
-           (propertize "elfeed" 'face 'mu4e-header-key-face)
-           (propertize " - Elfeed reader for Emacs version " 'face 'mu4e-title-face)
-           (propertize  elfeed-version 'face 'mu4e-header-key-face)
-           "\n"
-           (propertize "  Last updated at " 'face 'mu4e-title-face)
-           (let* ((db-time (seconds-to-time (elfeed-db-last-update)))
-                  (update (format-time-string "%Y-%m-%d %H:%M" db-time)))
-             (propertize update 'face 'mu4e-header-key-face))
-           "\n\n"
-           (propertize "  Basics\n\n" 'face 'mu4e-title-face)
-           ;; (funcall lps/mu4e-main-action-str
-           ;;  "\t* [j]ump to some maildir\n" 'mu4e-jump-to-maildir)
-           (funcall lps/mu4e-main-action-str
-                    "\t* enter a [s]earch query interactively\n"
-                    'lps/elfeed-search-filter-interactive)
-           "\n"
-           (funcall lps/mu4e-main-action-str
-                    "\t* modify the [S]earch query\n" 'elfeed-search-set-filter)
-           "\n"
-           (propertize "  Bookmarks\n\n" 'face 'mu4e-title-face)
-           (lps/elfeed-bookmarks-dashboard)
-           "\n"
-           (propertize "  Misc\n\n" 'face 'mu4e-title-face)
+  (defun lps/elfeed-dashboard ()
+    (interactive)
+    (with-current-buffer (get-buffer-create lps/elfeed-dashboard-buffer)
+      (let ((inhibit-read-only t)
+            (pos (point)))
+        (erase-buffer)
+        (insert
+         "* "
+         (propertize "elfeed" 'face 'mu4e-header-key-face)
+         (propertize " - Elfeed reader for Emacs version " 'face 'mu4e-title-face)
+         (propertize  elfeed-version 'face 'mu4e-header-key-face)
+         "\n"
+         (propertize "  Last updated at " 'face 'mu4e-title-face)
+         (let* ((db-time (seconds-to-time (elfeed-db-last-update)))
+                (update (format-time-string "%Y-%m-%d %H:%M" db-time)))
+           (propertize update 'face 'mu4e-header-key-face))
+         "\n\n"
+         (propertize "  Basics\n\n" 'face 'mu4e-title-face)
+         ;; (funcall lps/mu4e-main-action-str
+         ;;  "\t* [j]ump to some maildir\n" 'mu4e-jump-to-maildir)
+         (funcall lps/mu4e-main-action-str
+                  "\t* enter a [s]earch query interactively\n"
+                  'lps/elfeed-search-filter-interactive)
+         "\n"
+         (funcall lps/mu4e-main-action-str
+                  "\t* modify the [S]earch query\n" 'elfeed-search-set-filter)
+         "\n"
+         (propertize "  Bookmarks\n\n" 'face 'mu4e-title-face)
+         (lps/elfeed-bookmarks-dashboard)
+         "\n"
+         (propertize "  Misc\n\n" 'face 'mu4e-title-face)
 
-           (funcall lps/mu4e-main-action-str "\t* [U]pdate feeds & database\n"
-                    (lambda ()
-                      (interactive)
-                      (elfeed-update)
-                      (lps/elfeed-dashboard--redraw nil nil)))
-           (funcall lps/mu4e-main-action-str "\t* [r]ead elfeed-org files" 'lps/elfeed-org-reread)
-           "\n"
-           ;; (funcall lps/mu4e-main-action-str "\t* [H]elp\n" 'mu4e-display-manual)
-           (funcall lps/mu4e-main-action-str "\t* [q]uit\n" 'bury-buffer)
+         (funcall lps/mu4e-main-action-str "\t* [U]pdate feeds & database\n"
+                  (lambda ()
+                    (interactive)
+                    (elfeed-update)
+                    (lps/elfeed-dashboard--redraw nil nil)))
+         (funcall lps/mu4e-main-action-str "\t* [r]ead elfeed-org files" 'lps/elfeed-org-reread)
+         "\n"
+         ;; (funcall lps/mu4e-main-action-str "\t* [H]elp\n" 'mu4e-display-manual)
+         (funcall lps/mu4e-main-action-str "\t* [q]uit\n" 'bury-buffer)
 
-           "\n"
-           (propertize "  Info\n\n" 'face 'mu4e-title-face)
-           (funcall lps/mu4e-key-val "database-path" elfeed-db-directory)
-           (funcall lps/mu4e-key-val "in store"
-                    (format "%d" (elfeed-db-size))
-                    "entries"))
-          (goto-char pos))
-        (lps/elfeed-dashboard-mode))
-      (pop-to-buffer lps/elfeed-dashboard-buffer))
+         "\n"
+         (propertize "  Info\n\n" 'face 'mu4e-title-face)
+         (funcall lps/mu4e-key-val "database-path" elfeed-db-directory)
+         (funcall lps/mu4e-key-val "in store"
+                  (format "%d" (elfeed-db-size))
+                  "entries"))
+        (goto-char pos))
+      (lps/elfeed-dashboard-mode))
+    (pop-to-buffer lps/elfeed-dashboard-buffer))
 
-    (defun lps/elfeed-dashboard--redraw (_ignore-auto _noconfirm)
-      "The revert buffer function for `lsp/elfeed-dashboard-mode'."
-      (lps/elfeed-dashboard))
+  (defun lps/elfeed-dashboard--redraw (_ignore-auto _noconfirm)
+    "The revert buffer function for `lsp/elfeed-dashboard-mode'."
+    (lps/elfeed-dashboard))
 
-    (define-derived-mode lps/elfeed-dashboard-mode special-mode "elfeed:dashboard"
-      "Major mode for the elfeed dashboard.
+  (define-derived-mode lps/elfeed-dashboard-mode special-mode "elfeed:dashboard"
+    "Major mode for the elfeed dashboard.
   \\{lps/elfeed-dashboard-mode-map}."
-      (setq truncate-lines t)
-      (setq-local revert-buffer-function #'lps/elfeed-dashboard--redraw)
-      (read-only-mode 1)))
+    (setq truncate-lines t)
+    (setq-local revert-buffer-function #'lps/elfeed-dashboard--redraw)
+    (read-only-mode 1))
 #+end_src
 
 *** Elfeed-tube
@@ -7805,7 +7812,6 @@ To explore:
 
 ** Printing
 Not particularly Emacs-related, but: find a way to specify a username/password to ~lp~ when printing using either the built-in functions or ~transient-extras-lp-*~
-
 
 ** PDF/LaTeX
 *** Beamer
