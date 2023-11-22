@@ -4125,6 +4125,7 @@ return `nil'."
 
   (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-file-field-format)
 
+  ;; Bibtex tags
   (defvar *lps/bibtex-tags* '(("Topological Full Group" . "tfg")
                               ("Projective Fundamental Group" . "pfg")
                               ("Cocycles" . "coc")
@@ -4161,7 +4162,21 @@ return `nil'."
                                 (format-prompt "Tags: " nil)
                                 *lps/bibtex-tags*)))
                     (mapcar 'lps/bibtex-tag-description-to-tag descs))))
-    ()))
+    ())
+
+  ;; Biblio additions with org-capture
+  (defun lps/bibtex-capture-format-and-prompt-for-pdf-file ()
+    (org-ref-clean-bibtex-entry)
+    (when (y-or-n-p "Link to local article ? ")
+      (org-ref-bibtex-assoc-pdf-with-entry)))
+
+  (add-to-list 'org-capture-templates
+               `("b" "Biblio" plain
+                 (file ,(car lps/bib-bibliography-files))
+                 "%x\n"
+                 :empty-lines 1
+                 :before-finalize lps/bibtex-capture-format-and-prompt-for-pdf-file)
+               t 'equal))
 
 (use-package reftex
   :after latex
@@ -4179,6 +4194,7 @@ return `nil'."
   (reftex-toc-split-windows-horizontally nil)
   (reftex-toc-split-windows-fraction 0.5)
   (reftex-cite-format "~\\cite[]{%l}")
+  (reftex-cite-prompt-optional-args t)
   (reftex-label-alist
    '(("section"     ?s "sec:"   "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"))
      ("definition"  ?d "def:"   "~\\ref{%s}" 1 (regexp "[Dd]efinition\\(s\\)?"))
@@ -4568,6 +4584,9 @@ If none is found, loops through the functions in
   ;; Turn on other modes when loaded
   (require 'bibtex-completion)
   (org-roam-bibtex-mode 1)
+
+  (setq org-ref-clean-bibtex-entry-hook
+        (remove 'orcb-check-journal org-ref-clean-bibtex-entry-hook))
 
   (add-to-list 'org-ref-clean-bibtex-entry-hook 'org-ref-title-case)
 

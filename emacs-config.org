@@ -5102,7 +5102,11 @@ We also configure BibTeX and other packages that allow us to insert quickly bibl
 
     (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-file-field-format)
 
-    <<bibtex-tags>>)
+    ;; Bibtex tags
+    <<bibtex-tags>>
+
+    ;; Biblio additions with org-capture
+    <<bibtex-capture>>)
 #+end_src
 
 We slightly extend BibTeX so that it can work with tags !
@@ -5148,6 +5152,22 @@ We slightly extend BibTeX so that it can work with tags !
     ())
 #+end_src
 
+#+NAME: bibtex-capture
+#+begin_src emacs-lisp :tangle no
+  (defun lps/bibtex-capture-format-and-prompt-for-pdf-file ()
+    (org-ref-clean-bibtex-entry)
+    (when (y-or-n-p "Link to local article ? ")
+      (org-ref-bibtex-assoc-pdf-with-entry)))
+
+  (add-to-list 'org-capture-templates
+               `("b" "Biblio" plain
+                 (file ,(car lps/bib-bibliography-files))
+                 "%x\n"
+                 :empty-lines 1
+                 :before-finalize lps/bibtex-capture-format-and-prompt-for-pdf-file)
+               t 'equal)
+#+end_src
+
 Another useful package to deal with references, bibliography, citations and so on, is [[https://www.gnu.org/software/emacs/manual/html_mono/reftex.html][RefTeX]].
 
 #+begin_src emacs-lisp
@@ -5167,6 +5187,7 @@ Another useful package to deal with references, bibliography, citations and so o
     (reftex-toc-split-windows-horizontally nil)
     (reftex-toc-split-windows-fraction 0.5)
     (reftex-cite-format "~\\cite[]{%l}")
+    (reftex-cite-prompt-optional-args t)
     (reftex-label-alist
      '(("section"     ?s "sec:"   "~\\ref{%s}" t (regexp "[Ss]ection\\(s\\)?"))
        ("definition"  ?d "def:"   "~\\ref{%s}" 1 (regexp "[Dd]efinition\\(s\\)?"))
@@ -5568,6 +5589,9 @@ Because =bibtex-completion= is mainly an interface, we use a wrapper around it t
     ;; Turn on other modes when loaded
     (require 'bibtex-completion)
     (org-roam-bibtex-mode 1)
+
+    (setq org-ref-clean-bibtex-entry-hook
+          (remove 'orcb-check-journal org-ref-clean-bibtex-entry-hook))
 
     (add-to-list 'org-ref-clean-bibtex-entry-hook 'org-ref-title-case)
 
