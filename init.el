@@ -3072,14 +3072,6 @@ call the associated function interactively. Otherwise, call the
 
   ;; Basic fonts and faces
   (defun lps/org-font-setup ()
-    ;; Replace list hyphen with dot
-    (font-lock-add-keywords 'org-mode
-                            '(("^ *\\([-]\\) "
-                               (0 (prog1 nil
-                                    (compose-region (match-beginning 1)
-                                                    (match-end 1)
-                                                    "•"))))))
-
     ;; Set faces for heading levels
     ;; For non-headers: org-default
     (dolist (face '((org-level-1 . 1.1)
@@ -3113,7 +3105,8 @@ call the associated function interactively. Otherwise, call the
     (org-indent-mode 1)
     ;; (variable-pitch-mode 1)
     (visual-line-mode 1)
-    (lps/windmove-mode-local-off))
+    (lps/windmove-mode-local-off)
+    (org-cdlatex-mode 1))
 
   ;; Babel configuration
   (org-babel-do-load-languages
@@ -3403,15 +3396,7 @@ Refer to `org-agenda-prefix-format' for more information."
         ("c" . org-roam-capture)
         ("a" . org-roam-tag-add))
   :config
-  (org-roam-db-autosync-mode)
-
-  (defun lps/org-roam-cdlatex-mode ()
-    (when (and
-           (eq major-mode 'org-mode)
-           (f-ancestor-of-p org-roam-directory (buffer-file-name)))
-      (org-cdlatex-mode 1)))
-
-  (add-hook 'find-file-hook 'lps/org-roam-cdlatex-mode))
+  (org-roam-db-autosync-mode))
 
 (use-package consult-org-roam
   :after consult org-roam
@@ -4170,6 +4155,7 @@ return `nil'."
     (when (y-or-n-p "Link to local article ? ")
       (org-ref-bibtex-assoc-pdf-with-entry)))
 
+  (require 'org-capture)
   (add-to-list 'org-capture-templates
                `("b" "Biblio" plain
                  (file ,(car lps/bib-bibliography-files))
