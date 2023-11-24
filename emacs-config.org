@@ -4149,7 +4149,8 @@ Not only is Org Mode great to write structured documents that can be exported to
                             ("Holidays"     . "☀️")
                             ("Science"      . "👩🏾‍🔬")
                             ("Banque"       . "💰")
-                            ("Informatique" . "🖱️")
+                            ("Informatique" . "🏠️")
+                            ("Logement"     . "")
                             ("Santé"        . "⚕️")
                             ("Social"       . "🎉")))
       (cl-pushnew (list (car tag-and-icon)
@@ -7804,6 +7805,7 @@ Finally, and because we might use this on old computers or with bad network, we 
   - Add function to search only articles of a given tag (or tag combination ?)
   - Maybe change bibtex-format-entry functions to show tags (more or less succintly ?)
 - Fix autoloading of =bibtex-completion= when calling ~org-ref-read-key~.
+- Fix ~bibtex-autokey-demangle-name~ so that it correctly handles "long names": it currently assumes that a long name is of the form 'particle + relevant-stuff', while there might be surnames with a space where everything is to be kept.
 ** Generic
 Use functions that have been added to Emacs rather than mine, or use a macro to decide according to the version:
 - [ ] duplicate-dwim (29.1)
