@@ -4240,15 +4240,6 @@ Return a list of regular expressions."
           (cons def coll)))
       nil nil nil 'reftex-cite-regexp-hist))))
 
-(use-package biblio-core
-  :defer t
-  :config
-  ;; We just override this function, to use our own completion
-  ;; system.
-  ;; We don't want packages to mess up our config !
-  (defun biblio--completing-read-function ()
-    completing-read-function))
-
 (use-package biblio
   :bind
   (:map bibtex-mode-map
@@ -4379,10 +4370,10 @@ The functions used to match the keys are defined in
 
   ;; Improve visual look of org-ref-read-key
   (defvar lps/bibtex-completion-format-entry-properties
-    '(("author" face elfeed-search-arxiv-authors)
-      ("date" face elfeed-search-date-face)
-      ("year" face elfeed-search-date-face)
-      ("tags" face elfeed-search-tag-face))
+    '(("author" face (:inherit message-header-to :weight normal))
+      ("date" face font-lock-variable-name-face)
+      ("year" face font-lock-variable-name-face)
+      ("tags" face font-lock-type-face))
     "Alist of (FIELD-NAME (PROPERTIES)*).
 The properties will be applied as if by
 (apply 'propertize STRING PROPERTIES)")
@@ -4543,6 +4534,11 @@ If none is found, loops through the functions in
       (when pdf-url-maybe
         (concat "https://hal.science" pdf-url-maybe)))))
 
+(use-package org-ref
+  :defer t
+  :config
+  (require 'bibtex-completion))
+
 (use-package org-ref-bibtex
   :defer t
   :ensure nil
@@ -4568,8 +4564,6 @@ If none is found, loops through the functions in
                               ("article" "title")
                               ("book" "booktitle")))
   :config
-  ;; Turn on other modes when loaded
-  (require 'bibtex-completion)
   (org-roam-bibtex-mode 1)
 
   (setq org-ref-clean-bibtex-entry-hook
@@ -5522,6 +5516,46 @@ confirmation when sending a non-multipart MIME mail")
   ;; (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
 
   ;; Inspired by mu4e-column-faces-mode
+  ;; Taken from mu4e-column-faces
+  (defvar lps/mu4e-headers-fields-propertize
+    `((:human-date font-lock-string-face)
+      (:flags font-lock-type-face)
+      (:mailing-list font-lock-builtin-face)
+      (:from-or-to font-lock-variable-name-face)
+      (:subject lps/mu4e~headers-format-subject)
+      (:bcc font-lock-variable-name-face)
+      (:cc font-lock-variable-name-face)
+      (:changed)
+      (:date font-lock-string-face)
+      (:from font-lock-variable-name-face)
+      (:maildir font-lock-function-name-face)
+      (:list font-lock-builtin-face)
+      (:message-id font-lock-keyword-face)
+      (:path font-lock-function-name-face)
+      (:size font-lock-string-face)
+      (:tags font-lock-keyword-face)
+      (:thread-subject font-lock-doc-face)
+      (:to font-lock-variable-name-face))
+    "Alist of (FIELD-NAME FACE-OR-FUNCTION).
+
+    If the second element is a function, it will be called with two
+    elements: the field content, and the message itself.")
+
+  (defvar lps/mu4e-headers-propertize-context
+    '(("Orange" "red4")
+      ("Unicaen" "blue3")
+      ("ENS_Lyon" "green4"))
+    "Alist of (CONTEXT-NAME FACE-OR-FUNCTION)
+
+    If the second element is a function, it will be called with the
+    header corresponding to the current message.
+
+    If it is a string, it will be assumed to be a colour; in that
+    case, header will be prefixed with \"█ \", coloured in this
+    colour.
+
+    Otherwise, it is a symbol naming a face.")
+
   (defun lps/mu4e~headers-field-handler (f-w msg)
     "Create a description of the field of MSG described by F-W."
     (let* ((field (car f-w))
@@ -5568,45 +5602,6 @@ confirmation when sending a non-multipart MIME mail")
                                 '(:weight bold :underline t)))
       (buffer-substring (point-min) (point-max))))
 
-  ;; Taken from mu4e-column-faces
-  (defvar lps/mu4e-headers-fields-propertize
-    `((:human-date font-lock-string-face)
-      (:flags font-lock-type-face)
-      (:mailing-list font-lock-builtin-face)
-      (:from-or-to font-lock-variable-name-face)
-      (:subject lps/mu4e~headers-format-subject)
-      (:bcc font-lock-variable-name-face)
-      (:cc font-lock-variable-name-face)
-      (:changed)
-      (:date font-lock-string-face)
-      (:from font-lock-variable-name-face)
-      (:maildir font-lock-function-name-face)
-      (:list font-lock-builtin-face)
-      (:message-id font-lock-keyword-face)
-      (:path font-lock-function-name-face)
-      (:size font-lock-string-face)
-      (:tags font-lock-keyword-face)
-      (:thread-subject font-lock-doc-face)
-      (:to font-lock-variable-name-face))
-    "Alist of (FIELD-NAME FACE-OR-FUNCTION).
-
-    If the second element is a function, it will be called with two
-    elements: the field content, and the message itself.")
-
-  (defvar lps/mu4e-headers-propertize-context
-    '(("Orange" "red4")
-      ("Unicaen" "blue3")
-      ("ENS_Lyon" "green4"))
-    "Alist of (CONTEXT-NAME FACE-OR-FUNCTION)
-
-    If the second element is a function, it will be called with the
-    header corresponding to the current message.
-
-    If it is a string, it will be assumed to be a colour; in that
-    case, header will be prefixed with \"█ \", coloured in this
-    colour.
-
-    Otherwise, it is a symbol naming a face.")
   ;; This overrides the previous definition of this function, inlines
   ;; everything called by the original function, and replace an internal
   ;; function call by our own function.
