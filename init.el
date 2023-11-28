@@ -193,6 +193,22 @@ fboundp."
                            (let ,bindings
                              (apply ,wrap-fun ,wrap-args))))))
 
+(defmacro defun-override (name-or-old-new-name lambda-list &rest body)
+  (declare (doc-string 3) (indent 2))
+  (let* ((name
+          (if (listp name-or-old-new-name)
+              (cadr name-or-old-new-name)
+            name-or-old-new-name))
+         (old-name
+          (if (listp name-or-old-new-name)
+              (car name-or-old-new-name)
+            (intern (string-trim-left (symbol-name name-or-old-new-name) "lps/")))))
+    `(progn
+       (defun ,name ,lambda-list
+         ,@body)
+
+       (advice-add ',old-name :override ',name))))
+
 (use-package emacs
   :ensure nil
   :init
@@ -1535,7 +1551,7 @@ buffer name already resembles a file name"
   :config
   ;; Temporary (??) hack: we used HELPFUL to override the built-in help,
   ;; so company quickhelp got confused ...
-  (defun elisp--company-doc-buffer (str)
+  (defun-override lps/elisp--company-doc-buffer (str)
     (let ((symbol (intern-soft str)))
       ;; FIXME: we really don't want to "display-buffer and then undo it".
       (save-window-excursion
@@ -2089,13 +2105,10 @@ If it is non-nil, replace it by an underscore _"
   :config
   ;; Override, I believe it's buggy
   ;; Replaced PROJECTION-FILES with PROJECTION-ROOT
-  (defun lps/projection-ibuffer--current-project (project)
+  (defun-override lps/projection-ibuffer--current-project (project)
     "Open an IBuffer window showing only buffers in PROJECT."
     (ibuffer nil (format "*%s Buffers*" (project-name project))
-             (list (cons 'projection-root project))))
-
-  (advice-add 'projection-ibuffer--current-project
-              :override 'lps/projection-ibuffer--current-project))
+             (list (cons 'projection-root project)))))
 
 (use-package projection-multi)
 (use-package projection-multi-embark
@@ -4216,7 +4229,7 @@ return `nil'."
                  (mapcar 'lps/get-bibtex-keys (reftex-get-bibfile-list)))))
 
   ;; Override this function to have a better completion
-  (defun reftex--query-search-regexps (default)
+  (defun-override lps/reftex--query-search-regexps (default)
     "Query for regexps for searching entries using DEFAULT as default.
 Return a list of regular expressions."
     (split-string
@@ -4360,7 +4373,7 @@ The functions used to match the keys are defined in
      (lps/bibtex-completion-fix-stripped-brackets s)))
 
   ;; Override this, only ever used as an interfance: cannot break internal stuff
-  (defun bibtex-completion-clean-string (s)
+  (defun-override lps/bibtex-completion-clean-string (s)
     (if s
         (->> s
              (lps/bibtex-format-undo-nonascii)
@@ -4381,7 +4394,7 @@ The properties will be applied as if by
   ;; Copy of the original function
   ;; It simply propertizes every field by using the alist
   ;; lps/bibtex-completion-format-entry-properties
-  (defun bibtex-completion-format-entry (entry width)
+  (defun-override lps/bibtex-completion-format-entry (entry width)
     "Formats a BibTeX ENTRY for display in results list.
 WIDTH is the width of the results list.  The display format is
 governed by the variable `bibtex-completion-display-formats'."
@@ -4429,8 +4442,8 @@ governed by the variable `bibtex-completion-display-formats'."
   ;; Redefine here, superset
   (setq org-ref-lower-case-words lps/do-not-capitalize-list)
   :custom
-  (doi-utils-download-pdf nil) ; buggy
-  (doi-utils-async-download ) ; buggy
+  (doi-utils-download-pdf nil)          ; buggy
+  (doi-utils-async-download )           ; buggy
   (doi-utils-open-pdf-after-download t)
   :config
   (advice-ensure-bindings org-ref-read-key ((orderless-matching-styles
@@ -4475,7 +4488,7 @@ Mathematical Society) urls.
   (add-to-list 'doi-utils-pdf-url-functions 'ems-pdf-url)
 
   ;; Override to also use another list of functions
-  (defun doi-utils-get-pdf-url-from-anywhere (doi)
+  (defun-override lps/doi-utils-get-pdf-url-from-anywhere (doi)
     "Return a url to a pdf for the DOI if one can be calculated.
 Loops through the functions in `doi-utils-pdf-url-functions'
 until one is found.
@@ -5610,7 +5623,7 @@ confirmation when sending a non-multipart MIME mail")
   ;; depending on the installed version ...
   (version-case mu4e-mu
     ("1.8"
-     (defun mu4e~headers-append-handler (msglst)
+     (defun-override lps/mu4e~headers-append-handler (msglst)
        "Append one-line descriptions of messages in MSGLIST.
     Do this at the end of the headers-buffer."
        (when (buffer-live-p (mu4e-get-headers-buffer))
@@ -5636,7 +5649,7 @@ confirmation when sending a non-multipart MIME mail")
                 msglst)))))))
 
     ("1.7"
-     (defun mu4e~headers-header-handler (msg &optional point)
+     (defun-override lps/mu4e~headers-header-handler (msg &optional point)
        "Create a one line description of MSG in this buffer, at POINT,
     if provided, or at the end of the buffer otherwise."
        (when (buffer-live-p (mu4e-get-headers-buffer))
@@ -5665,8 +5678,7 @@ confirmation when sending a non-multipart MIME mail")
   :ensure nil
   :hook (dired-mode . turn-on-gnus-dired-mode)
   :config
-  ;; This overrides a function !
-  (defun gnus-dired-mail-buffers ()
+  (defun-override gnus-dired-mail-buffers ()
     "Return a list of active message buffers."
     (let (buffers)
       (save-current-buffer
