@@ -4095,34 +4095,38 @@ return `nil'."
   (defun lps/bibtex-autokey-name-convert (name)
     (downcase (lps/string-try-remove-accentuation name)))
 
-  (defun lps/bibtex-fix-file-field-format ()
+  (defun lps/bibtex-fix-long-field-format ()
+    "Slow version which fixes a problem of alignment/line breaks
+when formatting Bibtex entries. Hacky workaround."
     (save-excursion
       (bibtex-beginning-of-entry)
-      (let* ((bounds (or
-                      (bibtex-search-forward-field "file")
-                      (bibtex-search-forward-field "FILE")))
-             (end-field (and bounds (copy-marker (bibtex-end-of-field bounds)))))
-        (when end-field
-          (goto-char (bibtex-start-of-field bounds))
-          (forward-char)                ; leading comma
-          (bibtex-delete-whitespace)
-          (insert "\n")
-          (indent-to-column (+ bibtex-entry-offset
-                               bibtex-field-indentation))
-          (re-search-forward "[ \t\n]*=" end-field)
-          (replace-match "=")
-          (forward-char -1)
-          (if bibtex-align-at-equal-sign
-              (indent-to-column
-               (+ bibtex-entry-offset (- bibtex-text-indentation 2)))
-            (insert " "))
-          (forward-char)
-          (bibtex-delete-whitespace)
-          (if bibtex-align-at-equal-sign
-              (insert " ")
-            (indent-to-column bibtex-text-indentation))))))
+      (dolist (field (bibtex-parse-entry))
+        (bibtex-beginning-of-entry)
+        (let* ((bounds (or
+                        (bibtex-search-forward-field (downcase (car field)))
+                        (bibtex-search-forward-field (upcase (car field)))))
+               (end-field (and bounds (copy-marker (bibtex-end-of-field bounds)))))
+          (when end-field
+            (goto-char (bibtex-start-of-field bounds))
+            (forward-char)              ; leading comma
+            (bibtex-delete-whitespace)
+            (insert "\n")
+            (indent-to-column (+ bibtex-entry-offset
+                                 bibtex-field-indentation))
+            (re-search-forward "[ \t\n]*=" end-field)
+            (replace-match "=")
+            (forward-char -1)
+            (if bibtex-align-at-equal-sign
+                (indent-to-column
+                 (+ bibtex-entry-offset (- bibtex-text-indentation 2)))
+              (insert " "))
+            (forward-char)
+            (bibtex-delete-whitespace)
+            (if bibtex-align-at-equal-sign
+                (insert " ")
+              (indent-to-column bibtex-text-indentation)))))))
 
-  (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-file-field-format)
+  (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-long-field-format)
 
   ;; Bibtex tags
   (defvar *lps/bibtex-tags* '(("Topological Full Group" . "tfg")
@@ -4766,7 +4770,7 @@ present in the list of authors or in the title of the article"
   :bind
   (:map cdlatex-mode-map
         ("C-c ?" . nil)
-        ("<C-return>" . nil))
+        ("<C-return>" . lps/TeX-fast-insert-macro))
   :custom
   (cdlatex-paired-parens "$([{")
   (cdlatex-make-sub-superscript-roman-if-pressed-twice t)
@@ -4844,7 +4848,37 @@ present in the list of authors or in the title of the article"
       (apply fun args)))
 
   (advice-add 'cdlatex-sub-superscript
-              :around #'lps/cdlatex-sub-superscript-wrap-region))
+              :around #'lps/cdlatex-sub-superscript-wrap-region)
+
+  (defun lps/TeX-fast-insert-macro ()
+    "Insert a macro like `TeX-insert-macro' does, but pre-fill the
+prompt with the word at point, using flex matching."
+    (interactive)
+    (let* ((completion-extra-properties
+            (list :annotation-function
+                  #'TeX--completion-annotation-function))
+           (orderless-matching-styles '(orderless-flex))
+           (word (thing-at-point 'word))
+           (bounds (bounds-of-thing-at-point 'word))
+           (symbol (completing-read (concat "Macro (default "
+                                            TeX-default-macro
+                                            "): "
+                                            TeX-esc)
+                                    (TeX--symbol-completion-table) nil nil word
+                                    'TeX-macro-history TeX-default-macro)))
+      (when (called-interactively-p 'any)
+        (setq TeX-default-macro symbol))
+      (atomic-change-group
+        (TeX-parse-macro symbol (cdr-safe (assoc symbol (TeX-symbol-list))))
+        (when bounds
+          (delete-region (car bounds) (cdr bounds)))
+        (run-hooks 'TeX-after-insert-macro-hook)))))
+
+(use-package latex-table-wizard
+  :defer t
+  :bind
+  (:map TeX-mode-map
+        ("C-|" . latex-table-wizard)))
 
 ;; eshell
 (use-package eshell-did-you-mean
