@@ -5155,6 +5155,8 @@ We slightly extend BibTeX so that it can work with tags !
     ())
 #+end_src
 
+I often download articles from the Internet: in that setting, as I do not use browser extensions of separate software to manage my bibliography, the quick-and-dirty solution is to copy the BibTeX citation from the Internet too, and then using ~org-capture~, insert it at the right place, and link it to the downloaded PDF file /via/ the usual ~org-ref-*~ tools.
+
 #+NAME: bibtex-capture
 #+begin_src emacs-lisp :tangle no
   (defun lps/bibtex-capture-format-and-prompt-for-pdf-file ()
@@ -6872,7 +6874,7 @@ To patch this, we use a few tricks with ~gnus-dired~
     :ensure nil
     :hook (dired-mode . turn-on-gnus-dired-mode)
     :config
-    (defun-override gnus-dired-mail-buffers ()
+    (defun-override lps/gnus-dired-mail-buffers ()
       "Return a list of active message buffers."
       (let (buffers)
         (save-current-buffer

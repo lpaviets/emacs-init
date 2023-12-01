@@ -5712,7 +5712,7 @@ confirmation when sending a non-multipart MIME mail")
   :ensure nil
   :hook (dired-mode . turn-on-gnus-dired-mode)
   :config
-  (defun-override gnus-dired-mail-buffers ()
+  (defun-override lps/gnus-dired-mail-buffers ()
     "Return a list of active message buffers."
     (let (buffers)
       (save-current-buffer
