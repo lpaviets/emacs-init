@@ -2661,7 +2661,8 @@ call the associated function interactively. Otherwise, call the
                (cons 'lisp-mode 'sly-compile-and-load-file))
 
   (setq common-lisp-hyperspec-root
-        (concat "file://" (expand-file-name "~/Documents/Other/HyperSpec/")))
+        (concat "file://"
+                (expand-file-name "Other/HyperSpec/" (xdg-user-dir "DOCUMENTS"))))
 
   (define-key sly-prefix-map (kbd "C-v") sly-selector-map)
 
@@ -3047,7 +3048,8 @@ call the associated function interactively. Otherwise, call the
         ("'" . nil)
         ("$" . TeX-insert-dollar)) ; might break things ? Not here by default
   :init
-  (setq org-directory "~/Documents/OrgFiles/") ; have to do it early ...
+  ;; Have to do this early
+  (setq org-directory (expand-file-name "OrgFiles/" (xdg-user-dir "DOCUMENTS")))
   (defun lps/org-expand-file-name (name &optional as-directory)
     (let ((file-or-dir (expand-file-name name org-directory)))
       (if as-directory
