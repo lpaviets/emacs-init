@@ -1265,6 +1265,12 @@ Sometimes, we also want some very specific buffer to be associated to a certain 
 
 ** Files
 Although /buffers/ are what Emacs really manipulates, they are in particular often used to deal with ... files. Hence, we need ways to do things specifically for buffer that are visiting files, and also related to file management in general.
+
+A first thing that we do here is load some utilities:
+#+begin_src emacs-lisp
+  (require 'xdg)
+#+end_src
+
 *** Open file
 
 We often want to visit links. If the point is on a file path, for example, it is often useful to be able to quicky navigate to this file.
@@ -4424,6 +4430,7 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
                                               "-draw" "text %X,%Y '%c'"))
       (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
       (pdf-view-display-size 'fit-page)
+      (pdf-view-selection-style 'glyph)
       :config
       (pdf-tools-install :no-query)
 

@@ -966,6 +966,8 @@ buffer in current window."
      "%s is up for grabs.")
    (current-buffer)))
 
+(require 'xdg)
+
 (use-package ffap
   :ensure nil
   :only-built-in t
@@ -3479,6 +3481,7 @@ Refer to `org-agenda-prefix-format' for more information."
                                             "-draw" "text %X,%Y '%c'"))
     (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
     (pdf-view-display-size 'fit-page)
+    (pdf-view-selection-style 'glyph)
     :config
     (pdf-tools-install :no-query)
 
