@@ -3214,7 +3214,8 @@ Many programming languages have, in one way or another, a REPL or a command-line
     :ensure nil
     :custom
     (comint-scroll-to-bottom-on-input t)
-    (comint-prompt-read-only t))
+    (comint-prompt-read-only t)
+    (comint-completion-addsuffix nil))
 #+end_src
 
 ** Programming languages
