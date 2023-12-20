@@ -26,6 +26,7 @@
         down-list
         downcase-dwim
         drag-stuff-down
+        electric-newline-and-maybe-indent
         end-of-buffer
         end-of-visual-line
         eval-last-sexp
@@ -83,6 +84,7 @@
         reftex-label
         reindent-then-newline-and-indent
         transpose-sexps
+        undo-redo
         wdired--self-insert
         wdired-capitalize-word
         wdired-set-bit

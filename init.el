@@ -1639,6 +1639,7 @@ buffer name already resembles a file name"
   (isearch-regexp-lax-whitespace t)
   (isearch-yank-on-move 'shift)
   (isearch-allow-scroll t)
+  (isearch-allow-motion t)
   (isearch-lazy-count t)
   :config
   ;; Change this face to distinguish between current match and other ones

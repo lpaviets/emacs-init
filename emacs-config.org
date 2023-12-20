@@ -2131,7 +2131,7 @@ We also add more convenient bindings to move paragraph by paragraph, and to deal
     (sentence-end-double-space nil))
 #+end_src
 
-*** Text-search
+²*** Text-search
 Final touch: we often use the "search" functions to move the point around, because it is often easier than mashing the ~C-f~ and ~C-n~ keys.
 
 Hence, we add a few bindings to an already existing keymap, to make them easily accessible again.
@@ -2154,6 +2154,7 @@ Hence, we add a few bindings to an already existing keymap, to make them easily 
     (isearch-regexp-lax-whitespace t)
     (isearch-yank-on-move 'shift)
     (isearch-allow-scroll t)
+    (isearch-allow-motion t)
     (isearch-lazy-count t)
     :config
     ;; Change this face to distinguish between current match and other ones
