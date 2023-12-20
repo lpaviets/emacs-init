@@ -2496,7 +2496,8 @@ call the associated function interactively. Otherwise, call the
   :ensure nil
   :custom
   (comint-scroll-to-bottom-on-input t)
-  (comint-prompt-read-only t))
+  (comint-prompt-read-only t)
+  (comint-completion-addsuffix nil))
 
 (use-package python
   :defer t

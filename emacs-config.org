@@ -2131,7 +2131,7 @@ We also add more convenient bindings to move paragraph by paragraph, and to deal
     (sentence-end-double-space nil))
 #+end_src
 
-²*** Text-search
+*** Text-search
 Final touch: we often use the "search" functions to move the point around, because it is often easier than mashing the ~C-f~ and ~C-n~ keys.
 
 Hence, we add a few bindings to an already existing keymap, to make them easily accessible again.
@@ -3215,7 +3215,8 @@ Many programming languages have, in one way or another, a REPL or a command-line
     :ensure nil
     :custom
     (comint-scroll-to-bottom-on-input t)
-    (comint-prompt-read-only t))
+    (comint-prompt-read-only t)
+    (comint-completion-addsuffix nil))
 #+end_src
 
 ** Programming languages
