@@ -132,3 +132,4 @@ flycheck_*.el
 /.saveplaces
 /multisession/
 /tutorial/
+/eglot-java-eclipse-jdt-cache/*

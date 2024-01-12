@@ -590,6 +590,7 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
     (auto-hscroll-mode 'current-line)
     (display-line-numbers-width 3)
     (display-line-numbers-grow-only t)
+    (fill-column 80) ; default 70 is a bit low
     :hook
     ((prog-mode LaTeX-mode) . display-line-numbers-mode)
     ((text-mode org-mode LaTeX-mode comint-mode) . visual-line-mode)
@@ -4172,10 +4173,11 @@ Not only is Org Mode great to write structured documents that can be exported to
                             ("Holidays"     . "☀️")
                             ("Science"      . "👩🏾‍🔬")
                             ("Banque"       . "💰")
-                            ("Informatique" . "🏠️")
-                            ("Logement"     . "")
+                            ("Informatique" . "💻")
+                            ("Logement"     . "🏠️")
                             ("Santé"        . "⚕️")
-                            ("Social"       . "🎉")))
+                            ("Social"       . "🎉")
+                            ("Others"       . "❓")))
       (cl-pushnew (list (car tag-and-icon)
                         (list (substring-no-properties (cdr tag-and-icon)))
                         nil nil

@@ -410,6 +410,7 @@ fboundp."
   (auto-hscroll-mode 'current-line)
   (display-line-numbers-width 3)
   (display-line-numbers-grow-only t)
+  (fill-column 80) ; default 70 is a bit low
   :hook
   ((prog-mode LaTeX-mode) . display-line-numbers-mode)
   ((text-mode org-mode LaTeX-mode comint-mode) . visual-line-mode)
@@ -3250,10 +3251,11 @@ call the associated function interactively. Otherwise, call the
                           ("Holidays"     . "☀️")
                           ("Science"      . "👩🏾‍🔬")
                           ("Banque"       . "💰")
-                          ("Informatique" . "🏠️")
-                          ("Logement"     . "")
+                          ("Informatique" . "💻")
+                          ("Logement"     . "🏠️")
                           ("Santé"        . "⚕️")
-                          ("Social"       . "🎉")))
+                          ("Social"       . "🎉")
+                          ("Others"       . "❓")))
     (cl-pushnew (list (car tag-and-icon)
                       (list (substring-no-properties (cdr tag-and-icon)))
                       nil nil
