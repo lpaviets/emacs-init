@@ -2423,6 +2423,7 @@ Does not insert a space before the inserted opening parenthesis"
 
 (use-package eglot
   ;;:hook ((python-mode c-mode c++-mode) . eglot-ensure)
+  :hook (eglot-managed-mode . lps/eldoc-set-documentation-strategy)
   :ensure nil
   :only-built-in t
   :init
@@ -2446,15 +2447,15 @@ Does not insert a space before the inserted opening parenthesis"
 ;; Flycheck
 (use-package flymake
   :only-built-in t
-  :bind-keymap
-  ("C-c !" . flymake-mode-map)
+  ;; :bind-keymap
+  ;; ("C-c !" . flymake-mode-map)
   :bind
   (:map flymake-mode-map
-        ("c" . flymake-start)
-        ("l" . flymake-show-buffer-diagnostics)
-        ("L" . flymake-show-project-diagnostics)
-        ("n" . flymake-goto-next-error)
-        ("p" . flymake-goto-prev-error))
+        ("C-c ! c" . flymake-start)
+        ("C-c ! l" . flymake-show-buffer-diagnostics)
+        ("C-c ! L" . flymake-show-project-diagnostics)
+        ("C-c ! n" . flymake-goto-next-error)
+        ("C-c ! p" . flymake-goto-prev-error))
   :config
   (defvar flymake-repeat-map
     (let ((map (make-sparse-keymap)))
@@ -2489,9 +2490,14 @@ call the associated function interactively. Otherwise, call the
       (call-interactively command))))
 
 (use-package eldoc
+  :custom
+  (eldoc-documentation-strategy 'eldoc-documentation-compose-eagerly)
   :config
   (with-eval-after-load 'paredit
-   (eldoc-add-command-completions "paredit-")))
+    (eldoc-add-command-completions "paredit-"))
+  ;; Put that in a function: needed for Eglot ...
+  (defun lps/eldoc-set-documentation-strategy ()
+    (setq eldoc-documentation-strategy 'eldoc-documentation-compose-eagerly)))
 
 (use-package emacs
   :ensure nil
