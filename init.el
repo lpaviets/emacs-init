@@ -5558,6 +5558,9 @@ confirmation when sending a non-multipart MIME mail")
   ;; Change this face to make it more visible, at least for kaolin-ocean theme
   (set-face-attribute 'mu4e-replied-face nil :inherit 'font-lock-function-name-face)
 
+  ;; This is ugly otherwise
+  (when (facep 'mu4e-thread-fold-face)
+    (set-face-attribute 'mu4e-thread-fold-face nil :inherit nil))
 
   (defun lps/resize-headers-fields ()
     (if (eq major-mode 'mu4e-headers-mode)
