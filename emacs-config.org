@@ -3868,6 +3868,15 @@ Because HTML tends to be very verbose, we also want to be able to quickly type t
     (emmet-move-cursor-between-quotes t))
 #+end_src
 
+*** Java
+Despite not being the best editor to program in Java, Emacs is still quite capable, in particular when using LSP.
+
+#+begin_src emacs-lisp
+  (use-package eglot-java
+    :after eglot
+    :hook (java-mode . eglot-java-mode))
+#+end_src
+
 ** Debug
 *** GUD
 Emacs already provides a large number of debuggers, under the name "Grand Unified Debugger".
@@ -4183,7 +4192,8 @@ Not only is Org Mode great to write structured documents that can be exported to
                             ("Logement"     . "🏠️")
                             ("Santé"        . "⚕️")
                             ("Social"       . "🎉")
-                            ("Others"       . "❓")))
+                            ("Others"       . "❓")
+                            ("Workplace"    . "🏢")))
       (cl-pushnew (list (car tag-and-icon)
                         (list (substring-no-properties (cdr tag-and-icon)))
                         nil nil

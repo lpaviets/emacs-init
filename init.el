@@ -3008,6 +3008,10 @@ call the associated function interactively. Otherwise, call the
   :custom
   (emmet-move-cursor-between-quotes t))
 
+(use-package eglot-java
+  :after eglot
+  :hook (java-mode . eglot-java-mode))
+
 (use-package gdb-mi
   :ensure nil
   :defer t
@@ -3261,7 +3265,8 @@ call the associated function interactively. Otherwise, call the
                           ("Logement"     . "🏠️")
                           ("Santé"        . "⚕️")
                           ("Social"       . "🎉")
-                          ("Others"       . "❓")))
+                          ("Others"       . "❓")
+                          ("Workplace"    . "🏢")))
     (cl-pushnew (list (car tag-and-icon)
                       (list (substring-no-properties (cdr tag-and-icon)))
                       nil nil
