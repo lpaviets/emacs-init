@@ -3243,8 +3243,10 @@ call the associated function interactively. Otherwise, call the
      ("READ" . (:foreground "orchid3" :weight bold))
      ("NEXT" . (:foreground "orange1" :weight bold))))
 
+  (org-agenda-breadcrumbs-separator "/")
+
   (org-agenda-prefix-format
-   '((agenda . " %i %(lps/agenda-category 15)%?-15t% s")
+   '((agenda . " %i %(lps/agenda-category 15)%?-15t%b% s")
      (todo . " %i %(lps/agenda-category 15) ")
      (tags . " %i %(lps/agenda-category 15) ")
      (search . " %i %(lps/agenda-category 15)")))
