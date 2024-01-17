@@ -3267,8 +3267,10 @@ call the associated function interactively. Otherwise, call the
                           ("Logement"     . "🏠️")
                           ("Santé"        . "⚕️")
                           ("Social"       . "🎉")
-                          ("Others"       . "❓")
-                          ("Workplace"    . "🏢")))
+                          ("Books"        . "📚")
+                          ("Movies"       . "🎥")
+                          ("Workplace"    . "🏢")
+                          ("Others"       . "❓")))
     (cl-pushnew (list (car tag-and-icon)
                       (list (substring-no-properties (cdr tag-and-icon)))
                       nil nil
@@ -4047,7 +4049,28 @@ return `nil'."
                                ("fbox" "")
                                ("mbox" "")
                                ("sbox" ""))
-                             'function)))
+                             'function))
+
+  ;; Improve compile region
+  (defun lps/LaTeX-add-bib-to-compile-region ()
+    (let (bibstyle bibpath)
+      (with-current-buffer TeX-region-master-buffer
+        (save-excursion
+          (goto-char (point-min))
+          (setq bibpath (reftex-locate-bibliography-files
+                         (file-name-directory (reftex-TeX-master-file))))
+          (re-search-forward "\\\\bibliographystyle{[a-z]+}" nil t)
+          (setq bibstyle (or (match-string-no-properties 0) ""))))
+      (save-excursion
+        (goto-char (point-max))
+        (re-search-backward "\\\\end{document}")
+        (insert bibstyle
+                "\n"
+                "\\bibliography{"
+                (mapconcat 'identity bibpath ",")
+                "}\n"))))
+
+  (add-hook 'TeX-region-hook 'lps/LaTeX-add-bib-to-compile-region))
 
 (use-package tex-fold
   :defer t
@@ -4107,6 +4130,22 @@ return `nil'."
   (bibtex-autokey-name-year-separator "")
   (bibtex-autokey-year-title-separator "_")
   :config
+  ;; Fix accentuation
+  (dolist (a '((("\"o" "\\\"o" "\\o") . "o") ; "o,\"o,\o,\oe -> oe
+               (("\"O" "\\\"O" "\\O") . "O") ; "O,\"O,\O,\OE -> Oe
+               (("\"a" "\\\"a") . "a")       ; "a,\"a,\ae -> ae
+               (("\"A" "\\\"A") . "A")       ; "A,\"A,\AE    -> Ae
+               (("\"u" "\\\"u") . "u")       ; "u,\"u        -> ue
+               (("\"U" "\\\"U") . "U")))     ; "U,\"U        -> Ue
+    (add-to-list 'bibtex-autokey-transcriptions
+                 (cons (regexp-opt (car a)) (cdr a))
+                 nil
+                 'equal))
+
+  ;; Need to reevaluate them ...
+  (setq bibtex-autokey-name-change-strings bibtex-autokey-transcriptions
+        bibtex-autokey-titleword-change-strings bibtex-autokey-transcriptions)
+
   ;; From https://emacs.stackexchange.com/a/75531
   (defun lps/string-try-remove-accentuation (string)
     (mapconcat (lambda (c)
