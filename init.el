@@ -3915,9 +3915,62 @@ return `nil'."
   (defun lps/LaTeX-beamer-compile-frame ()
     "Compile the current frame"
     (interactive)
-    (save-mark-and-excursion
-      (lps/LaTeX-beamer-mark-frame)
-      (TeX-command-run-all-region)))
+    (let* ((sections (lps/LaTeX-beamer-all-sections))
+           (add-sections (lambda ()
+                           (save-excursion
+                             (goto-char (point-min))
+                             (re-search-forward "\\\\begin{document}" nil t)
+                             (insert "\n"
+                                     "% SECTIONS BEFORE POINT\n"
+                                     (mapconcat 'identity (car sections) "\n"))
+                             (goto-char (point-max))
+                             (re-search-backward "\\\\end{document}" nil t)
+                             (insert "\n"
+                                     "% SECTIONS AFTER POINT\n"
+                                     (mapconcat 'identity (cdr sections) "\n")))))
+           (TeX-region-hook (cons add-sections TeX-region-hook)))
+      (save-mark-and-excursion
+        (lps/LaTeX-beamer-mark-frame)
+        (TeX-command-run-all-region))))
+
+  ;; TODO: finish integrating this
+  ;;
+  ;; Difficulty: inserting sections that appear *before* point above the "current"
+  ;; text, and those appearing *after*, after.
+  ;;
+  ;;Moreover, empty sections are not appearing, and all sections are empty, as we
+  ;;want to compile a single frame.
+  (defun lps/LaTeX-beamer-all-sections ()
+    ;; Taken from `reftex-section-info'. Somewhat buggy, not an expert in RefTeX
+    ;; code, so use at your own risk.
+    ;; Inlines a bunch of stuff found in called functions too.
+    (let (sections-before
+          sections-after
+          (start-point (point)))
+      (save-excursion
+        (goto-char (point-min))
+        (save-match-data
+          (while (re-search-forward reftex-section-regexp nil t)
+            (let* ((macro (reftex-match-string 0))
+                   (level-exp (cdr (assoc (match-string 2) reftex-section-levels-all)))
+                   (text1 (buffer-substring-no-properties
+                           (point)
+                           (min (+ (point) 150)
+                                (point-max)
+                                (condition-case nil
+                                    ;; Unneeded fanciness.
+                                    (let ((forward-sexp-function nil))
+                                      (up-list 1)
+                                      (1- (point)))
+                                  (error (point-max))))))
+                   ;; Literal can be too short since text1 too short. No big problem.
+                   (text (reftex-nicify-text text1)))
+              (when (<= 1 level-exp)
+                (let ((section-text (concat macro text "}")))
+                  (if (<= (point) start-point)
+                      (push section-text sections-before)
+                    (push section-text sections-after))))))))
+      (cons (nreverse sections-before) (nreverse sections-after))))
 
   (defun lps/LaTeX-beamer-narrow-to-frame ()
     (interactive)
