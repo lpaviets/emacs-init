@@ -4912,7 +4912,8 @@ present in the list of authors or in the title of the article"
   :bind
   (:map cdlatex-mode-map
         ("C-c ?" . nil)
-        ("<C-return>" . lps/TeX-fast-insert-macro))
+        ("<C-return>" . lps/TeX-fast-insert-macro)
+        ("<backtab>" . cdlatex-backtab))
   :custom
   (cdlatex-paired-parens "$([{")
   (cdlatex-make-sub-superscript-roman-if-pressed-twice t)
@@ -5014,7 +5015,67 @@ prompt with the word at point, using flex matching."
         (TeX-parse-macro symbol (cdr-safe (assoc symbol (TeX-symbol-list))))
         (when bounds
           (delete-region (car bounds) (cdr bounds)))
-        (run-hooks 'TeX-after-insert-macro-hook)))))
+        (run-hooks 'TeX-after-insert-macro-hook))))
+
+  (defun cdlatex-backtab ()
+    "Similar in spirit to `cdlatex-tab'.
+
+Obtained by:
+
+- flipping opening/closing delimiters
+
+- changing the signs of arguments given to `forward-char'
+
+- `looking-at' <-> `looking-back'
+
+and similar changes.
+
+Does not run `cdlatex-tab-hook.'"
+    (interactive)
+    (catch 'stop
+      ;; Check for simplification of sub and superscripts
+      (cond
+       ((looking-back "{\\|\\[\\|(")
+        (forward-char -1)
+        (if (looking-back "[^_^({[]")
+            ;; stop after closing bracket, unless ^_[{( follow
+            (throw 'stop t)))
+       ((= (preceding-char) ?$)
+        (while (= (preceding-char) ?$) (forward-char -1))
+        (throw 'stop t))
+       ((= (preceding-char) ?\ )
+        ;; stop after first of many spaces
+        (forward-char -1)
+        (re-search-backward "[^ ]")
+        (if (/= (following-char) ?\n) (forward-char 1)))
+       (t
+        (forward-char -1)))
+
+      ;; move to next possible stopping site and check out the place
+      (while (re-search-backward "[ ({\n]\\|\\[" (point-min) t)
+        (forward-char 1)
+        (cond
+         ((= (preceding-char) ?\ )
+          ;; stop at first space or b-o-l
+          (if (not (eolp)) (forward-char -1)) (throw 'stop t)) ; unsure here ?
+         ((= (preceding-char) ?\n)
+          ;; stop at line end, but not after \\
+          (if (and (eolp) (not (bobp)))
+              (throw 'stop t)
+            (if (equal "\\\\" (buffer-substring-no-properties
+                               (point) (+ 2 (point))))
+                (forward-char -1)
+              (throw 'stop t))))
+         (t
+          ;; Stop before )}] if preceding-char is any parenthesis
+          (if (or (= (char-syntax (following-char)) ?\()
+                  (= (char-syntax (following-char)) ?\))
+                  (= (following-char) ?-))
+              (throw 'stop t)
+            (forward-char -1)
+            (if (looking-at "[^]_^)}]")
+                ;; stop after closing bracket, unless ^_[{( follow
+                (throw 'stop t)))))))))
 
 (use-package latex-table-wizard
   :defer t
