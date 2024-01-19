@@ -74,6 +74,15 @@ Should be non-nil to only allow built-in packages.")
 ;;     (when (file-exists-p file)
 ;;       (load file))))
 
+
+(defun lps/reinstall-package (pkg)
+  (interactive (list (intern (completing-read "Reinstall package: "
+                                              (mapcar #'car package-alist)))))
+  (ignore-errors
+    (unload-feature pkg t))
+  (package-reinstall pkg)
+  (require pkg))
+
 (require 'use-package)
 (use-package use-package
   :custom
@@ -423,7 +432,26 @@ fboundp."
   (kaolin-themes-distinct-parentheses t)
   (kaolin-themes-italic-comments t)
   (kaolin-themes-hl-line-colored t)
-  (kaolin-themes-org-scale-headings nil))
+  (kaolin-themes-org-scale-headings nil)
+  :config
+  ;; TODO: fix stuff happening in a recent Emacs version
+  ;; The :box attribute of faces used to support ":style none"
+  ;; This is no longer the case: must be NIL (I guess), or some other
+  ;; correct value. See e.g. a fix in doom-themes here
+  ;; https://github.com/doomemacs/themes/issues/809
+  ;; In kaolin themes, I find no other version of :style none,
+  ;; but there might be some remaining.
+  ;; Moreover, even after doing this, it seems that the actual attribute
+  ;; is not changed.
+  ;; Even this fix is not enough: the theme /loading/ makes Emacs sad :(
+  ;; FIXME: currently, themes files are modified within the elpa/<kaolin...>
+  ;; folder, which is bad.
+  (when (version<= "30" emacs-version)
+    (set-face-attribute 'custom-button nil :box
+                        '(:line-width 1 :color "cerulean4"))
+    (set-face-attribute 'custom-button-mouse nil :box
+                        '(:line-width 1 :color "amber3"))
+    (set-face-attribute 'custom-button-pressed nil :box '(:line-width 1 "gray3"))))
 
 (when *only-built-in-p*
   (load-theme 'deeper-blue))
