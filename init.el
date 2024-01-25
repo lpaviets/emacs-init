@@ -5263,7 +5263,8 @@ PWD is not in a git repo (or the git command is not found)."
   :defer t
   :bind
   (:map dired-mode-map
-        ("F" . find-name-dired))
+        ("F" . find-name-dired)
+        ([remap ibuffer] . lps/ibuffer-dired-current-directory))
   :custom
   ;; Delete and copy directories recursively
   (dired-recursive-deletes 'top)
@@ -5273,7 +5274,12 @@ PWD is not in a git repo (or the git command is not found)."
   (dired-isearch-filenames 'dwim)
   (dired-listing-switches "-AlFh --group-directories-first")
   (wdired-allow-to-change-permissions t)
-  (dired-dwim-target t))
+  (dired-dwim-target t)
+  :config
+  (defun lps/ibuffer-dired-current-directory (&optional other-window-p)
+    (interactive "P")
+    (let ((dir (dired-current-directory)))
+      (ibuffer other-window-p nil `((directory . ,dir))))))
 
 (use-package dired-x
   :ensure nil
