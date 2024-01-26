@@ -8061,6 +8061,14 @@ Finally, and because we might use this on old computers or with bad network, we 
         t)))
 #+end_src
 
+We might also need to edit, fix, add or even write subtitles. Even without even linking Emacs and MPV, subtitle files are often not perfect, and either contain typos, poor translations, or are simply off-sync, and we use Emacs to edit them as we would with any other text-based format.
+
+#+begin_src emacs-lisp
+  (use-package subed
+    :custom
+    (subed-auto-play-media nil))
+#+end_src
+
 * TODO Things to do or to fix
 ** Elfeed
 - Find a neat way to have bookmarks/pre-configured filters.

@@ -6801,3 +6801,7 @@ instance, it will be killed. Options specified in
          (mpv--tq-filter mpv--queue string)))
       (run-hook-with-args 'mpv-on-start-hook args)
       t)))
+
+(use-package subed
+  :custom
+  (subed-auto-play-media nil))
