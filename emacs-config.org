@@ -4167,7 +4167,7 @@ Not only is Org Mode great to write structured documents that can be exported to
     (org-log-done 'time)
     (org-archive-location (concat (lps/org-expand-file-name "archive" t)
                                   "%s_archive::")) ; not technically
-                                                   ; part of org-agenda
+                                          ; part of org-agenda
     (org-agenda-start-with-log-mode t)
     (org-agenda-show-inherited-tags nil)
     ;; Window configuration
@@ -4207,6 +4207,12 @@ Not only is Org Mode great to write structured documents that can be exported to
        (search . " %i %(lps/agenda-category 15)")))
 
     :config
+    ;; Faces
+    (set-face-attribute 'org-agenda-date nil :italic nil :underline t)
+    (set-face-attribute 'org-agenda-date-today nil :italic nil :underline t)
+    (set-face-attribute 'org-agenda-date-weekend nil :italic nil :underline t)
+
+    ;; Icons and categories
     (dolist (tag-and-icon `(("Lectures"     . "🏫")
                             ("Conference"   . "👥")
                             ("Talk"         . "🔊")
@@ -6514,6 +6520,14 @@ There are two usual ways to interact with processes via Emacs. The first one is 
     :bind
     (:map lps/system-tools-map
           ("p l" . list-processes)))
+#+end_src
+
+*** Systemd
+
+I am personally not completely opposed to using systemd. Therefore, I sometimes need to edit or work with systemd services.
+
+#+begin_src emacs-lisp
+  (use-package systemd)
 #+end_src
 
 *** Printer
