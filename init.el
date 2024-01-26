@@ -3280,6 +3280,11 @@ call the associated function interactively. Otherwise, call the
      (search . " %i %(lps/agenda-category 15)")))
 
   :config
+  ;; Faces
+  (set-face-attribute 'org-agenda-date nil :underline t)
+  (set-face-attribute 'org-agenda-date-weekend nil :underline t)
+
+  ;; Icons and categories
   (dolist (tag-and-icon `(("Lectures"     . "🏫")
                           ("Conference"   . "👥")
                           ("Talk"         . "🔊")
@@ -5400,6 +5405,8 @@ The return string is always 6 characters wide."
   :bind
   (:map lps/system-tools-map
         ("p l" . list-processes)))
+
+(use-package systemd)
 
 (use-package transient-extras-lp
   :bind
