@@ -53,13 +53,18 @@
     ("set_weights" (mapping))
     ("save_environment" (label))
     ("load_environment" (label))
+    ("run" (label))
     (("sft" "SFT") (label (:or formula pattern_list)))
+    (("sofic1d sofic1D") (label label))
     (("compute_forbidden_patterns" "calculate_forbidden_patterns")
      (label) ("radius" "filename"))
     ("load_forbidden_patterns" (label label))
+    ("determinize" (label))
+    ("minimize" (label))
     (("wang" "Wang")
      (label "tiles" nested_list) ("inverses") ("topology" "use_topology" "custom_topology"))
     ("intersection" (label simple_list))
+    ("union" (label simple_list))
     ("product"
      (label simple_list) ("tracks" "env"))
     (("block_map" "blockmap" "CA")
@@ -159,6 +164,9 @@ Each element is a list of following form:
   (let ((command (diddy-current-command)))
     (when command
       (diddy-command-to-docstring (car command) (cdr command)))))
+
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.diddy\\'" . diddy-mode))
 
 ;;;###autoload
 (define-derived-mode diddy-mode prog-mode "Diddy"
