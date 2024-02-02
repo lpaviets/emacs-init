@@ -69,6 +69,18 @@ current buffer's filename.")
                                  mode
                                  (file-name-nondirectory file))))))
 
+(defun diddy-browse-examples ()
+  (interactive)
+  (let* ((diddy-directory (file-name-directory diddy-path))
+         (diddy-examples-dir (expand-file-name "examples/" diddy-directory)))
+    (find-file
+     (if (file-exists-p diddy-examples-dir)
+         (read-file-name "Example file: "
+                         diddy-examples-dir
+                         nil
+                         ".diddy\\'")
+       (read-file-name "Example file: ")))))
+
 ;;; Internal
 (defvar *diddy--topology-keywords* '("line"
                                      "grid"
@@ -297,7 +309,6 @@ Each element is a list of following form:
               0 compilation-info-face)
             nil t))
 
-
 ;;; Actual Diddy mode
 
 ;;;###autoload
@@ -314,7 +325,8 @@ Each element is a list of following form:
   (setq font-lock-defaults diddy--font-lock-defaults)
   (setq-local eldoc-documentation-function 'diddy-eldoc-function)
   (add-hook 'completion-at-point-functions
-            #'diddy-completion-at-point nil 'local))
+            #'diddy-completion-at-point nil 'local)
+  (eldoc-mode 1))
 
 (provide 'diddy-mode)
 

@@ -1,13 +1,28 @@
+This package provides a major mode to work with [[https://github.com/ilkka-torma/diddy/][Diddy]], a /"Python toolbox for analysis of infinite discrete dynamical systems"/ written by Ilkka Törma and Ville Salo.
+
 * INSTALL
 TODO
 
 * Usage & Configuration
+** Features
+
+*Remark:* Some features are implemented by using a rather automatic translation from Diddy's internal parser. The command names might therefore not be up-to-date, and the docstring are not necessarily very informative.
+
+- Minimal completion of Diddy command names (commands starting with a ~%~)
+- Minimal documentation of those commands (in the modeline, after a valid command name, there should be some docstring telling you what options and flags this command expects.)
+- Syntactic highlighting
+- Easy compilation of the current file (see below)
+- A decent integration with Emacs other tools: in particular, if you are used to e.g. some completion mechanism or some custom compilation procedure, this should work correctly with =diddy-mode=.
 
 ** Run
 
-The only interactive function provided by the package is =diddy-run-file=. This creates a command-line command which runs the Diddy program on the current file. By default, this is bound to =C-c C-c=.
+The main interactive function provided by the package is =diddy-run-file=. This
+creates a command-line command which runs the Diddy program on the current file.
+By default, this is bound to =C-c C-c=.
 
 You will have to modify some variables to have a functioning compilation command, as you need to make =diddy-mode= aware of where Diddy is actually installed on your computer.
+
+You can also use the function =diddy-browse-examples= to be asked for a file in Diddy's examples directory.
 
 ** Customizations
 
