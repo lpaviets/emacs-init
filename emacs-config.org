@@ -7753,7 +7753,16 @@ We add a way to view and download articles from several online archives (Arxiv, 
                     (t
                      (completing-read "PDF dir: "
                                       bibtex-completion-library-path)))))
-      (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir)))
+      (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir)
+      (with-current-buffer (find-buffer-visiting bibfile)
+        (dolist (field '("file" "abstract"))
+          (bibtex-beginning-of-entry)
+          (bibtex-search-forward-field field)
+          (let* ((case-fold-search t)
+                 (bounds (bibtex-enclosing-field comma))
+                 (end (bibtex-end-of-field bounds))
+                 (beg (bibtex-start-of-field bounds)))
+            (delete-region beg end))))))
 #+end_src
 
 As the default syntax to manage and organize the various RSS feeds is a bit tedious, we use another package which this whole process painless.

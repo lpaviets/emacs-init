@@ -1,0 +1,19 @@
+* INSTALL
+TODO
+
+* Usage & Configuration
+
+** Run
+
+The only interactive function provided by the package is =diddy-run-file=. This creates a command-line command which runs the Diddy program on the current file. By default, this is bound to =C-c C-c=.
+
+You will have to modify some variables to have a functioning compilation command, as you need to make =diddy-mode= aware of where Diddy is actually installed on your computer.
+
+** Customizations
+
+Some customizables variables:
+
+- =diddy-python= Path to the Python interpreter. Diddy needs at least Python 3.9 (default value: ="python3.9"=).
+- =diddy-path= Path to the ~diddy.py~ file (default value: ="~/diddy/diddy.py"=).
+- =diddy-confirm-compile= Whether you need to confirm the compilation command built using the previous variables (default value: =compilation-read-command=, which is by default =t=).
+- =diddy-save-before-compile= Whether to save automatically if the current file has been modified before compiling (default value: =t=).

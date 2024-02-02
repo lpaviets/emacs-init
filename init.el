@@ -3240,7 +3240,7 @@ call the associated function interactively. Otherwise, call the
   (org-log-done 'time)
   (org-archive-location (concat (lps/org-expand-file-name "archive" t)
                                 "%s_archive::")) ; not technically
-                                                 ; part of org-agenda
+                                        ; part of org-agenda
   (org-agenda-start-with-log-mode t)
   (org-agenda-show-inherited-tags nil)
   ;; Window configuration
@@ -3281,8 +3281,9 @@ call the associated function interactively. Otherwise, call the
 
   :config
   ;; Faces
-  (set-face-attribute 'org-agenda-date nil :underline t)
-  (set-face-attribute 'org-agenda-date-weekend nil :underline t)
+  (set-face-attribute 'org-agenda-date nil :italic nil :underline t)
+  (set-face-attribute 'org-agenda-date-today nil :italic nil :underline t)
+  (set-face-attribute 'org-agenda-date-weekend nil :italic nil :underline t)
 
   ;; Icons and categories
   (dolist (tag-and-icon `(("Lectures"     . "🏫")
@@ -6506,7 +6507,16 @@ insert as many blank lines as necessary."
                     (t
                      (completing-read "PDF dir: "
                                       bibtex-completion-library-path)))))
-      (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir)))
+      (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir)
+      (with-current-buffer (find-buffer-visiting bibfile)
+        (dolist (field '("file" "abstract"))
+          (bibtex-beginning-of-entry)
+          (bibtex-search-forward-field field)
+          (let* ((case-fold-search t)
+                 (bounds (bibtex-enclosing-field comma))
+                 (end (bibtex-end-of-field bounds))
+                 (beg (bibtex-start-of-field bounds)))
+            (delete-region beg end))))))
 
   ;; Dashboard
   (defmacro lps/elfeed-wrap-before-elfeed (fun)
