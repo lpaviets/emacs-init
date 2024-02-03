@@ -4217,6 +4217,7 @@ return `nil'."
   (bibtex-autokey-name-year-separator "")
   (bibtex-autokey-year-title-separator "_")
   :config
+  (require 'bibtex-completion)
   ;; Fix accentuation
   (dolist (a '((("\"o" "\\\"o" "\\o") . "o") ; "o,\"o,\o,\oe -> oe
                (("\"O" "\\\"O" "\\O") . "O") ; "O,\"O,\O,\OE -> Oe
@@ -4275,6 +4276,15 @@ when formatting Bibtex entries. Hacky workaround."
               (indent-to-column bibtex-text-indentation)))))))
 
   (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-long-field-format)
+
+  (defun lps/bibtex-remove-field (field)
+    (save-excursion
+      (bibtex-beginning-of-entry)
+      (let ((bounds (bibtex-search-forward-field field t)))
+        (when bounds
+          (delete-region (bibtex-start-of-field bounds)
+                         (bibtex-end-of-field bounds))
+          (insert "\n")))))
 
   ;; Bibtex tags
   (defvar *lps/bibtex-tags* '(("Topological Full Group" . "tfg")
@@ -4713,17 +4723,6 @@ If none is found, loops through the functions in
   (:map lps/all-hydras-map
         ("p" . org-ref-bibtex-hydra/body))
   :custom
-  (arxiv-entry-format-string
-   "\n@misc{%s,
-  title =         {%s},
-  author =        {%s},
-  archivePrefix = {arXiv},
-  year =          {%s},
-  eprint =        {%s},
-  primaryClass =  {%s},
-  abstract =      {%s},
-  url =           {%s},
-}\n")
   (org-ref-title-case-types '(("misc" "title")
                               ("phdthesis" "title")
                               ("article" "title")
@@ -4855,6 +4854,25 @@ present in the list of authors or in the title of the article"
 
   ;; Ensure org-ref-replace-nonascii does not case fold
   (advice-ensure-bindings org-ref-replace-nonascii ((case-fold-search nil))))
+
+(use-package org-ref-arxiv
+  :ensure nil
+  :after (:or org-ref elfeed)
+  :init
+  (advice-add 'arxiv-get-pdf-add-bibtex-entry
+              :after (lambda (&rest _)
+                       (lps/bibtex-remove-field "file")))
+  :config
+  (require 'bibtex)
+  (setq arxiv-entry-format-string
+        "\n@misc{%s,
+  title =         {%s},
+  author =        {%s},
+  archivePrefix = {arXiv},
+  year =          {%s},
+  eprint =        {%s},
+  primaryClass =  {%s},
+}\n"))
 
 (use-package org-roam-bibtex
   :bind
@@ -6493,6 +6511,7 @@ insert as many blank lines as necessary."
   (defun lps/elfeed-arxiv-get-pdf-add-bibtex-entry ()
     (interactive)
     (require 'org-ref-bibtex)
+    (require 'org-ref-arxiv)
     (let* ((entry elfeed-show-entry)
            (id (cdr (elfeed-entry-id entry)))
            (num (progn
@@ -6507,16 +6526,7 @@ insert as many blank lines as necessary."
                     (t
                      (completing-read "PDF dir: "
                                       bibtex-completion-library-path)))))
-      (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir)
-      (with-current-buffer (find-buffer-visiting bibfile)
-        (dolist (field '("file" "abstract"))
-          (bibtex-beginning-of-entry)
-          (bibtex-search-forward-field field)
-          (let* ((case-fold-search t)
-                 (bounds (bibtex-enclosing-field comma))
-                 (end (bibtex-end-of-field bounds))
-                 (beg (bibtex-start-of-field bounds)))
-            (delete-region beg end))))))
+      (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir)))
 
   ;; Dashboard
   (defmacro lps/elfeed-wrap-before-elfeed (fun)

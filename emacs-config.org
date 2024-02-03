@@ -5203,6 +5203,7 @@ We also configure BibTeX and other packages that allow us to insert quickly bibl
     (bibtex-autokey-name-year-separator "")
     (bibtex-autokey-year-title-separator "_")
     :config
+    (require 'bibtex-completion)
     ;; Fix accentuation
     (dolist (a '((("\"o" "\\\"o" "\\o") . "o") ; "o,\"o,\o,\oe -> oe
                  (("\"O" "\\\"O" "\\O") . "O") ; "O,\"O,\O,\OE -> Oe
@@ -5261,6 +5262,15 @@ We also configure BibTeX and other packages that allow us to insert quickly bibl
                 (indent-to-column bibtex-text-indentation)))))))
 
     (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-fix-long-field-format)
+
+    (defun lps/bibtex-remove-field (field)
+      (save-excursion
+        (bibtex-beginning-of-entry)
+        (let ((bounds (bibtex-search-forward-field field t)))
+          (when bounds
+            (delete-region (bibtex-start-of-field bounds)
+                           (bibtex-end-of-field bounds))
+            (insert "\n")))))
 
     ;; Bibtex tags
     <<bibtex-tags>>
@@ -5729,17 +5739,6 @@ Because =bibtex-completion= is mainly an interface, we use a wrapper around it t
     (:map lps/all-hydras-map
           ("p" . org-ref-bibtex-hydra/body))
     :custom
-    (arxiv-entry-format-string
-     "\n@misc{%s,
-    title =         {%s},
-    author =        {%s},
-    archivePrefix = {arXiv},
-    year =          {%s},
-    eprint =        {%s},
-    primaryClass =  {%s},
-    abstract =      {%s},
-    url =           {%s},
-  }\n")
     (org-ref-title-case-types '(("misc" "title")
                                 ("phdthesis" "title")
                                 ("article" "title")
@@ -5871,6 +5870,25 @@ Because =bibtex-completion= is mainly an interface, we use a wrapper around it t
 
     ;; Ensure org-ref-replace-nonascii does not case fold
     (advice-ensure-bindings org-ref-replace-nonascii ((case-fold-search nil))))
+
+  (use-package org-ref-arxiv
+    :ensure nil
+    :after (:or org-ref elfeed)
+    :init
+    (advice-add 'arxiv-get-pdf-add-bibtex-entry
+                :after (lambda (&rest _)
+                         (lps/bibtex-remove-field "file")))
+    :config
+    (require 'bibtex)
+    (setq arxiv-entry-format-string
+          "\n@misc{%s,
+    title =         {%s},
+    author =        {%s},
+    archivePrefix = {arXiv},
+    year =          {%s},
+    eprint =        {%s},
+    primaryClass =  {%s},
+  }\n"))
 #+end_src
 
 We integrate all the previous stuff with org-roam. This means that we can store notes (and look for them) in a slightly more satisfactory way than "plain" org-files !
@@ -7739,6 +7757,7 @@ We add a way to view and download articles from several online archives (Arxiv, 
   (defun lps/elfeed-arxiv-get-pdf-add-bibtex-entry ()
     (interactive)
     (require 'org-ref-bibtex)
+    (require 'org-ref-arxiv)
     (let* ((entry elfeed-show-entry)
            (id (cdr (elfeed-entry-id entry)))
            (num (progn
@@ -7753,16 +7772,7 @@ We add a way to view and download articles from several online archives (Arxiv, 
                     (t
                      (completing-read "PDF dir: "
                                       bibtex-completion-library-path)))))
-      (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir)
-      (with-current-buffer (find-buffer-visiting bibfile)
-        (dolist (field '("file" "abstract"))
-          (bibtex-beginning-of-entry)
-          (bibtex-search-forward-field field)
-          (let* ((case-fold-search t)
-                 (bounds (bibtex-enclosing-field comma))
-                 (end (bibtex-end-of-field bounds))
-                 (beg (bibtex-start-of-field bounds)))
-            (delete-region beg end))))))
+      (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir)))
 #+end_src
 
 As the default syntax to manage and organize the various RSS feeds is a bit tedious, we use another package which this whole process painless.
