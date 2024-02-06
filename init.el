@@ -3088,8 +3088,10 @@ call the associated function interactively. Otherwise, call the
         ("C-c C-c" . org-edit-src-exit))
   (:map org-cdlatex-mode-map
         ("°" . cdlatex-math-symbol)
+        ("C-°" . cdlatex-math-modify)
         ("'" . nil)
-        ("$" . TeX-insert-dollar)) ; might break things ? Not here by default
+        ("`" . nil)
+        ("$" . TeX-insert-dollar))    ; might break things ? Not here by default
   :init
   ;; Have to do this early
   (setq org-directory (expand-file-name "OrgFiles/" (xdg-user-dir "DOCUMENTS")))
@@ -3111,10 +3113,17 @@ call the associated function interactively. Otherwise, call the
   (org-imenu-depth 4)
   (org-catch-invisible-edits 'show)
   (org-latex-packages-alist '(("" "amsfonts" t)))
+  (org-preview-latex-default-process (if (executable-find "dvisvgm")
+                                         'dvisvgm
+                                       'dvipng))
   (org-format-latex-options (list
                              :foreground 'default
-                             :background 'default
-                             :scale 1.5
+                             :background (if (executable-find "dvisvgm")
+                                             "Transparent"
+                                           'default)
+                             :scale (if (executable-find "dvisvgm")
+                                        1.25
+                                      1.5)
                              :html-foreground "Black"
                              :html-background "Transparent"
                              :html-scale 1.0
@@ -3156,7 +3165,20 @@ call the associated function interactively. Otherwise, call the
       (cl-destructuring-bind (name inherit &rest args) face
         (apply 'set-face-attribute name nil :inherit inherit args))))
 
+  ;; Math stuff
+  (dolist (name '("definition"
+                  "examples"
+                  "theorem"
+                  "lemma"
+                  "corollary"
+                  "remark"))
+    (add-to-list 'org-protecting-blocks name nil 'string-equal))
+
   (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
+
+  (defun lps/electric-pair-inhibit-predicate-org (char)
+    (or (char-equal char ?<)
+        (electric-pair-default-inhibit char)))
 
   (defun lps/org-mode-setup ()
     (lps/org-font-setup)
@@ -3164,7 +3186,9 @@ call the associated function interactively. Otherwise, call the
     ;; (variable-pitch-mode 1)
     (visual-line-mode 1)
     (lps/windmove-mode-local-off)
-    (org-cdlatex-mode 1))
+    (org-cdlatex-mode 1)
+    (setq-local electric-pair-inhibit-predicate
+                'lps/electric-pair-inhibit-predicate-org))
 
   ;; Babel configuration
   (org-babel-do-load-languages

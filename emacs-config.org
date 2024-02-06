@@ -3983,8 +3983,10 @@ We change the general feel of Org Mode documents by using other indentation rule
           ("C-c C-c" . org-edit-src-exit))
     (:map org-cdlatex-mode-map
           ("°" . cdlatex-math-symbol)
+          ("C-°" . cdlatex-math-modify)
           ("'" . nil)
-          ("$" . TeX-insert-dollar)) ; might break things ? Not here by default
+          ("`" . nil)
+          ("$" . TeX-insert-dollar))    ; might break things ? Not here by default
     :init
     ;; Have to do this early
     (setq org-directory (expand-file-name "OrgFiles/" (xdg-user-dir "DOCUMENTS")))
@@ -4006,10 +4008,17 @@ We change the general feel of Org Mode documents by using other indentation rule
     (org-imenu-depth 4)
     (org-catch-invisible-edits 'show)
     (org-latex-packages-alist '(("" "amsfonts" t)))
+    (org-preview-latex-default-process (if (executable-find "dvisvgm")
+                                           'dvisvgm
+                                         'dvipng))
     (org-format-latex-options (list
                                :foreground 'default
-                               :background 'default
-                               :scale 1.5
+                               :background (if (executable-find "dvisvgm")
+                                               "Transparent"
+                                             'default)
+                               :scale (if (executable-find "dvisvgm")
+                                          1.25
+                                        1.5)
                                :html-foreground "Black"
                                :html-background "Transparent"
                                :html-scale 1.0
@@ -4026,7 +4035,20 @@ We change the general feel of Org Mode documents by using other indentation rule
     ;; Basic fonts and faces
     <<org-fonts>>
 
+    ;; Math stuff
+    (dolist (name '("definition"
+                    "examples"
+                    "theorem"
+                    "lemma"
+                    "corollary"
+                    "remark"))
+      (add-to-list 'org-protecting-blocks name nil 'string-equal))
+
     (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
+
+    (defun lps/electric-pair-inhibit-predicate-org (char)
+      (or (char-equal char ?<)
+          (electric-pair-default-inhibit char)))
 
     (defun lps/org-mode-setup ()
       (lps/org-font-setup)
@@ -4034,7 +4056,9 @@ We change the general feel of Org Mode documents by using other indentation rule
       ;; (variable-pitch-mode 1)
       (visual-line-mode 1)
       (lps/windmove-mode-local-off)
-      (org-cdlatex-mode 1))
+      (org-cdlatex-mode 1)
+      (setq-local electric-pair-inhibit-predicate
+                  'lps/electric-pair-inhibit-predicate-org))
 
     ;; Babel configuration
     <<org-babel>>)
@@ -8131,6 +8155,13 @@ To explore:
 - [ ] replace-regexp-function
 - [ ] defvar-keymap
 
+** Org mode
+- Fix (or check what breaks if fix) ~org-element-latex-fragment-parser~ so that it recognizes "dollars" followed by a dash directly (and no space+dash).
+- Add way to draw automata/trees easily without using artist mode (maybe TikZ integration ?)
+- May be (but not urgent) add a way to write theorems/definitions and so on in Org documents (instead of using e.g. *Theorem:*)
+- Fix HTML files opening in Chrome sometimes (somewhat complicated. Some keywords: mailcap, sensible-browser, the /etc/mailcap file). Solution: delete chrome.
+- Add Latex/HTML headers & export options
+- Add a proper "personal org math mode" to typeset math, and setup/remove options (~org-cdlatex~, electric-pair twists, some protected blocks, etc).
 ** Printing
 Not particularly Emacs-related, but: find a way to specify a username/password to ~lp~ when printing using either the built-in functions or ~transient-extras-lp-*~
 
