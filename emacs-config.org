@@ -2672,6 +2672,7 @@ We also define a bunch of functions and commands related to editing text that ar
 
     (defvar lps/do-not-capitalize-list '("the" "a" "an" "of" "in" "on" "by"
                                          "no" "or" "and" "if" "for" "to" "is"
+                                         "as"
                                          "le" "la" "les" "et" "ou"
                                          "si" "un" "une" "de" "des"
                                          "du" "d" "l" "ni"))
@@ -4044,6 +4045,22 @@ We change the general feel of Org Mode documents by using other indentation rule
                     "remark"))
       (add-to-list 'org-protecting-blocks name nil 'string-equal))
 
+    (ensure-version org 9.2
+      ;; This is needed as of Org 9.2
+      (require 'org-tempo)
+      (let ((bound-key-templates
+             (mapcar #'car org-structure-template-alist)))
+        (dolist (key-template '(("lt" . "theorem")
+                                ("ld" . "definition")
+                                ("lc" . "corollary")
+                                ("le" . "examples")
+                                ("ll" . "lemma")
+                                ("lr" . "remark")))
+
+          (unless
+              (member (car key-template) bound-key-templates)
+            (push key-template org-structure-template-alist)))))
+
     (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
 
     (defun lps/electric-pair-inhibit-predicate-org (char)
@@ -5190,6 +5207,8 @@ Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
 
 We also configure BibTeX and other packages that allow us to insert quickly bibliography, labels, and various kinds of references in our documents.
 
+***** Bibtex files
+
 #+begin_src emacs-lisp :noweb yes
   (use-package bibtex
     :defer t
@@ -5296,6 +5315,26 @@ We also configure BibTeX and other packages that allow us to insert quickly bibl
                            (bibtex-end-of-field bounds))
             (insert "\n")))))
 
+    (add-hook 'bibtex-clean-entry-hook (lambda ()
+                                         (lps/bibtex-remove-field "file")))
+
+    (defun lps/bibtex-keep-only-doi-if-url (&rest args)
+      "Delete the URL field when there is also a DOI field present.
+
+  Does not read any argument: this is to be able to add it both to
+  `bibtex-clean-entry-hook' and to be passed to
+  `bibtex-map-entries'."
+      (interactive)
+      (let* ((fields (bibtex-parse-entry))
+             (doi (assoc "doi" fields))
+             (url (assoc "url" fields)))
+        (when (and doi url)
+          (save-excursion
+            (goto-char (car (cdr (bibtex-search-backward-field "url" t))))
+            (bibtex-kill-field)))))
+
+    (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-keep-only-doi-if-url)
+
     ;; Bibtex tags
     <<bibtex-tags>>
 
@@ -5364,6 +5403,8 @@ I often download articles from the Internet: in that setting, as I do not use br
                  :before-finalize lps/bibtex-capture-format-and-prompt-for-pdf-file)
                t 'equal)
 #+end_src
+
+***** LaTeX integration
 
 Another useful package to deal with references, bibliography, citations and so on, is [[https://www.gnu.org/software/emacs/manual/html_mono/reftex.html][RefTeX]].
 
@@ -5444,6 +5485,8 @@ Another useful package to deal with references, bibliography, citations and so o
         nil nil nil 'reftex-cite-regexp-hist))))
 #+end_src
 
+***** Web integration
+
 Finally, we also want a way to do everything from Emacs, and it starts with /finding/ the BibTeX entry that we want to put in our =.bib= file. Hence, we use a package that will look on the Internet for us, and automatically insert the BibTex entries where we need them.
 
 #+begin_src emacs-lisp
@@ -5489,6 +5532,8 @@ Finally, we also want a way to do everything from Emacs, and it starts with /fin
                                                  biblio-download-directory))
           (user-error "No direct URL (try arXiv or HAL)")))))
 #+end_src
+
+***** Bibliography management UI
 
 The next packages are used to manage the bibliography in itself: download articles, add some bibtex entries from simple queries directly within Emacs, add functions to search our bibliography, or even setup a note system with packages extending Org Roam !
 
@@ -5764,9 +5809,11 @@ Because =bibtex-completion= is mainly an interface, we use a wrapper around it t
           ("p" . org-ref-bibtex-hydra/body))
     :custom
     (org-ref-title-case-types '(("misc" "title")
+                                ("inproceedings" "title")
                                 ("phdthesis" "title")
                                 ("article" "title")
-                                ("book" "booktitle")))
+                                ("book" "booktitle" "title")
+                                ("inbook" "booktitle" "title")))
     :config
     (org-roam-bibtex-mode 1)
 
@@ -5898,10 +5945,6 @@ Because =bibtex-completion= is mainly an interface, we use a wrapper around it t
   (use-package org-ref-arxiv
     :ensure nil
     :after (:or org-ref elfeed)
-    :init
-    (advice-add 'arxiv-get-pdf-add-bibtex-entry
-                :after (lambda (&rest _)
-                         (lps/bibtex-remove-field "file")))
     :config
     (require 'bibtex)
     (setq arxiv-entry-format-string
@@ -8139,6 +8182,7 @@ We might also need to edit, fix, add or even write subtitles. Even without even 
   - Maybe change bibtex-format-entry functions to show tags (more or less succintly ?)
 - Fix autoloading of =bibtex-completion= when calling ~org-ref-read-key~.
 - Fix ~bibtex-autokey-demangle-name~ so that it correctly handles "long names": it currently assumes that a long name is of the form 'particle + relevant-stuff', while there might be surnames with a space where everything is to be kept.
+- Search/write a way to have a tabular mode with bib entries + filter functions, just as e.g. for processes or packages.
 ** Generic
 Use functions that have been added to Emacs rather than mine, or use a macro to decide according to the version:
 - [ ] duplicate-dwim (29.1)

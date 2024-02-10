@@ -2075,6 +2075,7 @@ Breaks if region or line spans multiple visual lines"
 
   (defvar lps/do-not-capitalize-list '("the" "a" "an" "of" "in" "on" "by"
                                        "no" "or" "and" "if" "for" "to" "is"
+                                       "as"
                                        "le" "la" "les" "et" "ou"
                                        "si" "un" "une" "de" "des"
                                        "du" "d" "l" "ni"))
@@ -3173,6 +3174,22 @@ call the associated function interactively. Otherwise, call the
                   "corollary"
                   "remark"))
     (add-to-list 'org-protecting-blocks name nil 'string-equal))
+
+  (ensure-version org 9.2
+    ;; This is needed as of Org 9.2
+    (require 'org-tempo)
+    (let ((bound-key-templates
+           (mapcar #'car org-structure-template-alist)))
+      (dolist (key-template '(("lt" . "theorem")
+                              ("ld" . "definition")
+                              ("lc" . "corollary")
+                              ("le" . "examples")
+                              ("ll" . "lemma")
+                              ("lr" . "remark")))
+
+        (unless
+            (member (car key-template) bound-key-templates)
+          (push key-template org-structure-template-alist)))))
 
   (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
 
@@ -4310,6 +4327,26 @@ when formatting Bibtex entries. Hacky workaround."
                          (bibtex-end-of-field bounds))
           (insert "\n")))))
 
+  (add-hook 'bibtex-clean-entry-hook (lambda ()
+                                       (lps/bibtex-remove-field "file")))
+
+  (defun lps/bibtex-keep-only-doi-if-url (&rest args)
+    "Delete the URL field when there is also a DOI field present.
+
+Does not read any argument: this is to be able to add it both to
+`bibtex-clean-entry-hook' and to be passed to
+`bibtex-map-entries'."
+    (interactive)
+    (let* ((fields (bibtex-parse-entry))
+           (doi (assoc "doi" fields))
+           (url (assoc "url" fields)))
+      (when (and doi url)
+        (save-excursion
+          (goto-char (car (cdr (bibtex-search-backward-field "url" t))))
+          (bibtex-kill-field)))))
+
+  (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-keep-only-doi-if-url)
+
   ;; Bibtex tags
   (defvar *lps/bibtex-tags* '(("Topological Full Group" . "tfg")
                               ("Projective Fundamental Group" . "pfg")
@@ -4748,9 +4785,11 @@ If none is found, loops through the functions in
         ("p" . org-ref-bibtex-hydra/body))
   :custom
   (org-ref-title-case-types '(("misc" "title")
+                              ("inproceedings" "title")
                               ("phdthesis" "title")
                               ("article" "title")
-                              ("book" "booktitle")))
+                              ("book" "booktitle" "title")
+                              ("inbook" "booktitle" "title")))
   :config
   (org-roam-bibtex-mode 1)
 
@@ -4882,10 +4921,6 @@ present in the list of authors or in the title of the article"
 (use-package org-ref-arxiv
   :ensure nil
   :after (:or org-ref elfeed)
-  :init
-  (advice-add 'arxiv-get-pdf-add-bibtex-entry
-              :after (lambda (&rest _)
-                       (lps/bibtex-remove-field "file")))
   :config
   (require 'bibtex)
   (setq arxiv-entry-format-string
