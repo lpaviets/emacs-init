@@ -28,6 +28,7 @@
 
 ;; Tabular view for bibtex bibliography.
 ;; TODO:
+;; - Clean code: in particular, cleaner column->field mapping.
 ;; - View bib entry in other window + follow-mode
 ;; - More "actions" when pressing RET (view entry, open PDF, online DOI/URL ...)
 ;; - Tag system ? Integrate with bibtex (custom field), or separate ?
@@ -63,7 +64,7 @@ an entry.
 
 Cons cell (FILE . NO-FILE).")
 
-(defcustom biblio-list-format [("Author" 50 nil)
+(defcustom biblio-list-format [("Author" 40 nil)
                                ("Title"  80 nil)
                                ("Type"   12 t)
                                ("Year"   5 t)
@@ -95,12 +96,24 @@ return a list of properties.
 In that case, the entry will be propertized with
 (apply 'propertize STRING (funcall FUNC STRING)).")
 
+(defcustom biblio-list-preprocess-field
+  '(("author" . biblio-list-preprocess-authors))
+  "Alist of (FIELD . FUNC) to pre-process the fields of an entry.
 
-;; Commands
+If some field has an entry, the function FUNC will be called with
+a single argument, the content of the field, before creating the
+object to pass to the tabulated list. In particular:
+
+- this operation is performed *before* formatting.
+
+- this function might receive NIL, and take appropriate action if
+it wants to replace by a default or placeholder value.")
+
+;;; Commands and public functions
 (defun biblio-list-find-file ()
   "Open file of the entry at point."
   (interactive)
-  (let* ((key (tabulated-list-get-id))
+  (let* ((key (biblio-list---key-at-point))
          (file (biblio-list--get-file key)))
     (if file
         (find-file file)
@@ -111,11 +124,44 @@ In that case, the entry will be propertized with
   :parent tabulated-list-mode-map
   "C-m" 'biblio-list-find-file)
 
-;; Internals
+(defun biblio-list-preprocess-authors (names)
+  (when names
+    (dolist (pattern bibtex-autokey-name-change-strings)
+      (setq names (replace-regexp-in-string (car pattern)
+                                            (cdr pattern)
+                                            names t)))
+    (mapconcat 'capitalize
+               (mapcar #'bibtex-autokey-demangle-name
+                       (split-string names "[ \t\n]+and[ \t\n]+"))
+               ", ")))
+
+;;; Internals
 (defvar-local biblio-list--raw-entries nil)
 (defvar-local biblio-list--vec-entries nil)
 
-;; Formatting
+;;; Utils
+
+(defun biblio-list--normalize-field (field)
+  (setq field (downcase field))
+  (cond
+   ((string= field "type") "=type=")
+   ((string= field "key") "=key=")
+   (t field)))
+
+(defun biblio-list--get-field (entry field)
+  (setq field (biblio-list--normalize-field field))
+  (cond
+   ((string= field "file")
+    (let* ((key (cdr (assoc "=key=" entry)))
+           (file (biblio-list--get-file key)))
+      (if file
+          (car biblio-list-file-indicator)
+        (cdr biblio-list-file-indicator))))
+   (t (cdr (assoc field entry)))))
+
+
+;;; Cleaning the entry: removing special characters, etc
+
 (defvar biblio-list--nonascii-latex-replacements
   '(("í" . "{\\\\'i}")
     ("æ" . "{\\\\ae}")
@@ -248,6 +294,7 @@ In that case, the entry will be propertized with
            (replace-regexp-in-string "  +" " "))
     nil))
 
+;;; Formatting the entry for display
 (defun biblio-list--format-file-checkmark (checkmark)
   (let ((file (car biblio-list-file-indicator))
         (nofile (cdr biblio-list-file-indicator)))
@@ -271,8 +318,13 @@ In that case, the entry will be propertized with
                           "")))
     (biblio-list--format-propertize field-cleaned field-name)))
 
-;; Parsing
+;;; Parsing
+(defun biblio-list---key-at-point ()
+  (car (tabulated-list-get-id)))
+
 (defun biblio-list--parse-files (&optional files)
+  "Parses files and fills biblio-list--raw-entries with
+(PARSED-ENTRY . SOURCE-FILE)."
   (setq biblio-list--raw-entries nil)
   (let (entries)
     (dolist (file (or files biblio-list-files))
@@ -280,7 +332,8 @@ In that case, the entry will be propertized with
         (insert-file-contents file)
         (goto-char (point-min))
         (bibtex-map-entries (lambda (&rest args)
-                              (push (bibtex-parse-entry) entries)))))
+                              (push (cons (bibtex-parse-entry t) file)
+                                    entries)))))
     (setq biblio-list--raw-entries (nreverse entries))))
 
 (defun biblio-list--get-file (key)
@@ -294,38 +347,39 @@ In that case, the entry will be propertized with
         (when file-found
           (throw 'find-file file-found))))))
 
-(defun biblio-list--get-field (entry field)
-  (setq field (downcase field))
-  (cond
-   ((string= field "type")
-    (cdr (assoc "=type=" entry)))
-   ((string= field "key")
-    (cdr (assoc "=key=" entry)))
-   ((string= field "file") (let* ((key (cdr (assoc "=key=" entry)))
-                                  (file (biblio-list--get-file key)))
-                             (if file
-                                 (car biblio-list-file-indicator)
-                               (cdr biblio-list-file-indicator))))
-   (t (cdr (assoc field entry)))))
+(defun biblio-list--preprocess-field (content field)
+  (let ((func (cdr (assoc field biblio-list-preprocess-field))))
+    (if func
+        (funcall func content)
+      content)))
+
+(defun biblio-list--preprocess-entry (entry)
+  (let ((new-entry
+         (cl-loop for (col . rest) across biblio-list-format
+                  for field = (biblio-list--normalize-field col)
+                  for content = (biblio-list--get-field entry col)
+                  for processed = (biblio-list--preprocess-field content field)
+                  collect (cons field processed))))
+    (if (biblio-list--get-field new-entry "key")
+        new-entry
+      (cons (cons "=key=" (biblio-list--get-field entry "key"))
+            new-entry))))
 
 (defun biblio-list--convert-entries ()
   (setq biblio-list--vec-entries nil)
   (dolist (entry biblio-list--raw-entries)
-    (let ((id (biblio-list--get-field entry "key"))
-          (contents (cl-map 'vector
-                            (lambda (col)
-                              (biblio-list--format-column entry col))
-                            biblio-list-format)))
-      (push (list id contents) biblio-list--vec-entries)
+    (let* ((file (cdr entry))
+           (entry (car entry))
+           (id (cons (biblio-list--get-field entry "key") file))
+           (contents (biblio-list--preprocess-entry entry))
+           (formatted (cl-map 'vector
+                              (lambda (col)
+                                (biblio-list--format-column contents col))
+                              biblio-list-format)))
+      (push (list id formatted) biblio-list--vec-entries)
       (setq biblio-list--vec-entries (nreverse biblio-list--vec-entries)))))
 
-(defun biblio-list--extract-fields ()
-  (let (fields)
-    (dolist (entry biblio-list--entries)
-      (dolist (field entry)
-        (cl-pushnew (car field) fields :test 'equal)))
-    fields))
-
+;;; Tabulated-list-mode functions
 (defun biblio-list--refresh (&optional ignore-auto no-confirm)
   (biblio-list--parse-files)
   (biblio-list--convert-entries)
@@ -340,8 +394,8 @@ In that case, the entry will be propertized with
     (with-current-buffer buf
       (setq buffer-file-coding-system 'utf-8)
       ;; TODO: initialize everything
-      (biblio-list--refresh)
       (biblio-list-mode)
+      (biblio-list--refresh)
       (tabulated-list-print 'remember 'update))
     (pop-to-buffer buf)))
 

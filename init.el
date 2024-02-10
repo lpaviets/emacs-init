@@ -1860,9 +1860,11 @@ the current selection by line."
        arg))))
 
 (use-package drag-stuff
+  :custom
+  (drag-stuff-except-modes '(org-mode
+                             tabulated-list-mode))
   :config
   (drag-stuff-global-mode 1)
-  (add-to-list 'drag-stuff-except-modes 'org-mode)
   (drag-stuff-define-keys))
 
 (use-package emacs
