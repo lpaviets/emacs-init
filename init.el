@@ -4969,6 +4969,15 @@ present in the list of authors or in the title of the article"
                            (bibtex-completion-key-at-point))))
     (orb-note-actions--run orb-note-actions-interface citekey)))
 
+(use-package biblio-list
+  :ensure nil
+  :defer t
+  :config
+  (require 'bibtex)
+  (require 'bibtex-completion)
+  (setq biblio-list-files lps/bib-bibliography-files)
+  (setq biblio-list-library-path (ensure-list bibtex-completion-library-path)))
+
 (use-package preview
   :ensure nil ;; Comes with AUCTeX
   :defer t

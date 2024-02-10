@@ -5998,6 +5998,19 @@ We integrate all the previous stuff with org-roam. This means that we can store 
       (orb-note-actions--run orb-note-actions-interface citekey)))
 #+end_src
 
+Another useful thing is to view the entire bibliography as a table, with more or less information: this makes it easier to filter, sort, navigate bibliography possibly split in several files.
+
+#+begin_src emacs-lisp
+  (use-package biblio-list
+    :ensure nil
+    :defer t
+    :config
+    (require 'bibtex)
+    (require 'bibtex-completion)
+    (setq biblio-list-files lps/bib-bibliography-files)
+    (setq biblio-list-library-path (ensure-list bibtex-completion-library-path)))
+#+end_src
+
 **** Preview
 
 Instead of recompiling the source code to generate a complete PDF to visualize /e..g/ our mathematical formulas, AUCTeX also gives us the possibility to preview them inlines (as well as other - configurables - constructs, such as figures, matrices, and so on).
