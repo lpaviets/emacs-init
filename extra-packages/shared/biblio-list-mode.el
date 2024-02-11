@@ -36,6 +36,18 @@
 ;; - Fixes: robustness to some other workflows/naming schemes/etc
 ;; - "Performance": cache more things, refresh correctly, watch file changes...
 
+;; Explanation:
+;; Pipeline is as follows:
+;; .bib file     --- (parsing function) --> ((alist of fields) . SOURCE-FILE) -->
+;; raw entries   --- (processing)       --> (ID [DESC1 ... DESCN])            -->
+;; vec entries   --- (formatting)       --> (ID [DESC1' ... DESCN'])          -->
+;; call to personal printing function
+
+;; ID is a list (BIBKEY SOURCE-FILE RAW-ENTRY)
+;; In particular, entries in `tabulated-list-entries' keep a reference to the
+;; "raw entry": this allows us to filter, mark, etc, on properties that are not
+;; kept for display.
+
 ;;; Code:
 
 (require 'bibtex)
@@ -109,20 +121,48 @@ object to pass to the tabulated list. In particular:
 - this function might receive NIL, and take appropriate action if
 it wants to replace by a default or placeholder value.")
 
+(defcustom biblio-list-printer 'biblio-list-format-print-entry
+  "Function for inserting an entry in the table.
+
+See `tabulated-list-printer' for more info.")
+
 ;;; Commands and public functions
-(defun biblio-list-find-file ()
-  "Open file of the entry at point."
-  (interactive)
-  (let* ((key (biblio-list---key-at-point))
-         (file (biblio-list--get-file key)))
+(defun biblio-list-find-file (key)
+  "Open file associated to an entry KEY.
+
+When called interactively, KEY is the key of the entry at point."
+  (interactive (list (biblio-list---key-at-point)))
+  (let* ((file (biblio-list--get-file key)))
     (if file
         (find-file file)
       (error "No file found for entry at point: %s" key))))
 
+(defun biblio-list-show-bib-entry (key file)
+  "Show bibtex entry corresponding to KEY in FILE.
+
+When called interactively, both parameters are picked from the
+entry at point."
+  (interactive (list (biblio-list---key-at-point)
+                     (biblio-list--get-source-file-at-point)))
+  (let ((buf (or (get-file-buffer file)
+                 (find-buffer-visiting file))))
+    (find-file file)
+    (widen)
+    (goto-char (point-min))
+    (bibtex-search-entry key)
+    (unless buf
+      (kill-buffer))))
+
 (defvar-keymap biblio-list-mode-map
   :doc "Local keymap for `biblio-list-mode'"
   :parent tabulated-list-mode-map
-  "C-m" 'biblio-list-find-file)
+  "C-m" 'biblio-list-find-file
+  "SPC" 'biblio-list-show-bib-entry
+  "/ /" 'biblio-list-clear-filter
+  "/ d" 'biblio-list-filter-by-date
+  "/ a" 'biblio-list-filter-by-any-author
+  "/ A" 'biblio-list-filter-by-all-authors
+  "/ t" 'biblio-list-filter-by-title)
 
 (defun biblio-list-preprocess-authors (names)
   (when names
@@ -135,13 +175,16 @@ it wants to replace by a default or placeholder value.")
                        (split-string names "[ \t\n]+and[ \t\n]+"))
                ", ")))
 
+(defun biblio-list-format-print-entry (id cols)
+  (tabulated-list-print-entry id (biblio-list--format-entry cols)))
+
 ;;; Internals
 (defvar-local biblio-list--raw-entries nil)
 (defvar-local biblio-list--vec-entries nil)
 
 ;;; Utils
 
-(defun biblio-list--normalize-field (field)
+(defun biblio-list--normalize-field-name (field)
   (setq field (downcase field))
   (cond
    ((string= field "type") "=type=")
@@ -149,7 +192,7 @@ it wants to replace by a default or placeholder value.")
    (t field)))
 
 (defun biblio-list--get-field (entry field)
-  (setq field (biblio-list--normalize-field field))
+  (setq field (biblio-list--normalize-field-name field))
   (cond
    ((string= field "file")
     (let* ((key (cdr (assoc "=key=" entry)))
@@ -294,33 +337,12 @@ it wants to replace by a default or placeholder value.")
            (replace-regexp-in-string "  +" " "))
     nil))
 
-;;; Formatting the entry for display
-(defun biblio-list--format-file-checkmark (checkmark)
-  (let ((file (car biblio-list-file-indicator))
-        (nofile (cdr biblio-list-file-indicator)))
-    (cond
-     ((string= checkmark file) '(face (:foreground "green")))
-     ((string= checkmark nofile) '(face (:foreground "red")))
-     (t nil))))
-
-(defun biblio-list--format-propertize (content field)
-  (let ((props (cdr (assoc (downcase field)
-                           biblio-list-format-entry-properties))))
-    (if (functionp props)
-        (apply 'propertize content (funcall props content))
-      (apply 'propertize content props))))
-
-(defun biblio-list--format-column (entry column)
-  (let* ((field-name (car column))
-         (field-content (biblio-list--get-field entry field-name))
-         (field-cleaned (if field-content
-                            (biblio-list--clean-string field-content)
-                          "")))
-    (biblio-list--format-propertize field-cleaned field-name)))
-
 ;;; Parsing
 (defun biblio-list---key-at-point ()
-  (car (tabulated-list-get-id)))
+  (nth 0 (tabulated-list-get-id)))
+
+(defun biblio-list--get-source-file-at-point ()
+  (nth 1 (tabulated-list-get-id)))
 
 (defun biblio-list--parse-files (&optional files)
   "Parses files and fills biblio-list--raw-entries with
@@ -347,43 +369,142 @@ it wants to replace by a default or placeholder value.")
         (when file-found
           (throw 'find-file file-found))))))
 
+;;; Processing raw entries
 (defun biblio-list--preprocess-field (content field)
-  (let ((func (cdr (assoc field biblio-list-preprocess-field))))
-    (if func
-        (funcall func content)
-      content)))
+  (let* ((func (cdr (assoc field biblio-list-preprocess-field)))
+         (processed (if func
+                        (funcall func content)
+                      content)))
+    (biblio-list--clean-string (or processed ""))))
 
 (defun biblio-list--preprocess-entry (entry)
   (let ((new-entry
          (cl-loop for (col . rest) across biblio-list-format
-                  for field = (biblio-list--normalize-field col)
+                  for field = (biblio-list--normalize-field-name col)
                   for content = (biblio-list--get-field entry col)
                   for processed = (biblio-list--preprocess-field content field)
-                  collect (cons field processed))))
-    (if (biblio-list--get-field new-entry "key")
-        new-entry
-      (cons (cons "=key=" (biblio-list--get-field entry "key"))
-            new-entry))))
+                  collect processed)))
+    (vconcat new-entry)))
 
-(defun biblio-list--convert-entries ()
+(defun biblio-list--process-entry (entry)
+  (let* ((file (cdr entry))
+         (entry (car entry))
+         (id (list (biblio-list--get-field entry "key") file entry))
+         (contents (biblio-list--preprocess-entry entry)))
+    (list id contents)))
+
+(defun biblio-list--process-all-entries ()
   (setq biblio-list--vec-entries nil)
   (dolist (entry biblio-list--raw-entries)
-    (let* ((file (cdr entry))
-           (entry (car entry))
-           (id (cons (biblio-list--get-field entry "key") file))
-           (contents (biblio-list--preprocess-entry entry))
-           (formatted (cl-map 'vector
-                              (lambda (col)
-                                (biblio-list--format-column contents col))
-                              biblio-list-format)))
-      (push (list id formatted) biblio-list--vec-entries)
-      (setq biblio-list--vec-entries (nreverse biblio-list--vec-entries)))))
+    (push (biblio-list--process-entry entry) biblio-list--vec-entries)
+    (setq biblio-list--vec-entries (nreverse biblio-list--vec-entries))))
+
+;;; Formatting the entry for display
+(defun biblio-list--format-file-checkmark (checkmark)
+  (let ((file (car biblio-list-file-indicator))
+        (nofile (cdr biblio-list-file-indicator)))
+    (cond
+     ((string= checkmark file) '(face (:foreground "green")))
+     ((string= checkmark nofile) '(face (:foreground "red")))
+     (t nil))))
+
+(defun biblio-list--format-column (content column)
+  (let ((props (cdr (assoc (downcase column)
+                           biblio-list-format-entry-properties))))
+    (if (functionp props)
+        (apply 'propertize content (funcall props content))
+      (apply 'propertize content props))))
+
+(defun biblio-list--format-entry (entry)
+  (vconcat (cl-loop for (col . rest) across biblio-list-format
+                    for field across entry
+                    collect (biblio-list--format-column field col))))
+
+;;; Filtering
+(defun biblio-list--filter-by (predicate)
+  "Filter \"*Biblio list*\" buffer by PREDICATE.
+
+PREDICATE is a function which will be called with one argument, a
+entry, and returns t if that object should be listed in the
+Biblio list."
+  ;; Update `tabulated-list-entries' so that it contains all
+  ;; packages before searching.
+  (biblio-list--refresh)
+  (let (found-entries)
+    (dolist (entry tabulated-list-entries)
+      (when (funcall predicate entry)
+        (push entry found-entries)))
+    (if found-entries
+        (progn
+          (setq tabulated-list-entries found-entries)
+          (biblio-list--redisplay t nil))
+      (user-error "No corresponding entries found"))))
+
+(defun biblio-list-filter-by-date (after before)
+  (interactive (list (read-number "Articles between date ...: ")
+                     (read-number "and date: ")))
+  (biblio-list--filter-by
+   (lambda (entry)
+     (cl-destructuring-bind ((key file raw-entry) vec-entry)
+         entry
+       (let* ((date (biblio-list--get-field raw-entry "year"))
+              (num-date (and date (string-to-number date))))
+         (and num-date (<= after num-date before)))))))
+
+(defun biblio-list-clear-filter ()
+  (interactive)
+  (biblio-list--refresh)
+  (biblio-list--redisplay 'remember nil))
+
+;; Not very robust, assumes a specific format ...
+;; TODO: pre-process all authors to give completion ?
+(defun biblio-list-filter-by-all-authors (authors)
+  (interactive (list (mapcar 'capitalize
+                             (completing-read-multiple "Authors: " nil))))
+  (biblio-list--filter-by
+   (lambda (entry)
+     (cl-destructuring-bind ((key file raw-entry) vec-entry)
+         entry
+       (let* ((entry-author (biblio-list--get-field raw-entry "author"))
+              (entry-author-clean (biblio-list--preprocess-field entry-author "author"))
+              (entry-author-split (split-string entry-author-clean ", ")))
+         (cl-loop for req-author in authors
+                  always (member req-author entry-author-split)))))))
+
+(defun biblio-list-filter-by-any-author (authors)
+  (interactive (list (mapcar 'capitalize
+                             (completing-read-multiple "Authors: " nil))))
+  (biblio-list--filter-by
+   (lambda (entry)
+     (cl-destructuring-bind ((key file raw-entry) vec-entry)
+         entry
+       (let* ((entry-author (biblio-list--get-field raw-entry "author"))
+              (entry-author-clean (biblio-list--preprocess-field entry-author "author"))
+              (entry-author-split (split-string entry-author-clean ", ")))
+         (cl-loop for req-author in authors
+                  thereis (member req-author entry-author-split)))))))
+
+(defun biblio-list-filter-by-title (title)
+  (interactive (list (read-string "Title: ")))
+  (biblio-list--filter-by
+   (lambda (entry)
+     (cl-destructuring-bind ((key file raw-entry) vec-entry)
+         entry
+       (let* ((entry-title (or (biblio-list--get-field raw-entry "title")
+                               (biblio-list--get-field raw-entry "booktitle")))
+              (entry-clean (biblio-list--preprocess-field entry-title "title"))
+              (case-fold-search t))
+         (string-match title entry-clean))))))
 
 ;;; Tabulated-list-mode functions
 (defun biblio-list--refresh (&optional ignore-auto no-confirm)
   (biblio-list--parse-files)
-  (biblio-list--convert-entries)
+  (biblio-list--process-all-entries)
   (setq tabulated-list-entries biblio-list--vec-entries))
+
+(defun biblio-list--redisplay (&optional remember-pos update)
+  (tabulated-list-init-header)
+  (tabulated-list-print remember-pos update))
 
 ;;; Entry points
 
@@ -396,7 +517,7 @@ it wants to replace by a default or placeholder value.")
       ;; TODO: initialize everything
       (biblio-list-mode)
       (biblio-list--refresh)
-      (tabulated-list-print 'remember 'update))
+      (biblio-list--redisplay 'remember 'update))
     (pop-to-buffer buf)))
 
 ;;;###autoload
@@ -409,8 +530,9 @@ it wants to replace by a default or placeholder value.")
   (setq tabulated-list-format biblio-list-format)
   (setq tabulated-list-padding 2)
   (setq tabulated-list-sort-key nil)
+  (setq tabulated-list-printer biblio-list-printer)
   (biblio-list--refresh)
-  (tabulated-list-init-header)
+  (biblio-list--redisplay t nil)
   (setq revert-buffer-function 'biblio-list--refresh))
 
 (provide 'biblio-list)
