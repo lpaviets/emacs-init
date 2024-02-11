@@ -4974,6 +4974,8 @@ present in the list of authors or in the title of the article"
 (use-package biblio-list
   :ensure nil
   :defer t
+  :bind
+  ("C-c B" . biblio-list-bibliography)
   :config
   (require 'bibtex)
   (require 'bibtex-completion)

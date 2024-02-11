@@ -6006,6 +6006,8 @@ Another useful thing is to view the entire bibliography as a table, with more or
   (use-package biblio-list
     :ensure nil
     :defer t
+    :bind
+    ("C-c B" . biblio-list-bibliography)
     :config
     (require 'bibtex)
     (require 'bibtex-completion)
