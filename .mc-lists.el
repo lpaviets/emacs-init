@@ -114,6 +114,7 @@
         iedit-switch-to-mc-mode
         lps/duplicate-line-or-region-down
         next-buffer
+        org-insert-link
         org-shiftright
         previous-buffer
         sly-compile-defun

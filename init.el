@@ -1860,10 +1860,9 @@ the current selection by line."
        arg))))
 
 (use-package drag-stuff
-  :custom
-  (drag-stuff-except-modes '(org-mode
-                             tabulated-list-mode))
   :config
+  (setq drag-stuff-except-modes '(org-mode
+                                  tabulated-list-mode))
   (drag-stuff-global-mode 1)
   (drag-stuff-define-keys))
 
@@ -3115,7 +3114,7 @@ call the associated function interactively. Otherwise, call the
   (org-return-follows-link t)
   (org-imenu-depth 4)
   (org-catch-invisible-edits 'show)
-  (org-latex-packages-alist '(("" "amsfonts" t)))
+  (org-latex-packages-alist '(("" "amsfonts" t) ("" "lps-tex-style" t)))
   (org-preview-latex-default-process (if (executable-find "dvisvgm")
                                          'dvisvgm
                                        'dvipng))
