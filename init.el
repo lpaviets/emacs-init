@@ -294,7 +294,8 @@ fboundp."
   (desktop-restore-frames nil) ;; Otherwise buggy with daemon-mode
   (desktop-path (list (locate-user-emacs-file "desktop-saves/")))
   (desktop-restore-eager 10)
-  (desktop-lazy-verbose nil))
+  (desktop-lazy-verbose nil)
+  (desktop-restore-forces-onscreen nil))
 
 (use-package saveplace
   :ensure nil
@@ -400,7 +401,8 @@ fboundp."
   (column-number-mode t)
 
   (defun lps/activate-truncate-lines ()
-    (toggle-truncate-lines 1))
+    (let ((inhibit-message t))
+      (toggle-truncate-lines 1)))
 
   (defvar lps/truncate-lines-modes-hook '(dired-mode-hook
                                           outline-mode-hook
@@ -419,7 +421,7 @@ fboundp."
   (auto-hscroll-mode 'current-line)
   (display-line-numbers-width 3)
   (display-line-numbers-grow-only t)
-  (fill-column 80) ; default 70 is a bit low
+  (fill-column 80)                      ; default 70 is a bit low
   :hook
   ((prog-mode LaTeX-mode) . display-line-numbers-mode)
   ((text-mode org-mode LaTeX-mode comint-mode) . visual-line-mode)
@@ -1131,8 +1133,6 @@ buffer name already resembles a file name"
 
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
-  :custom
-  (describe-char-unidata-list t)
   :bind
   (:map help-map
         (";" . helpful-at-point))
@@ -1174,6 +1174,7 @@ buffer name already resembles a file name"
   :ensure nil
   :custom
   (apropos-documentation-sort-by-scores t)
+  (describe-char-unidata-list t)
   :bind
   (:map help-map
         ("u" . describe-face)
@@ -1196,6 +1197,11 @@ buffer name already resembles a file name"
   (set-face-attribute 'Man-underline nil
                       :inherit font-lock-variable-name-face
                       :underline t))
+
+(use-package info
+  :bind
+  (:map Info-mode-map
+        ("S" . consult-info)))
 
 ;;; Add some colours to Info nodes
 (use-package info-colors
@@ -5576,6 +5582,7 @@ confirmation when sending a non-multipart MIME mail")
   :ensure nil
   :load-path "/usr/local/share/emacs/site-lisp/mu4e" ;; Might be needed.
   :commands mu4e
+  :hook (mu4e-compose-mode . olivetti-mode)
   :bind (("C-c e" . mu4e)
          :map mu4e-compose-mode-map
          ("C-c h" . lps/org-mime-htmlize-preserve-secure-and-attach)

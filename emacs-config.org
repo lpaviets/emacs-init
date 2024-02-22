@@ -391,7 +391,8 @@ Emacs is generally meant to be started once and stay up for long period of times
     (desktop-restore-frames nil) ;; Otherwise buggy with daemon-mode
     (desktop-path (list (locate-user-emacs-file "desktop-saves/")))
     (desktop-restore-eager 10)
-    (desktop-lazy-verbose nil))
+    (desktop-lazy-verbose nil)
+    (desktop-restore-forces-onscreen nil))
 #+end_src
 
 We can also remember more information than "which files were opened"; the built-in ~save-place-mode~ remembers /where/ your point was the list time you opened a file.
@@ -580,7 +581,8 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
     (column-number-mode t)
 
     (defun lps/activate-truncate-lines ()
-      (toggle-truncate-lines 1))
+      (let ((inhibit-message t))
+        (toggle-truncate-lines 1)))
 
     (defvar lps/truncate-lines-modes-hook '(dired-mode-hook
                                             outline-mode-hook
@@ -599,7 +601,7 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
     (auto-hscroll-mode 'current-line)
     (display-line-numbers-width 3)
     (display-line-numbers-grow-only t)
-    (fill-column 80) ; default 70 is a bit low
+    (fill-column 80)                      ; default 70 is a bit low
     :hook
     ((prog-mode LaTeX-mode) . display-line-numbers-mode)
     ((text-mode org-mode LaTeX-mode comint-mode) . visual-line-mode)
@@ -1480,8 +1482,6 @@ It will condense all the available information about something within a single H
 #+begin_src emacs-lisp
   ;; Helpful. Extra documentation when calling for help
   (use-package helpful
-    :custom
-    (describe-char-unidata-list t)
     :bind
     (:map help-map
           (";" . helpful-at-point))
@@ -1528,6 +1528,7 @@ We can also improve some of the other help commands:
     :ensure nil
     :custom
     (apropos-documentation-sort-by-scores t)
+    (describe-char-unidata-list t)
     :bind
     (:map help-map
           ("u" . describe-face)
@@ -1557,6 +1558,11 @@ We can also improve some of the other help commands:
 Another useful built-in tool to read documentation is ~info-mode~. This is convenient major-mode used to read =.info= files, a GNU file format mainly used to write technical documentation; several GNU (and non-GNU) utilities and softwares have an Info manual, readable using this mode.
 
 #+begin_src emacs-lisp
+  (use-package info
+    :bind
+    (:map Info-mode-map
+          ("S" . consult-info)))
+
   ;;; Add some colours to Info nodes
   (use-package info-colors
     :hook (Info-selection . info-colors-fontify-node)
@@ -6739,6 +6745,7 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     :ensure nil
     :load-path "/usr/local/share/emacs/site-lisp/mu4e" ;; Might be needed.
     :commands mu4e
+    :hook (mu4e-compose-mode . olivetti-mode)
     :bind (("C-c e" . mu4e)
            :map mu4e-compose-mode-map
            ("C-c h" . lps/org-mime-htmlize-preserve-secure-and-attach)
@@ -8196,9 +8203,9 @@ We might also need to edit, fix, add or even write subtitles. Even without even 
   - Add function to add/remove tag
   - Add function to search only articles of a given tag (or tag combination ?)
   - Maybe change bibtex-format-entry functions to show tags (more or less succintly ?)
-- Fix autoloading of =bibtex-completion= when calling ~org-ref-read-key~.
 - Fix ~bibtex-autokey-demangle-name~ so that it correctly handles "long names": it currently assumes that a long name is of the form 'particle + relevant-stuff', while there might be surnames with a space where everything is to be kept.
-- Search/write a way to have a tabular mode with bib entries + filter functions, just as e.g. for processes or packages.
+- Try ~consult-bibtex~ ?
+
 ** Generic
 Use functions that have been added to Emacs rather than mine, or use a macro to decide according to the version:
 - [ ] duplicate-dwim (29.1)
@@ -8218,16 +8225,13 @@ To explore:
 ** Org mode
 - Fix (or check what breaks if fix) ~org-element-latex-fragment-parser~ so that it recognizes "dollars" followed by a dash directly (and no space+dash).
 - Add way to draw automata/trees easily without using artist mode (maybe TikZ integration ?)
-- May be (but not urgent) add a way to write theorems/definitions and so on in Org documents (instead of using e.g. *Theorem:*)
 - Fix HTML files opening in Chrome sometimes (somewhat complicated. Some keywords: mailcap, sensible-browser, the /etc/mailcap file). Solution: delete chrome.
-- Add Latex/HTML headers & export options
 - Add a proper "personal org math mode" to typeset math, and setup/remove options (~org-cdlatex~, electric-pair twists, some protected blocks, etc).
 ** Printing
 Not particularly Emacs-related, but: find a way to specify a username/password to ~lp~ when printing using either the built-in functions or ~transient-extras-lp-*~
 
 ** PDF/LaTeX
 *** Beamer
-- [X] Add a template to fill new Beamer documents with my usual stuff (Warsaw, improved footers, etc). /Somewhat done: created a tex style, probably a more natural option than using Emacs to insert text/
 - Fix =beamer-mode= overriding the builtin beamer style when added via =TeX-add-style-hook=
 *** Documentation
 - Improve the documentation function: jump to a manual depending on current packages (not word at point ...), /then/ look in index for word at point (using personal function ~lps/pdf-maybe-goto-index~), possibly streamlining the experience using a modified version of ~pdf-read-links-*~ if possible so that the word at point is automatically pre-selected and I only need to press enter if it is "automatically" found in the Index.
