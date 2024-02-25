@@ -3054,7 +3054,10 @@ call the associated function interactively. Otherwise, call the
   :hook (gdb-mode . gdb-many-windows))
 
 (use-package antlr-mode
-  :mode ("\\.g4\\'" . antlr-mode))
+  :mode ("\\.g4\\'" . antlr-mode)
+  :custom
+  (antlr-tool-command "java org.antlr.v4.Tool")
+  (antlr-ask-about-save nil))
 
 (use-package sage-shell-mode
   :hook

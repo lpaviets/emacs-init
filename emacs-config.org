@@ -3930,7 +3930,10 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
 
 #+begin_src emacs-lisp
   (use-package antlr-mode
-    :mode ("\\.g4\\'" . antlr-mode))
+    :mode ("\\.g4\\'" . antlr-mode)
+    :custom
+    (antlr-tool-command "java org.antlr.v4.Tool")
+    (antlr-ask-about-save nil))
 
 #+end_src
 
