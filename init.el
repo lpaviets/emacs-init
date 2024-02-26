@@ -1276,7 +1276,15 @@ buffer name already resembles a file name"
   ("C-c i" . lps/consult-imenu-or-org-heading)
   ("C-c r r" . consult-register-load)
   ("C-c r s" . consult-register-store)
-  ("C-x b" . consult-buffer)
+  ([remap switch-to-buffer] . consult-buffer)
+  ([remap repeat-complex-command] . consult-complex-command)
+  ([remap bookmark-jump] . consult-bookmark)
+  ([remap project-switch-to-buffer] . consult-project-buffer)
+  ("M-g e" . consult-compile-error)
+  ("M-g f" . consult-flymake)
+  ("M-g o" . consult-outline)
+  (:map isearch-mode-map
+        ([remap isearch-edit-string] . consult-isearch-history))
   (:map lps/system-tools-map
         ("C-f" . consult-file-externally))
   :custom
@@ -1303,7 +1311,7 @@ buffer name already resembles a file name"
   :defer t
   :bind
   ("C-," . embark-act)
-  ("C-h b" . embark-bindings)
+  ([remap describe-bindings] . embark-bindings)
   (:map embark-file-map
         ("s" . lps/find-file-as-root))
   :custom
