@@ -3620,6 +3620,13 @@ pre-filled with WORD."
 (use-package saveplace-pdf-view
   :after pdf-view)
 
+(use-package doc-toc
+  :after pdf-tools
+  :bind
+  (:map pdf-view-mode-map
+        ("C-c e" . nil)
+        ("C-c M-e" . doc-toc-extract-pages-ocr)))
+
 ;; AUCTeX initialization
 (use-package tex-site
   :ensure auctex) ;; Don't defer, buggy ?
@@ -5585,7 +5592,6 @@ confirmation when sending a non-multipart MIME mail")
   :ensure nil
   :load-path "/usr/local/share/emacs/site-lisp/mu4e" ;; Might be needed.
   :commands mu4e
-  :hook (mu4e-compose-mode . olivetti-mode)
   :bind (("C-c e" . mu4e)
          :map mu4e-compose-mode-map
          ("C-c h" . lps/org-mime-htmlize-preserve-secure-and-attach)
@@ -5601,7 +5607,8 @@ confirmation when sending a non-multipart MIME mail")
   :hook
   ;; Security issues
   (mu4e-main-mode . lps/auth-source-define-cache-expiry)
-
+  ;; Improve appearance
+  (mu4e-compose-mode . olivetti-mode)
   ;; Might avoid unwanted drafts
   (mu4e-compose-mode . lps/disable-auto-save-mode)
   :custom

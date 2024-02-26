@@ -4579,6 +4579,23 @@ We also add the (generally useful) feature of remembering where we left a PDF wh
     :after pdf-view)
 #+end_src
 
+*** PDF modification
+
+Sometimes, we don't only want to view PDF, but also to modify them, for example split, concatenate, extract pages ... or add a table of contents.
+
+Once again, we rely on external CLI tools and some wrapper Emacs package that make using those tools easier.
+
+*MANUAL* As explained on [[https://github.com/dalanicolai/doc-tools-toc][the package webpage]], you need to install some utilities: ~pdftotext~ from poppler-utils, ~pdfoutline~ from fntsample, and ~tesseract~ (sometimes packages as ~tesseract-ocr~).
+
+#+begin_src emacs-lisp
+  (use-package doc-toc
+    :after pdf-tools
+    :bind
+    (:map pdf-view-mode-map
+          ("C-c e" . nil)
+          ("C-c M-e" . doc-toc-extract-pages-ocr)))
+#+end_src
+
 *** LaTeX
 
 It is also possible to configure Emacs to comfortably write and edit LaTeX documents, using the famous tool AUCTeX.
@@ -6748,7 +6765,6 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     :ensure nil
     :load-path "/usr/local/share/emacs/site-lisp/mu4e" ;; Might be needed.
     :commands mu4e
-    :hook (mu4e-compose-mode . olivetti-mode)
     :bind (("C-c e" . mu4e)
            :map mu4e-compose-mode-map
            ("C-c h" . lps/org-mime-htmlize-preserve-secure-and-attach)
@@ -6764,7 +6780,8 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     :hook
     ;; Security issues
     (mu4e-main-mode . lps/auth-source-define-cache-expiry)
-
+    ;; Improve appearance
+    (mu4e-compose-mode . olivetti-mode)
     ;; Might avoid unwanted drafts
     (mu4e-compose-mode . lps/disable-auto-save-mode)
     :custom
