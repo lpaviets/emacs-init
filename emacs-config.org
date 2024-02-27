@@ -6757,6 +6757,7 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
 
 *MANUAL* You need to install ~mu4e~ separately, either from the standard repositories of your distribution or directly from source. Once installed, you will need to execute a few commands to initialize everything, so please refer to the package documentation.
 
+*** General configuration
 #+begin_src emacs-lisp :noweb yes
   (use-package smtpmail
     :ensure nil
@@ -6806,7 +6807,7 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     (mu4e-index-update-in-background t)
     (mu4e-hide-index-messages t)
     (mu4e-headers-date-format "%d-%m-%Y [%H:%M]") ; Always show full date and time
-    (mu4e-search-threads t)             ; Also show full message threads
+    (mu4e-search-threads t)                       ; Also show full message threads
     (mu4e-headers-include-related t)
     (mu4e-headers-precise-alignment t)
     ;; Keep one mail per line
@@ -6827,35 +6828,41 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
         (mu4e-headers-mark-for-unmark)))
 
     (defun lps/mu4e-view-mime-part-action ()
-      "Wrapper around `mu4e-view-mime-part-action' with better prompt"
-      (interactive)
-      (let* ((parts (mu4e~view-gather-mime-parts))
-             attachments)
-        (cl-loop for part in parts
-                 for num = (car part)
-                 for fn = (or (cdr (assoc 'filename
-                                          (assoc "attachment" (cdr part))))
-                              (cl-loop for item in part
-                                       for name = (and (listp item)
-                                                       (assoc-default 'name item))
-                                       thereis (and (stringp name) name)))
-                 when fn
-                 do (push (cons fn num) attachments))
-        (mu4e-view-mime-part-action (cdr (assoc
-                                          (completing-read "MIME-part: "
-                                                           attachments nil t)
-                                          attachments)))))
+      "Wrapper around `mu4e-view-mime-part-action' with better prompt
 
-    ;;; Main view and global stuff
+  This is just a call to `mu4e-view-mime-part-action' in more
+  recent versions of mu4e."
+      (interactive)
+      (version-case mu4e-mu
+        ("1.11" (call-interactively 'mu4e-view-mime-part-action))
+        ("1.10"
+         (let* ((parts (mu4e~view-gather-mime-parts))
+                attachments)
+           (cl-loop for part in parts
+                    for num = (car part)
+                    for fn = (or (cdr (assoc 'filename
+                                             (assoc "attachment" (cdr part))))
+                                 (cl-loop for item in part
+                                          for name = (and (listp item)
+                                                          (assoc-default 'name item))
+                                          thereis (and (stringp name) name)))
+                    when fn
+                    do (push (cons fn num) attachments))
+           (mu4e-view-mime-part-action (cdr (assoc
+                                             (completing-read "MIME-part: "
+                                                              attachments nil t)
+                                             attachments)))))))
+
+  ;;; Main view and global stuff
     <<mu4e-global>>
 
-    ;;; Contexts
+  ;;; Contexts
     <<mu4e-contexts>>
 
-    ;;; Queries
+  ;;; Queries
     <<mu4e-build-query>>
 
-    ;;; Appearance
+  ;;; Appearance
     <<mu4e-appearance>>)
 #+end_src
 
@@ -6908,6 +6915,8 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
 
     (setq mu4e-view-buffer-name-func 'lps/mu4e-view-buffer-name-func))
 #+end_src
+
+In order to provide contextual mail completion, address, server synchronization ... mu4e relies on /contexts/, essentially mappings between local maildirs, mail addresses, and a bunch of local variables that are indenpendently setup per context.
 
 #+NAME: mu4e-contexts
 #+begin_src emacs-lisp :tangle no
@@ -7051,6 +7060,8 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
       (let ((query (mapconcat 'identity (reverse query-list) " ")))
         (mu4e-search query "Search for: " t))))
 #+end_src
+
+*** Look and feel
 
 #+NAME: mu4e-appearance
 #+begin_src emacs-lisp :tangle no
@@ -7234,6 +7245,8 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
                      'docid docid 'msg msg)))))))))))
 #+end_src
 
+*** Integrate with other Emacs tools
+**** Attachments from Dired
 One point that is a bit infuriating with the current state of ~mu4e~ is how you are supposed to manage attachments. In particular, you have to navigate in a whole filetree, everytime you want to attach a file. To my knowledge, there is no "easy and immediate" way to /e.g./ attach several files at once.
 
 To patch this, we use a few tricks with ~gnus-dired~
@@ -7266,7 +7279,7 @@ To patch this, we use a few tricks with ~gnus-dired~
           ("E" . gnus-dired-attach)))
 #+end_src
 
-** Org MIME
+**** Org MIME
 
 ~mu4e~ in itself is not really able to send HTML e-mails. However, it is nowadays a given that people you are sending e-mails too are going to be able to visualize HTML-ized content, and they might even /assume/ that this is the case - meaning that a plain text e-mail will loo strange and/or unprofessional.
 

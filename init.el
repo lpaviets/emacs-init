@@ -5633,7 +5633,7 @@ confirmation when sending a non-multipart MIME mail")
   (mu4e-index-update-in-background t)
   (mu4e-hide-index-messages t)
   (mu4e-headers-date-format "%d-%m-%Y [%H:%M]") ; Always show full date and time
-  (mu4e-search-threads t)             ; Also show full message threads
+  (mu4e-search-threads t)                       ; Also show full message threads
   (mu4e-headers-include-related t)
   (mu4e-headers-precise-alignment t)
   ;; Keep one mail per line
@@ -5654,26 +5654,32 @@ confirmation when sending a non-multipart MIME mail")
       (mu4e-headers-mark-for-unmark)))
 
   (defun lps/mu4e-view-mime-part-action ()
-    "Wrapper around `mu4e-view-mime-part-action' with better prompt"
-    (interactive)
-    (let* ((parts (mu4e~view-gather-mime-parts))
-           attachments)
-      (cl-loop for part in parts
-               for num = (car part)
-               for fn = (or (cdr (assoc 'filename
-                                        (assoc "attachment" (cdr part))))
-                            (cl-loop for item in part
-                                     for name = (and (listp item)
-                                                     (assoc-default 'name item))
-                                     thereis (and (stringp name) name)))
-               when fn
-               do (push (cons fn num) attachments))
-      (mu4e-view-mime-part-action (cdr (assoc
-                                        (completing-read "MIME-part: "
-                                                         attachments nil t)
-                                        attachments)))))
+    "Wrapper around `mu4e-view-mime-part-action' with better prompt
 
-  ;;; Main view and global stuff
+This is just a call to `mu4e-view-mime-part-action' in more
+recent versions of mu4e."
+    (interactive)
+    (version-case mu4e-mu
+      ("1.11" (call-interactively 'mu4e-view-mime-part-action))
+      ("1.10"
+       (let* ((parts (mu4e~view-gather-mime-parts))
+              attachments)
+         (cl-loop for part in parts
+                  for num = (car part)
+                  for fn = (or (cdr (assoc 'filename
+                                           (assoc "attachment" (cdr part))))
+                               (cl-loop for item in part
+                                        for name = (and (listp item)
+                                                        (assoc-default 'name item))
+                                        thereis (and (stringp name) name)))
+                  when fn
+                  do (push (cons fn num) attachments))
+         (mu4e-view-mime-part-action (cdr (assoc
+                                           (completing-read "MIME-part: "
+                                                            attachments nil t)
+                                           attachments)))))))
+
+;;; Main view and global stuff
   ;; Bookmarks
   (add-to-list 'mu4e-bookmarks `(:name
                                  "Important"
@@ -5721,7 +5727,7 @@ confirmation when sending a non-multipart MIME mail")
 
     (setq mu4e-view-buffer-name-func 'lps/mu4e-view-buffer-name-func))
 
-  ;;; Contexts
+;;; Contexts
   ;; Before making a new context:
   ;; - Make sure that the [sent/trash/drafts] folders are correctly named, to avoid duplicates
   ;; - Don't forget to modify .mbsyncrc and .authinfo.gpg to correctly authenticate against
@@ -5784,7 +5790,7 @@ confirmation when sending a non-multipart MIME mail")
                   (smtpmail-smtp-service . 587)
                   (smtpmail-stream-type  . starttls)))))
 
-  ;;; Queries
+;;; Queries
   (defun lps/--mu4e-read-date (&optional prompt)
     (let ((time (decode-time (org-read-date nil t))))
       (format "%04d%02d%02d"
@@ -5860,7 +5866,7 @@ confirmation when sending a non-multipart MIME mail")
       (let ((query (mapconcat 'identity (reverse query-list) " ")))
         (mu4e-search query "Search for: " t))))
 
-  ;;; Appearance
+;;; Appearance
   ;; Redefine everything here
   (setq mu4e-headers-draft-mark     '("D" . "⚒")
         mu4e-headers-flagged-mark   '("F" . "✚")
