@@ -4979,7 +4979,9 @@ Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
         (lps/LaTeX-beamer-remove-frame-as-section)
         (TeX-fold-clearout-buffer))))
 
-  ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
+  (add-hook 'TeX-update-style-hook
+            (lambda ()
+              (TeX-add-style-hook "beamer" 'beamer-mode))) ; Buggy ?! Overrides default
 
   ;; Folding
   (defvar lps/TeX-beamer-fold-frame-overlay-regexp
@@ -6764,6 +6766,8 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     :after mu4e
     :custom
     ;; Default SMTP configuration
+    ;; Don't forget that it uses authinfo(.gpg) ! So any password change
+    ;; should be reflected there too !
     (smtpmail-debug-info t)
     (smtpmail-smtp-user "paviets201")
     (smtpmail-smtp-server "smtp.unicaen.fr")
@@ -6809,8 +6813,6 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     (mu4e-headers-date-format "%d-%m-%Y [%H:%M]") ; Always show full date and time
     (mu4e-search-threads t)                       ; Also show full message threads
     (mu4e-headers-include-related t)
-    (mu4e-headers-precise-alignment t)
-    ;; Keep one mail per line
     ;; Todo: fix so that it updates when window is resized
     (mu4e-headers-fields '((:human-date . 22)
                            (:flags . 6)
@@ -7670,7 +7672,13 @@ Those modes allow you to draw geometric shapes, such as lines (non-necessarily h
       (when artist-key-is-drawing
         (artist-key-do-continously-common)))
 
-    (setq artist-arrows [ ?> ?⌟ ?v ?⌞ ?< ?⌜ ?^ ?⌝ ]))
+    (setq artist-arrows [ ?> ?⌟ ?v ?⌞ ?< ?⌜ ?^ ?⌝ ])
+
+    (when (fboundp 'which-key-mode)
+      (add-to-list 'which-key-replacement-alist
+                   '((nil . "\\<artist-select-op") . (nil . "🎨"))
+                   nil
+                   'equal)))
 #+end_src
 
 ** Calendar
@@ -8294,8 +8302,6 @@ To explore:
 Not particularly Emacs-related, but: find a way to specify a username/password to ~lp~ when printing using either the built-in functions or ~transient-extras-lp-*~
 
 ** PDF/LaTeX
-*** Beamer
-- Fix =beamer-mode= overriding the builtin beamer style when added via =TeX-add-style-hook=
 *** Documentation
 - Improve the documentation function: jump to a manual depending on current packages (not word at point ...), /then/ look in index for word at point (using personal function ~lps/pdf-maybe-goto-index~), possibly streamlining the experience using a modified version of ~pdf-read-links-*~ if possible so that the word at point is automatically pre-selected and I only need to press enter if it is "automatically" found in the Index.
   - Also catch the potential call to latex2e documentation: open info manual instead of pdf.

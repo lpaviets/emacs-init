@@ -3892,7 +3892,9 @@ return `nil'."
         (lps/LaTeX-beamer-remove-frame-as-section)
         (TeX-fold-clearout-buffer))))
 
-  ;; (TeX-add-style-hook "beamer" 'beamer-mode) ; Buggy ?! Overrides default
+  (add-hook 'TeX-update-style-hook
+            (lambda ()
+              (TeX-add-style-hook "beamer" 'beamer-mode))) ; Buggy ?! Overrides default
 
   ;; Folding
   (defvar lps/TeX-beamer-fold-frame-overlay-regexp
@@ -5590,6 +5592,8 @@ confirmation when sending a non-multipart MIME mail")
   :after mu4e
   :custom
   ;; Default SMTP configuration
+  ;; Don't forget that it uses authinfo(.gpg) ! So any password change
+  ;; should be reflected there too !
   (smtpmail-debug-info t)
   (smtpmail-smtp-user "paviets201")
   (smtpmail-smtp-server "smtp.unicaen.fr")
@@ -5635,8 +5639,6 @@ confirmation when sending a non-multipart MIME mail")
   (mu4e-headers-date-format "%d-%m-%Y [%H:%M]") ; Always show full date and time
   (mu4e-search-threads t)                       ; Also show full message threads
   (mu4e-headers-include-related t)
-  (mu4e-headers-precise-alignment t)
-  ;; Keep one mail per line
   ;; Todo: fix so that it updates when window is resized
   (mu4e-headers-fields '((:human-date . 22)
                          (:flags . 6)
@@ -6412,7 +6414,13 @@ insert as many blank lines as necessary."
     (when artist-key-is-drawing
       (artist-key-do-continously-common)))
 
-  (setq artist-arrows [ ?> ?⌟ ?v ?⌞ ?< ?⌜ ?^ ?⌝ ]))
+  (setq artist-arrows [ ?> ?⌟ ?v ?⌞ ?< ?⌜ ?^ ?⌝ ])
+
+  (when (fboundp 'which-key-mode)
+    (add-to-list 'which-key-replacement-alist
+                 '((nil . "\\<artist-select-op") . (nil . "🎨"))
+                 nil
+                 'equal)))
 
 (use-package calendar
   :ensure nil
