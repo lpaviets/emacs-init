@@ -1612,6 +1612,15 @@ However, we tend not to use the mouse at all, and in particular having to use th
     (help-at-pt-timer-delay 0.5))
 #+end_src
 
+We also add a way to use the mouse for help, with a typical menu appearing when you right-click on something. Of course, when using a keyboard, there are usually more powerful (even contextual) tools, but this is sometimes good enough.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :init
+    (ensure-emacs-version "28.1"
+      (context-menu-mode 1)))
+#+end_src
+
 * Commands
 ** Disabled commands
 
@@ -4050,6 +4059,8 @@ We change the general feel of Org Mode documents by using other indentation rule
     (org-archive-subtree-save-file-p t)
     (org-ellipsis " ▾")
     :config
+    ;; Mouse support
+    (require 'org-mouse)
 
     ;; Basic fonts and faces
     <<org-fonts>>

@@ -1231,6 +1231,11 @@ buffer name already resembles a file name"
   (help-at-pt-display-when-idle t)
   (help-at-pt-timer-delay 0.5))
 
+(use-package emacs
+  :init
+  (ensure-emacs-version "28.1"
+    (context-menu-mode 1)))
+
 ;; Don't disable any command
 ;; BE CAREFUL
 ;; If you are a new user, you might to comment out this line
@@ -3155,6 +3160,8 @@ call the associated function interactively. Otherwise, call the
   (org-archive-subtree-save-file-p t)
   (org-ellipsis " ▾")
   :config
+  ;; Mouse support
+  (require 'org-mouse)
 
   ;; Basic fonts and faces
   (defun lps/org-font-setup ()
