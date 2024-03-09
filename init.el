@@ -3338,7 +3338,7 @@ call the associated function interactively. Otherwise, call the
      ("NEXT" . (:foreground "orange1" :weight bold))))
 
   (org-agenda-breadcrumbs-separator "/")
-
+  (org-agenda-format-date 'lps/org-agenda-format-date)
   (org-agenda-prefix-format
    '((agenda . " %i %(lps/agenda-category 15)%?-15t%b% s")
      (todo . " %i %(lps/agenda-category 15) ")
@@ -3347,9 +3347,14 @@ call the associated function interactively. Otherwise, call the
 
   :config
   ;; Faces
-  (set-face-attribute 'org-agenda-date nil :italic nil :underline t)
-  (set-face-attribute 'org-agenda-date-today nil :italic nil :underline t)
-  (set-face-attribute 'org-agenda-date-weekend nil :italic nil :underline t)
+  (set-face-attribute 'org-agenda-date nil :italic t :underline nil)
+  (set-face-attribute 'org-agenda-date-today nil :italic t :underline nil)
+  (set-face-attribute 'org-agenda-date-weekend nil :italic t :underline nil)
+
+  ;; Maybe don't hardcode width and refer to some kind of window/buffer width ?
+  (defun lps/org-agenda-format-date (date)
+    (let ((old (org-agenda-format-date-aligned date)))
+      (format (concat (make-string 40 ?-) "\n%s") old)))
 
   ;; Icons and categories
   (dolist (tag-and-icon `(("Lectures"     . "🏫")
