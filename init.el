@@ -5663,7 +5663,7 @@ recent versions of mu4e."
     (interactive)
     (version-case mu4e-mu
       ("1.11" (call-interactively 'mu4e-view-mime-part-action))
-      ("1.10"
+      (t
        (let* ((parts (mu4e~view-gather-mime-parts))
               attachments)
          (cl-loop for part in parts
