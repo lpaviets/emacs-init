@@ -3644,8 +3644,11 @@ pre-filled with WORD."
   :after pdf-tools
   :bind
   (:map pdf-view-mode-map
-        ("C-c e" . nil)
-        ("C-c M-e" . doc-toc-extract-pages-ocr)))
+        ("C-c C-e" . doc-toc-extract-pages)
+        ("C-c M-e" . doc-toc-extract-pages-ocr))
+  :config
+  ;; Mandatory as the package is poorly-written ...
+  (define-key pdf-view-mode-map (kbd "C-c e") nil))
 
 ;; AUCTeX initialization
 (use-package tex-site
@@ -5537,6 +5540,7 @@ The return string is always 6 characters wide."
 (use-package systemd)
 
 (use-package transient-extras-lp
+  :after pdf-tools
   :bind
   (:map lps/system-tools-map
         ("i" . transient-extras-lp-menu))
