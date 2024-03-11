@@ -6499,6 +6499,29 @@ insert as many blank lines as necessary."
                 ;; holiday-solar-holidays
                 )))
 
+(use-package calfw
+  :defer t
+  :custom
+  ;; Taken from https://github.com/kiwanami/emacs-calfw
+
+  ;; If it does not show, comment this, and it will use the defaults which are
+  ;; normal ascii chars instead.
+  (cfw:fchar-junction ?╋)
+  (cfw:fchar-vertical-line ?┃)
+  (cfw:fchar-horizontal-line ?━)
+  (cfw:fchar-left-junction ?┣)
+  (cfw:fchar-right-junction ?┫)
+  (cfw:fchar-top-junction ?┯)
+  (cfw:fchar-top-left-corner ?┏)
+  (cfw:fchar-top-right-corner ?┓)
+  (cfw:render-line-breaker 'cfw:render-line-breaker-wordwrap))
+
+(use-package calfw-org
+  :defer t
+  :bind ("C-c A" . cfw:open-org-calendar)
+  :config
+  (setq cfw:org-overwrite-default-keybinding t))
+
 (use-package elfeed
   :defer t
   :bind

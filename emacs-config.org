@@ -7768,6 +7768,37 @@ Emacs comes with a builtin calendar. Being French, I decide to format dates usin
                   )))
 #+end_src
 
+Moreover, it is sometimes useful to see a full-fledged, full-screen, complete calendar. For this, we use Calfw, a "calendar framework for Emacs". It is less useful than ~org-agenda~ for integrating with Org-mode (priorities, TODOs, tags and so on), but is a very nice frontend/visualisation tool.
+
+In particular, it integrates somewhat nicely with ~org-agenda~: it can read the content of the agenda, using internally ~org-agenda-get-day-entries~, and so any modification done to ~org-agenda~ "sources" will appear in Calfw. For example, enabling the diary in Org /will/ show the diary entries (holidays, etc ...) in Calfw.
+
+Although not been updated in the last 7 years at the time of writing (2024), it is still quite featureful and stable, and does not have that many bugs - moreover, it is quite well documented, and any break can probably be fixed by an Emacs user.
+
+#+begin_src emacs-lisp
+  (use-package calfw
+    :defer t
+    :custom
+    ;; Taken from https://github.com/kiwanami/emacs-calfw
+
+    ;; If it does not show, comment this, and it will use the defaults which are
+    ;; normal ascii chars instead.
+    (cfw:fchar-junction ?╋)
+    (cfw:fchar-vertical-line ?┃)
+    (cfw:fchar-horizontal-line ?━)
+    (cfw:fchar-left-junction ?┣)
+    (cfw:fchar-right-junction ?┫)
+    (cfw:fchar-top-junction ?┯)
+    (cfw:fchar-top-left-corner ?┏)
+    (cfw:fchar-top-right-corner ?┓)
+    (cfw:render-line-breaker 'cfw:render-line-breaker-wordwrap))
+
+  (use-package calfw-org
+    :defer t
+    :bind ("C-c A" . cfw:open-org-calendar)
+    :config
+    (setq cfw:org-overwrite-default-keybinding t))
+#+end_src
+
 * News and RSS feed
 ** Elfeed
 
@@ -8318,6 +8349,7 @@ To explore:
 - Add way to draw automata/trees easily without using artist mode (maybe TikZ integration ?)
 - Fix HTML files opening in Chrome sometimes (somewhat complicated. Some keywords: mailcap, sensible-browser, the /etc/mailcap file). Solution: delete chrome.
 - Add a proper "personal org math mode" to typeset math, and setup/remove options (~org-cdlatex~, electric-pair twists, some protected blocks, etc).
+- Maybe already done: add a way to jump /from/ the agenda /to/ a Cafw buffer (the other direction is already implemented, I believe) displaying "the same content" (if both directions are unimplemented: do them both ?)
 ** Printing
 Not particularly Emacs-related, but: find a way to specify a username/password to ~lp~ when printing using either the built-in functions or ~transient-extras-lp-*~
 
