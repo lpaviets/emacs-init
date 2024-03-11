@@ -1612,6 +1612,15 @@ However, we tend not to use the mouse at all, and in particular having to use th
     (help-at-pt-timer-delay 0.5))
 #+end_src
 
+We also add a way to use the mouse for help, with a typical menu appearing when you right-click on something. Of course, when using a keyboard, there are usually more powerful (even contextual) tools, but this is sometimes good enough.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :init
+    (ensure-emacs-version "28.1"
+      (context-menu-mode 1)))
+#+end_src
+
 * Commands
 ** Disabled commands
 
@@ -4050,6 +4059,8 @@ We change the general feel of Org Mode documents by using other indentation rule
     (org-archive-subtree-save-file-p t)
     (org-ellipsis " ▾")
     :config
+    ;; Mouse support
+    (require 'org-mouse)
 
     ;; Basic fonts and faces
     <<org-fonts>>
@@ -4258,7 +4269,7 @@ Not only is Org Mode great to write structured documents that can be exported to
        ("NEXT" . (:foreground "orange1" :weight bold))))
 
     (org-agenda-breadcrumbs-separator "/")
-
+    (org-agenda-format-date 'lps/org-agenda-format-date)
     (org-agenda-prefix-format
      '((agenda . " %i %(lps/agenda-category 15)%?-15t%b% s")
        (todo . " %i %(lps/agenda-category 15) ")
@@ -4267,9 +4278,14 @@ Not only is Org Mode great to write structured documents that can be exported to
 
     :config
     ;; Faces
-    (set-face-attribute 'org-agenda-date nil :italic nil :underline t)
-    (set-face-attribute 'org-agenda-date-today nil :italic nil :underline t)
-    (set-face-attribute 'org-agenda-date-weekend nil :italic nil :underline t)
+    (set-face-attribute 'org-agenda-date nil :italic t :underline nil)
+    (set-face-attribute 'org-agenda-date-today nil :italic t :underline nil)
+    (set-face-attribute 'org-agenda-date-weekend nil :italic t :underline nil)
+
+    ;; Maybe don't hardcode width and refer to some kind of window/buffer width ?
+    (defun lps/org-agenda-format-date (date)
+      (let ((old (org-agenda-format-date-aligned date)))
+        (format (concat (make-string 40 ?-) "\n%s") old)))
 
     ;; Icons and categories
     (dolist (tag-and-icon `(("Lectures"     . "🏫")

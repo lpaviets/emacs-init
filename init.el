@@ -1231,6 +1231,11 @@ buffer name already resembles a file name"
   (help-at-pt-display-when-idle t)
   (help-at-pt-timer-delay 0.5))
 
+(use-package emacs
+  :init
+  (ensure-emacs-version "28.1"
+    (context-menu-mode 1)))
+
 ;; Don't disable any command
 ;; BE CAREFUL
 ;; If you are a new user, you might to comment out this line
@@ -3155,6 +3160,8 @@ call the associated function interactively. Otherwise, call the
   (org-archive-subtree-save-file-p t)
   (org-ellipsis " ▾")
   :config
+  ;; Mouse support
+  (require 'org-mouse)
 
   ;; Basic fonts and faces
   (defun lps/org-font-setup ()
@@ -3331,7 +3338,7 @@ call the associated function interactively. Otherwise, call the
      ("NEXT" . (:foreground "orange1" :weight bold))))
 
   (org-agenda-breadcrumbs-separator "/")
-
+  (org-agenda-format-date 'lps/org-agenda-format-date)
   (org-agenda-prefix-format
    '((agenda . " %i %(lps/agenda-category 15)%?-15t%b% s")
      (todo . " %i %(lps/agenda-category 15) ")
@@ -3340,9 +3347,14 @@ call the associated function interactively. Otherwise, call the
 
   :config
   ;; Faces
-  (set-face-attribute 'org-agenda-date nil :italic nil :underline t)
-  (set-face-attribute 'org-agenda-date-today nil :italic nil :underline t)
-  (set-face-attribute 'org-agenda-date-weekend nil :italic nil :underline t)
+  (set-face-attribute 'org-agenda-date nil :italic t :underline nil)
+  (set-face-attribute 'org-agenda-date-today nil :italic t :underline nil)
+  (set-face-attribute 'org-agenda-date-weekend nil :italic t :underline nil)
+
+  ;; Maybe don't hardcode width and refer to some kind of window/buffer width ?
+  (defun lps/org-agenda-format-date (date)
+    (let ((old (org-agenda-format-date-aligned date)))
+      (format (concat (make-string 40 ?-) "\n%s") old)))
 
   ;; Icons and categories
   (dolist (tag-and-icon `(("Lectures"     . "🏫")
