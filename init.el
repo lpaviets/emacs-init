@@ -6501,26 +6501,52 @@ insert as many blank lines as necessary."
 
 (use-package calfw
   :defer t
+  :bind
+  (:map cfw:calendar-mode-map
+        ("RET" . cfw:show-details-command))
   :custom
   ;; Taken from https://github.com/kiwanami/emacs-calfw
 
   ;; If it does not show, comment this, and it will use the defaults which are
   ;; normal ascii chars instead.
-  (cfw:fchar-junction ?╋)
-  (cfw:fchar-vertical-line ?┃)
-  (cfw:fchar-horizontal-line ?━)
-  (cfw:fchar-left-junction ?┣)
-  (cfw:fchar-right-junction ?┫)
-  (cfw:fchar-top-junction ?┯)
-  (cfw:fchar-top-left-corner ?┏)
-  (cfw:fchar-top-right-corner ?┓)
+  (cfw:fchar-junction ?┼)
+  (cfw:fchar-vertical-line ?│)
+  (cfw:fchar-horizontal-line ?─)
+  (cfw:fchar-left-junction ?├)
+  (cfw:fchar-right-junction ?┤)
+  (cfw:fchar-top-junction ?┬)
+  (cfw:fchar-top-left-corner ?┌)
+  (cfw:fchar-top-right-corner ?┐)
   (cfw:render-line-breaker 'cfw:render-line-breaker-wordwrap))
 
 (use-package calfw-org
   :defer t
   :bind ("C-c A" . cfw:open-org-calendar)
   :config
-  (setq cfw:org-overwrite-default-keybinding t))
+  (setq cfw:org-overwrite-default-keybinding t)
+
+  ;; There is a problem with the original function: periods are displayed at the
+  ;; wrong dates + multiple times. AFAICT, the computations of start-date and
+  ;; end-date are bonkers, so we fix those.
+  (defun-override lps/cfw:org-get-timerange (text)
+    "Return a range object (begin end text).
+If TEXT does not have a range, return nil."
+    (let* ((dotime (cfw:org-tp text 'dotime)))
+      (and (stringp dotime)
+           (string-match org-ts-regexp dotime)
+           (let ((date-string  (match-string 1 dotime))
+                 (extra (cfw:org-tp text 'extra)))
+             (when (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra)
+               (let* ((range-beg (save-match-data (org-read-date nil t date-string)))
+                      (total-days (string-to-number
+                                   (match-string 2 extra)))
+                      (start-date range-beg)
+                      (end-date (time-add
+                                 start-date
+                                 (seconds-to-time (* 3600 24 (- total-days 1))))))
+                 (list (calendar-gregorian-from-absolute (time-to-days start-date))
+                       (calendar-gregorian-from-absolute (time-to-days end-date))
+                       text))))))))
 
 (use-package elfeed
   :defer t

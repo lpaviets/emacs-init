@@ -81,6 +81,7 @@
         paredit-splice-sexp
         paredit-splice-sexp-killing-backward
         paredit-wrap-round
+        pp-eval-last-sexp
         reftex-label
         reindent-then-newline-and-indent
         transpose-sexps
