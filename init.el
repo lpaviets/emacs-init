@@ -4990,7 +4990,9 @@ present in the list of authors or in the title of the article"
    '("r"
      "bibliography reference" plain "* %?"
      :target (file+head "articles-notes/%<%Y%m%d%H%M%S>-${citekey}.org"
-                        "#+title: ${title}\n#+filetags: :phd:")
+                        "#+title: ${title}
+#+filetags: :phd:
+#+startup: latexpreview")
      :unnarrowed t
      :empty-lines-before 1
      :kill-buffer t
@@ -6522,9 +6524,10 @@ insert as many blank lines as necessary."
 (use-package calfw-org
   :defer t
   :bind ("C-c A" . cfw:open-org-calendar)
+  :custom
+  (cfw:org-overwrite-default-keybinding t)
+  ;; (cfw:org-schedule-summary-transformer 'lps/cfw:org-summary-format)
   :config
-  (setq cfw:org-overwrite-default-keybinding t)
-
   ;; There is a problem with the original function: periods are displayed at the
   ;; wrong dates + multiple times. AFAICT, the computations of start-date and
   ;; end-date are bonkers, so we fix those.
@@ -6546,7 +6549,21 @@ If TEXT does not have a range, return nil."
                                  (seconds-to-time (* 3600 24 (- total-days 1))))))
                  (list (calendar-gregorian-from-absolute (time-to-days start-date))
                        (calendar-gregorian-from-absolute (time-to-days end-date))
-                       text))))))))
+                       text)))))))
+
+  ;;;; Still a problem: Emoji size makes alignment weird, as characters are too wide.
+  ;;;; Possible fix/solution: either use font-rescaling, or find a monospace font
+  ;;;; with Emoji symbols.
+  ;; (defun lps/cfw:org-summary-format (item)
+  ;;   (let* ((original (cfw:org-summary-format item))
+  ;;          (props (text-properties-at 0 original))
+  ;;          (category (cfw:org-tp item 'org-category))
+  ;;          (icon (caadr (assoc-string category org-agenda-category-icon-alist))))
+  ;;     (if icon
+  ;;         (concat (apply 'propertize icon props)
+  ;;                 original)
+  ;;       original)))
+  )
 
 (use-package elfeed
   :defer t
