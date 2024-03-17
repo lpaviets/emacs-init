@@ -59,6 +59,7 @@
         paredit-backslash
         paredit-backward
         paredit-backward-kill-word
+        paredit-backward-slurp-sexp
         paredit-backward-up
         paredit-close-round
         paredit-copy-as-kill

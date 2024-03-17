@@ -1381,7 +1381,9 @@ buffer name already resembles a file name"
         ("<right>" . mc/unmark-next-like-this)
         ("<left>" . mc/unmark-previous-like-this)
         ("a" . mc/mark-all-like-this)
-        ("A" . mc/mark-all-dwim))
+        ("A" . mc/mark-all-dwim)
+        ("d" . mc/mark-all-symbols-like-this-in-defun)
+        ("D" . mc/mark-all-like-this-in-defun))
   (:map lps/multiple-cursors-repeat-map
         ("<down>" . mc/mark-next-like-this)
         ("<up>" . mc/mark-previous-like-this)
@@ -1398,16 +1400,16 @@ buffer name already resembles a file name"
       ("e" mc/edit-ends-of-lines "Edit ends of lines in region" :exit t))
      "Mark same word (all)"
      (("a" mc/mark-all-like-this "Mark all like this" :exit t)
-      ("S" mc/mark-all-symbols-like-this "Mark all symbols likes this" :exit t)
+      ("A" mc/mark-all-dwim "Mark all dwim")
+      ("s" mc/mark-all-symbols-like-this "Mark all symbols likes this" :exit t)
       ("w" mc/mark-all-words-like-this "Mark all words like this" :exit t)
       ("r" mc/mark-all-in-region "Mark all in region" :exit t)
       ("R" mc/mark-all-in-region-regexp "Mark all in region (regexp)" :exit t)
-      ("d" mc/mark-all-dwim "Mark all dwim"))
-     "Mark same word (next)"
+      ("d" mc/mark-all-symbols-like-this-in-defun "Mark symbols in defun" :exit t))
+     "Mark same word (one)"
      (("n" mc/mark-next-like-this "Mark next like this")
-      ("N" mc/skip-to-next-like-this "Skip to next like this"))
-     "Mark same word (previous)"
-     (("p" mc/mark-previous-like-this "Mark previous like this")
+      ("N" mc/skip-to-next-like-this "Skip to next like this")
+      ("p" mc/mark-previous-like-this "Mark previous like this")
       ("P" mc/skip-to-previous-like-this "Skip to previous like this"))
      "Unmark"
      (("M-n" mc/unmark-next-like-this "Unmark next like this")
@@ -1950,30 +1952,6 @@ Move point in the last duplicated string (line or region)."
   (vundo-glyph-alist vundo-unicode-symbols)
   (vundo-compact-display nil)
   (vundo-window-max-height 5))
-
-(defun lps/find-delete-forward-all-regexp (re &optional beg)
-  "Searches for all the matches of the regexp RE after the point, or after the optional position BEG.
-  Returns a list of strings containing the matches in order, or nil if none was found.
-  Deletes (rather than kill) those matches from the buffer"
-  (save-excursion
-    (let (matches)
-      (goto-char (or beg (point)))
-      (while (re-search-forward re nil t)
-        (push (match-string 0) matches)
-        (delete-region (match-beginning 0) (match-end 0)))
-      matches)))
-
-(defun lps/move-all-regexp-pos-buffer (re &optional beg move split)
-  "Moves all the string matching the regexp RE after the point (or after BEG) to the end of the buffer
-(or to the position MOVE if provided)
-  If SPLIT is provided, it will be inserted before each match, including the first one.
-  The initial strings are destroyed, and the kill-ring is not modified"
-  (save-excursion
-    (let ((matches (nreverse (lps/find-delete-forward-all-regexp re beg))))
-      (goto-char (or move (point-max)))
-      (while matches
-        (insert (or split ""))
-        (insert (pop matches))))))
 
 (use-package wgrep
   :bind
@@ -6505,6 +6483,8 @@ insert as many blank lines as necessary."
 
 (use-package calfw
   :defer t
+  :hook
+  (cfw:calendar-mode . lps/enable-auto-hscroll-scroll)
   :bind
   (:map cfw:calendar-mode-map
         ("RET" . cfw:show-details-command))
@@ -6525,9 +6505,9 @@ insert as many blank lines as necessary."
 
 (use-package calfw-org
   :defer t
+  :init
+  (setq cfw:org-overwrite-default-keybinding t) ; dumb here but it is not a custom var ...
   :bind ("C-c A" . cfw:open-org-calendar)
-  :custom
-  (cfw:org-overwrite-default-keybinding t)
   ;; (cfw:org-schedule-summary-transformer 'lps/cfw:org-summary-format)
   :config
   ;; There is a problem with the original function: periods are displayed at the
