@@ -1427,11 +1427,6 @@ buffer name already resembles a file name"
                      mc/mark-all-like-this))
     (put command 'repeat-map 'lps/multiple-cursors-repeat-map)))
 
-(use-package iedit
-  :defer t
-  :bind
-  ("C-;" . iedit-mode))
-
 (use-package emacs
   :ensure nil
   :when *only-built-in-p*
@@ -2004,7 +1999,8 @@ Move point in the last duplicated string (line or region)."
   (:map lps/quick-edit-map
         ("C-u" . lps/underline-or-frame-dwim)
         ("k" . zap-up-to-char)
-        ("C-t" . lps/make-filename-from-sentence))
+        ("C-t" . lps/make-filename-from-sentence)
+        ("i" . lps/insert-file-name))
   (:map lisp-data-mode-map
         ("M-*" . lps/earmuffify))
   :config
@@ -2120,7 +2116,18 @@ If it is non-nil, replace it by an underscore _"
           (insert ?*))
         (forward-symbol 1)
         (unless (= (char-before) ?*)
-          (insert ?*))))))
+          (insert ?*)))))
+
+  (defun lps/insert-file-name (&optional absolute)
+    "Prompt for a file, and inserts its name in the current buffer,
+relative to the current directory.
+
+If ABSOLUTE is non-nil, inserts the absolute file name instead."
+    (interactive "P")
+    (let ((file (read-file-name "Insert file: ")))
+      (insert (if absolute
+                  (expand-file-name file)
+                (file-relative-name file))))))
 
 (use-package project
   :custom

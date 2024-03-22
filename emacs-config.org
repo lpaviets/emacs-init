@@ -1893,15 +1893,6 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
 
 The webpage specifies that the commands provided by this package are best invoked when bound to key sequence rather than by =M-x <mc/command-name>=, although some testing on my part seems to show that it still works relatively well most of the time.
 
-Another package, perhaps less featureful but also cleaner and less complicated, is ~iedit~. It provides functionality similar to other editors to modify several instances of the same symbol interactively. One drawback - as is often the case with such packages - is that it is regexp-based, meaning that there will unavoidably be "false positive" in the matched symbols.
-
-#+begin_src emacs-lisp
-  (use-package iedit
-    :defer t
-    :bind
-    ("C-;" . iedit-mode))
-#+end_src
-
 ** Auto-completion
 
 We fundamentally use Emacs to write text. What would writing be without some kind of auto-completion ? Hence, we use a few tools to make the general experience of /writing text/ better, whether it is source code, simple sentences or even commands in the minibuffer.
@@ -2603,7 +2594,8 @@ We also define a bunch of functions and commands related to editing text that ar
     (:map lps/quick-edit-map
           ("C-u" . lps/underline-or-frame-dwim)
           ("k" . zap-up-to-char)
-          ("C-t" . lps/make-filename-from-sentence))
+          ("C-t" . lps/make-filename-from-sentence)
+          ("i" . lps/insert-file-name))
     (:map lisp-data-mode-map
           ("M-*" . lps/earmuffify))
     :config
@@ -2719,7 +2711,18 @@ We also define a bunch of functions and commands related to editing text that ar
             (insert ?*))
           (forward-symbol 1)
           (unless (= (char-before) ?*)
-            (insert ?*))))))
+            (insert ?*)))))
+
+    (defun lps/insert-file-name (&optional absolute)
+      "Prompt for a file, and inserts its name in the current buffer,
+  relative to the current directory.
+
+  If ABSOLUTE is non-nil, inserts the absolute file name instead."
+      (interactive "P")
+      (let ((file (read-file-name "Insert file: ")))
+        (insert (if absolute
+                    (expand-file-name file)
+                  (file-relative-name file))))))
 #+end_src
 
 * Programming
@@ -8381,3 +8384,4 @@ Not particularly Emacs-related, but: find a way to specify a username/password t
 *** Documentation
 - Improve the documentation function: jump to a manual depending on current packages (not word at point ...), /then/ look in index for word at point (using personal function ~lps/pdf-maybe-goto-index~), possibly streamlining the experience using a modified version of ~pdf-read-links-*~ if possible so that the word at point is automatically pre-selected and I only need to press enter if it is "automatically" found in the Index.
   - Also catch the potential call to latex2e documentation: open info manual instead of pdf.
+- Add a style for =multibbl=, probably using the one built-in for =multibib=.
