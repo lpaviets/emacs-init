@@ -256,12 +256,12 @@ fboundp."
     (auth-source-cache-expiry 86400) ;; All day
 
     :config
-    (defvar lps/--auth-cache-expiry-setup-p t) ; change it to ask for duration on startup
+    (defvar lps/auth-cache-expiry-setup-p t) ; change it to ask for duration on startup
 
     (defun lps/auth-source-define-cache-expiry ()
       (interactive)
-      (unless lps/--auth-cache-expiry-setup-p
-        (setq lps/--auth-cache-expiry-setup-p t)
+      (unless lps/auth-cache-expiry-setup-p
+        (setq lps/auth-cache-expiry-setup-p t)
         (when (y-or-n-p (concat "Change default auth-cache-expiry value "
                                 "(default "
                                 (number-to-string auth-source-cache-expiry)
@@ -273,7 +273,7 @@ fboundp."
       (auth-source-forget-all-cached)
       (shell-command "gpgconf --kill gpg-agent")
       ;; (shell-command "gpgconf -- reload gpg-agent")
-      (setq lps/--auth-cache-expiry-setup-p nil)))))
+      (setq lps/auth-cache-expiry-setup-p nil)))))
 
 (ensure-emacs-version 29
   (use-package emacs
@@ -2004,7 +2004,7 @@ Move point in the last duplicated string (line or region)."
   (:map lisp-data-mode-map
         ("M-*" . lps/earmuffify))
   :config
-  (defun lps/--fill-width-repeat-string (width str)
+  (defun lps/fill-width-repeat-string (width str)
     "Insert STR as many times as necessary to fill WIDTH,
 potentially using only a prefix of STR for the final iteration"
     (let* ((len (length str))
@@ -2055,17 +2055,17 @@ Breaks if region or line spans multiple visual lines"
               (insert "\n")
               (forward-line -1)
               (indent-to col)
-              (lps/--fill-width-repeat-string width str)
+              (lps/fill-width-repeat-string width str)
               (forward-line 1)
               (end-of-line)
               (insert "\n")
               (indent-to col)
-              (lps/--fill-width-repeat-string width str))
+              (lps/fill-width-repeat-string width str))
           (progn
             (end-of-line)
             (insert "\n")
             (indent-to col)
-            (lps/--fill-width-repeat-string width str))))))
+            (lps/fill-width-repeat-string width str))))))
 
   (defvar lps/do-not-capitalize-list '("the" "a" "an" "of" "in" "on" "by"
                                        "no" "or" "and" "if" "for" "to" "is"
@@ -2411,25 +2411,25 @@ Does not insert a space before the inserted opening parenthesis"
   ;; server for one or two files, however, once I start using LSP,
   ;; there is no reason not to assume that I also want to use it by
   ;; default for other files in the same session
-  (defvar lps/--default-lsp-mode -1) ; change to ask for LSP on startup
+  (defvar lps/default-lsp-mode -1) ; change to ask for LSP on startup
 
   (defun lps/lsp-by-default-in-session ()
-    (if (> lps/--default-lsp-mode 0)
+    (if (> lps/default-lsp-mode 0)
         (lps/start-language-server)
-      (if (and (= lps/--default-lsp-mode 0)
+      (if (and (= lps/default-lsp-mode 0)
                (y-or-n-p "Automatically use lsp-mode in the current session ?"))
           (progn
-            (setq lps/--default-lsp-mode 1)
+            (setq lps/default-lsp-mode 1)
             (lps/start-language-server)))
-      (setq lps/--default-lsp-mode -1)))
+      (setq lps/default-lsp-mode -1)))
 
   (defun lps/toggle-lsp-by-default-in-session ()
     (interactive)
-    (setq lps/--default-lsp-mode (not lps/--default-lsp-mode)))
+    (setq lps/default-lsp-mode (not lps/default-lsp-mode)))
 
   ;; Fix documentation: don't want to start a server to view some
   ;; C code in helpful buffers !
-  (advice-ensure-bindings helpful-update ((lps/--default-lsp-mode -1))))
+  (advice-ensure-bindings helpful-update ((lps/default-lsp-mode -1))))
 
 ;; LSP mode. Useful IDE-like features
 (use-package lsp-mode
@@ -5796,30 +5796,39 @@ recent versions of mu4e."
                   (smtpmail-stream-type  . starttls)))))
 
 ;;; Queries
-  (defun lps/--mu4e-read-date (&optional prompt)
+  (defun lps/mu4e-read-range (fun initial-prompt)
+    (concat (funcall fun initial-prompt)
+            ".."
+            (funcall fun "... and ...")))
+
+  (defun lps/mu4e-read-date (&optional prompt)
     (let ((time (decode-time (org-read-date nil t))))
-      (format "%04d%02d%02d"
+      (format "%04d-%02d-%02d"
               (decoded-time-year time)
               (decoded-time-month time)
               (decoded-time-day time))))
 
-  (defun lps/--mu4e-read-date-range (&optional prompt)
-    (concat (lps/--mu4e-read-date "Mail received or sent between ...")
-            ".."
-            (lps/--mu4e-read-date "... and ...")))
+  (defun lps/mu4e-read-date-range (&optional prompt)
+    (lps/mu4e-read-range 'lps/mu4e-read-date "Mail received or sent between ... "))
 
-  (defun lps/--mu4e-read-mime-type (&optional prompt)
+  (defun lps/mu4e-read-size-range (&optional prompt)
+    (lps/mu4e-read-range 'read-string "Mail with size between ... "))
+
+  (defun lps/mu4e-read-regexp (&optional prompt)
+    (concat "/" (read-string prompt) "/"))
+
+  (defun lps/mu4e-read-mime-type (&optional prompt)
     (require 'mailcap)
     (mailcap-parse-mimetypes)
     (completing-read (or prompt "Mime type: ") (mailcap-mime-types)))
 
-  (defvar lps/--mu4e-build-query-alist
+  (defvar lps/mu4e-build-query-alist
     '((?q "confirm" "confirm")
       (?\  " anything" "" read-string)
       (?f "from" "from:" read-string)
       (?t "to" "to:" read-string)
-      (?d "date" "date:" ((?d "date" "" lps/--mu4e-read-date)
-                          (?r "range" "" lps/--mu4e-read-date-range)))
+      (?d "date" "date:" ((?d "date" "" lps/mu4e-read-date)
+                          (?r "range" "" lps/mu4e-read-date-range)))
       (?F "Flag" "flag:" ((?u "unread" "unread")
                           (?d "draft" "draft")
                           (?f "flagged" "flagged")
@@ -5830,11 +5839,14 @@ recent versions of mu4e."
                           (?t "trashed" "trashed")
                           (?a "attach" "attach")
                           (?e "encrypted" "encrypted")
-                          (?S "Signed" "signed")))
+                          (?S "Signed" "signed")
+                          (?P "Personal" "personal")))
       (?s "subject" "subject:" read-string)
-      (?m "mime" "mime:" lps/--mu4e-read-mime-type)))
+      (?m "mime-type" "mime:" lps/mu4e-read-mime-type)
+      (?a "attachment" "file:" lps/mu4e-read-regexp)
+      (?S "Size" "size:" lps/mu4e-read-size-range)))
 
-  (defun lps/--mu4e-parse-query (choices)
+  (defun lps/mu4e-parse-query (choices)
     (let* ((choice (read-multiple-choice "Query element: " choices))
            (rest (cddr choice))
            (str (car rest))
@@ -5847,7 +5859,7 @@ recent versions of mu4e."
        ((functionp read-fun-or-continue)
         (concat str (funcall read-fun-or-continue (concat str " "))))
        ((consp read-fun-or-continue)
-        (concat str (lps/--mu4e-parse-query read-fun-or-continue)))
+        (concat str (lps/mu4e-parse-query read-fun-or-continue)))
        (t str))))
 
   (defun lps/mu4e-build-query (&optional start-query)
@@ -5856,7 +5868,7 @@ recent versions of mu4e."
     OR ...) between expressions, so the expression has to be modified
     by hand if needed"
     (interactive "P")
-    (let ((choices lps/--mu4e-build-query-alist)
+    (let ((choices lps/mu4e-build-query-alist)
           (query-list (if start-query
                           (list (completing-read "Search for: "
                                                  mu4e--search-hist
@@ -5866,7 +5878,7 @@ recent versions of mu4e."
                                                  'mu4e--search-hist))
                         nil))
           (choice nil))
-      (while (not (eq (setq choice (lps/--mu4e-parse-query choices)) :quit))
+      (while (not (eq (setq choice (lps/mu4e-parse-query choices)) :quit))
         (push choice query-list))
       (let ((query (mapconcat 'identity (reverse query-list) " ")))
         (mu4e-search query "Search for: " t))))
