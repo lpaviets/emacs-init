@@ -2210,6 +2210,7 @@ Hence, we add a few bindings to an already existing keymap, to make them easily 
     :ensure nil
     :only-built-in t
     :bind
+    ("C-%" . query-replace-number)
     (:map query-replace-map
           ("RET" . act)
           ("<return>" . act))
@@ -2227,9 +2228,10 @@ Hence, we add a few bindings to an already existing keymap, to make them easily 
        (let* ((query-replace-lazy-highlight nil)
               (common
                (query-replace-read-args
-                (concat "Query replace num"
+                (concat "Query replace"
                         (if (eq current-prefix-arg '-) " backward" "")
-                        (if (use-region-p) " in region" ""))
+                        (if (use-region-p) " in region" "")
+                        " numbers")
                 t)))
          (list (nth 0 common) ;; num variable
                (query-replace-compile-replacement
@@ -3949,6 +3951,19 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
     (defun lps/sage-shell-hooks ()
       (eldoc-mode 1)
       (setq-local python-mode-hook (remove 'lps/run-python python-mode-hook))))
+#+end_src
+
+*** Graphviz
+
+Graphviz is a simple tool to visualize graphs. It used a custom file format, usually withe extension ~.dot~.
+
+#+begin_src emacs-lisp
+  (use-package graphviz-dot-mode
+    :mode ("\\.dot\\'" . graphviz-dot-mode)
+    :init
+    (with-eval-after-load 'org
+      (setcdr (assoc "dot" org-src-lang-modes)
+              'graphviz-dot)))
 #+end_src
 
 * Org Mode
@@ -8397,6 +8412,9 @@ Not particularly Emacs-related, but: find a way to specify a username/password t
 ** PDF/LaTeX
 *** Styles
 - Add a style for =multibbl=, probably using the one built-in for =multibib=.
+- For =multibbl=:
+  - Fix compilation, some bibliography files need to be compiled "manually" files (not that easy, nowhere to cleanly hook to). The simplest (but unclear if it is enough/reliable enough ?) would be to change ~TeX-command-BibTeX~ when using the package, and to add a corresponding entry/function in ~TeX-command-list~ doing the appropriate thing.
+  - Fix completion with reftex-cite: only use "correct" biblio file.
 *** Documentation
 - Improve the documentation function: jump to a manual depending on current packages (not word at point ...), /then/ look in index for word at point (using personal function ~lps/pdf-maybe-goto-index~), possibly streamlining the experience using a modified version of ~pdf-read-links-*~ if possible so that the word at point is automatically pre-selected and I only need to press enter if it is "automatically" found in the Index.
   - Also catch the potential call to latex2e documentation: open info manual instead of pdf.

@@ -1695,6 +1695,7 @@ buffer name already resembles a file name"
   :ensure nil
   :only-built-in t
   :bind
+  ("C-%" . query-replace-number)
   (:map query-replace-map
         ("RET" . act)
         ("<return>" . act))
@@ -1712,9 +1713,10 @@ buffer name already resembles a file name"
      (let* ((query-replace-lazy-highlight nil)
             (common
              (query-replace-read-args
-              (concat "Query replace num"
+              (concat "Query replace"
                       (if (eq current-prefix-arg '-) " backward" "")
-                      (if (use-region-p) " in region" ""))
+                      (if (use-region-p) " in region" "")
+                      " numbers")
               t)))
        (list (nth 0 common) ;; num variable
              (query-replace-compile-replacement
@@ -3068,6 +3070,13 @@ call the associated function interactively. Otherwise, call the
   (defun lps/sage-shell-hooks ()
     (eldoc-mode 1)
     (setq-local python-mode-hook (remove 'lps/run-python python-mode-hook))))
+
+(use-package graphviz-dot-mode
+  :mode ("\\.dot\\'" . graphviz-dot-mode)
+  :init
+  (with-eval-after-load 'org
+    (setcdr (assoc "dot" org-src-lang-modes)
+            'graphviz-dot)))
 
 (use-package org-bullets
   :hook (org-mode . org-bullets-mode)
