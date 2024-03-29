@@ -4,15 +4,15 @@
    (TeX-add-to-alist 'LaTeX-provided-package-options
                      '(("fontenc" "T1") ("inputenc" "utf8")))
    (add-to-list 'LaTeX-verbatim-environments-local "lstlisting")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "path")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "url")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "nolinkurl")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "hyperbaseurl")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "hyperimage")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "href")
    (add-to-list 'LaTeX-verbatim-macros-with-braces-local "lstinline")
-   (add-to-list 'LaTeX-verbatim-macros-with-delims-local "path")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "href")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "hyperimage")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "hyperbaseurl")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "nolinkurl")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "url")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "path")
    (add-to-list 'LaTeX-verbatim-macros-with-delims-local "lstinline")
+   (add-to-list 'LaTeX-verbatim-macros-with-delims-local "path")
    (TeX-run-style-hooks
     "fontenc"
     "inputenc"
@@ -41,6 +41,7 @@
     '("tileUR" ["argument"] 0)
     '("tileUL" ["argument"] 0)
     '("tileUP" ["argument"] 0)
+    '("randomclipline" ["argument"] 4)
     '("randomclip" ["argument"] 4)
     '("shiftlang" ["argument"] 1)
     '("zeropoint" ["argument"] 0)
@@ -72,8 +73,9 @@
     '("vect" 1)
     '("cyl" 1)
     '("defn" 1)
-    "TODO"
+    '("TODO" 1)
     "acts"
+    "semidirect"
     "isomorphic"
     "surjection"
     "injection"
@@ -90,8 +92,10 @@
     "theorem"
     "definition"
     "example"
+    "examples"
     "conjecture"
     "proposition"
+    "question"
     "remark"
     "notation"
     "observation"

@@ -69,7 +69,7 @@ It makes both installation and customization easier, and the code is also simple
 The first thing we do is check for a CLI argument, telling us that we should only use builtin packages; this might be useful to start Emacs in a "nice" state for us, e.g. during a fresh install or when debugging, while not loading any packages.
 
 #+begin_src emacs-lisp
-  (defvar *only-built-in-p* nil
+  (defvar lps/only-built-in-p nil
     "Variable indicating if we can load, or even download, packages
   that are not built-in.
 
@@ -78,7 +78,7 @@ The first thing we do is check for a CLI argument, telling us that we should onl
   (when (member "--only-built-in" command-line-args)
     (message "Using only built-in packages")
     (setq command-line-args (delete "--only-built-in" command-line-args))
-    (setq *only-built-in-p* t))
+    (setq lps/only-built-in-p t))
 #+end_src
 
 We now setup the built-in package manager, adding some online repositories to its available sources, and some personal extra packages that are too big to fit within this configuration file:
@@ -166,7 +166,7 @@ We now setup the built-in package manager, adding some online repositories to it
     ;; present/tested/whatever.
     (defun use-package-handler/:only-built-in (name _keyword arg rest state)
       (let ((body (use-package-process-keywords name rest state)))
-        `((when (or (not *only-built-in-p*)
+        `((when (or (not lps/only-built-in-p)
                     (eq ,arg t)
                     (and (eq ',name 'emacs)
                          (eq ,arg 'absent)))
@@ -647,7 +647,7 @@ This is simply a way to change how Emacs looks. Some themes are more complete th
 As we tend to use ~beamer~ to make presentations (and therefore, the slides are in fact a PDF file), we wish to use Emacs as a nice viewer /for slideshows/. This includes hiding as much of the UI as possible, using full screen, and so on.
 
 #+begin_src emacs-lisp
-  (when *only-built-in-p*
+  (when lps/only-built-in-p
     (load-theme 'deeper-blue))
 
   (use-package emacs
@@ -1076,7 +1076,7 @@ For this reason, we might want to take a look at some lightweight alternatives, 
 #+begin_src emacs-lisp
   (use-package icomplete
     :ensure nil
-    :when *only-built-in-p*
+    :when lps/only-built-in-p
     :only-built-in t
     :custom
     (icomplete-show-matches-on-no-input t)
@@ -1913,7 +1913,7 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
 #+begin_src emacs-lisp
   (use-package emacs
     :ensure nil
-    :when *only-built-in-p*
+    :when lps/only-built-in-p
     :custom
     (completion-styles '(basic partial-completion substring)))
 
@@ -5378,19 +5378,19 @@ We slightly extend BibTeX so that it can work with tags !
 
 #+NAME: bibtex-tags
 #+begin_src emacs-lisp :tangle no
-  (defvar *lps/bibtex-tags* '(("Topological Full Group" . "tfg")
-                              ("Projective Fundamental Group" . "pfg")
-                              ("Cocycles" . "coc")
-                              ("Recursion Theory" . "rec")
-                              ("Subshift" . "shf")
-                              ("Group Theory" . "grp")
-                              ("Graph Theory" . "gph")
-                              ("Substitution" . "sub")
-                              ("Hom-Shifts" . "hom")
-                              ("Complexity Theory" . "cpl")))
+  (defvar lps/bibtex-tags '(("Topological Full Group" . "tfg")
+                            ("Projective Fundamental Group" . "pfg")
+                            ("Cocycles" . "coc")
+                            ("Recursion Theory" . "rec")
+                            ("Subshift" . "shf")
+                            ("Group Theory" . "grp")
+                            ("Graph Theory" . "gph")
+                            ("Substitution" . "sub")
+                            ("Hom-Shifts" . "hom")
+                            ("Complexity Theory" . "cpl")))
 
   (defun lps/bibtex-tag-description-to-tag (desc)
-    (cdr (assoc-string desc *lps/bibtex-tags*)))
+    (cdr (assoc-string desc lps/bibtex-tags)))
 
   (defun lps/bibtex-replace-tags (key beg end)
     (interactive (list (save-excursion
@@ -5404,7 +5404,7 @@ We slightly extend BibTeX so that it can work with tags !
                          (bibtex-end-of-entry)
                          (point))))
     (let* ((descs (completing-read-multiple (format-prompt key nil)
-                                            ,*lps/bibtex-tags*))
+                                            lps/bibtex-tags))
            (tags (mapcar 'lps/bibtex-tag-description-to-tag descs)))
       (bibtex-set-field "tags" (mapconcat 'identity tags ","))))
 
@@ -5412,7 +5412,7 @@ We slightly extend BibTeX so that it can work with tags !
     (interactive (list
                   (let ((descs (completing-read-multiple
                                 (format-prompt "Tags: " nil)
-                                ,*lps/bibtex-tags*)))
+                                lps/bibtex-tags)))
                     (mapcar 'lps/bibtex-tag-description-to-tag descs))))
     ())
 #+end_src
@@ -6486,7 +6486,8 @@ Now, we try to add things on top of the built-in file manager, Dired.
     :bind
     (:map dired-mode-map
           ("F" . find-name-dired)
-          ([remap ibuffer] . lps/ibuffer-dired-current-directory))
+          ([remap ibuffer] . lps/ibuffer-dired-current-directory)
+          ("<C-return>" . dired-do-open))
     :custom
     ;; Delete and copy directories recursively
     (dired-recursive-deletes 'top)
@@ -7782,7 +7783,6 @@ Although not been updated in the last 7 years at the time of writing (2024), it 
     :init
     (setq cfw:org-overwrite-default-keybinding t) ; dumb here but it is not a custom var ...
     :bind ("C-c A" . cfw:open-org-calendar)
-    ;; (cfw:org-schedule-summary-transformer 'lps/cfw:org-summary-format)
     :config
     ;; There is a problem with the original function: periods are displayed at the
     ;; wrong dates + multiple times. AFAICT, the computations of start-date and
@@ -7819,6 +7819,9 @@ Although not been updated in the last 7 years at the time of writing (2024), it 
     ;;         (concat (apply 'propertize icon props)
     ;;                 original)
     ;;       original)))
+
+    ;; Buggy
+    ;; (setq cfw:org-schedule-summary-transformer 'lps/cfw:org-summary-format)
     )
 #+end_src
 

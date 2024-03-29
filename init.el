@@ -23,7 +23,7 @@
 (add-hook 'emacs-startup-hook #'lps/display-garbage-collection)
 (add-hook 'emacs-startup-hook #'lps/restore-gc-cons)
 
-(defvar *only-built-in-p* nil
+(defvar lps/only-built-in-p nil
   "Variable indicating if we can load, or even download, packages
 that are not built-in.
 
@@ -32,7 +32,7 @@ Should be non-nil to only allow built-in packages.")
 (when (member "--only-built-in" command-line-args)
   (message "Using only built-in packages")
   (setq command-line-args (delete "--only-built-in" command-line-args))
-  (setq *only-built-in-p* t))
+  (setq lps/only-built-in-p t))
 
 ;; Initialize package sources
 (require 'package)
@@ -111,7 +111,7 @@ Should be non-nil to only allow built-in packages.")
   ;; present/tested/whatever.
   (defun use-package-handler/:only-built-in (name _keyword arg rest state)
     (let ((body (use-package-process-keywords name rest state)))
-      `((when (or (not *only-built-in-p*)
+      `((when (or (not lps/only-built-in-p)
                   (eq ,arg t)
                   (and (eq ',name 'emacs)
                        (eq ,arg 'absent)))
@@ -455,7 +455,7 @@ fboundp."
                         '(:line-width 1 :color "amber3"))
     (set-face-attribute 'custom-button-pressed nil :box '(:line-width 1 "gray3"))))
 
-(when *only-built-in-p*
+(when lps/only-built-in-p
   (load-theme 'deeper-blue))
 
 (use-package emacs
@@ -810,7 +810,7 @@ It might be buggy with some backend, so use at your own risk"
 
 (use-package icomplete
   :ensure nil
-  :when *only-built-in-p*
+  :when lps/only-built-in-p
   :only-built-in t
   :custom
   (icomplete-show-matches-on-no-input t)
@@ -1434,7 +1434,7 @@ buffer name already resembles a file name"
 
 (use-package emacs
   :ensure nil
-  :when *only-built-in-p*
+  :when lps/only-built-in-p
   :custom
   (completion-styles '(basic partial-completion substring)))
 
@@ -4368,19 +4368,19 @@ Does not read any argument: this is to be able to add it both to
   (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-keep-only-doi-if-url)
 
   ;; Bibtex tags
-  (defvar *lps/bibtex-tags* '(("Topological Full Group" . "tfg")
-                              ("Projective Fundamental Group" . "pfg")
-                              ("Cocycles" . "coc")
-                              ("Recursion Theory" . "rec")
-                              ("Subshift" . "shf")
-                              ("Group Theory" . "grp")
-                              ("Graph Theory" . "gph")
-                              ("Substitution" . "sub")
-                              ("Hom-Shifts" . "hom")
-                              ("Complexity Theory" . "cpl")))
+  (defvar lps/bibtex-tags '(("Topological Full Group" . "tfg")
+                            ("Projective Fundamental Group" . "pfg")
+                            ("Cocycles" . "coc")
+                            ("Recursion Theory" . "rec")
+                            ("Subshift" . "shf")
+                            ("Group Theory" . "grp")
+                            ("Graph Theory" . "gph")
+                            ("Substitution" . "sub")
+                            ("Hom-Shifts" . "hom")
+                            ("Complexity Theory" . "cpl")))
 
   (defun lps/bibtex-tag-description-to-tag (desc)
-    (cdr (assoc-string desc *lps/bibtex-tags*)))
+    (cdr (assoc-string desc lps/bibtex-tags)))
 
   (defun lps/bibtex-replace-tags (key beg end)
     (interactive (list (save-excursion
@@ -4394,7 +4394,7 @@ Does not read any argument: this is to be able to add it both to
                          (bibtex-end-of-entry)
                          (point))))
     (let* ((descs (completing-read-multiple (format-prompt key nil)
-                                            *lps/bibtex-tags*))
+                                            lps/bibtex-tags))
            (tags (mapcar 'lps/bibtex-tag-description-to-tag descs)))
       (bibtex-set-field "tags" (mapconcat 'identity tags ","))))
 
@@ -4402,7 +4402,7 @@ Does not read any argument: this is to be able to add it both to
     (interactive (list
                   (let ((descs (completing-read-multiple
                                 (format-prompt "Tags: " nil)
-                                *lps/bibtex-tags*)))
+                                lps/bibtex-tags)))
                     (mapcar 'lps/bibtex-tag-description-to-tag descs))))
     ())
 
@@ -5380,7 +5380,8 @@ PWD is not in a git repo (or the git command is not found)."
   :bind
   (:map dired-mode-map
         ("F" . find-name-dired)
-        ([remap ibuffer] . lps/ibuffer-dired-current-directory))
+        ([remap ibuffer] . lps/ibuffer-dired-current-directory)
+        ("<C-return>" . dired-do-open))
   :custom
   ;; Delete and copy directories recursively
   (dired-recursive-deletes 'top)
@@ -6508,7 +6509,6 @@ insert as many blank lines as necessary."
   :init
   (setq cfw:org-overwrite-default-keybinding t) ; dumb here but it is not a custom var ...
   :bind ("C-c A" . cfw:open-org-calendar)
-  ;; (cfw:org-schedule-summary-transformer 'lps/cfw:org-summary-format)
   :config
   ;; There is a problem with the original function: periods are displayed at the
   ;; wrong dates + multiple times. AFAICT, the computations of start-date and
@@ -6545,6 +6545,9 @@ If TEXT does not have a range, return nil."
   ;;         (concat (apply 'propertize icon props)
   ;;                 original)
   ;;       original)))
+
+  ;; Buggy
+  ;; (setq cfw:org-schedule-summary-transformer 'lps/cfw:org-summary-format)
   )
 
 (use-package elfeed

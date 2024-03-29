@@ -6,9 +6,11 @@
         LaTeX-babel-insert-hyphen
         LaTeX-environment
         LaTeX-insert-left-brace
+        LaTeX-section
         TeX-font
         TeX-insert-backslash
         TeX-insert-dollar
+        TeX-insert-macro
         TeX-insert-sub-or-superscript
         backward-sexp
         backward-up-list
@@ -17,6 +19,7 @@
         capitalize-dwim
         cdlatex-pbb
         cdlatex-sub-superscript
+        cdlatex-tab
         company-indent-or-complete-common
         counsel-M-x
         cycle-spacing
@@ -59,7 +62,6 @@
         paredit-backslash
         paredit-backward
         paredit-backward-kill-word
-        paredit-backward-slurp-sexp
         paredit-backward-up
         paredit-close-round
         paredit-copy-as-kill
