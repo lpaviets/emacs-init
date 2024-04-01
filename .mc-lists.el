@@ -121,6 +121,7 @@
         org-insert-link
         org-shiftright
         previous-buffer
+        search-forward
         sly-compile-defun
         swiper-mc
         wdired-finish-edit

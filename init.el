@@ -295,6 +295,9 @@ fboundp."
   (desktop-path (list (locate-user-emacs-file "desktop-saves/")))
   (desktop-restore-eager 10)
   (desktop-lazy-verbose nil)
+  (desktop-modes-not-to-save '(tags-table-mode     ; default
+                               eglot--managed-mode ; seems buggy ?
+                               ))
   (desktop-restore-forces-onscreen nil))
 
 (use-package saveplace
