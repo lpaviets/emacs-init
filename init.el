@@ -340,7 +340,10 @@ fboundp."
 (use-package emacs
   :init
   (define-key key-translation-map (kbd "<C-dead-circumflex>") (kbd "C-^"))
-  (define-key key-translation-map (kbd "<M-dead-circumflex>") (kbd "M-^")))
+  (define-key key-translation-map (kbd "<M-dead-circumflex>") (kbd "M-^"))
+  :bind
+  (:map lps/quick-edit-map
+        ("C-z" . iso-transl-ctl-x-8-map)))
 
 (use-package emacs
   :init
