@@ -295,6 +295,9 @@ fboundp."
   (desktop-path (list (locate-user-emacs-file "desktop-saves/")))
   (desktop-restore-eager 10)
   (desktop-lazy-verbose nil)
+  (desktop-modes-not-to-save '(tags-table-mode     ; default
+                               eglot--managed-mode ; seems buggy ?
+                               ))
   (desktop-restore-forces-onscreen nil))
 
 (use-package saveplace
@@ -1373,6 +1376,8 @@ buffer name already resembles a file name"
   (defvar lps/multiple-cursors-repeat-map (make-sparse-keymap))
   :bind
   ("<M-S-mouse-1>" . mc/add-cursor-on-click)
+  (:map mc/keymap
+        ("<return>" . nil))
   (:map lps/all-hydras-map
         ("M" . hydra-multiple-cursors/body))
   (:map lps/multiple-cursors-map
@@ -6815,6 +6820,12 @@ If TEXT does not have a range, return nil."
   ;; Temporary remappings while mu4e is normalizing names
   (defvar lps/mu4e-main-action-str
     (version-case mu4e-mu
+      ("1.11" (lambda (title cmd)
+                (string-match "\\[\\([a-zA-Z]+?\\)\\]" title)
+                (let ((binding (match-string 1 title)))
+                  (mu4e--main-action (replace-match  "[@]" nil nil title)
+                                     cmd
+                                     binding))))
       ("1.8" 'mu4e--main-action-str)
       (t 'mu4e~main-action-str)))
 
