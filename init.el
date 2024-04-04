@@ -3294,7 +3294,103 @@ call the associated function interactively. Otherwise, call the
                                           (face-foreground 'default))
                                   "  }"
                                   "</style>")
-                            "\n")))
+                            "\n"))
+  :config
+  ;; Random code to automatically relace some words with an abbreviation during
+  ;; the export process.
+
+  ;; TODO:
+  ;; - Fix nested expansions when some DESCRIPTION contains a word matching
+  ;; another ABBR !
+  ;; - Robustness: don't replace within code blocks, verbatim environments, etc
+  ;; - Add options to toggle case sensitivity ?
+  ;;
+  ;; Ideas:
+  ;; - Use the \,(lisp code) functionnality of replace-regexp to check context
+  ;; - Context checked with `org-element-at-point'
+  ;; - Either hard-code list of contexts to preserve (src-block, verbatim ...),
+  ;; or find this list somewhere ? It probably exists in some form ...
+  (defvar lps/org-export-abbr-contexts-no-replace '(keyword
+                                                    src-block
+                                                    verbatim)
+    "List of Org elements in which abbreviations should not be replaced")
+
+  (defvar lps/org-export-abbr-global-abbrevs nil
+    "List of abbreviations to replace in every exported file.
+
+An abbreviation is a cons cell (SHORT . LONG-DESCRIPTION), both
+SHORT and LONG-DESCRIPTION being strings.
+
+Occurrences of SHORT will be replaced by a corresponding <abbr>
+HTML element.
+
+SHORT needs not be a single word, but will only be matched at
+word boundaries (so for example, if SHORT is \"some text\", it
+will not be matched in \"My awesome text !\")
+
+SHORT can also be a regular expression.
+
+If an abbreviation is defined in a file and is also present in
+this list, the local version supersedes the global one.
+
+The matches are case-sensitive. To perform case-insensitive
+replacement, set `case-fold-search' to `t'.")
+
+  (defun lps/org-parse-abbr-definition (abbr)
+    (string-match "\\[\\(.+\\)\\][ \t]*\\(.*\\)" abbr)
+    (let ((short (match-string 1 abbr))
+          (description (match-string 2 abbr)))
+      (cons short description)))
+
+  (defun lps/org-export-replace-abbr (backend)
+    "Replace all the abbreviations with an <abbr> HTML element.
+
+Abbreviations are defined using the ABBR keyword, with the following syntax:
+
+#+ABBR: [short-text-1] long-description-1
+#+ABBR: [short-text-2] long-description-2
+
+with one abbreviation per line. In the buffer, occurrences of the
+abbreviated texts are matched using a simple regexp search, see
+`lps/org-export-abbr-global-abbrevs' for a full description.
+
+For parsing reasons, LONG-DESCRIPTION should not contain the
+character ], even if it is escaped.
+
+This works in a single pass over the buffer, and should not
+perform recursive expansion: for example, if an abbreviation has
+a description containing a word that is also an abbreviation, it
+should not be expanded."
+    (when (equal backend 'html)
+      (let* ((abbrevs-raw (cdar (org-collect-keywords '("abbr"))))
+             (abbrevs-local (mapcar 'lps/org-parse-abbr-definition abbrevs-raw))
+             (abbrevs (append abbrevs-local lps/org-export-abbr-global-abbrevs))
+             (abbrevs-regexp (concat "\\b\\(?:" ; regexp matching any abbr
+                                     (mapconcat #'car abbrevs "\\|")
+                                     "\\)\\b")))
+        (save-excursion
+          (beginning-of-buffer)
+          ;; Match any of the abbr in the buffer, single pass
+          (while (re-search-forward abbrevs-regexp nil t)
+            ;; Check context: do nothing if in a "bad context"
+            (unless (save-match-data
+                      (member (car (org-element-at-point))
+                              lps/org-export-abbr-contexts-no-replace))
+              ;; Get the actual matched string, and its associated description
+              (let* ((abbr-matched (match-string 0))
+                     (description (cl-loop for (from . to) in abbrevs
+                                           when (save-match-data
+                                                  (string-match from abbr-matched))
+                                           return to)))
+                ;; Replace the match with inline HTML. The matched string has
+                ;; the same case, the description is fixed.
+                (replace-match (concat "@@html:<abbr title=\""
+                                       description
+                                       "\">"
+                                       abbr-matched
+                                       "</abbr>@@")))))))))
+
+  (add-hook 'org-export-before-parsing-hook 'lps/org-export-replace-abbr))
 
 (use-package org-agenda
   :after org
