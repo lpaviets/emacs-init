@@ -3930,6 +3930,20 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
     :hook (gdb-mode . gdb-many-windows))
 #+end_src
 
+For a more recent and, in some settings, featureful debugging experience, there is the DAP protocol, playing the same role than LSP for the programming experience (auto-completion, jump-to definition/reference, etc).
+
+The general protocol exists independently from Emacs, and we therefore have to choose a client for it, just as we do with LSP. We choose ~dape~, which is the "closest to built-in" compared to the alternative ~dap-mode~ (same difference than in ~eglot~ vs ~lsp-mode~).
+
+#+begin_src emacs-lisp
+  (use-package dape
+    :defer t
+    :custom
+    (dape-buffer-window-arrangement 'gud)
+    :config
+    (add-hook 'dape-on-stopped-hooks 'dape-info)
+    (add-hook 'dape-on-stopped-hooks 'dape-repl))
+#+end_src
+
 ** Other tools
 *** ANTLR
 [[https://fr.wikipedia.org/wiki/ANTLR][ANTLR]] is a tool that is used to write compilers and interpreters, by producing a lexer and a parser (and potentially several other things) from a grammar.

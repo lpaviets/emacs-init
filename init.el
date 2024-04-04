@@ -3061,6 +3061,14 @@ call the associated function interactively. Otherwise, call the
   :defer t
   :hook (gdb-mode . gdb-many-windows))
 
+(use-package dape
+  :defer t
+  :custom
+  (dape-buffer-window-arrangement 'gud)
+  :config
+  (add-hook 'dape-on-stopped-hooks 'dape-info)
+  (add-hook 'dape-on-stopped-hooks 'dape-repl))
+
 (use-package antlr-mode
   :mode ("\\.g4\\'" . antlr-mode)
   :custom
