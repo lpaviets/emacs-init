@@ -4206,7 +4206,9 @@ We also add templates to insert code blocks with a few key presses.
 
 Org-mode can export an ~.org~ document to various other formats, for example $\LaTeX$, ~.odt~ or ~HTML~. There are a lot of options for those different backends, and you can even define your own backends easily.
 
-#+begin_src emacs-lisp
+*** HTML
+
+#+begin_src emacs-lisp :noweb yes
   (use-package ox-html
     :after org
     :ensure nil
@@ -4227,27 +4229,33 @@ Org-mode can export an ~.org~ document to various other formats, for example $\L
                                     "</style>")
                               "\n"))
     :config
-    ;; Random code to automatically relace some words with an abbreviation during
-    ;; the export process.
+    ;;; Abbreviations
+    <<org-export-abbr>>
+    ;;; Useful ID nodes
+    <<org-export-id-nodes>>)
+#+end_src
 
-    ;; TODO:
-    ;; - Fix nested expansions when some DESCRIPTION contains a word matching
-    ;; another ABBR !
-    ;; - Robustness: don't replace within code blocks, verbatim environments, etc
-    ;; - Add options to toggle case sensitivity ?
-    ;;
-    ;; Ideas:
-    ;; - Use the \,(lisp code) functionnality of replace-regexp to check context
-    ;; - Context checked with `org-element-at-point'
-    ;; - Either hard-code list of contexts to preserve (src-block, verbatim ...),
-    ;; or find this list somewhere ? It probably exists in some form ...
-    (defvar lps/org-export-abbr-contexts-no-replace '(keyword
-                                                      src-block
-                                                      verbatim)
-      "List of Org elements in which abbreviations should not be replaced")
+**** Abbreviations
 
-    (defvar lps/org-export-abbr-global-abbrevs nil
-      "List of abbreviations to replace in every exported file.
+A useful feature, offered by some static website generators (e.g. [[https://getpelican.com/][Pelican]] ...), consists in defining some "abbreviations" along with a description, all occurrences of which being replaced in the exported document by a HTML ~abbr~ element. This is a built-in feature of Org-mode, but is easily added, using ~org-export-before-parsing-hook~, regular expressions tricks, and the alread-existing Org parsing capabilities.
+
+#+NAME: org-export-abbr
+#+begin_src emacs-lisp :tangle no
+  ;;; Random code to automatically relace some words with an abbreviation during
+  ;;; the export process.
+
+  ;; TODO:
+  ;; Add options to toggle case sensitivity ?
+  ;;
+  ;; Either hard-code list of contexts to preserve (src-block, verbatim ...),
+  ;; or find this list somewhere ? It probably exists in some form ...
+  (defvar lps/org-export-abbr-contexts-no-replace '(keyword
+                                                    src-block
+                                                    verbatim)
+    "List of Org elements in which abbreviations should not be replaced")
+
+  (defvar lps/org-export-abbr-global-abbrevs nil
+    "List of abbreviations to replace in every exported file.
 
   An abbreviation is a cons cell (SHORT . LONG-DESCRIPTION), both
   SHORT and LONG-DESCRIPTION being strings.
@@ -4267,14 +4275,14 @@ Org-mode can export an ~.org~ document to various other formats, for example $\L
   The matches are case-sensitive. To perform case-insensitive
   replacement, set `case-fold-search' to `t'.")
 
-    (defun lps/org-parse-abbr-definition (abbr)
-      (string-match "\\[\\(.+\\)\\][ \t]*\\(.*\\)" abbr)
-      (let ((short (match-string 1 abbr))
-            (description (match-string 2 abbr)))
-        (cons short description)))
+  (defun lps/org-parse-abbr-definition (abbr)
+    (string-match "\\[\\(.+\\)\\][ \t]*\\(.*\\)" abbr)
+    (let ((short (match-string 1 abbr))
+          (description (match-string 2 abbr)))
+      (cons short description)))
 
-    (defun lps/org-export-replace-abbr (backend)
-      "Replace all the abbreviations with an <abbr> HTML element.
+  (defun lps/org-export-replace-abbr (backend)
+    "Replace all the abbreviations with an <abbr> HTML element.
 
   Abbreviations are defined using the ABBR keyword, with the following syntax:
 
@@ -4292,36 +4300,133 @@ Org-mode can export an ~.org~ document to various other formats, for example $\L
   perform recursive expansion: for example, if an abbreviation has
   a description containing a word that is also an abbreviation, it
   should not be expanded."
-      (when (equal backend 'html)
-        (let* ((abbrevs-raw (cdar (org-collect-keywords '("abbr"))))
-               (abbrevs-local (mapcar 'lps/org-parse-abbr-definition abbrevs-raw))
-               (abbrevs (append abbrevs-local lps/org-export-abbr-global-abbrevs))
-               (abbrevs-regexp (concat "\\b\\(?:" ; regexp matching any abbr
-                                       (mapconcat #'car abbrevs "\\|")
-                                       "\\)\\b")))
-          (save-excursion
-            (beginning-of-buffer)
-            ;; Match any of the abbr in the buffer, single pass
-            (while (re-search-forward abbrevs-regexp nil t)
-              ;; Check context: do nothing if in a "bad context"
-              (unless (save-match-data
-                        (member (car (org-element-at-point))
-                                lps/org-export-abbr-contexts-no-replace))
-                ;; Get the actual matched string, and its associated description
-                (let* ((abbr-matched (match-string 0))
-                       (description (cl-loop for (from . to) in abbrevs
-                                             when (save-match-data
-                                                    (string-match from abbr-matched))
-                                             return to)))
-                  ;; Replace the match with inline HTML. The matched string has
-                  ;; the same case, the description is fixed.
-                  (replace-match (concat "@@html:<abbr title=\""
-                                         description
-                                         "\">"
-                                         abbr-matched
-                                         "</abbr>@@")))))))))
+    (when (equal backend 'html)
+      (let* ((abbrevs-raw (cdar (org-collect-keywords '("abbr"))))
+             (abbrevs-local (mapcar 'lps/org-parse-abbr-definition abbrevs-raw))
+             (abbrevs (append abbrevs-local lps/org-export-abbr-global-abbrevs))
+             (abbrevs-regexp (concat "\\b\\(?:" ; regexp matching any abbr
+                                     (mapconcat #'car abbrevs "\\|")
+                                     "\\)\\b")))
+        (save-excursion
+          (beginning-of-buffer)
+          ;; Match any of the abbr in the buffer, single pass
+          (while (re-search-forward abbrevs-regexp nil t)
+            ;; Check context: do nothing if in a "bad context"
+            (unless (save-match-data
+                      (member (car (org-element-at-point))
+                              lps/org-export-abbr-contexts-no-replace))
+              ;; Get the actual matched string, and its associated description
+              (let* ((abbr-matched (match-string 0))
+                     (description (cl-loop for (from . to) in abbrevs
+                                           when (save-match-data
+                                                  (string-match from abbr-matched))
+                                           return to)))
+                ;; Replace the match with inline HTML. The matched string has
+                ;; the same case, the description is fixed.
+                (replace-match (concat "@@html:<abbr title=\""
+                                       description
+                                       "\">"
+                                       abbr-matched
+                                       "</abbr>@@")))))))))
 
-    (add-hook 'org-export-before-parsing-hook 'lps/org-export-replace-abbr))
+  (add-hook 'org-export-before-parsing-hook 'lps/org-export-replace-abbr)
+#+end_src
+
+**** Anchors names
+
+By default, Org exports automatically generated section names for healines, section and so on. This means in particular that the generated IDs are modified each time the file is re-exported, and that it is also meaningless. This code tries to fix it, by generating IDs depending on the current section, possibly using sections higher up in the tree until the ID is unique. The code is taken, and might be adapted, from [[https://github.com/alphapapa/unpackaged.el?tab=readme-ov-file#export-to-html-with-useful-anchors][Alphapapa's list of unpackaged but still useful functions]].
+
+#+NAME: org-export-id-nodes
+#+begin_src emacs-lisp :tangle no
+  (define-minor-mode lps/org-export-html-with-useful-ids-mode
+    "Attempt to export Org as HTML with useful link IDs.
+  Instead of random IDs like \"#orga1b2c3\", use heading titles,
+  made unique when necessary."
+    :global t
+    (if lps/org-export-html-with-useful-ids-mode
+        (advice-add #'org-export-get-reference
+                    :override #'lps/org-export-get-reference)
+      (advice-remove #'org-export-get-reference #'lps/org-export-get-reference)))
+
+  (defun lps/org-export-get-reference (datum info)
+    "Like `org-export-get-reference', except uses heading titles
+  instead of random numbers."
+    (let ((cache (plist-get info :internal-references)))
+      (or (car (rassq datum cache))
+          (let* ((crossrefs (plist-get info :crossrefs))
+                 (cells (org-export-search-cells datum))
+                 ;; Preserve any pre-existing association between
+                 ;; a search cell and a reference, i.e., when some
+                 ;; previously published document referenced a location
+                 ;; within current file (see
+                 ;; `org-publish-resolve-external-link').
+                 ;;
+                 ;; However, there is no guarantee that search cells are
+                 ;; unique, e.g., there might be duplicate custom ID or
+                 ;; two headings with the same title in the file.
+                 ;;
+                 ;; As a consequence, before re-using any reference to
+                 ;; an element or object, we check that it doesn't refer
+                 ;; to a previous element or object.
+                 (new (or (cl-some
+                           (lambda (cell)
+                             (let ((stored (cdr (assoc cell crossrefs))))
+                               (when stored
+                                 (let ((old (org-export-format-reference stored)))
+                                   (and (not (assoc old cache)) stored)))))
+                           cells)
+                          (when (org-element-property :raw-value datum)
+                            ;; Heading with a title
+                            (lps/org-export-new-title-reference datum cache))
+                          ;; NOTE: This probably breaks some Org Export
+                          ;; feature, but if it does what I need, fine.
+                          (org-export-format-reference
+                           (org-export-new-reference cache))))
+                 (reference-string new))
+            ;; Cache contains both data already associated to
+            ;; a reference and in-use internal references, so as to make
+            ;; unique references.
+            (dolist (cell cells) (push (cons cell new) cache))
+            ;; Retain a direct association between reference string and
+            ;; DATUM since (1) not every object or element can be given
+            ;; a search cell (2) it permits quick lookup.
+            (push (cons reference-string datum) cache)
+            (plist-put info :internal-references cache)
+            reference-string))))
+
+  (defun lps/org-export-new-title-reference (datum cache)
+    "Return new reference for DATUM that is unique in CACHE."
+    (cl-macrolet ((inc-suffixf (place)
+                    `(progn
+                       (string-match (rx bos
+                                         (minimal-match (group (1+ anything)))
+                                         (optional "--" (group (1+ digit)))
+                                         eos)
+                                     ,place)
+                       ;; HACK: `s1' instead of a gensym.
+                       (-let* (((s1 suffix) (list (match-string 1 ,place)
+                                                  (match-string 2 ,place)))
+                               (suffix (if suffix
+                                           (string-to-number suffix)
+                                         0)))
+                         (setf ,place (format "%s--%s" s1 (cl-incf suffix)))))))
+      (let* ((title (org-element-property :raw-value datum))
+             (ref (url-hexify-string (substring-no-properties title)))
+             (parent (org-element-property :parent datum)))
+        (while (--any (equal ref (car it))
+                      cache)
+          ;; Title not unique: make it so.
+          (if parent
+              ;; Append ancestor title.
+              (setf title (concat (org-element-property :raw-value parent)
+                                  "--" title)
+                    ref (url-hexify-string (substring-no-properties title))
+                    parent (org-element-property :parent parent))
+            ;; No more ancestors: add and increment a number.
+            (inc-suffixf ref)))
+        ref)))
+
+  (lps/org-export-html-with-useful-ids-mode 1)
 #+end_src
 
 ** Org Agenda

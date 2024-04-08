@@ -3296,19 +3296,14 @@ call the associated function interactively. Otherwise, call the
                                   "</style>")
                             "\n"))
   :config
-  ;; Random code to automatically relace some words with an abbreviation during
-  ;; the export process.
+  ;;; Abbreviations
+  ;;; Random code to automatically relace some words with an abbreviation during
+  ;;; the export process.
 
   ;; TODO:
-  ;; - Fix nested expansions when some DESCRIPTION contains a word matching
-  ;; another ABBR !
-  ;; - Robustness: don't replace within code blocks, verbatim environments, etc
-  ;; - Add options to toggle case sensitivity ?
+  ;; Add options to toggle case sensitivity ?
   ;;
-  ;; Ideas:
-  ;; - Use the \,(lisp code) functionnality of replace-regexp to check context
-  ;; - Context checked with `org-element-at-point'
-  ;; - Either hard-code list of contexts to preserve (src-block, verbatim ...),
+  ;; Either hard-code list of contexts to preserve (src-block, verbatim ...),
   ;; or find this list somewhere ? It probably exists in some form ...
   (defvar lps/org-export-abbr-contexts-no-replace '(keyword
                                                     src-block
@@ -3318,23 +3313,23 @@ call the associated function interactively. Otherwise, call the
   (defvar lps/org-export-abbr-global-abbrevs nil
     "List of abbreviations to replace in every exported file.
 
-An abbreviation is a cons cell (SHORT . LONG-DESCRIPTION), both
-SHORT and LONG-DESCRIPTION being strings.
+  An abbreviation is a cons cell (SHORT . LONG-DESCRIPTION), both
+  SHORT and LONG-DESCRIPTION being strings.
 
-Occurrences of SHORT will be replaced by a corresponding <abbr>
-HTML element.
+  Occurrences of SHORT will be replaced by a corresponding <abbr>
+  HTML element.
 
-SHORT needs not be a single word, but will only be matched at
-word boundaries (so for example, if SHORT is \"some text\", it
-will not be matched in \"My awesome text !\")
+  SHORT needs not be a single word, but will only be matched at
+  word boundaries (so for example, if SHORT is \"some text\", it
+  will not be matched in \"My awesome text !\")
 
-SHORT can also be a regular expression.
+  SHORT can also be a regular expression.
 
-If an abbreviation is defined in a file and is also present in
-this list, the local version supersedes the global one.
+  If an abbreviation is defined in a file and is also present in
+  this list, the local version supersedes the global one.
 
-The matches are case-sensitive. To perform case-insensitive
-replacement, set `case-fold-search' to `t'.")
+  The matches are case-sensitive. To perform case-insensitive
+  replacement, set `case-fold-search' to `t'.")
 
   (defun lps/org-parse-abbr-definition (abbr)
     (string-match "\\[\\(.+\\)\\][ \t]*\\(.*\\)" abbr)
@@ -3345,22 +3340,22 @@ replacement, set `case-fold-search' to `t'.")
   (defun lps/org-export-replace-abbr (backend)
     "Replace all the abbreviations with an <abbr> HTML element.
 
-Abbreviations are defined using the ABBR keyword, with the following syntax:
+  Abbreviations are defined using the ABBR keyword, with the following syntax:
 
-#+ABBR: [short-text-1] long-description-1
-#+ABBR: [short-text-2] long-description-2
+  #+ABBR: [short-text-1] long-description-1
+  #+ABBR: [short-text-2] long-description-2
 
-with one abbreviation per line. In the buffer, occurrences of the
-abbreviated texts are matched using a simple regexp search, see
-`lps/org-export-abbr-global-abbrevs' for a full description.
+  with one abbreviation per line. In the buffer, occurrences of the
+  abbreviated texts are matched using a simple regexp search, see
+  `lps/org-export-abbr-global-abbrevs' for a full description.
 
-For parsing reasons, LONG-DESCRIPTION should not contain the
-character ], even if it is escaped.
+  For parsing reasons, LONG-DESCRIPTION should not contain the
+  character ], even if it is escaped.
 
-This works in a single pass over the buffer, and should not
-perform recursive expansion: for example, if an abbreviation has
-a description containing a word that is also an abbreviation, it
-should not be expanded."
+  This works in a single pass over the buffer, and should not
+  perform recursive expansion: for example, if an abbreviation has
+  a description containing a word that is also an abbreviation, it
+  should not be expanded."
     (when (equal backend 'html)
       (let* ((abbrevs-raw (cdar (org-collect-keywords '("abbr"))))
              (abbrevs-local (mapcar 'lps/org-parse-abbr-definition abbrevs-raw))
@@ -3390,7 +3385,97 @@ should not be expanded."
                                        abbr-matched
                                        "</abbr>@@")))))))))
 
-  (add-hook 'org-export-before-parsing-hook 'lps/org-export-replace-abbr))
+  (add-hook 'org-export-before-parsing-hook 'lps/org-export-replace-abbr)
+  ;;; Useful ID nodes
+  (define-minor-mode lps/org-export-html-with-useful-ids-mode
+    "Attempt to export Org as HTML with useful link IDs.
+  Instead of random IDs like \"#orga1b2c3\", use heading titles,
+  made unique when necessary."
+    :global t
+    (if lps/org-export-html-with-useful-ids-mode
+        (advice-add #'org-export-get-reference
+                    :override #'lps/org-export-get-reference)
+      (advice-remove #'org-export-get-reference #'lps/org-export-get-reference)))
+
+  (defun lps/org-export-get-reference (datum info)
+    "Like `org-export-get-reference', except uses heading titles
+  instead of random numbers."
+    (let ((cache (plist-get info :internal-references)))
+      (or (car (rassq datum cache))
+          (let* ((crossrefs (plist-get info :crossrefs))
+                 (cells (org-export-search-cells datum))
+                 ;; Preserve any pre-existing association between
+                 ;; a search cell and a reference, i.e., when some
+                 ;; previously published document referenced a location
+                 ;; within current file (see
+                 ;; `org-publish-resolve-external-link').
+                 ;;
+                 ;; However, there is no guarantee that search cells are
+                 ;; unique, e.g., there might be duplicate custom ID or
+                 ;; two headings with the same title in the file.
+                 ;;
+                 ;; As a consequence, before re-using any reference to
+                 ;; an element or object, we check that it doesn't refer
+                 ;; to a previous element or object.
+                 (new (or (cl-some
+                           (lambda (cell)
+                             (let ((stored (cdr (assoc cell crossrefs))))
+                               (when stored
+                                 (let ((old (org-export-format-reference stored)))
+                                   (and (not (assoc old cache)) stored)))))
+                           cells)
+                          (when (org-element-property :raw-value datum)
+                            ;; Heading with a title
+                            (lps/org-export-new-title-reference datum cache))
+                          ;; NOTE: This probably breaks some Org Export
+                          ;; feature, but if it does what I need, fine.
+                          (org-export-format-reference
+                           (org-export-new-reference cache))))
+                 (reference-string new))
+            ;; Cache contains both data already associated to
+            ;; a reference and in-use internal references, so as to make
+            ;; unique references.
+            (dolist (cell cells) (push (cons cell new) cache))
+            ;; Retain a direct association between reference string and
+            ;; DATUM since (1) not every object or element can be given
+            ;; a search cell (2) it permits quick lookup.
+            (push (cons reference-string datum) cache)
+            (plist-put info :internal-references cache)
+            reference-string))))
+
+  (defun lps/org-export-new-title-reference (datum cache)
+    "Return new reference for DATUM that is unique in CACHE."
+    (cl-macrolet ((inc-suffixf (place)
+                    `(progn
+                       (string-match (rx bos
+                                         (minimal-match (group (1+ anything)))
+                                         (optional "--" (group (1+ digit)))
+                                         eos)
+                                     ,place)
+                       ;; HACK: `s1' instead of a gensym.
+                       (-let* (((s1 suffix) (list (match-string 1 ,place)
+                                                  (match-string 2 ,place)))
+                               (suffix (if suffix
+                                           (string-to-number suffix)
+                                         0)))
+                         (setf ,place (format "%s--%s" s1 (cl-incf suffix)))))))
+      (let* ((title (org-element-property :raw-value datum))
+             (ref (url-hexify-string (substring-no-properties title)))
+             (parent (org-element-property :parent datum)))
+        (while (--any (equal ref (car it))
+                      cache)
+          ;; Title not unique: make it so.
+          (if parent
+              ;; Append ancestor title.
+              (setf title (concat (org-element-property :raw-value parent)
+                                  "--" title)
+                    ref (url-hexify-string (substring-no-properties title))
+                    parent (org-element-property :parent parent))
+            ;; No more ancestors: add and increment a number.
+            (inc-suffixf ref)))
+        ref)))
+
+  (lps/org-export-html-with-useful-ids-mode 1))
 
 (use-package org-agenda
   :after org
