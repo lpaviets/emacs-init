@@ -4601,6 +4601,14 @@ Not only is Org Mode great to write structured documents that can be exported to
         ,(concat "* %?\n%^t" (or extra "\n"))
         :empty-lines 1))
 
+    ;; Mimics `org-capture-set-target-location', in particular the file+function part
+    (defun lps/org-capture-agenda-any-location ()
+      (let ((path (read-file-name "Capture in file: " (lps/org-expand-file-name "agenda" t))))
+        (set-buffer (org-capture-target-buffer path))
+        (org-capture-put-target-region-and-position)
+        (widen)
+        (lps/org-ask-location)))
+
     :bind
     ("C-c o" . org-capture)
     (:map org-capture-mode-map
@@ -4624,6 +4632,10 @@ Not only is Org Mode great to write structured documents that can be exported to
 
        ,(lps/org-capture-make-generic-timestamp-template "as" "Science Event"
                                                          "agenda/Science.org"
+                                                         "%i")
+
+       ,(lps/org-capture-make-generic-timestamp-template "aw" "Workplace events"
+                                                         "agenda/Workplace.org"
                                                          "%i")
 
        ,(lps/org-capture-make-generic-timestamp-template "ao" "Others"
@@ -4653,6 +4665,7 @@ Not only is Org Mode great to write structured documents that can be exported to
                    (error (car org-refile-history)))))
         (goto-char (point-min))
         (outline-next-heading)
+        (beginning-of-line) ; problems when hd is the first heading ?
         (if (re-search-forward
              (format org-complex-heading-regexp-format (regexp-quote hd))
              nil t)
@@ -7666,6 +7679,65 @@ To deal with this problem, we use a ~org~ package, called [[https://github.com/o
               (insert (pop secure))))))))
 #+end_src
 
+**** Org-agenda
+
+Sometimes, people send calendar invitations via Email. Most of the time, this means that there is a =text/calendar= attachment to the message, and luckily, Gnus already knows how to deal with them ! It can also be integrated with org-agenda; however, I find this integration a bit lacking, and override some of the built-in functions.
+
+#+begin_src emacs-lisp
+  (use-package gnus-icalendar
+    :defer t
+    :config
+    (defun lps/gnus-icalendar-org-setup ()
+      (progn
+        (lps/gnus-icalendar-insinuate-org-templates)
+        (setq gnus-icalendar-org-enabled-p t)))
+
+    (defun lps/gnus-icalendar-insinuate-org-templates ()
+      (unless (gnus-icalendar-find-if (lambda (x)
+                                        (string= (cadr x) gnus-icalendar-org-template-name))
+                                      org-capture-templates)
+        (setq org-capture-templates
+              (cons `(,gnus-icalendar-org-template-key
+                      ,gnus-icalendar-org-template-name
+                      entry
+                      (function lps/org-capture-agenda-any-location)
+                      "\n%i\n"
+                      :empty-lines 1)
+                    org-capture-templates))))
+
+    (lps/gnus-icalendar-org-setup)
+
+    ;; Override this function. At the date of <2024-04-10 mer.> there is a TODO in
+    ;; the gnus-icalendar.el file to make the template customizable. Until this is
+    ;; done, we use the following hack.
+    (defun-override lps/gnus-icalendar:org-event-save (event reply-status)
+      (with-temp-buffer
+        (let ((short (y-or-n-p "Capture short version of the calendar invitation ?")))
+          (org-capture-string
+           (if short
+               (lps/gnus-icalendar-event->org-entry-short event reply-status)
+             (gnus-icalendar-event->org-entry entry reply-status))
+           gnus-icalendar-org-template-key))))
+
+    (cl-defun lps/gnus-icalendar-event->org-entry-short (event reply-status)
+      "Return string with new `org-mode' entry describing EVENT."
+      (with-temp-buffer
+        (org-mode)
+        (with-slots (summary)
+            event
+          (insert (format "* %s\n\n"
+                          (gnus-icalendar--format-summary-line summary)))
+
+          (save-restriction
+            (narrow-to-region (point) (point))
+            (insert (gnus-icalendar-event:org-timestamp event)
+                    "\n")
+            (indent-region (point-min) (point-max) 2)
+            (fill-region (point-min) (point-max)))
+
+          (buffer-string)))))
+#+end_src
+
 ** Other improvements
 
 This section is dedicated to minor improvements to the mailing workflow.
@@ -8721,12 +8793,16 @@ To explore:
 - [ ] defvar-keymap
 
 ** Org mode
-- Fix (or check what breaks if fix) ~org-element-latex-fragment-parser~ so that it recognizes "dollars" followed by a dash directly (and no space+dash).
+- [X] Fix (or check what breaks if fix) ~org-element-latex-fragment-parser~ so that it recognizes "dollars" followed by a dash directly (and no space+dash).
+  - Solution: See [[https://orgmode.org/worg/org-syntax.html#LaTeX_Fragments][the Org syntax reference]] with additional syntax for LaTeX
 - Add way to draw automata/trees easily without using artist mode (maybe TikZ integration ?)
-- Fix HTML files opening in Chrome sometimes (somewhat complicated. Some keywords: mailcap, sensible-browser, the /etc/mailcap file). Solution: delete chrome.
+- [X] Fix HTML files opening in Chrome sometimes (somewhat complicated. Some keywords: mailcap, sensible-browser, the /etc/mailcap file).
+  - Solution: delete chrome.
 - Add a proper "personal org math mode" to typeset math, and setup/remove options (~org-cdlatex~, electric-pair twists, some protected blocks, etc).
 - Maybe already done: add a way to jump /from/ the agenda /to/ a Cafw buffer (the other direction is already implemented, I believe) displaying "the same content" (if both directions are unimplemented: do them both ?)
 - Improve colours of the displayed items in Calfw ? Maybe reuse ~org-agenda-category-icon-alist~, or other display code from the agenda ? Likely function to modify/variable to set: ~cfw:org-schedule-summary-transformer~.
+- Add a way to export ~.ics~ invitations from =mu4e= to the agenda
+  - Partially done in the file =gnus-icalendar=, e.g. see the function ~gnus-icalendar-sync-event-to-org~ and the variable ~gnus-icalendar-org-enabled-p~
 ** Printing
 Not particularly Emacs-related, but: find a way to specify a username/password to ~lp~ when printing using either the built-in functions or ~transient-extras-lp-*~
 

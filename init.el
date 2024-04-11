@@ -3640,6 +3640,14 @@ Refer to `org-agenda-prefix-format' for more information."
       ,(concat "* %?\n%^t" (or extra "\n"))
       :empty-lines 1))
 
+  ;; Mimics `org-capture-set-target-location', in particular the file+function part
+  (defun lps/org-capture-agenda-any-location ()
+    (let ((path (read-file-name "Capture in file: " (lps/org-expand-file-name "agenda" t))))
+      (set-buffer (org-capture-target-buffer path))
+      (org-capture-put-target-region-and-position)
+      (widen)
+      (lps/org-ask-location)))
+
   :bind
   ("C-c o" . org-capture)
   (:map org-capture-mode-map
@@ -3663,6 +3671,10 @@ Refer to `org-agenda-prefix-format' for more information."
 
      ,(lps/org-capture-make-generic-timestamp-template "as" "Science Event"
                                                        "agenda/Science.org"
+                                                       "%i")
+
+     ,(lps/org-capture-make-generic-timestamp-template "aw" "Workplace events"
+                                                       "agenda/Workplace.org"
                                                        "%i")
 
      ,(lps/org-capture-make-generic-timestamp-template "ao" "Others"
@@ -3692,6 +3704,7 @@ Refer to `org-agenda-prefix-format' for more information."
                  (error (car org-refile-history)))))
       (goto-char (point-min))
       (outline-next-heading)
+      (beginning-of-line) ; problems when hd is the first heading ?
       (if (re-search-forward
            (format org-complex-heading-regexp-format (regexp-quote hd))
            nil t)
@@ -6329,6 +6342,59 @@ recent versions of mu4e."
           (message-goto-body)
           (while secure
             (insert (pop secure))))))))
+
+(use-package gnus-icalendar
+  :defer t
+  :config
+  (defun lps/gnus-icalendar-org-setup ()
+    (progn
+      (lps/gnus-icalendar-insinuate-org-templates)
+      (setq gnus-icalendar-org-enabled-p t)))
+
+  (defun lps/gnus-icalendar-insinuate-org-templates ()
+    (unless (gnus-icalendar-find-if (lambda (x)
+                                      (string= (cadr x) gnus-icalendar-org-template-name))
+                                    org-capture-templates)
+      (setq org-capture-templates
+            (cons `(,gnus-icalendar-org-template-key
+                    ,gnus-icalendar-org-template-name
+                    entry
+                    (function lps/org-capture-agenda-any-location)
+                    "\n%i\n"
+                    :empty-lines 1)
+                  org-capture-templates))))
+
+  (lps/gnus-icalendar-org-setup)
+
+  ;; Override this function. At the date of <2024-04-10 mer.> there is a TODO in
+  ;; the gnus-icalendar.el file to make the template customizable. Until this is
+  ;; done, we use the following hack.
+  (defun-override lps/gnus-icalendar:org-event-save (event reply-status)
+    (with-temp-buffer
+      (let ((short (y-or-n-p "Capture short version of the calendar invitation ?")))
+        (org-capture-string
+         (if short
+             (lps/gnus-icalendar-event->org-entry-short event reply-status)
+           (gnus-icalendar-event->org-entry entry reply-status))
+         gnus-icalendar-org-template-key))))
+
+  (cl-defun lps/gnus-icalendar-event->org-entry-short (event reply-status)
+    "Return string with new `org-mode' entry describing EVENT."
+    (with-temp-buffer
+      (org-mode)
+      (with-slots (summary)
+          event
+        (insert (format "* %s\n\n"
+                        (gnus-icalendar--format-summary-line summary)))
+
+        (save-restriction
+          (narrow-to-region (point) (point))
+          (insert (gnus-icalendar-event:org-timestamp event)
+                  "\n")
+          (indent-region (point-min) (point-max) 2)
+          (fill-region (point-min) (point-max)))
+
+        (buffer-string)))))
 
 (use-package message-attachment-reminder
   :after mu4e
