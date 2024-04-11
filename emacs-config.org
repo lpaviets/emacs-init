@@ -4601,14 +4601,6 @@ Not only is Org Mode great to write structured documents that can be exported to
         ,(concat "* %?\n%^t" (or extra "\n"))
         :empty-lines 1))
 
-    ;; Mimics `org-capture-set-target-location', in particular the file+function part
-    (defun lps/org-capture-agenda-any-location ()
-      (let ((path (read-file-name "Capture in file: " (lps/org-expand-file-name "agenda" t))))
-        (set-buffer (org-capture-target-buffer path))
-        (org-capture-put-target-region-and-position)
-        (widen)
-        (lps/org-ask-location)))
-
     :bind
     ("C-c o" . org-capture)
     (:map org-capture-mode-map
@@ -4640,6 +4632,11 @@ Not only is Org Mode great to write structured documents that can be exported to
 
        ,(lps/org-capture-make-generic-timestamp-template "ao" "Others"
                                                          "agenda/Others.org")
+       ("aa"
+        "Any (pick)" entry
+        (function lps/org-capture-agenda-any-location)
+        "* %?\n%^t"
+        :empty-lines 1)
 
        ("r" "Random")
        ("rr" "Random" plain
@@ -4665,7 +4662,7 @@ Not only is Org Mode great to write structured documents that can be exported to
                    (error (car org-refile-history)))))
         (goto-char (point-min))
         (outline-next-heading)
-        (beginning-of-line) ; problems when hd is the first heading ?
+        (beginning-of-line)              ; problems when hd is the first heading ?
         (if (re-search-forward
              (format org-complex-heading-regexp-format (regexp-quote hd))
              nil t)
@@ -4673,7 +4670,16 @@ Not only is Org Mode great to write structured documents that can be exported to
           (goto-char (point-max))
           (or (bolp) (insert "\n"))
           (insert "* " hd "\n")))
-      (end-of-line)))
+      (end-of-line))
+
+    ;; Mimics `org-capture-set-target-location', in particular the file+function part
+    (defun lps/org-capture-agenda-any-location ()
+      (let ((path (read-file-name "Capture in file: "
+                                  (lps/org-expand-file-name "agenda" t))))
+        (set-buffer (org-capture-target-buffer path))
+        (org-capture-put-target-region-and-position)
+        (widen)
+        (lps/org-ask-location))))
 #+end_src
 
 ** Org Roam
@@ -7693,9 +7699,10 @@ Sometimes, people send calendar invitations via Email. Most of the time, this me
         (setq gnus-icalendar-org-enabled-p t)))
 
     (defun lps/gnus-icalendar-insinuate-org-templates ()
-      (unless (gnus-icalendar-find-if (lambda (x)
-                                        (string= (cadr x) gnus-icalendar-org-template-name))
-                                      org-capture-templates)
+      (unless (gnus-icalendar-find-if
+               (lambda (x)
+                 (string= (cadr x) gnus-icalendar-org-template-name))
+               org-capture-templates)
         (setq org-capture-templates
               (cons `(,gnus-icalendar-org-template-key
                       ,gnus-icalendar-org-template-name
@@ -7712,7 +7719,7 @@ Sometimes, people send calendar invitations via Email. Most of the time, this me
     ;; done, we use the following hack.
     (defun-override lps/gnus-icalendar:org-event-save (event reply-status)
       (with-temp-buffer
-        (let ((short (y-or-n-p "Capture short version of the calendar invitation ?")))
+        (let ((short (y-or-n-p "Capture a short version of the invitation ?")))
           (org-capture-string
            (if short
                (lps/gnus-icalendar-event->org-entry-short event reply-status)

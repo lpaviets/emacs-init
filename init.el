@@ -3640,14 +3640,6 @@ Refer to `org-agenda-prefix-format' for more information."
       ,(concat "* %?\n%^t" (or extra "\n"))
       :empty-lines 1))
 
-  ;; Mimics `org-capture-set-target-location', in particular the file+function part
-  (defun lps/org-capture-agenda-any-location ()
-    (let ((path (read-file-name "Capture in file: " (lps/org-expand-file-name "agenda" t))))
-      (set-buffer (org-capture-target-buffer path))
-      (org-capture-put-target-region-and-position)
-      (widen)
-      (lps/org-ask-location)))
-
   :bind
   ("C-c o" . org-capture)
   (:map org-capture-mode-map
@@ -3679,6 +3671,11 @@ Refer to `org-agenda-prefix-format' for more information."
 
      ,(lps/org-capture-make-generic-timestamp-template "ao" "Others"
                                                        "agenda/Others.org")
+     ("aa"
+      "Any (pick)" entry
+      (function lps/org-capture-agenda-any-location)
+      "* %?\n%^t"
+      :empty-lines 1)
 
      ("r" "Random")
      ("rr" "Random" plain
@@ -3704,7 +3701,7 @@ Refer to `org-agenda-prefix-format' for more information."
                  (error (car org-refile-history)))))
       (goto-char (point-min))
       (outline-next-heading)
-      (beginning-of-line) ; problems when hd is the first heading ?
+      (beginning-of-line)              ; problems when hd is the first heading ?
       (if (re-search-forward
            (format org-complex-heading-regexp-format (regexp-quote hd))
            nil t)
@@ -3712,7 +3709,16 @@ Refer to `org-agenda-prefix-format' for more information."
         (goto-char (point-max))
         (or (bolp) (insert "\n"))
         (insert "* " hd "\n")))
-    (end-of-line)))
+    (end-of-line))
+
+  ;; Mimics `org-capture-set-target-location', in particular the file+function part
+  (defun lps/org-capture-agenda-any-location ()
+    (let ((path (read-file-name "Capture in file: "
+                                (lps/org-expand-file-name "agenda" t))))
+      (set-buffer (org-capture-target-buffer path))
+      (org-capture-put-target-region-and-position)
+      (widen)
+      (lps/org-ask-location))))
 
 (use-package org-roam
   :after org
@@ -6352,9 +6358,10 @@ recent versions of mu4e."
       (setq gnus-icalendar-org-enabled-p t)))
 
   (defun lps/gnus-icalendar-insinuate-org-templates ()
-    (unless (gnus-icalendar-find-if (lambda (x)
-                                      (string= (cadr x) gnus-icalendar-org-template-name))
-                                    org-capture-templates)
+    (unless (gnus-icalendar-find-if
+             (lambda (x)
+               (string= (cadr x) gnus-icalendar-org-template-name))
+             org-capture-templates)
       (setq org-capture-templates
             (cons `(,gnus-icalendar-org-template-key
                     ,gnus-icalendar-org-template-name
@@ -6371,7 +6378,7 @@ recent versions of mu4e."
   ;; done, we use the following hack.
   (defun-override lps/gnus-icalendar:org-event-save (event reply-status)
     (with-temp-buffer
-      (let ((short (y-or-n-p "Capture short version of the calendar invitation ?")))
+      (let ((short (y-or-n-p "Capture a short version of the invitation ?")))
         (org-capture-string
          (if short
              (lps/gnus-icalendar-event->org-entry-short event reply-status)
