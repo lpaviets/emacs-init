@@ -2533,6 +2533,34 @@ Another light-weight option, which tends to work better with some built-in Emacs
 
 ** Regexp
 
+We add a few functions that are used later in the config. Their purpose is more or less to "prevent" some commands from acting on some regions of the buffer, by deleting them, then processing the file, and inserting them somewhere else afterwards.
+
+#+begin_src emacs-lisp
+  (defun lps/find-delete-forward-all-regexp (re &optional beg)
+    "Searches for all the matches of the regexp RE after the point, or after the optional position BEG.
+    Returns a list of strings containing the matches in order, or nil if none was found.
+    Deletes (rather than kill) those matches from the buffer"
+    (save-excursion
+      (let (matches)
+        (goto-char (or beg (point)))
+        (while (re-search-forward re nil t)
+          (push (match-string 0) matches)
+          (delete-region (match-beginning 0) (match-end 0)))
+        matches)))
+
+  (defun lps/move-all-regexp-pos-buffer (re &optional beg move split)
+    "Moves all the string matching the regexp RE after the point (or after BEG) to the end of the buffer
+  (or to the position MOVE if provided)
+    If SPLIT is provided, it will be inserted before each match, including the first one.
+    The initial strings are destroyed, and the kill-ring is not modified"
+    (save-excursion
+      (let ((matches (nreverse (lps/find-delete-forward-all-regexp re beg))))
+        (goto-char (or move (point-max)))
+        (while matches
+          (insert (or split ""))
+          (insert (pop matches))))))
+#+end_src
+
 There are also various packages implementing ~grep~, ~ripgrep~ and so on. One of them is especially nice, and is called ~wgrep~. It does the same thing to ~grep~ buffer than ~wdired~ does to Dired ones: make them editable as plain text, and commit the changes to the files (or the filesystem, for Dired) !
 
 #+begin_src emacs-lisp
@@ -7685,7 +7713,7 @@ To deal with this problem, we use a ~org~ package, called [[https://github.com/o
               (insert (pop secure))))))))
 #+end_src
 
-**** Org-agenda
+**** Org agenda
 
 Sometimes, people send calendar invitations via Email. Most of the time, this means that there is a =text/calendar= attachment to the message, and luckily, Gnus already knows how to deal with them ! It can also be integrated with org-agenda; however, I find this integration a bit lacking, and override some of the built-in functions.
 

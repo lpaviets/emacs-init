@@ -1958,6 +1958,30 @@ Move point in the last duplicated string (line or region)."
   (vundo-compact-display nil)
   (vundo-window-max-height 5))
 
+(defun lps/find-delete-forward-all-regexp (re &optional beg)
+  "Searches for all the matches of the regexp RE after the point, or after the optional position BEG.
+  Returns a list of strings containing the matches in order, or nil if none was found.
+  Deletes (rather than kill) those matches from the buffer"
+  (save-excursion
+    (let (matches)
+      (goto-char (or beg (point)))
+      (while (re-search-forward re nil t)
+        (push (match-string 0) matches)
+        (delete-region (match-beginning 0) (match-end 0)))
+      matches)))
+
+(defun lps/move-all-regexp-pos-buffer (re &optional beg move split)
+  "Moves all the string matching the regexp RE after the point (or after BEG) to the end of the buffer
+(or to the position MOVE if provided)
+  If SPLIT is provided, it will be inserted before each match, including the first one.
+  The initial strings are destroyed, and the kill-ring is not modified"
+  (save-excursion
+    (let ((matches (nreverse (lps/find-delete-forward-all-regexp re beg))))
+      (goto-char (or move (point-max)))
+      (while matches
+        (insert (or split ""))
+        (insert (pop matches))))))
+
 (use-package wgrep
   :bind
   (:map grep-mode-map
