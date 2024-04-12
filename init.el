@@ -3164,6 +3164,7 @@ call the associated function interactively. Otherwise, call the
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
   (org-use-speed-commands t)
+  (org-list-allow-alphabetical t)
   (org-blank-before-new-entry '((heading . t)
                                 (plain-list-item . auto)))
   (org-special-ctrl-a/e t) ;; With visual-line-mode, need to bind C-a/C-e too
@@ -5690,6 +5691,11 @@ PWD is not in a git repo (or the git command is not found)."
  (gnu/linux
   (use-package dirvish
     :after dired
+    :bind
+    (:map dirvish-mode-map
+          ("TAB" . dirvish-subtree-toggle)
+          ("b" . dirvish-history-go-backward)
+          ("f" . dirvish-history-go-forward))
     :custom
     (dirvish-hide-details nil)
     (dirvish-hide-cursor nil)
@@ -5701,7 +5707,7 @@ PWD is not in a git repo (or the git command is not found)."
                                 (omit yank index " " free-space)))
     (dirvish-attributes '(file-size file-time subtree-state all-the-icons))
     :config
-    (remove-hook dired-mode-hook 'all-the-icons-dired)
+    (remove-hook 'dired-mode-hook 'all-the-icons-dired-mode)
     (dirvish-override-dired-mode))))
 
 (use-package tramp
