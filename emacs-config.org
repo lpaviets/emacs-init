@@ -1205,7 +1205,7 @@ We also improve the appearance (and functionalities) of the buffer that we get w
     :custom
     (ibuffer-saved-filter-groups
      '(("default"
-        ("Dired" (mode . dired-mode))
+        ("Dired" (derived-mode . dired-mode))
         ("Emacs" (or
                   (name . "^\\*scratch\\*$")
                   (name . "^\\*Messages\\*$")))
@@ -6870,9 +6870,8 @@ Now, we try to add things on top of the built-in file manager, Dired.
     (dired-recursive-deletes 'top)
     (dired-recursive-copies 'always)
     (dired-auto-revert-buffer t)
-    (dired-listing-switches "-alFh")
     (dired-isearch-filenames 'dwim)
-    (dired-listing-switches "-AlFh --group-directories-first")
+    (dired-listing-switches "-l --almost-all --human-readable --classify --group-directories-first")
     (wdired-allow-to-change-permissions t)
     (dired-dwim-target t)
     :config
@@ -6922,6 +6921,30 @@ Because those are useful functions, we bind them globally.
           ("f g" . find-grep-dired)
           ("f l" . locate)
           ("f L" . locate-with-filter)))
+#+end_src
+
+*** Dirvish
+
+[[https://github.com/alexluigit/dirvish/][Dirvish]] is (almost) a drop-in replacement for Dired. As it is essentially a big wrapper around the built-in Dired, most of the customizations (bindings, some defaults ...) are kept ! However, you may find that some of your old customizations have become unneeded, for Dirvish provides more options, or already has the "good" default behaviour, and so on.
+
+#+begin_src emacs-lisp
+  (system-case
+   (gnu/linux
+    (use-package dirvish
+      :after dired
+      :custom
+      (dirvish-hide-details nil)
+      (dirvish-hide-cursor nil)
+      (dirvish-use-mode-line t)
+      (dirvish-mode-line-height 15)       ; same as doom-modeline, see above
+      (dirvish-mode-line-format '(:left
+                                  (sort symlink vc-info)
+                                  :right
+                                  (omit yank index " " free-space)))
+      (dirvish-attributes '(file-size file-time subtree-state all-the-icons))
+      :config
+      (remove-hook dired-mode-hook 'all-the-icons-dired)
+      (dirvish-override-dired-mode))))
 #+end_src
 
 ** TRAMP

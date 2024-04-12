@@ -923,7 +923,7 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
   :custom
   (ibuffer-saved-filter-groups
    '(("default"
-      ("Dired" (mode . dired-mode))
+      ("Dired" (derived-mode . dired-mode))
       ("Emacs" (or
                 (name . "^\\*scratch\\*$")
                 (name . "^\\*Messages\\*$")))
@@ -5643,9 +5643,8 @@ PWD is not in a git repo (or the git command is not found)."
   (dired-recursive-deletes 'top)
   (dired-recursive-copies 'always)
   (dired-auto-revert-buffer t)
-  (dired-listing-switches "-alFh")
   (dired-isearch-filenames 'dwim)
-  (dired-listing-switches "-AlFh --group-directories-first")
+  (dired-listing-switches "-l --almost-all --human-readable --classify --group-directories-first")
   (wdired-allow-to-change-permissions t)
   (dired-dwim-target t)
   :config
@@ -5686,6 +5685,24 @@ PWD is not in a git repo (or the git command is not found)."
         ("f g" . find-grep-dired)
         ("f l" . locate)
         ("f L" . locate-with-filter)))
+
+(system-case
+ (gnu/linux
+  (use-package dirvish
+    :after dired
+    :custom
+    (dirvish-hide-details nil)
+    (dirvish-hide-cursor nil)
+    (dirvish-use-mode-line t)
+    (dirvish-mode-line-height 15)       ; same as doom-modeline, see above
+    (dirvish-mode-line-format '(:left
+                                (sort symlink vc-info)
+                                :right
+                                (omit yank index " " free-space)))
+    (dirvish-attributes '(file-size file-time subtree-state all-the-icons))
+    :config
+    (remove-hook dired-mode-hook 'all-the-icons-dired)
+    (dirvish-override-dired-mode))))
 
 (use-package tramp
   :bind
