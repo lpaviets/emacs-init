@@ -133,3 +133,4 @@ flycheck_*.el
 /multisession/
 /tutorial/
 /eglot-java-eclipse-jdt-cache/*
+/dirvish/

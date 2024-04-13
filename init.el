@@ -266,7 +266,8 @@ fboundp."
                                 "(default "
                                 (number-to-string auth-source-cache-expiry)
                                 ") ?"))
-          (setq auth-source-cache-expiry (read-number "New cache expiry value in seconds: " auth-source-cache-expiry)))))
+          (setq auth-source-cache-expiry
+                (read-number "New cache expiry value in seconds: " auth-source-cache-expiry)))))
 
     (defun lps/force-forget-all-passwords ()
       (interactive)
@@ -933,6 +934,7 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
                   (or
                    (starred-name)
                    (mode . special-mode))))
+      ("Org Files" (mode . org-mode))
       ("Process" (process))
       ("Git" (name . "^magit"))
       ("Images/PDF" (or
@@ -5694,21 +5696,72 @@ PWD is not in a git repo (or the git command is not found)."
     :bind
     (:map dirvish-mode-map
           ("TAB" . dirvish-subtree-toggle)
+          ("a" . dirvish-quick-access)
           ("b" . dirvish-history-go-backward)
-          ("f" . dirvish-history-go-forward))
+          ("f" . dirvish-history-go-forward)
+          ("z" . dirvish-layout-toggle)
+          ("h" . dirvish-history-jump)
+          ("/" . dirvish-fd)
+          ([remap dired-sort-toggle-or-edit] . dirvish-quicksort)
+          ([remap dired-do-relsymlink] . dirvish-yank-menu) ; to be called from TARGET of symlink
+          ([remap dired-show-file-type] . dirvish-file-info-menu))
+    :init
+    (dirvish-override-dired-mode)
     :custom
     (dirvish-hide-details nil)
     (dirvish-hide-cursor nil)
     (dirvish-use-mode-line t)
+    (dirvish-subtree-state-style 'arrow)
+    (dirvish-subtree-always-show-state t)
     (dirvish-mode-line-height 15)       ; same as doom-modeline, see above
     (dirvish-mode-line-format '(:left
                                 (sort symlink vc-info)
                                 :right
                                 (omit yank index " " free-space)))
     (dirvish-attributes '(file-size file-time subtree-state all-the-icons))
+    (dirvish-show-media-properties t)
+    (dirvish-quick-access-entries `(("h" "~/" "Home")
+                                    ("e" "~/.config/emacs/" "Emacs user directory")
+                                    ("t"  "~/.local/share/Trash/" "Trashes")
+                                    ("d"  "~/.dotfiles" "Dotfiles")
+                                    ("m"  "/media/" "Mounting directory")
+                                    ("oo" ,org-directory "Org Files")
+                                    ("oa" ,(lps/org-expand-file-name "agenda" t) "Org Files")
+                                    ,@(let (shortcuts)
+                                        (dolist (key-name '(("B" "DESKTOP")
+                                                            ("T" "DOWNLOAD")
+                                                            ("D" "DOCUMENTS")
+                                                            ("M" "MUSIC")
+                                                            ("P" "PICTURES")
+                                                            ("V" "VIDEOS")))
+                                          (let* ((key (car key-name))
+                                                 (name (cadr key-name))
+                                                 (path (xdg-user-dir name))
+                                                 (desc (capitalize name)))
+                                            (push (list key path desc) shortcuts)))
+                                        (nreverse shortcuts))))
     :config
     (remove-hook 'dired-mode-hook 'all-the-icons-dired-mode)
-    (dirvish-override-dired-mode))))
+
+    ;; Swap the meaning of prefix arg
+    (defun-override lps/dirvish-yank--read-dest (method)
+      "Read dest dir for METHOD when prefixed with `current-prefix-arg'."
+      (list (unless current-prefix-arg  ; was 'when current-prefix-arg'
+              (read-file-name (format "%s files to: " method)
+                              (dired-dwim-target-directory)
+                              nil nil nil 'file-directory-p))))
+
+    ;;;; Add a colourful directory preview.
+    ;;;; Not really needed and somewhat noisy ...
+    ;; (dirvish-define-preview exa (file)
+    ;;   "Use `exa' to generate directory preview."
+    ;;   :require ("exa")             ; tell Dirvish to check if we have the executable
+    ;;   (when (file-directory-p file)         ; we only interest in directories here
+    ;;     `(shell . ("exa" "-al" "--color=always" "--icons"
+    ;;                "--group-directories-first" ,file))))
+
+    ;; (add-to-list 'dirvish-preview-dispatchers 'exa)
+    )))
 
 (use-package tramp
   :bind
