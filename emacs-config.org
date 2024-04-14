@@ -456,6 +456,7 @@ Even if most of the time, you should be working with UTF-8, we still want to mak
     :custom
     (locale-coding-system 'utf-8)
     (display-raw-bytes-as-hex t)
+    (default-transient-input-method "rfc1345") ; see https://www.rfc-editor.org/rfc/rfc1345
     :init
     (prefer-coding-system 'utf-8)
     (set-language-environment 'utf-8)
@@ -7138,6 +7139,43 @@ Printing things on Linux can be cumbersome. Most desktop environments (GNOME, KD
           ("i" . transient-extras-lp-menu))
     (:map pdf-view-mode-map
           ("i i" . transient-extras-lp-menu)))
+#+end_src
+
+*** Emacs Everywhere
+
+Being used to write any kind of text into Emacs, it is probably easier to do so /everywhere/ ! We use the following package, implemented in Elisp (and so, not requiring to install any external tool besides the dependencies), to be able to use Emacs to fill any text field in any application.
+
+#+begin_src emacs-lisp
+  (use-package emacs-everywhere
+    :defer t
+    :custom
+    ;; Disambiguate name for i3 window management, increase initial size
+    (emacs-everywhere-frame-parameters `((name . "emacs-everywhere-init")
+                                         (width . 100)
+                                         (height . 20)))
+    ;; Don't insert selection/spellcheck initially: we only write text
+    (emacs-everywhere-init-hooks '(emacs-everywhere-set-frame-name
+                                   ;; emacs-everywhere-set-frame-position ; don't override WM settings
+                                   emacs-everywhere-apply-major-mode))
+    :config
+    ;; Try to robustify against content loss: bugs, etc
+    (defvar emacs-everywhere-last-texts-ring (make-ring 10)
+      "Last texts copied by `emacs-everywhere'")
+
+    (defun emacs-everywhere-save-last-text ()
+      (ring-insert
+       emacs-everywhere-last-texts-ring
+       (buffer-substring-no-properties (point-min) (point-max))))
+
+    (defun emacs-everywhere-insert-last-text ()
+      (interactive)
+      (if (ring-empty-p emacs-everywhere-last-texts-ring)
+          (message "Empty ring")
+        (insert (ring-ref emacs-everywhere-last-texts-ring 0))))
+
+    (define-key emacs-everywhere-mode-map (kbd "C-c C-y") 'emacs-everywhere-insert-last-text)
+
+    (add-hook 'emacs-everywhere-final-hooks 'emacs-everywhere-save-last-text))
 #+end_src
 
 * Email

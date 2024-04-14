@@ -328,6 +328,7 @@ fboundp."
   :custom
   (locale-coding-system 'utf-8)
   (display-raw-bytes-as-hex t)
+  (default-transient-input-method "rfc1345") ; see https://www.rfc-editor.org/rfc/rfc1345
   :init
   (prefer-coding-system 'utf-8)
   (set-language-environment 'utf-8)
@@ -5859,6 +5860,37 @@ The return string is always 6 characters wide."
         ("i" . transient-extras-lp-menu))
   (:map pdf-view-mode-map
         ("i i" . transient-extras-lp-menu)))
+
+(use-package emacs-everywhere
+  :defer t
+  :custom
+  ;; Disambiguate name for i3 window management, increase initial size
+  (emacs-everywhere-frame-parameters `((name . "emacs-everywhere-init")
+                                       (width . 100)
+                                       (height . 20)))
+  ;; Don't insert selection/spellcheck initially: we only write text
+  (emacs-everywhere-init-hooks '(emacs-everywhere-set-frame-name
+                                 ;; emacs-everywhere-set-frame-position ; don't override WM settings
+                                 emacs-everywhere-apply-major-mode))
+  :config
+  ;; Try to robustify against content loss: bugs, etc
+  (defvar emacs-everywhere-last-texts-ring (make-ring 10)
+    "Last texts copied by `emacs-everywhere'")
+
+  (defun emacs-everywhere-save-last-text ()
+    (ring-insert
+     emacs-everywhere-last-texts-ring
+     (buffer-substring-no-properties (point-min) (point-max))))
+
+  (defun emacs-everywhere-insert-last-text ()
+    (interactive)
+    (if (ring-empty-p emacs-everywhere-last-texts-ring)
+        (message "Empty ring")
+      (insert (ring-ref emacs-everywhere-last-texts-ring 0))))
+
+  (define-key emacs-everywhere-mode-map (kbd "C-c C-y") 'emacs-everywhere-insert-last-text)
+
+  (add-hook 'emacs-everywhere-final-hooks 'emacs-everywhere-save-last-text))
 
 (use-package message
   :ensure nil
