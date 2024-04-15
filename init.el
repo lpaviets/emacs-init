@@ -3229,36 +3229,7 @@ call the associated function interactively. Otherwise, call the
       (cl-destructuring-bind (name inherit &rest args) face
         (apply 'set-face-attribute name nil :inherit inherit args))))
 
-  ;; Math stuff
-  (dolist (name '("definition"
-                  "examples"
-                  "theorem"
-                  "lemma"
-                  "corollary"
-                  "remark"))
-    (add-to-list 'org-protecting-blocks name nil 'string-equal))
-
-  (ensure-version org 9.2
-    ;; This is needed as of Org 9.2
-    (require 'org-tempo)
-    (let ((bound-key-templates
-           (mapcar #'car org-structure-template-alist)))
-      (dolist (key-template '(("lt" . "theorem")
-                              ("ld" . "definition")
-                              ("lc" . "corollary")
-                              ("le" . "examples")
-                              ("ll" . "lemma")
-                              ("lr" . "remark")))
-
-        (unless
-            (member (car key-template) bound-key-templates)
-          (push key-template org-structure-template-alist)))))
-
   (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
-
-  (defun lps/electric-pair-inhibit-predicate-org (char)
-    (or (char-equal char ?<)
-        (electric-pair-default-inhibit char)))
 
   (defun lps/org-mode-setup ()
     (lps/org-font-setup)
@@ -3269,6 +3240,51 @@ call the associated function interactively. Otherwise, call the
     (org-cdlatex-mode 1)
     (setq-local electric-pair-inhibit-predicate
                 'lps/electric-pair-inhibit-predicate-org))
+
+  ;; Improve org edition
+  (defun lps/electric-pair-inhibit-predicate-org (char)
+    (or (char-equal char ?<)
+        (electric-pair-default-inhibit char)))
+
+  ;; Improve the input of emphasis marker: auto surround region
+  ;; Adapted from https://github.com/alphapapa/unpackaged.el
+  ;; If region is already marked, remove markers instead of doubling them
+  (defmacro lps/def-org-maybe-surround (&rest keys)
+    "Define and bind interactive commands for each of KEYS that surround the region or insert text.
+  Commands are bound in `org-mode-map' to each of KEYS.  If the
+  region is active, commands surround it with the key character,
+  otherwise call `org-self-insert-command'."
+    `(progn
+       ,@(cl-loop for key in keys
+                  for name = (intern (concat "lps/org-maybe-surround-" key))
+                  for docstring =
+                  (format "If region is active, surround it with \"%s\".
+  Otherwise call `org-self-insert-command'." key)
+                  collect `(defun ,name ()
+                             ,docstring
+                             (interactive)
+                             (if (region-active-p)
+                                 (let* ((beg (region-beginning))
+                                        (end (region-end))
+                                        (char-beg (char-after beg))
+                                        (char-end (char-before end)))
+                                   (if (and (string= ,key (string char-beg))
+                                            (string= ,key (string char-end)))
+                                       (let ((delete-active-region nil))
+                                         (save-excursion
+                                           (goto-char end)
+                                           (delete-backward-char 1)
+                                           (goto-char beg)
+                                           (delete-forward-char 1)))
+                                     (save-excursion
+                                       (goto-char end)
+                                       (insert ,key)
+                                       (goto-char beg)
+                                       (insert ,key))))
+                               (call-interactively #'org-self-insert-command)))
+                  collect `(define-key org-mode-map (kbd ,key) #',name))))
+
+  (lps/def-org-maybe-surround "~" "=" "*" "/" "+")
 
   ;; Babel configuration
   (org-babel-do-load-languages
@@ -3287,15 +3303,32 @@ call the associated function interactively. Otherwise, call the
     (require 'org-tempo)
     (let ((bound-key-templates
            (mapcar #'car org-structure-template-alist)))
-      (dolist (key-template '(("sh" . "src shell")
+      (dolist (key-template '(;; Programming
+                              ("sh" . "src shell")
                               ("el" . "src emacs-lisp")
                               ("py" . "src python")
                               ("latex" . "src latex")
-                              ("cl" . "src lisp")))
+                              ("cl" . "src lisp")
+                              ;; Math stuff
+                              ("lt" . "theorem")
+                              ("ld" . "definition")
+                              ("lc" . "corollary")
+                              ("le" . "examples")
+                              ("ll" . "lemma")
+                              ("lr" . "remark")))
 
         (unless
             (member (car key-template) bound-key-templates)
           (push key-template org-structure-template-alist)))))
+
+  ;; Math stuff
+  (dolist (name '("definition"
+                  "examples"
+                  "theorem"
+                  "lemma"
+                  "corollary"
+                  "remark"))
+    (add-to-list 'org-protecting-blocks name nil 'string-equal))
 
   (add-hook 'org-babel-post-tangle-hook 'delete-trailing-whitespace)
 
