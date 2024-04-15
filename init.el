@@ -3314,6 +3314,15 @@ call the associated function interactively. Otherwise, call the
         ;; Link: Open it.
         (org-open-at-point-global))
 
+       ;; LaTeX overlays
+       ;; Needed before list item, as an overlay can also be in a list.
+       ((let ((datum (org-element-context)))
+          (and (memq (org-element-type datum) '(latex-environment latex-fragment))
+               (let ((beg (org-element-property :begin datum))
+                     (end (org-element-property :end datum)))
+                 ;; Returns t if successful: gets out of the COND !
+                 (org-clear-latex-preview beg end)))))
+
        ((org-at-heading-p)
         ;; Heading: Move to position after entry content.
         ;; NOTE: This is probably the most interesting feature of this function.
@@ -3380,6 +3389,7 @@ call the associated function interactively. Otherwise, call the
               (t
                ;; Non-empty row: call `org-return'.
                (org-return))))
+
        (t
         ;; All other cases: call `org-return'.
         (org-return)))))
