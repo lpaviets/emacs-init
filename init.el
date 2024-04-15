@@ -2706,9 +2706,10 @@ call the associated function interactively. Otherwise, call the
   (defun lps/eval-and-replace-last-sexp ()
     "Evaluate the last s-expression, and replace it with the result"
     (interactive)
-    (let ((value (eval (preceding-sexp))))
-      (kill-sexp -1)
-      (insert (format "%S" value))))
+    (pp-eval-last-sexp 1)
+    (save-excursion
+      (backward-sexp 2)
+      (kill-sexp 1)))
 
   (defun lps/print-eval-region (start end)
     (interactive "r")
