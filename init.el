@@ -3144,7 +3144,8 @@ call the associated function interactively. Otherwise, call the
         ("C-," . nil)
         ("C-a" . org-beginning-of-line)
         ("C-e" . org-end-of-line)
-        ([remap org-insert-structure-template] . 'lps/org-insert-structure-template))
+        ([remap org-insert-structure-template] . 'lps/org-insert-structure-template)
+        ([remap org-return] . lps/org-return-dwim))
   (:map org-src-mode-map
         ("C-c C-c" . org-edit-src-exit))
   (:map org-cdlatex-mode-map
@@ -3285,6 +3286,103 @@ call the associated function interactively. Otherwise, call the
                   collect `(define-key org-mode-map (kbd ,key) #',name))))
 
   (lps/def-org-maybe-surround "~" "=" "*" "/" "+")
+
+  ;; Improved RETURN
+  ;; Adapted from https://github.com/alphapapa/unpackaged.el
+  (defun lps/org-element-descendant-of (type element)
+    "Return non-nil if ELEMENT is a descendant of TYPE.
+  TYPE should be an element type, like `item' or `paragraph'.
+  ELEMENT should be a list like that returned by `org-element-context'."
+    ;; MAYBE: Use `org-element-lineage'.
+    (when-let* ((parent (org-element-property :parent element)))
+      (or (eq type (car parent))
+          (lps/org-element-descendant-of type parent))))
+
+  (defun lps/org-return-dwim (&optional default)
+    "A helpful replacement for `org-return'.  With prefix, call `org-return'.
+
+  On headings, move point to position after entry content.  In
+  lists, insert a new item or end the list, with checkbox if
+  appropriate.  In tables, insert a new row or end the table."
+    ;; Inspired by John Kitchin: http://kitchingroup.cheme.cmu.edu/blog/2017/04/09/A-better-return-in-org-mode/
+    (interactive "P")
+    (if default
+        (org-return)
+      (cond
+       ;; Act depending on context around point.
+       ((eq 'link (car (org-element-context)))
+        ;; Link: Open it.
+        (org-open-at-point-global))
+
+       ((org-at-heading-p)
+        ;; Heading: Move to position after entry content.
+        ;; NOTE: This is probably the most interesting feature of this function.
+        (let ((heading-start (org-entry-beginning-position)))
+          (goto-char (org-entry-end-position))
+          (cond ((and (org-at-heading-p)
+                      (= heading-start (org-entry-beginning-position)))
+                 ;; Entry ends on its heading; add newline after
+                 (end-of-line)
+                 (insert "\n\n"))
+                (t
+                 ;; Entry ends after its heading; back up
+                 (forward-line -1)
+                 (end-of-line)
+                 (when (org-at-heading-p)
+                   ;; At the same heading
+                   (forward-line)
+                   (insert "\n")
+                   (forward-line -1))
+                 ;; FIXME: looking-back is supposed to be called with more arguments.
+                 (while (not (looking-back (rx (repeat 3
+                                                       (seq (optional blank) "\n")))))
+                   (insert "\n"))
+                 (forward-line -1)))))
+
+       ((org-at-item-checkbox-p)
+        ;; Checkbox: Insert new item with checkbox.
+        (org-insert-todo-heading nil))
+
+       ((org-in-item-p)
+        ;; Plain list.  Yes, this gets a little complicated...
+        (let ((context (org-element-context)))
+          (if (or (eq 'plain-list (car context)) ; First item in list
+                  (and (eq 'item (car context))
+                       (not (eq (org-element-property :contents-begin context)
+                                (org-element-property :contents-end context))))
+                  ;; Element in list item, e.g. a link
+                  (lps/org-element-descendant-of 'item context))
+              ;; Non-empty item: Add new item.
+              (org-insert-item)
+            ;; Empty item: Close the list.
+            ;; TODO: Do this with org functions rather than operating on the text.
+            ;; Can't seem to find the right function.
+            (delete-region (line-beginning-position) (line-end-position))
+            (insert "\n"))))
+
+       ((when (fboundp 'org-inlinetask-in-task-p)
+          (org-inlinetask-in-task-p))
+        ;; Inline task: Don't insert a new heading.
+        (org-return))
+
+       ((org-at-table-p)
+        (cond ((save-excursion
+                 (beginning-of-line)
+                 ;; See `org-table-next-field'.
+                 (cl-loop with end = (line-end-position)
+                          for cell = (org-element-table-cell-parser)
+                          always (equal (org-element-property :contents-begin cell)
+                                        (org-element-property :contents-end cell))
+                          while (re-search-forward "|" end t)))
+               ;; Empty row: end the table.
+               (delete-region (line-beginning-position) (line-end-position))
+               (org-return))
+              (t
+               ;; Non-empty row: call `org-return'.
+               (org-return))))
+       (t
+        ;; All other cases: call `org-return'.
+        (org-return)))))
 
   ;; Babel configuration
   (org-babel-do-load-languages
