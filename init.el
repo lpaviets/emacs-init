@@ -852,8 +852,37 @@ It might be buggy with some backend, so use at your own risk"
 
 (use-package marginalia
   :after vertico
+  :bind
+  (:map minibuffer-local-map
+        ("M-A" . marginalia-cycle))
   :config
-  (marginalia-mode))
+  (defun marginalia-annotate-callable (cand)
+    "Annotate function CAND with its documentation string."
+    (when-let (sym (intern-soft cand))
+      (when (fboundp sym)
+        (marginalia--fields
+         (:left (marginalia-annotate-binding cand))
+         ((marginalia--symbol-class sym) :face 'marginalia-type)
+         ((marginalia--function-args sym) :face 'marginalia-value
+          :truncate 0.8)
+         ((marginalia--function-doc sym)
+          :truncate 1.0 :face 'marginalia-documentation)
+         ((abbreviate-file-name (or (symbol-file sym) ""))
+          :truncate -0.5 :face 'marginalia-file-name)))))
+
+  (marginalia-mode)
+  ;; Work with `helpful-callable'
+  (add-to-list 'marginalia-prompt-categories
+               '("\\<Callable\\>" . callable)
+               nil 'equal)
+
+  (add-to-list 'marginalia-annotator-registry
+               '(callable marginalia-annotate-callable builtin none)
+               nil 'equal)
+
+  (add-to-list 'marginalia-command-categories
+               '(helpful-callable . callable)
+               nil 'equal))
 
 (use-package emacs
   :ensure nil
