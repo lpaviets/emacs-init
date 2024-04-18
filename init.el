@@ -1239,7 +1239,9 @@ buffer name already resembles a file name"
 (use-package info
   :bind
   (:map Info-mode-map
-        ("S" . consult-info)))
+        ("S" . consult-info))
+  :hook
+  (Info . olivetti-mode))
 
 ;;; Add some colours to Info nodes
 (use-package info-colors
@@ -2230,8 +2232,8 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
   (:map magit-section-mode-map
         ("M-^" . magit-section-up))
   :custom
-  (magit-view-git-manual-method 'man) ; can't understand what Gitman is
-  (magit-module-sections-nested nil) ; disable if many modules in a given repo
+  (magit-view-git-manual-method 'man)  ; can't understand what Gitman is
+  (magit-module-sections-nested nil)   ; disable if many modules in a given repo
   (magit-clone-always-transient t)
   :config
   (dolist (action '(stage-all-changes unstage-all-changes))
@@ -2250,7 +2252,8 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
 
   ;; Insert modules /after/ the other sections
   (add-hook 'magit-status-sections-hook 'magit-insert-modules 1)
-  (add-hook 'magit-status-sections-hook 'magit-insert-tracked-files 1))
+  (add-hook 'magit-status-sections-hook 'magit-insert-tracked-files 1)
+  (add-hook 'magit-status-sections-hook 'magit-insert-ignored-files 1))
 
 (use-package transient
   :custom
