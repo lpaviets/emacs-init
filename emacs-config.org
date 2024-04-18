@@ -2239,7 +2239,7 @@ Hence, we add a few bindings to an already existing keymap, to make them easily 
     ;; Interpret whitespaces as "anything but a newline"
     (search-whitespace-regexp "[-\\/_ \\t.]+")
     (isearch-regexp-lax-whitespace t)
-    (isearch-yank-on-move 'shift)
+    (isearch-yank-on-move t)
     (isearch-allow-scroll t)
     (isearch-allow-motion t)
     (isearch-lazy-count t)
@@ -2532,24 +2532,7 @@ Because we added other, more "Emacs-y" bindings to move by paragraphs, we are fr
 
 ** Undo
 
-Another very useful package is =undo-tree=, which allows you to visualize the previous "Undos" and navigate them.
-
-It can act as a small, local version control system due to how Undos are managed by Emacs.
-
-#+begin_src emacs-lisp
-  (use-package undo-tree
-    :diminish
-    :disabled t
-    :custom
-    (undo-tree-visualizer-timestamps t)
-    (undo-tree-enable-undo-in-region t)
-    (undo-tree-visualizer-diff t)
-    (undo-tree-auto-save-history nil)
-    :config
-    (global-undo-tree-mode))
-#+end_src
-
-Another light-weight option, which tends to work better with some built-in Emacs features such as as "undo-in-region", is =vundo=. It has become much more usable in newer versions of Emacs, where the undo systems has gained some new commands, making it behave more like in most other tools.
+Another light-weight option to improve on the built-in ~undo~, which tends to work better than some others choices (notably, =undo-tree=) with some built-in Emacs features such as as "undo-in-region", is =vundo=. It has become much more usable in newer versions of Emacs, where the undo systems has gained some new commands, making it behave more like in most other tools.
 
 #+begin_src emacs-lisp
   (use-package vundo
@@ -7069,29 +7052,6 @@ Now, we try to add things on top of the built-in file manager, Dired.
     :ensure nil
     :only-built-in t
     :after dired)
-#+end_src
-
-There are other useful packages, that either improve the visual appearance of Dired, or give more functionalities.
-
-#+begin_src emacs-lisp
-  ;; Make things prettier
-  (use-package all-the-icons-dired
-    :diminish
-    :hook (dired-mode . all-the-icons-dired-mode)
-    :custom
-    (all-the-icons-dired-monochrome nil))
-
-  (use-package dired-git-info
-    :after dired
-    :bind
-    (:map dired-mode-map
-          (")" . dired-git-info-mode))
-    :custom
-    (dgi-auto-hide-details-p nil)
-    :config
-    (set-face-attribute 'dgi-commit-message-face nil
-                        :inherit 'font-lock-constant-face
-                        :slant 'italic))
 #+end_src
 
 Dired can also be used to search for files, using their names or their content.

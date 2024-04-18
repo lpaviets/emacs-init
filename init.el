@@ -1724,7 +1724,7 @@ buffer name already resembles a file name"
   ;; Interpret whitespaces as "anything but a newline"
   (search-whitespace-regexp "[-\\/_ \\t.]+")
   (isearch-regexp-lax-whitespace t)
-  (isearch-yank-on-move 'shift)
+  (isearch-yank-on-move t)
   (isearch-allow-scroll t)
   (isearch-allow-motion t)
   (isearch-lazy-count t)
@@ -1968,17 +1968,6 @@ Move point in the last duplicated string (line or region)."
         (setq final (point)))
       (kill-whole-line (- arg))
       (goto-char final))))
-
-(use-package undo-tree
-  :diminish
-  :disabled t
-  :custom
-  (undo-tree-visualizer-timestamps t)
-  (undo-tree-enable-undo-in-region t)
-  (undo-tree-visualizer-diff t)
-  (undo-tree-auto-save-history nil)
-  :config
-  (global-undo-tree-mode))
 
 (use-package vundo
   :defer t
@@ -5835,25 +5824,6 @@ PWD is not in a git repo (or the git command is not found)."
   :ensure nil
   :only-built-in t
   :after dired)
-
-;; Make things prettier
-(use-package all-the-icons-dired
-  :diminish
-  :hook (dired-mode . all-the-icons-dired-mode)
-  :custom
-  (all-the-icons-dired-monochrome nil))
-
-(use-package dired-git-info
-  :after dired
-  :bind
-  (:map dired-mode-map
-        (")" . dired-git-info-mode))
-  :custom
-  (dgi-auto-hide-details-p nil)
-  :config
-  (set-face-attribute 'dgi-commit-message-face nil
-                      :inherit 'font-lock-constant-face
-                      :slant 'italic))
 
 (use-package find-dired
   :ensure nil
