@@ -3548,34 +3548,36 @@ call the associated function interactively. Otherwise, call the
   perform recursive expansion: for example, if an abbreviation has
   a description containing a word that is also an abbreviation, it
   should not be expanded."
-    (when (equal backend 'html)
+    (when (org-export-derived-backend-p backend 'html)
       (let* ((abbrevs-raw (cdar (org-collect-keywords '("abbr"))))
              (abbrevs-local (mapcar 'lps/org-parse-abbr-definition abbrevs-raw))
              (abbrevs (append abbrevs-local lps/org-export-abbr-global-abbrevs))
              (abbrevs-regexp (concat "\\b\\(?:" ; regexp matching any abbr
                                      (mapconcat #'car abbrevs "\\|")
                                      "\\)\\b")))
-        (save-excursion
-          (beginning-of-buffer)
-          ;; Match any of the abbr in the buffer, single pass
-          (while (re-search-forward abbrevs-regexp nil t)
-            ;; Check context: do nothing if in a "bad context"
-            (unless (save-match-data
-                      (member (car (org-element-at-point))
-                              lps/org-export-abbr-contexts-no-replace))
-              ;; Get the actual matched string, and its associated description
-              (let* ((abbr-matched (match-string 0))
-                     (description (cl-loop for (from . to) in abbrevs
-                                           when (save-match-data
-                                                  (string-match from abbr-matched))
-                                           return to)))
-                ;; Replace the match with inline HTML. The matched string has
-                ;; the same case, the description is fixed.
-                (replace-match (concat "@@html:<abbr title=\""
-                                       description
-                                       "\">"
-                                       abbr-matched
-                                       "</abbr>@@")))))))))
+        (when abbrevs
+          (save-excursion
+            (beginning-of-buffer)
+            ;; Match any of the abbr in the buffer, single pass
+            (while (re-search-forward abbrevs-regexp nil t)
+              ;; Check context: do nothing if in a "bad context"
+              (unless (save-match-data
+                        (member (car (org-element-at-point))
+                                lps/org-export-abbr-contexts-no-replace))
+                ;; Get the actual matched string, and its associated description
+                (let* ((abbr-matched (match-string 0))
+                       (desc (cl-loop for (from . to) in abbrevs
+                                      when (save-match-data
+                                             (string-match from abbr-matched))
+                                      return to)))
+                  ;; Replace the match with inline HTML. The matched string has
+                  ;; the same case, the description is fixed.
+                  (replace-match (concat "@@html:<abbr title=\""
+                                         desc
+                                         "\">"
+                                         abbr-matched
+                                         "</abbr>@@")
+                                 'fixedcase)))))))))
 
   (add-hook 'org-export-before-parsing-hook 'lps/org-export-replace-abbr)
   ;;; Useful ID nodes
