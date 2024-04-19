@@ -851,11 +851,13 @@ It might be buggy with some backend, so use at your own risk"
         (backward-kill-word arg)))))
 
 (use-package marginalia
+  :demand t
   :after vertico
   :bind
   (:map minibuffer-local-map
         ("M-A" . marginalia-cycle))
   :config
+  (marginalia-mode)
   (defun marginalia-annotate-callable (cand)
     "Annotate function CAND with its documentation string."
     (when-let (sym (intern-soft cand))
@@ -870,7 +872,6 @@ It might be buggy with some backend, so use at your own risk"
          ((abbreviate-file-name (or (symbol-file sym) ""))
           :truncate -0.5 :face 'marginalia-file-name)))))
 
-  (marginalia-mode)
   ;; Work with `helpful-callable'
   (add-to-list 'marginalia-prompt-categories
                '("\\<Callable\\>" . callable)
@@ -5871,7 +5872,8 @@ PWD is not in a git repo (or the git command is not found)."
                                     ("d"  "~/.dotfiles" "Dotfiles")
                                     ("m"  "/media/" "Mounting directory")
                                     ("oo" ,org-directory "Org Files")
-                                    ("oa" ,(lps/org-expand-file-name "agenda" t) "Org Files")
+                                    ("oa" ,(lps/org-expand-file-name "agenda" t)
+                                     "Org Files")
                                     ,@(let (shortcuts)
                                         (dolist (key-name '(("B" "DESKTOP")
                                                             ("T" "DOWNLOAD")
@@ -5888,6 +5890,47 @@ PWD is not in a git repo (or the git command is not found)."
     :config
     (remove-hook 'dired-mode-hook 'all-the-icons-dired-mode)
 
+    ;; Fix a bug, see
+    ;; https://github.com/alexluigit/dirvish/pull/251/commits/600b81d5b8adc8532cb31b72c9cf2fc981c678e9
+    (defun dirvish--mode-line-fmt-setter (left right &optional header)
+      "Set the `dirvish--mode-line-fmt'.
+LEFT and RIGHT are segments aligned to left/right respectively.
+If HEADER, set the `dirvish--header-line-fmt' instead."
+      (cl-labels ((expand (segments)
+                    (cl-loop for s in segments collect
+                             (if (stringp s) s
+                               `(:eval (,(intern (format "dirvish-%s-ml" s))
+                                        (dirvish-curr))))))
+                  (get-font-scale ()
+                    (let* ((face (if header 'header-line 'mode-line-inactive))
+                           (defualt (face-attribute 'default :height))
+                           (ml-height (face-attribute face :height)))
+                      (cond ((floatp ml-height) ml-height)
+                            ((integerp ml-height) (/ (float ml-height) defualt))
+                            (t 1)))))
+        `((:eval
+           (let* ((dv (dirvish-curr))
+                  (buf (and (car (dv-layout dv)) (cdr (dv-index dv))))
+                  (scale ,(get-font-scale))
+                  (win-width (floor (/ (window-width) scale)))
+                  (str-l (format-mode-line
+                          ',(or (expand left) mode-line-format) nil nil buf))
+                  (str-r (format-mode-line ',(expand right) nil nil buf))
+                  (len-r (string-width str-r)))
+             (concat
+              (dirvish--bar-image (car (dv-layout dv)) ,header)
+              (if (< (+ (string-width str-l) len-r) win-width)
+                  str-l
+                (let ((trim (1- (- win-width len-r))))
+                  (if (>= trim 0)
+                      (substring str-l 0 (min trim (1- (length str-l))))
+                    "")))
+              (propertize
+               " " 'display
+               `((space :align-to (- (+ right right-fringe right-margin)
+                                     ,(ceiling (* scale (string-width str-r)))))))
+              str-r))))))
+
     ;; Swap the meaning of prefix arg
     (defun-override lps/dirvish-yank--read-dest (method)
       "Read dest dir for METHOD when prefixed with `current-prefix-arg'."
@@ -5896,8 +5939,8 @@ PWD is not in a git repo (or the git command is not found)."
                               (dired-dwim-target-directory)
                               nil nil nil 'file-directory-p))))
 
-    ;;;; Add a colourful directory preview.
-    ;;;; Not really needed and somewhat noisy ...
+;;;; Add a colourful directory preview.
+;;;; Not really needed and somewhat noisy ...
     ;; (dirvish-define-preview exa (file)
     ;;   "Use `exa' to generate directory preview."
     ;;   :require ("exa")             ; tell Dirvish to check if we have the executable
