@@ -45,6 +45,7 @@
         lps/eval-and-replace-last-sexp
         lps/exchange-point-and-mark
         lps/insert-parentheses
+        lps/insert-quotes
         lps/kill-region-or-word-dwim
         lps/lisp-indent-adjust-parens
         lps/select-line

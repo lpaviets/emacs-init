@@ -1439,6 +1439,8 @@ By default, Emacs performs a lot of backups, allowing to recover both from unwan
   (use-package emacs
     :ensure nil
     :only-built-in t
+    :custom
+    (backup-by-copying t)
     :init
     (defvar lps/backup-directory (locate-user-emacs-file".backups/"))
     (unless (file-exists-p lps/backup-directory)
@@ -1602,7 +1604,7 @@ Another useful built-in tool to read documentation is ~info-mode~. This is conve
     (:map Info-mode-map
           ("S" . consult-info))
     :hook
-    (Info . olivetti-mode))
+    (Info-mode . olivetti-mode))
 
   ;;; Add some colours to Info nodes
   (use-package info-colors
@@ -1673,12 +1675,6 @@ We want to use the full Emacs power. However, if you find yourself using repeate
   ;; If you are a new user, you might to comment out this line
   (setq disabled-command-function nil)
 
-#+end_src
-
-There is, however, one really annoying binding, especially for new users or people used to ... computers, calling the =suspend-frame= command. For people who are using it, do not worry, it is still available on =C-x C-z= anyway.
-
-#+begin_src emacs-lisp
-  (global-unset-key (kbd "C-z"))
 #+end_src
 
 ** History
@@ -2180,29 +2176,8 @@ Most of the time, when writing text, we are going to use words over and over aga
 
 ** Navigation
 *** Structure based
-Because movement keys are the most frequently used ones, it might be useful to create an Hydra helping us navigate around a document.
 
-#+begin_src emacs-lisp
-  (use-package emacs
-    :only-built-in nil
-    :bind (:map lps/all-hydras-map
-                ("m" . hydra-move/body))
-    :config
-    (defhydra hydra-move ()
-      "Movement"                        ; m as in movement
-      ("n" next-line)
-      ("p" previous-line)
-      ("f" forward-char)
-      ("b" backward-char)
-      ("a" beginning-of-line)
-      ("e" move-end-of-line)
-      ("v" scroll-up-command)
-      ;; Converting M-v to V here by analogy.
-      ("V" scroll-down-command)
-      ("l" recenter-top-bottom)))
-#+end_src
-
-Furthermore, we change a variable that makes sense for American writers, but not so much according to French conventions. The Emacs Manual recommends against it, as we are no longer able to distinguish a sentence ending from an abbreviation, but I do not use this type of abbreviation very often anyway (notable counterexamples nonetheless: /i.e./ and /e.g./).
+We change a variable that makes sense for American writers, but not so much according to French conventions. The Emacs Manual recommends against it, as we are no longer able to distinguish a sentence ending from an abbreviation, but I do not use this type of abbreviation very often anyway (notable counterexamples nonetheless: /i.e./ and /e.g./).
 
 We also add more convenient bindings to move paragraph by paragraph, and to deal with long lines.
 
@@ -3335,7 +3310,6 @@ The command ~pyls~ needs to be available on the ~PATH~ environment variable.
     :custom
     (python-shell-interpreter "python3")
     :config
-    (require 'lsp-pyright)
     (defun lps/run-python ()
       (save-excursion
         (call-interactively 'run-python)))
@@ -3344,13 +3318,6 @@ The command ~pyls~ needs to be available on the ~PATH~ environment variable.
                  (cons 'python-mode 'python-shell-send-buffer))
 
     (push 'company-indent-or-complete-common python-indent-trigger-commands))
-#+end_src
-
-I will use another server, based on [[https://github.com/microsoft/pyright][Pyright]]
-
-#+begin_src emacs-lisp
-  (use-package lsp-pyright
-    :defer t)
 #+end_src
 
 Finally, we can improve the interpreter by allowing it to handle multi-line statements better. Terminal emulators are lame and have trouble doing it without massive changes (hello, IPython !), but this is Emacs, we can do whatever we want.

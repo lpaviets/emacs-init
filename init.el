@@ -1121,6 +1121,8 @@ If called with a prefix argument, also kills the current buffer"
 (use-package emacs
   :ensure nil
   :only-built-in t
+  :custom
+  (backup-by-copying t)
   :init
   (defvar lps/backup-directory (locate-user-emacs-file".backups/"))
   (unless (file-exists-p lps/backup-directory)
@@ -1242,7 +1244,7 @@ buffer name already resembles a file name"
   (:map Info-mode-map
         ("S" . consult-info))
   :hook
-  (Info . olivetti-mode))
+  (Info-mode . olivetti-mode))
 
 ;;; Add some colours to Info nodes
 (use-package info-colors
@@ -1281,8 +1283,6 @@ buffer name already resembles a file name"
 ;; BE CAREFUL
 ;; If you are a new user, you might to comment out this line
 (setq disabled-command-function nil)
-
-(global-unset-key (kbd "C-z"))
 
 ;; Generic Prescient configuration
 (use-package prescient
@@ -1680,24 +1680,6 @@ buffer name already resembles a file name"
   (company-dabbrev-ignore-case 'keep-prefix)
   (company-dabbrev-downcase nil)
   (company-dabbrev-minimum-length 4))
-
-(use-package emacs
-  :only-built-in nil
-  :bind (:map lps/all-hydras-map
-              ("m" . hydra-move/body))
-  :config
-  (defhydra hydra-move ()
-    "Movement"                        ; m as in movement
-    ("n" next-line)
-    ("p" previous-line)
-    ("f" forward-char)
-    ("b" backward-char)
-    ("a" beginning-of-line)
-    ("e" move-end-of-line)
-    ("v" scroll-up-command)
-    ;; Converting M-v to V here by analogy.
-    ("V" scroll-down-command)
-    ("l" recenter-top-bottom)))
 
 (use-package emacs
   :ensure nil
@@ -2605,7 +2587,6 @@ call the associated function interactively. Otherwise, call the
   :custom
   (python-shell-interpreter "python3")
   :config
-  (require 'lsp-pyright)
   (defun lps/run-python ()
     (save-excursion
       (call-interactively 'run-python)))
@@ -2614,9 +2595,6 @@ call the associated function interactively. Otherwise, call the
                (cons 'python-mode 'python-shell-send-buffer))
 
   (push 'company-indent-or-complete-common python-indent-trigger-commands))
-
-(use-package lsp-pyright
-  :defer t)
 
 (use-package python-mls
   :disabled t
