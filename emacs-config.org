@@ -7020,7 +7020,7 @@ Now, we try to add things on top of the built-in file manager, Dired.
     (dired-recursive-copies 'always)
     (dired-auto-revert-buffer t)
     (dired-isearch-filenames 'dwim)
-    (dired-listing-switches "-l --almost-all --human-readable --classify --group-directories-first")
+    (dired-listing-switches "-l --almost-all --human-readable --group-directories-first")
     (wdired-allow-to-change-permissions t)
     (dired-dwim-target t)
     :config
@@ -7194,8 +7194,10 @@ It is quite heavily customizable. However, I do not use it that much, and I am j
                                       nil nil nil t)
                          (read-string "File: "
                                       nil nil nil t)))
-      (let ((port (when (member method '("ssh" "sshx"))
-                    (read-string "Port: "))))
+      (let ((port (if (member method '("ssh" "sshx" "ftp"))
+                      (read-string "Port: ")
+                    (message "Using TRAMP for %s: no port asked" method)
+                    nil)))
         (find-file (concat "/" method ":"
                            (unless (string-empty-p user)
                              (concat user "@"))
@@ -7537,11 +7539,11 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
   ;; Bookmarks
   (add-to-list 'mu4e-bookmarks `(:name
                                  "Important"
-                                 :query ,(concat "maildir:/Orange/Important"
-                                                 " OR "
-                                                 "maildir:/Unicaen/Important"
-                                                 " OR "
-                                                 "maildir:/ENS_Lyon/Important")
+                                 :query ,(mapconcat 'identity
+                                                    '("maildir:/Orange/Important"
+                                                      "maildir:/Unicaen/Important"
+                                                      "maildir:/ENS_Lyon/Important"
+                                                      "maildir:/Personal/Important"))
                                  :key   ?i)
                t)
 
@@ -7826,7 +7828,8 @@ As ~mu4e~ provides a lot of query options to filter mails, sometimes you can for
   (defvar lps/mu4e-headers-propertize-context
     '(("Orange" "red4")
       ("Unicaen" "blue3")
-      ("ENS_Lyon" "green4"))
+      ("ENS_Lyon" "green4")
+      ("Personal" "dark violet"))
     "Alist of (CONTEXT-NAME FACE-OR-FUNCTION)
 
     If the second element is a function, it will be called with the
@@ -9156,3 +9159,9 @@ Not particularly Emacs-related, but: find a way to specify a username/password t
 *** Documentation
 - Improve the documentation function: jump to a manual depending on current packages (not word at point ...), /then/ look in index for word at point (using personal function ~lps/pdf-maybe-goto-index~), possibly streamlining the experience using a modified version of ~pdf-read-links-*~ if possible so that the word at point is automatically pre-selected and I only need to press enter if it is "automatically" found in the Index.
   - Also catch the potential call to latex2e documentation: open info manual instead of pdf.
+
+** TRAMP
+
+- Fix dirvish and sudoedit
+- Fix dirvish (not only ? Same bug in =emacs -Q= and dired ...) and (some ?) FTP hanging forever.
+  - Seems like it came from a symlink to a file not accessible by the FTP

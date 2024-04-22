@@ -5803,7 +5803,7 @@ PWD is not in a git repo (or the git command is not found)."
   (dired-recursive-copies 'always)
   (dired-auto-revert-buffer t)
   (dired-isearch-filenames 'dwim)
-  (dired-listing-switches "-l --almost-all --human-readable --classify --group-directories-first")
+  (dired-listing-switches "-l --almost-all --human-readable --group-directories-first")
   (wdired-allow-to-change-permissions t)
   (dired-dwim-target t)
   :config
@@ -5958,8 +5958,10 @@ If HEADER, set the `dirvish--header-line-fmt' instead."
                                     nil nil nil t)
                        (read-string "File: "
                                     nil nil nil t)))
-    (let ((port (when (member method '("ssh" "sshx"))
-                  (read-string "Port: "))))
+    (let ((port (if (member method '("ssh" "sshx" "ftp"))
+                    (read-string "Port: ")
+                  (message "Using TRAMP for %s: no port asked" method)
+                  nil)))
       (find-file (concat "/" method ":"
                          (unless (string-empty-p user)
                            (concat user "@"))
@@ -6226,11 +6228,11 @@ recent versions of mu4e."
   ;; Bookmarks
   (add-to-list 'mu4e-bookmarks `(:name
                                  "Important"
-                                 :query ,(concat "maildir:/Orange/Important"
-                                                 " OR "
-                                                 "maildir:/Unicaen/Important"
-                                                 " OR "
-                                                 "maildir:/ENS_Lyon/Important")
+                                 :query ,(mapconcat 'identity
+                                                    '("maildir:/Orange/Important"
+                                                      "maildir:/Unicaen/Important"
+                                                      "maildir:/ENS_Lyon/Important"
+                                                      "maildir:/Personal/Important"))
                                  :key   ?i)
                t)
 
@@ -6503,7 +6505,8 @@ recent versions of mu4e."
   (defvar lps/mu4e-headers-propertize-context
     '(("Orange" "red4")
       ("Unicaen" "blue3")
-      ("ENS_Lyon" "green4"))
+      ("ENS_Lyon" "green4")
+      ("Personal" "dark violet"))
     "Alist of (CONTEXT-NAME FACE-OR-FUNCTION)
 
     If the second element is a function, it will be called with the
