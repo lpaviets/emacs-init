@@ -3652,7 +3652,9 @@ call the associated function interactively. Otherwise, call the
 (use-package org-agenda
   :after org
   :ensure nil
-  :hook (org-agenda-mode . lps/windmove-mode-local-off)
+  :hook
+  (org-agenda-mode . lps/windmove-mode-local-off)
+  (org-agenda-mode . hl-line-mode)
   :bind
   ("C-c a" . org-agenda)
   :custom
@@ -4858,7 +4860,16 @@ Does not read any argument: this is to be able to add it both to
   (reftex-insert-label-flags '(t t))
   (reftex-derive-label-parameters `(4 25 t 1 "-"
                                       ,lps/do-not-capitalize-list
-                                      t)))
+                                      t))
+  :config
+  (defun lps/reftex-string-to-label-function-add-file (string)
+    (concat (if (buffer-file-name)
+                (reftex-string-to-label
+                 (file-name-sans-extension
+                  (file-name-nondirectory (buffer-file-name))))
+              "")
+            "--"
+            (reftex-string-to-label string))))
 
 (use-package reftex-cite
   :diminish
@@ -6123,6 +6134,8 @@ confirmation when sending a non-multipart MIME mail")
   ;; Don't forget that it uses authinfo(.gpg) ! So any password change
   ;; should be reflected there too !
   (smtpmail-debug-info t)
+  (smtpmail-debug-verb t)
+  (smtpmail-servers-requiring-authorization "ovh")
   (smtpmail-smtp-user "paviets201")
   (smtpmail-smtp-server "smtp.unicaen.fr")
   (smtpmail-smtp-service 465)
@@ -6318,7 +6331,24 @@ recent versions of mu4e."
                   (smtpmail-smtp-user    . "lpaviets")
                   (smtpmail-smtp-server  . "smtp.ens-lyon.fr")
                   (smtpmail-smtp-service . 587)
-                  (smtpmail-stream-type  . starttls)))))
+                  (smtpmail-stream-type  . starttls)))
+
+         (make-mu4e-context
+          :name "Personal"
+          :match-func
+          (lambda (msg)
+            (when msg
+              (string-prefix-p "/Personal" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address  . "mail@lpaviets.org")
+                  (user-full-name     . "Leo Paviet Salomon")
+                  (mu4e-drafts-folder . "/Personal/Drafts")
+                  (mu4e-sent-folder   . "/Personal/Sent Items")
+                  (mu4e-refile-folder . "/Personal/Archive")
+                  (mu4e-trash-folder  . "/Personal/Deleted Items")
+                  (smtpmail-smtp-user    . "mail@lpaviets.org")
+                  (smtpmail-smtp-server  . "smtp.mail.ovh.ca")
+                  (smtpmail-smtp-service . 465)
+                  (smtpmail-stream-type  . ssl)))))
 
 ;;; Queries
   (defun lps/mu4e-read-range (fun initial-prompt)

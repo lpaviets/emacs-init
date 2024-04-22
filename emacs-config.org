@@ -4603,7 +4603,9 @@ Not only is Org Mode great to write structured documents that can be exported to
   (use-package org-agenda
     :after org
     :ensure nil
-    :hook (org-agenda-mode . lps/windmove-mode-local-off)
+    :hook
+    (org-agenda-mode . lps/windmove-mode-local-off)
+    (org-agenda-mode . hl-line-mode)
     :bind
     ("C-c a" . org-agenda)
     :custom
@@ -5900,7 +5902,16 @@ Another useful package to deal with references, bibliography, citations and so o
     (reftex-insert-label-flags '(t t))
     (reftex-derive-label-parameters `(4 25 t 1 "-"
                                         ,lps/do-not-capitalize-list
-                                        t)))
+                                        t))
+    :config
+    (defun lps/reftex-string-to-label-function-add-file (string)
+      (concat (if (buffer-file-name)
+                  (reftex-string-to-label
+                   (file-name-sans-extension
+                    (file-name-nondirectory (buffer-file-name))))
+                "")
+              "--"
+              (reftex-string-to-label string))))
 
   (use-package reftex-cite
     :diminish
@@ -7420,6 +7431,8 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     ;; Don't forget that it uses authinfo(.gpg) ! So any password change
     ;; should be reflected there too !
     (smtpmail-debug-info t)
+    (smtpmail-debug-verb t)
+    (smtpmail-servers-requiring-authorization "ovh")
     (smtpmail-smtp-user "paviets201")
     (smtpmail-smtp-server "smtp.unicaen.fr")
     (smtpmail-smtp-service 465)
@@ -7633,7 +7646,24 @@ In order to provide contextual mail completion, address, server synchronization 
                   (smtpmail-smtp-user    . "lpaviets")
                   (smtpmail-smtp-server  . "smtp.ens-lyon.fr")
                   (smtpmail-smtp-service . 587)
-                  (smtpmail-stream-type  . starttls)))))
+                  (smtpmail-stream-type  . starttls)))
+
+         (make-mu4e-context
+          :name "Personal"
+          :match-func
+          (lambda (msg)
+            (when msg
+              (string-prefix-p "/Personal" (mu4e-message-field msg :maildir))))
+          :vars '((user-mail-address  . "mail@lpaviets.org")
+                  (user-full-name     . "Leo Paviet Salomon")
+                  (mu4e-drafts-folder . "/Personal/Drafts")
+                  (mu4e-sent-folder   . "/Personal/Sent Items")
+                  (mu4e-refile-folder . "/Personal/Archive")
+                  (mu4e-trash-folder  . "/Personal/Deleted Items")
+                  (smtpmail-smtp-user    . "mail@lpaviets.org")
+                  (smtpmail-smtp-server  . "smtp.mail.ovh.ca")
+                  (smtpmail-smtp-service . 465)
+                  (smtpmail-stream-type  . ssl)))))
 #+end_src
 
 As ~mu4e~ provides a lot of query options to filter mails, sometimes you can forget what the syntax is. To make some non-trivial queries easier to write, we add some interactive functions for the most common options.
