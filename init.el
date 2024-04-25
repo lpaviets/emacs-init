@@ -4813,13 +4813,17 @@ Does not read any argument: this is to be able to add it both to
                                       ,lps/do-not-capitalize-list
                                       t))
   :config
+  ;; When labeling a section, insert file name into it
   (defun lps/reftex-string-to-label-function-add-file (string)
-    (concat (if (buffer-file-name)
-                (reftex-string-to-label
-                 (file-name-sans-extension
-                  (file-name-nondirectory (buffer-file-name))))
+    (concat (if (and (buffer-file-name)
+                     (save-match-data
+                       (assoc (reftex-label-location) reftex-section-levels)))
+                (concat
+                 (reftex-string-to-label
+                  (file-name-sans-extension
+                   (file-name-nondirectory (buffer-file-name))))
+                 "--")
               "")
-            "--"
             (reftex-string-to-label string))))
 
 (use-package reftex-cite

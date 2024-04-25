@@ -53,6 +53,7 @@
         lps/transpose-sexp-forward
         lps/yank-indent
         mark-sexp
+        mark-word
         org-beginning-of-line
         org-delete-char
         org-emphasize
