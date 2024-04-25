@@ -7498,7 +7498,8 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
                                                     '("maildir:/Orange/Important"
                                                       "maildir:/Unicaen/Important"
                                                       "maildir:/ENS_Lyon/Important"
-                                                      "maildir:/Personal/Important"))
+                                                      "maildir:/Personal/Important")
+                                                    " OR ")
                                  :key   ?i)
                t)
 
