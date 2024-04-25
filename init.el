@@ -2275,6 +2275,25 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
           (message "Smerge-mode automatically enabled: there seem to be conflicts !")
           (smerge-mode 1))))))
 
+(use-package ediff
+  :defer t
+  :hook
+  (ediff-before-setup . lps/ediff-save-window-configuration)
+  :custom
+  (ediff-split-window-function 'split-window-horizontally)
+  (ediff-window-setup-function 'ediff-setup-windows-plain)
+  :config
+  (defvar lps/ediff-saved-window-configuration nil)
+
+  (defun lps/ediff-save-window-configuration ()
+    (setq lps/ediff-saved-window-configuration (current-window-configuration)))
+
+  (defun lps/ediff-restore-window-configuration ()
+    (set-window-configuration lps/ediff-saved-window-configuration))
+
+  ;; Weird name for the following hook: may be not supposed to use it ?
+  (add-hook 'ediff-after-quit-hook-internal 'lps/ediff-restore-window-configuration))
+
 ;; Always highlight matching parenthesis
 (use-package paren
   :ensure nil

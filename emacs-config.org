@@ -2908,6 +2908,29 @@ Whenever we use version control, merge conflicts will unavoidably arise. Hence, 
             (smerge-mode 1))))))
 #+end_src
 
+Although looking at, merging, and dealing with diffs in not strictly related to version control, I believe it is the appropriate time to talk about Ediff. Ediff is (one of the) the built-in modes to visualize side-by-side diffs of different files, and possibly edit and merge them. The defaults are a bit lacking, in particular when it comes to layout/UI, so this is one of the main changes we do.
+
+#+begin_src emacs-lisp
+  (use-package ediff
+    :defer t
+    :hook
+    (ediff-before-setup . lps/ediff-save-window-configuration)
+    :custom
+    (ediff-split-window-function 'split-window-horizontally)
+    (ediff-window-setup-function 'ediff-setup-windows-plain)
+    :config
+    (defvar lps/ediff-saved-window-configuration nil)
+
+    (defun lps/ediff-save-window-configuration ()
+      (setq lps/ediff-saved-window-configuration (current-window-configuration)))
+
+    (defun lps/ediff-restore-window-configuration ()
+      (set-window-configuration lps/ediff-saved-window-configuration))
+
+    ;; Weird name for the following hook: may be not supposed to use it ?
+    (add-hook 'ediff-after-quit-hook-internal 'lps/ediff-restore-window-configuration))
+#+end_src
+
 ** Parenthesis
 
 First of all, we want to easily be able to tell with a quick glance which parenthesis are matching
