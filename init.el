@@ -6232,7 +6232,8 @@ recent versions of mu4e."
                                                     '("maildir:/Orange/Important"
                                                       "maildir:/Unicaen/Important"
                                                       "maildir:/ENS_Lyon/Important"
-                                                      "maildir:/Personal/Important"))
+                                                      "maildir:/Personal/Important")
+                                                    " OR ")
                                  :key   ?i)
                t)
 
