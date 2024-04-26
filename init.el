@@ -4548,7 +4548,58 @@ return `nil'."
     (add-to-list 'LaTeX-indent-environment-list env
                  nil 'equal))
 
-  ;;;  Navigation
+
+;;; Fix some old AucTeX stuff that have been "merged"/superseded elsewhere
+  ;; Redefine TeX-completing-read-multiple
+  ;; Might be a bit buggy (return value is not expected to be nil,
+  ;; or something along those lines ...) but I prefer having a
+  ;; consistent interface, regardless of minor bugs
+  (defalias 'TeX-completing-read-multiple 'completing-read-multiple)
+
+  ;; Redefine multi-prompt-value to use completing-read-multiple
+  ;; rather than read-from-minibuffer
+  ;; This allows Vertico to do its job
+  (with-eval-after-load 'multi-prompt
+    (defun multi-prompt-key-value
+        (prompt table &optional predicate require-match initial-input
+                hist def inherit-input-method)
+      "Read multiple strings, with completion and key=value support.
+PROMPT is a string to prompt with, usually ending with a colon
+and a space.  TABLE is an alist.  The car of each element should
+be a string representing a key and the optional cdr should be a
+list with strings to be used as values for the key.
+
+See the documentation for `completing-read' for details on the
+other arguments: PREDICATE, REQUIRE-MATCH, INITIAL-INPUT, HIST,
+DEF, and INHERIT-INPUT-METHOD.
+
+The return value is the string as entered in the minibuffer."
+      (let* ((minibuffer-completion-table #'multi-prompt-key-value-collection-fn)
+             (minibuffer-completion-predicate predicate)
+             (minibuffer-completion-confirm
+              (unless (eq require-match t) require-match))
+             (multi-prompt-completion-table
+              ;; Expand the table here because completion would otherwise
+              ;; interpret symbols in the table as functions.  However, it
+              ;; would be nicer if this could be done during the actual
+              ;; completion in order to avoid walking through the whole
+              ;; table.
+              (multi-prompt-expand-completion-table table))
+             (map (if require-match
+                      crm-local-must-match-map
+                    crm-local-completion-map))
+             ;; (input (read-from-minibuffer
+             ;;         prompt initial-input map
+             ;;         nil hist def inherit-input-method))
+             (input (or (completing-read-multiple
+                         prompt minibuffer-completion-table
+                         predicate require-match initial-input
+                         hist def inherit-input-method)
+                        "")))
+        (and def (string-equal input "") (setq input def))
+        (mapconcat 'identity input ", "))))
+
+;;;  Navigation
   ;; Slow: could be made faster by searching $ or \] characters rather
   ;; than calling `texmathp' at each step. However, this is the most
   ;; robust, and fast enough.
