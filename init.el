@@ -4146,7 +4146,7 @@ show."
             (erase-buffer)
             (insert (shell-command-to-string
                      (concat "texdoc --list --nointeract " pkg)))
-            (goto-char 1)           ; No need to use `point-min' here.
+            (goto-char 1)               ; No need to use `point-min' here.
             (save-excursion
               (while (re-search-forward
                       ;; XXX: XEmacs doesn't support character classes in
@@ -4227,15 +4227,6 @@ return `nil'."
         (delete-region (1- (cdr bounds)) (cdr bounds))
         (delete-region (car bounds) (1+ brace)))
       t))
-
-  (defun lps/TeX-recompile-all ()
-    ;; Clean everything
-    (TeX-clean t)
-    ;; Recompile everything
-    (let ((TeX-debug-bad-boxes t)
-          (TeX-debug-warnings t)
-          (TeX-error-overview-open-after-TeX-run t))
-      (TeX-command-sequence t t)))
 
   ;; Beamer-related stuff
   (defvar beamer-mode-map
@@ -4625,6 +4616,17 @@ The return value is the string as entered in the minibuffer."
                                ("mbox" "")
                                ("sbox" ""))
                              'function))
+
+  ;;; Improved compilation
+  ;; Full recompile
+  (defun lps/TeX-recompile-all ()
+    ;; Clean everything
+    (TeX-clean t)
+    ;; Recompile everything
+    (let ((TeX-debug-bad-boxes t)
+          (TeX-debug-warnings t)
+          (TeX-error-overview-open-after-TeX-run t))
+      (TeX-command-sequence t t)))
 
   ;; Improve compile region
   (defun lps/LaTeX-add-bib-to-compile-region ()

@@ -5150,7 +5150,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
               (erase-buffer)
               (insert (shell-command-to-string
                        (concat "texdoc --list --nointeract " pkg)))
-              (goto-char 1)           ; No need to use `point-min' here.
+              (goto-char 1)               ; No need to use `point-min' here.
               (save-excursion
                 (while (re-search-forward
                         ;; XXX: XEmacs doesn't support character classes in
@@ -5231,15 +5231,6 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
           (delete-region (1- (cdr bounds)) (cdr bounds))
           (delete-region (car bounds) (1+ brace)))
         t))
-
-    (defun lps/TeX-recompile-all ()
-      ;; Clean everything
-      (TeX-clean t)
-      ;; Recompile everything
-      (let ((TeX-debug-bad-boxes t)
-            (TeX-debug-warnings t)
-            (TeX-error-overview-open-after-TeX-run t))
-        (TeX-command-sequence t t)))
 
     ;; Beamer-related stuff
     <<beamer-mode>>)
@@ -5349,26 +5340,43 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
                                  ("sbox" ""))
                                'function))
 
-    ;; Improve compile region
-    (defun lps/LaTeX-add-bib-to-compile-region ()
-      (let (bibstyle bibpath)
-        (with-current-buffer TeX-region-master-buffer
-          (save-excursion
-            (goto-char (point-min))
-            (setq bibpath (reftex-locate-bibliography-files
-                           (file-name-directory (reftex-TeX-master-file))))
-            (re-search-forward "\\\\bibliographystyle{[a-z]+}" nil t)
-            (setq bibstyle (or (match-string-no-properties 0) ""))))
-        (save-excursion
-          (goto-char (point-max))
-          (re-search-backward "\\\\end{document}")
-          (insert bibstyle
-                  "\n"
-                  "\\bibliography{"
-                  (mapconcat 'identity bibpath ",")
-                  "}\n"))))
+    ;;; Improved compilation
+    <<tex-better-compilation>>)
+#+end_src
 
-    (add-hook 'TeX-region-hook 'lps/LaTeX-add-bib-to-compile-region))
+
+#+NAME: tex-better-compilation
+#+begin_src emacs-lisp :tangle no
+  ;; Full recompile
+  (defun lps/TeX-recompile-all ()
+    ;; Clean everything
+    (TeX-clean t)
+    ;; Recompile everything
+    (let ((TeX-debug-bad-boxes t)
+          (TeX-debug-warnings t)
+          (TeX-error-overview-open-after-TeX-run t))
+      (TeX-command-sequence t t)))
+
+  ;; Improve compile region
+  (defun lps/LaTeX-add-bib-to-compile-region ()
+    (let (bibstyle bibpath)
+      (with-current-buffer TeX-region-master-buffer
+        (save-excursion
+          (goto-char (point-min))
+          (setq bibpath (reftex-locate-bibliography-files
+                         (file-name-directory (reftex-TeX-master-file))))
+          (re-search-forward "\\\\bibliographystyle{[a-z]+}" nil t)
+          (setq bibstyle (or (match-string-no-properties 0) ""))))
+      (save-excursion
+        (goto-char (point-max))
+        (re-search-backward "\\\\end{document}")
+        (insert bibstyle
+                "\n"
+                "\\bibliography{"
+                (mapconcat 'identity bibpath ",")
+                "}\n"))))
+
+  (add-hook 'TeX-region-hook 'lps/LaTeX-add-bib-to-compile-region)
 #+end_src
 
 **** Folding
@@ -9182,10 +9190,8 @@ Not particularly Emacs-related, but: find a way to specify a username/password t
 
 ** PDF/LaTeX
 *** Styles
-- Add a style for =multibbl=, probably using the one built-in for =multibib=.
-- For =multibbl=:
-  - Fix compilation, some bibliography files need to be compiled "manually" files (not that easy, nowhere to cleanly hook to). The simplest (but unclear if it is enough/reliable enough ?) would be to change ~TeX-command-BibTeX~ when using the package, and to add a corresponding entry/function in ~TeX-command-list~ doing the appropriate thing.
-  - Fix completion with reftex-cite: only use "correct" biblio file.
+- For =multibbl=
+- More generally: override and improve ~TeX-command-default~, this is probably where things need to be done.
 *** Documentation
 - Improve the documentation function: jump to a manual depending on current packages (not word at point ...), /then/ look in index for word at point (using personal function ~lps/pdf-maybe-goto-index~), possibly streamlining the experience using a modified version of ~pdf-read-links-*~ if possible so that the word at point is automatically pre-selected and I only need to press enter if it is "automatically" found in the Index.
   - Also catch the potential call to latex2e documentation: open info manual instead of pdf.
@@ -9193,5 +9199,3 @@ Not particularly Emacs-related, but: find a way to specify a username/password t
 ** TRAMP
 
 - Fix dirvish and sudoedit
-- Fix dirvish (not only ? Same bug in =emacs -Q= and dired ...) and (some ?) FTP hanging forever.
-  - Seems like it came from a symlink to a file not accessible by the FTP
