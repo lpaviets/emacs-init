@@ -711,7 +711,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
   :init
   ;; Tab behaviour and whitespaces
   (setq-default indent-tabs-mode nil)
-  (setq-default tab-width 4)
+  (setq-default tab-width 8) ; otherwise, Emacs source code is ugly ...
   :custom
   (cycle-spacing-actions '(just-one-space
                            (delete-all-space inverted-arg)
@@ -4524,6 +4524,7 @@ return `nil'."
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . lps/latex-fontification)
+  (LaTeX-mode . lps/LaTeX-add-ffap)
   ;; (LaTeX-mode . lps/latex-company-setup)
   ;; (LaTeX-mode . LaTeX-math-mode)
   (LaTeX-mode . cdlatex-mode)
@@ -4539,6 +4540,13 @@ return `nil'."
     (add-to-list 'LaTeX-indent-environment-list env
                  nil 'equal))
 
+  (defun lps/LaTeX-add-ffap ()
+    (add-to-list 'ffap-string-at-point-mode-alist
+                 '(LaTeX-mode "--:\\\\$+<>@-Z_[:alpha:]~*?" "<@" "@>;.,!:")
+                 t 'equal)
+    (add-to-list 'ffap-alist
+                 '(LaTeX-mode . ffap-latex-mode)
+                 t 'equal))
 
 ;;; Fix some old AucTeX stuff that have been "merged"/superseded elsewhere
   ;; Redefine TeX-completing-read-multiple
