@@ -2207,6 +2207,13 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
   (magit-view-git-manual-method 'man)  ; can't understand what Gitman is
   (magit-module-sections-nested nil)   ; disable if many modules in a given repo
   (magit-clone-always-transient t)
+  (magit-repository-directories (list (cons (expand-file-name "~/from_source")
+                                            1)
+                                      (cons (expand-file-name "Projects" (xdg-user-dir "DOCUMENTS"))
+                                            2)
+                                      (cons (expand-file-name "~/.dotfiles") 0)
+                                      (cons user-emacs-directory 0)
+                                      (cons org-directory 0)))
   :config
   (dolist (action '(stage-all-changes unstage-all-changes))
     (add-to-list 'magit-no-confirm action))
