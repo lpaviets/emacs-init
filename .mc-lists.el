@@ -52,6 +52,7 @@
         lps/transpose-sexp-backward
         lps/transpose-sexp-forward
         lps/yank-indent
+        mark-paragraph
         mark-sexp
         mark-word
         org-beginning-of-line
@@ -87,8 +88,10 @@
         paredit-splice-sexp-killing-backward
         paredit-wrap-round
         pp-eval-last-sexp
+        query-replace
         reftex-label
         reindent-then-newline-and-indent
+        replace-string
         transpose-sexps
         undo-redo
         wdired--self-insert
