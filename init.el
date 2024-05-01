@@ -2211,9 +2211,15 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
                                             1)
                                       (cons (expand-file-name "Projects" (xdg-user-dir "DOCUMENTS"))
                                             2)
+                                      (cons (expand-file-name "These" (xdg-user-dir "DOCUMENTS"))
+                                            2)
                                       (cons (expand-file-name "~/.dotfiles") 0)
                                       (cons user-emacs-directory 0)
                                       (cons org-directory 0)))
+  (magit-section-initial-visibility-alist '((stashes . hide)
+                                            (local . hide)
+                                            (tracked . hide)
+                                            (module . hide)))
   :config
   (dolist (action '(stage-all-changes unstage-all-changes))
     (add-to-list 'magit-no-confirm action))
@@ -2230,9 +2236,11 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
     '("U" magit-submodule-update-all))
 
   ;; Insert modules /after/ the other sections
-  (add-hook 'magit-status-sections-hook 'magit-insert-modules 1)
-  (add-hook 'magit-status-sections-hook 'magit-insert-tracked-files 1)
-  (add-hook 'magit-status-sections-hook 'magit-insert-ignored-files 1))
+  (dolist (hook '(magit-insert-modules
+                  magit-insert-local-branches
+                  magit-insert-tracked-files
+                  magit-insert-ignored-files))
+    (add-hook 'magit-status-sections-hook hook 1)))
 
 (use-package transient
   :custom
