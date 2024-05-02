@@ -2207,24 +2207,24 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
   (magit-view-git-manual-method 'man)  ; can't understand what Gitman is
   (magit-module-sections-nested nil)   ; disable if many modules in a given repo
   (magit-clone-always-transient t)
-  (magit-repository-directories (list (cons (expand-file-name "~/from_source")
-                                            1)
-                                      (cons (expand-file-name "Projects" (xdg-user-dir "DOCUMENTS"))
-                                            2)
-                                      (cons (expand-file-name "These" (xdg-user-dir "DOCUMENTS"))
-                                            2)
-                                      (cons (expand-file-name "~/.dotfiles") 0)
-                                      (cons user-emacs-directory 0)
-                                      (cons org-directory 0)))
-  (magit-section-initial-visibility-alist '((stashes . hide)
-                                            (local . hide)
-                                            (tracked . hide)
-                                            (module . hide)))
+  (magit-repository-directories `((,(expand-file-name "~/from_source") . 1)
+                                  (,(expand-file-name "Projects"
+                                                      (xdg-user-dir "DOCUMENTS"))
+                                   . 2)
+                                  (,(expand-file-name "These"
+                                                      (xdg-user-dir "DOCUMENTS"))
+                                        2)
+                                  (,(expand-file-name "~/.dotfiles") . 0)
+                                  (,user-emacs-directory . 0)
+                                  (,org-directory . 0)))
   :config
   (dolist (action '(stage-all-changes unstage-all-changes))
     (add-to-list 'magit-no-confirm action))
 
   ;; From https://emacs.stackexchange.com/a/43975/31651
+  ;; Also doable using builtin stuff (toggle the "recursive" option
+  ;; and use the already-defined command for update --init) but this
+  ;; is a single button now.
   (transient-define-suffix magit-submodule-update-all ()
     "Update all submodules"
     :description "Update All     git submodule update --init --recursive"
@@ -2234,6 +2234,9 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
 
   (transient-append-suffix 'magit-submodule "u"
     '("U" magit-submodule-update-all))
+
+  (transient-append-suffix 'magit-pull "-A"
+    '("-R" "Do not recurse into submodules" "--no-recurse-submodule"))
 
   ;; Insert modules /after/ the other sections
   (dolist (hook '(magit-insert-modules
