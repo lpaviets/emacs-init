@@ -2818,7 +2818,7 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
                                      . 2)
                                     (,(expand-file-name "These"
                                                         (xdg-user-dir "DOCUMENTS"))
-                                          2)
+                                     . 2)
                                     (,(expand-file-name "~/.dotfiles") . 0)
                                     (,user-emacs-directory . 0)
                                     (,org-directory . 0)))
