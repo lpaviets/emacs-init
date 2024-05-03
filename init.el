@@ -1053,6 +1053,15 @@ one if none exists."
     (interactive "P")
     (find-file (concat "/sudo:root@localhost:" filename)))
 
+  ;; FFAP is only aware of the built-in latex-mode, so we let it know of
+  ;; the featureful version provided by AucTeX: LaTeX-mode
+  (add-to-list 'ffap-string-at-point-mode-alist
+               '(LaTeX-mode "--:\\\\$+<>@-Z_[:alpha:]~*?" "<@" "@>;.,!:")
+               t 'equal)
+  (add-to-list 'ffap-alist
+               '(LaTeX-mode . ffap-latex-mode)
+               t 'equal)
+
   (advice-add #'ffap-menu-ask :around 'lps/disable-minibuffer-completion-help))
 
 (use-package recentf
@@ -4542,7 +4551,6 @@ return `nil'."
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . lps/latex-fontification)
-  (LaTeX-mode . lps/LaTeX-add-ffap)
   ;; (LaTeX-mode . lps/latex-company-setup)
   ;; (LaTeX-mode . LaTeX-math-mode)
   (LaTeX-mode . cdlatex-mode)
@@ -4557,14 +4565,6 @@ return `nil'."
   (dolist (env '(("tikzpicture") ("scope")))
     (add-to-list 'LaTeX-indent-environment-list env
                  nil 'equal))
-
-  (defun lps/LaTeX-add-ffap ()
-    (add-to-list 'ffap-string-at-point-mode-alist
-                 '(LaTeX-mode "--:\\\\$+<>@-Z_[:alpha:]~*?" "<@" "@>;.,!:")
-                 t 'equal)
-    (add-to-list 'ffap-alist
-                 '(LaTeX-mode . ffap-latex-mode)
-                 t 'equal))
 
 ;;; Fix some old AucTeX stuff that have been "merged"/superseded elsewhere
   ;; Redefine TeX-completing-read-multiple
@@ -6217,6 +6217,7 @@ confirmation when sending a non-multipart MIME mail")
   (mu4e-main-mode . lps/auth-source-define-cache-expiry)
   ;; Improve appearance
   (mu4e-compose-mode . olivetti-mode)
+  (mu4e-view-mode . olivetti-mode)
   ;; Might avoid unwanted drafts
   (mu4e-compose-mode . lps/disable-auto-save-mode)
   :custom
