@@ -6211,7 +6211,10 @@ confirmation when sending a non-multipart MIME mail")
          (:map mu4e-view-mode-map
                ("A" . lps/mu4e-view-mime-part-action))
          (:map mu4e-headers-mode-map
-               ("<backspace>" . lps/mu4e-unmark-backward)))
+               ("<backspace>" . lps/mu4e-unmark-backward))
+         (:map mu4e-thread-mode-map
+               ([remap forward-paragraph] . lps/mu4e-thread-next)
+               ([remap backward-paragraph] . lps/mu4e-thread-prev)))
   :hook
   ;; Security issues
   (mu4e-main-mode . lps/auth-source-define-cache-expiry)
@@ -6276,6 +6279,16 @@ recent versions of mu4e."
                                            (completing-read "MIME-part: "
                                                             attachments nil t)
                                            attachments)))))))
+
+  (defun lps/mu4e-thread-next ()
+    (interactive)
+    (let ((thread-end (mu4e-thread-next)))
+      (goto-char (or thread-end (point-max)))))
+
+  (defun lps/mu4e-thread-prev ()
+    (interactive)
+    (let ((thread-beg (mu4e-thread-prev)))
+      (goto-char (or thread-beg (point-min)))))
 
 ;;; Main view and global stuff
   ;; Bookmarks
