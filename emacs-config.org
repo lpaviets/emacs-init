@@ -1361,6 +1361,15 @@ We often want to visit links. If the point is on a file path, for example, it is
       (interactive "P")
       (find-file (concat "/sudo:root@localhost:" filename)))
 
+    ;; FFAP is only aware of the built-in latex-mode, so we let it know of
+    ;; the featureful version provided by AucTeX: LaTeX-mode
+    (add-to-list 'ffap-string-at-point-mode-alist
+                 '(LaTeX-mode "--:\\\\$+<>@-Z_[:alpha:]~*?" "<@" "@>;.,!:")
+                 t 'equal)
+    (add-to-list 'ffap-alist
+                 '(LaTeX-mode . ffap-latex-mode)
+                 t 'equal)
+
     (advice-add #'ffap-menu-ask :around 'lps/disable-minibuffer-completion-help))
 
   (use-package recentf
@@ -2822,6 +2831,10 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
                                     (,(expand-file-name "~/.dotfiles") . 0)
                                     (,user-emacs-directory . 0)
                                     (,org-directory . 0)))
+    (magit-section-initial-visibility-alist '((stashes . hide)
+                                              (local . hide)
+                                              (tracked . hide)
+                                              (module . hide)))
     :config
     (dolist (action '(stage-all-changes unstage-all-changes))
       (add-to-list 'magit-no-confirm action))
@@ -2849,6 +2862,15 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
                     magit-insert-tracked-files
                     magit-insert-ignored-files))
       (add-hook 'magit-status-sections-hook hook 1)))
+#+end_src
+
+Being one of the most popular Emacs packages, there are various other packages that try to further improve it to integrate it with other Emacs tools.
+
+#+begin_src emacs-lisp
+  (use-package magit-todos
+    :after magit
+    :config
+    (magit-todos-mode 1))
 #+end_src
 
 **** Transient
@@ -5264,8 +5286,8 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
           ("C-S-f" . lps/LaTeX-next-math))
     :hook
     (LaTeX-mode . outline-minor-mode)
+    (LaTeX-mode . subword-mode)
     (LaTeX-mode . lps/latex-fontification)
-    (LaTeX-mode . lps/LaTeX-add-ffap)
     ;; (LaTeX-mode . lps/latex-company-setup)
     ;; (LaTeX-mode . LaTeX-math-mode)
     (LaTeX-mode . cdlatex-mode)
@@ -5280,14 +5302,6 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
     (dolist (env '(("tikzpicture") ("scope")))
       (add-to-list 'LaTeX-indent-environment-list env
                    nil 'equal))
-
-    (defun lps/LaTeX-add-ffap ()
-      (add-to-list 'ffap-string-at-point-mode-alist
-                   '(LaTeX-mode "--:\\\\$+<>@-Z_[:alpha:]~*?" "<@" "@>;.,!:")
-                   t 'equal)
-      (add-to-list 'ffap-alist
-                   '(LaTeX-mode . ffap-latex-mode)
-                   t 'equal))
 
   ;;; Fix some old AucTeX stuff that have been "merged"/superseded elsewhere
     ;; Redefine TeX-completing-read-multiple
@@ -7527,6 +7541,7 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     (mu4e-main-mode . lps/auth-source-define-cache-expiry)
     ;; Improve appearance
     (mu4e-compose-mode . olivetti-mode)
+    (mu4e-view-mode . olivetti-mode)
     ;; Might avoid unwanted drafts
     (mu4e-compose-mode . lps/disable-auto-save-mode)
     :custom
