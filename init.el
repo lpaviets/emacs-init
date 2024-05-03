@@ -2226,6 +2226,10 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
                                   (,(expand-file-name "~/.dotfiles") . 0)
                                   (,user-emacs-directory . 0)
                                   (,org-directory . 0)))
+  (magit-section-initial-visibility-alist '((stashes . hide)
+                                            (local . hide)
+                                            (tracked . hide)
+                                            (module . hide)))
   :config
   (dolist (action '(stage-all-changes unstage-all-changes))
     (add-to-list 'magit-no-confirm action))
@@ -2253,6 +2257,11 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
                   magit-insert-tracked-files
                   magit-insert-ignored-files))
     (add-hook 'magit-status-sections-hook hook 1)))
+
+(use-package magit-todos
+  :after magit
+  :config
+  (magit-todos-mode 1))
 
 (use-package transient
   :custom
@@ -4550,6 +4559,7 @@ return `nil'."
         ("C-S-f" . lps/LaTeX-next-math))
   :hook
   (LaTeX-mode . outline-minor-mode)
+  (LaTeX-mode . subword-mode)
   (LaTeX-mode . lps/latex-fontification)
   ;; (LaTeX-mode . lps/latex-company-setup)
   ;; (LaTeX-mode . LaTeX-math-mode)

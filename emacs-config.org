@@ -2831,6 +2831,10 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
                                     (,(expand-file-name "~/.dotfiles") . 0)
                                     (,user-emacs-directory . 0)
                                     (,org-directory . 0)))
+    (magit-section-initial-visibility-alist '((stashes . hide)
+                                              (local . hide)
+                                              (tracked . hide)
+                                              (module . hide)))
     :config
     (dolist (action '(stage-all-changes unstage-all-changes))
       (add-to-list 'magit-no-confirm action))
@@ -2858,6 +2862,15 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
                     magit-insert-tracked-files
                     magit-insert-ignored-files))
       (add-hook 'magit-status-sections-hook hook 1)))
+#+end_src
+
+Being one of the most popular Emacs packages, there are various other packages that try to further improve it to integrate it with other Emacs tools.
+
+#+begin_src emacs-lisp
+  (use-package magit-todos
+    :after magit
+    :config
+    (magit-todos-mode 1))
 #+end_src
 
 **** Transient
@@ -5273,6 +5286,7 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
           ("C-S-f" . lps/LaTeX-next-math))
     :hook
     (LaTeX-mode . outline-minor-mode)
+    (LaTeX-mode . subword-mode)
     (LaTeX-mode . lps/latex-fontification)
     ;; (LaTeX-mode . lps/latex-company-setup)
     ;; (LaTeX-mode . LaTeX-math-mode)

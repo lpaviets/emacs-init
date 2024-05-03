@@ -4,15 +4,15 @@
    (TeX-add-to-alist 'LaTeX-provided-package-options
                      '(("fontenc" "T1") ("inputenc" "utf8")))
    (add-to-list 'LaTeX-verbatim-environments-local "lstlisting")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "path")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "url")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "nolinkurl")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "hyperbaseurl")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "hyperimage")
-   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "href")
    (add-to-list 'LaTeX-verbatim-macros-with-braces-local "lstinline")
-   (add-to-list 'LaTeX-verbatim-macros-with-delims-local "path")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "href")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "hyperimage")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "hyperbaseurl")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "nolinkurl")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "url")
+   (add-to-list 'LaTeX-verbatim-macros-with-braces-local "path")
    (add-to-list 'LaTeX-verbatim-macros-with-delims-local "lstinline")
+   (add-to-list 'LaTeX-verbatim-macros-with-delims-local "path")
    (TeX-run-style-hooks
     "fontenc"
     "inputenc"
@@ -43,6 +43,7 @@
     '("tileUR" ["argument"] 0)
     '("tileUL" ["argument"] 0)
     '("tileUP" ["argument"] 0)
+    '("wangtile" ["argument"] 6)
     '("shiftlang" ["argument"] 1)
     '("zeropoint" ["argument"] 0)
     '("machinenohalt" ["argument"] 1)
@@ -74,6 +75,7 @@
     '("norm" 1)
     '("intervalint" 1)
     '("interval" 1)
+    '("domain" 1)
     '("vect" 1)
     '("cylinder" 1)
     '("defn" 1)
@@ -83,6 +85,7 @@
     "isomorphic"
     "surjection"
     "injection"
+    "subsetf"
     "subpattern"
     "subgroup"
     "normalsg"
@@ -91,13 +94,18 @@
    (LaTeX-add-environments
     '("claimproof" LaTeX-env-args ["argument"] 0)
     '("proof" LaTeX-env-args ["argument"] 0)
-    '("subproof" LaTeX-env-args ["argument"] 0)
+    '("subproof" LaTeX-env-args ["argument"] 0))
+   (LaTeX-add-amsthm-newtheorems
     "corollary"
     "lemma"
     "theorem"
     "definition"
+    "example"
+    "examples"
     "conjecture"
     "proposition"
+    "remark"
+    "notation"
     "observation"
     "claim"
     "question"))
