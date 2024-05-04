@@ -8208,7 +8208,8 @@ Emacs is, obviously, quite good at dealing with text. Hence, it is natural to wo
   (use-package olivetti
     :defer t
     :custom
-    (olivetti-body-width 90))
+    (olivetti-body-width 0.4)
+    (olivetti-minimum-body-width 80))
 #+end_src
 
 In fact, we can even read EPUB files with Emacs.

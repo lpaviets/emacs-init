@@ -6831,7 +6831,8 @@ recent versions of mu4e."
 (use-package olivetti
   :defer t
   :custom
-  (olivetti-body-width 90))
+  (olivetti-body-width 0.4)
+  (olivetti-minimum-body-width 80))
 
 (use-package nov
   :defer t
