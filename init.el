@@ -284,13 +284,13 @@ fboundp."
 
 (use-package desktop
   :init
+  ;; Only use desktop-save-mode automatically in daemon mode
+  ;; Otherwise, just manually restore/save stuff
   (add-hook 'server-after-make-frame-hook
             (lambda ()
               (let ((desktop-load-locked-desktop t))
                 (desktop-save-mode 1)
                 (desktop-read (car desktop-path)))))
-  (unless (daemonp)
-    (desktop-save-mode 1))
   :custom
   (desktop-restore-frames nil) ;; Otherwise buggy with daemon-mode
   (desktop-path (list (locate-user-emacs-file "desktop-saves/")))
@@ -1008,7 +1008,6 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
   (org-shiftleft-final . windmove-left)
   (org-shiftdown-final . windmove-down)
   (org-shiftright-final . windmove-right)
-
   :init
   (windmove-default-keybindings 'shift)
   (windmove-swap-states-default-keybindings '(ctrl shift))
@@ -1183,19 +1182,26 @@ buffer name already resembles a file name"
 
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
+  :defer t
   :bind
+  (:map global-map
+        ([remap describe-function] . helpful-callable)
+        ([remap describe-variable] . helpful-variable)
+        ([remap describe-key] . helpful-key))
   (:map help-map
-        (";" . helpful-at-point))
+        (";" . helpful-at-point)
+        ([remap describe-function] . helpful-callable)
+        ([remap describe-variable] . helpful-variable)
+        ([remap describe-key] . helpful-key))
   (:map helpful-mode-map
         ("i" . lps/helpful-manual)
         ("s" . lps/helpful-source))
-  :init
-  (require 'helpful) ;; somewhat hacky, would like to autoload ...
+  :config
   (defalias 'describe-function 'helpful-callable)
   (defalias 'describe-variable 'helpful-variable)
   (defalias 'describe-symbol 'helpful-symbol)
   (defalias 'describe-key 'helpful-key)
-  :config
+
   ;; Taken from `helpful--manual'
   (defun lps/helpful-manual ()
     (interactive)
@@ -1558,9 +1564,7 @@ buffer name already resembles a file name"
 
 ;; Company. Auto-completion package
 (use-package company
-  :diminish
-  :init
-  (global-company-mode t)
+  :defer t
   :hook
   (prog-mode . lps/company-default-backends-prog)
   (text-mode . lps/company-default-backends-text)
@@ -1596,6 +1600,8 @@ buffer name already resembles a file name"
   (company-search-regexp-function 'company-search-words-regexp)
 
   :config
+  (global-company-mode t) ;; Should be loaded when pressing <TAB> for the first time
+
   ;; Don't use orderless for company
   (advice-ensure-bindings company--perform ((completion-styles '(basic
                                                                  partial-completion
@@ -1631,8 +1637,7 @@ buffer name already resembles a file name"
                   `(lambda () (interactive) (company-complete-number ,(car key-char)))))))
 
 (use-package company-box
-  :after company
-  :diminish
+  :defer t
   :hook (company-mode . company-box-mode)
   :custom
   (company-box-show-single-candidate 'never)
@@ -1643,7 +1648,7 @@ buffer name already resembles a file name"
                                                     :foreground "white")))))
 
 (use-package company-quickhelp
-  :after company
+  :defer t
   :hook (company-mode . company-quickhelp-mode)
   :custom
   (company-quickhelp-delay 0.2)
@@ -3019,9 +3024,11 @@ call the associated function interactively. Otherwise, call the
   :after sly)
 
 (use-package sly-repl-ansi-color
-  :config
+  :after sly
+  :init
   (add-to-list 'sly-contribs 'sly-repl-ansi-color)
 
+  :config
   (defun lps/sly-colour-lisp-output (string)
     (with-temp-buffer
       (insert string)
@@ -6094,7 +6101,8 @@ The return string is always 6 characters wide."
   (:map lps/system-tools-map
         ("p l" . list-processes)))
 
-(use-package systemd)
+(use-package systemd
+  :defer t)
 
 (use-package transient-extras-lp
   :after pdf-tools
@@ -7737,5 +7745,6 @@ instance, it will be killed. Options specified in
       t)))
 
 (use-package subed
+  :defer t
   :custom
   (subed-auto-play-media nil))
