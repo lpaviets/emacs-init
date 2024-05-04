@@ -94,7 +94,7 @@ Should be non-nil to only allow built-in packages.")
   ;; all the packages that you are missing
   (use-package-always-ensure nil)
   ;; Uncomment the folllowing line to have a detailed startup log
-  (use-package-verbose t)
+  (use-package-verbose nil)
   ;; (use-package-compute-statistics t)
   ;; (use-package-always-defer t)
   :config
@@ -218,6 +218,16 @@ fboundp."
 
        (advice-add ',old-name :override ',name))))
 
+(defun add-hook-once (hook function &optional depth local)
+  (let (fun-add fun-remove)
+    (setf fun-add (lambda ()
+                    (unwind-protect
+                        (funcall function)
+                      (funcall fun-remove))))
+    (setf fun-remove (lambda ()
+                       (remove-hook hook fun-add)))
+    (add-hook hook fun-add depth local)))
+
 (use-package emacs
   :ensure nil
   :init
@@ -307,7 +317,7 @@ fboundp."
   (save-place-file (locate-user-emacs-file ".saveplaces"))
   (save-place-limit 1000)               ; better be safe
   :init
-  (save-place-mode 1))
+  (add-hook-once 'find-file-hook 'save-place-mode))
 
 (use-package server
   :custom
@@ -572,6 +582,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
 
 (use-package doom-modeline
   :after all-the-icons
+  :hook (after-init . doom-modeline-mode)
   :custom
   (doom-modeline-height 15)
   (doom-modeline-project-detection 'project)
@@ -586,8 +597,6 @@ the mode-line and the usual non-full-screen Emacs are restored."
                                  (cons (remove-pos-from-symbol (car it)) (cdr it)))))
       (setq doom-modeline-fn-alist (mapcar remove-pos-from-seg doom-modeline-fn-alist)
             doom-modeline-var-alist (mapcar remove-pos-from-seg doom-modeline-var-alist))))
-
-  (doom-modeline-mode 1)
 
   ;; Hide encoding in modeline when UTF-8(-unix)
   (defun lps/hide-utf-8-encoding ()
