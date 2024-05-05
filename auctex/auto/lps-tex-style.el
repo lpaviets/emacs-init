@@ -43,7 +43,8 @@
     '("tileUR" ["argument"] 0)
     '("tileUL" ["argument"] 0)
     '("tileUP" ["argument"] 0)
-    '("wangtile" ["argument"] 6)
+    '("WangTile" ["argument"] 6)
+    '("WangTileNeutral" ["argument"] 6)
     '("shiftlang" ["argument"] 1)
     '("zeropoint" ["argument"] 0)
     '("machinenohalt" ["argument"] 1)
@@ -92,8 +93,6 @@
     "argmax"
     "argmin")
    (LaTeX-add-environments
-    '("claimproof" LaTeX-env-args ["argument"] 0)
-    '("proof" LaTeX-env-args ["argument"] 0)
     '("subproof" LaTeX-env-args ["argument"] 0))
    (LaTeX-add-amsthm-newtheorems
     "corollary"
