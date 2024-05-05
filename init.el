@@ -94,7 +94,7 @@ Should be non-nil to only allow built-in packages.")
   ;; all the packages that you are missing
   (use-package-always-ensure nil)
   ;; Uncomment the folllowing line to have a detailed startup log
-  (use-package-verbose nil)
+  ;; (use-package-verbose t)
   ;; (use-package-compute-statistics t)
   ;; (use-package-always-defer t)
   :config
@@ -250,17 +250,24 @@ fboundp."
 (system-case
  (gnu/linux
   (use-package password-cache
+    :defer t
     :custom
     (password-cache t)
     (password-cache-expiry 300))
 
   (use-package pinentry
+    :defer t
+    :after epa
     :custom
     (epg-pinentry-mode 'loopback)
+    ;; Try to delay after epa ?
+    ;; :init
+    ;; (add-hook-once 'find-file-hook 'pinentry-start)
     :config
     (pinentry-start))
 
   (use-package auth-source
+    :defer t
     :custom
     (auth-sources (remove "~/.authinfo" auth-sources))
     (auth-source-cache-expiry 86400) ;; All day
@@ -313,11 +320,14 @@ fboundp."
 
 (use-package saveplace
   :ensure nil
+  :defer t
   :custom
   (save-place-file (locate-user-emacs-file ".saveplaces"))
   (save-place-limit 1000)               ; better be safe
   :init
-  (add-hook-once 'find-file-hook 'save-place-mode))
+  (add-hook-once 'find-file-hook (lambda ()
+                                   (save-place-mode 1)
+                                   (save-place-find-file-hook))))
 
 (use-package server
   :custom
@@ -408,11 +418,17 @@ fboundp."
   (setq visible-bell nil)
 
   ;; Menus
-  (scroll-bar-mode -1)
-  (tool-bar-mode -1)
+  ;; Doom inspired: don't call the functions directly
+  (push '(menu-bar-lines . 0)   default-frame-alist)
+  (push '(tool-bar-lines . 0)   default-frame-alist)
+  (push '(vertical-scroll-bars) default-frame-alist)
+
+  (setq scroll-bar-mode nil
+        tool-bar-mode nil
+        menu-bar-mode nil)
+
   (tooltip-mode -1)
-  (set-fringe-mode 10)
-  (menu-bar-mode -1))
+  (set-fringe-mode 10))
 
 (use-package emacs
   :init
@@ -458,8 +474,8 @@ fboundp."
   (load-theme 'deeper-blue))
 
 (use-package emacs
-  :after kaolin-themes
   :init
+  (require 'kaolin-themes)
   (defvar lps/default-theme 'kaolin-ocean)
   (defvar lps/default-light-theme 'modus-operandi)
   (defvar lps/live-presentation-p nil)
@@ -565,23 +581,9 @@ the mode-line and the usual non-full-screen Emacs are restored."
 
 ;; First time used: run M-x all-the-icons-install-fonts
 (use-package all-the-icons
-  :config
-  ;; Avoid unnecessary warnings
-  (declare-function all-the-icons-faicon 'all-the-icons)
-  (declare-function all-the-icons-fileicon 'all-the-icons)
-  (declare-function all-the-icons-material 'all-the-icons)
-  (declare-function all-the-icons-octicon 'all-the-icons)
-
-  ;;define an icon function with all-the-icons-faicon
-  ;;to use filecon, etc, define same function with icon set
-  (defun with-faicon (icon str &rest height v-adjust)
-    (s-concat (all-the-icons-faicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str))
-  ;; filecon
-  (defun with-fileicon (icon str &rest height v-adjust)
-    (s-concat (all-the-icons-fileicon icon :v-adjust (or v-adjust 0) :height (or height 1)) " " str)))
+  :defer t)
 
 (use-package doom-modeline
-  :after all-the-icons
   :hook (after-init . doom-modeline-mode)
   :custom
   (doom-modeline-height 15)
@@ -629,6 +631,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
 (use-package battery
   :ensure nil
   :only-built-in t
+  :disabled t
   :config
   (when (and battery-status-function
               (let ((status (battery-format "%B" (funcall battery-status-function))))
@@ -647,7 +650,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
 
 (use-package beacon
   :init
-  (beacon-mode 1)
+  (add-hook-once 'post-command-hook 'beacon-mode)
   :custom
   (beacon-blink-when-point-moves-vertically 30)
   (beacon-size 20))
@@ -735,15 +738,12 @@ the mode-line and the usual non-full-screen Emacs are restored."
   :ensure nil
   :only-built-in nil
   :after pretty-hydra
+  :defer t
   :bind (:map lps/all-hydras-map
               ("a" . hydra-appearance/body))
   :config
-  ;; define a title function
-  (defvar appearance-title (with-faicon "desktop" "Appearance"))
-
   ;; generate hydra
-
-  (pretty-hydra-define hydra-appearance (:title appearance-title
+  (pretty-hydra-define hydra-appearance (:title "Appearance"
                                                 :quit-key "q")
     ("Theme"
      (
@@ -817,11 +817,10 @@ It might be buggy with some backend, so use at your own risk"
   (icomplete-vertical-mode 1))
 
 (use-package vertico
-  :ensure t
   :custom
   (vertico-cycle t)
   :init
-  (vertico-mode)
+  (add-hook-once 'pre-command-hook 'vertico-mode)
   :bind
   (:map vertico-map
         ("<C-backspace>" . lps/minibuffer-go-up-directory))
@@ -1032,7 +1031,7 @@ buffer in current window."
   :only-built-in t
   :bind ("C-c C-f" . ffap-menu)
   :init
-  (ffap-bindings)
+  (add-hook-once 'pre-command-hook 'ffap-bindings)
   :custom
   (ffap-pass-wildcards-to-dired t)
   :config
@@ -1055,8 +1054,8 @@ one if none exists."
 
 (use-package recentf
   :ensure nil
-  :init
-  (recentf-mode 1)
+  :hook
+  (vertico-mode . recentf-mode)
   :custom
   (recentf-max-saved-items 50)
   :config
@@ -1259,18 +1258,20 @@ buffer name already resembles a file name"
   (set-face-attribute 'info-colors-lisp-code-block nil :weight 'bold))
 
 (use-package info-rename-buffer
-  :init
-  (info-rename-buffer-mode 1))
+  :defer t
+  :hook
+  (Info-mode . info-rename-buffer-mode))
 
 ;; which-key. Shows all the available key sequences after a prefix
 (use-package which-key
+  :defer t
   :init
-  (which-key-mode 1)
-  (which-key-setup-side-window-bottom) ;; default
-  :diminish
+  (add-hook-once 'pre-command-hook 'which-key-mode)
   :custom
   (which-key-idle-delay 1)
-  (which-key-idle-secondary-delay 0.05))
+  (which-key-idle-secondary-delay 0.05)
+  :config
+  (which-key-setup-side-window-bottom))
 
 (use-package help-at-pt
   :only-built-in t
@@ -1282,7 +1283,7 @@ buffer name already resembles a file name"
 (use-package emacs
   :init
   (ensure-emacs-version "28.1"
-    (context-menu-mode 1)))
+    (add-hook-once 'pre-command-hook 'context-menu-mode)))
 
 ;; Don't disable any command
 ;; BE CAREFUL
@@ -1294,19 +1295,20 @@ buffer name already resembles a file name"
   :custom
   (prescient-history-length 50)
   (prescient-sort-length-enable nil)
-  :config
-  (prescient-persist-mode 1))
+  :hook (company-mode . prescient-persist-mode))
 
 (use-package company-prescient
   :after company
-  :config
-  (company-prescient-mode 1))
+  :hook (company-mode . company-prescient-mode))
 
 (use-package savehist
   :ensure nil
   :only-built-in t
+  :defer t
   :init
-  (savehist-mode))
+  (add-hook-once 'minibuffer-setup-hook (lambda ()
+                                          (savehist-mode 1)
+                                          (savehist-minibuffer-hook))))
 
 (use-package keycast
   :defer t
@@ -1555,9 +1557,6 @@ buffer name already resembles a file name"
 ;; Company. Auto-completion package
 (use-package company
   :defer t
-  :hook
-  (prog-mode . lps/company-default-backends-prog)
-  (text-mode . lps/company-default-backends-text)
   :bind
   ("TAB" . company-indent-or-complete-common)
   (:map company-active-map
@@ -1588,6 +1587,12 @@ buffer name already resembles a file name"
   (company-tooltip-limit 20)
   (company-require-match nil)
   (company-search-regexp-function 'company-search-words-regexp)
+  (company-backends '((company-capf company-files company-dabbrev)
+                      (company-dabbrev-code
+                       company-gtags company-etags
+                       company-keywords
+                       company-clang)
+                      company-oddmuse))
 
   :config
   (global-company-mode t) ;; Should be loaded when pressing <TAB> for the first time
@@ -1596,19 +1601,6 @@ buffer name already resembles a file name"
   (advice-ensure-bindings company--perform ((completion-styles '(basic
                                                                  partial-completion
                                                                  emacs22))))
-
-  ;; Use our personal default backends
-  (defun lps/company-default-backends-prog ()
-    (setq-local company-backends '((company-capf company-files company-dabbrev)
-                                   (company-dabbrev-code
-                                    company-gtags company-etags
-                                    company-keywords
-                                    company-clang)
-                                   company-oddmuse)))
-
-  (defun lps/company-default-backends-text ()
-    (setq-local company-backends '((company-capf company-files)
-                                   company-oddmuse)))
 
   ;; AZERTY-friendly company number selection
   ;; Might lead to company-box being a bit broken ? Long function names are cut-off
@@ -2174,12 +2166,15 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
                 (file-relative-name file))))))
 
 (use-package project
+  :defer t
   :custom
   ;; Difficulties with symlinks, which I use a lot
   (project-vc-merge-submodules nil))
 
 (use-package projection
-  :hook (after-init . global-projection-hook-mode)
+  :defer t
+  :init
+  (add-hook-once 'find-file-hook 'global-projection-hook-mode)
   :bind-keymap
   ("C-x P" . projection-map)
   :bind
@@ -2192,7 +2187,9 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
     (ibuffer nil (format "*%s Buffers*" (project-name project))
              (list (cons 'projection-root project)))))
 
-(use-package projection-multi)
+(use-package projection-multi
+  :after projection)
+
 (use-package projection-multi-embark
   :after (embark projection-multi)
   :config
@@ -2259,6 +2256,7 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
   (magit-todos-mode 1))
 
 (use-package transient
+  :defer t
   :custom
   (transient-highlight-higher-levels t)
   (transient-default-level 7)
@@ -2459,7 +2457,6 @@ Does not insert a space before the inserted opening parenthesis"
 
 ;;YASnippet
 (use-package yasnippet
-  :diminish
   :init
   (defvar lps/snippets-dir-root (expand-file-name "snippets" user-emacs-directory))
   :custom
@@ -4090,11 +4087,9 @@ pre-filled with WORD."
   (define-key pdf-view-mode-map (kbd "C-c e") nil))
 
 ;; AUCTeX initialization
-(use-package tex-site
-  :ensure auctex) ;; Don't defer, buggy ?
-
 (use-package tex
   :ensure auctex
+  :mode ("\\.tex\\'" . LaTeX-mode)
   :defer t
   :bind
   (:map TeX-mode-map
