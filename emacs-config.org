@@ -5,21 +5,42 @@
 
 * Organization of this file
 
-This file contains the entirety of my Emacs configuration, written in a Org Mode document that gets tangled to a single =init.el= file. It was largely based on [[https://github.com/daviwil/emacs-from-scratch/][Emacs From Scratch]] originally, but has somewhat evolved past it.
+This file contains the entirety of my Emacs configuration, written in a Org Mode
+document that gets tangled to a single =init.el= file. It was largely based on
+[[https://github.com/daviwil/emacs-from-scratch/][Emacs From Scratch]] originally, but has somewhat evolved past it.
 
-Because I use a version system on those files, I don't mind conflicts with the currently loaded configuration file, and so the the generated file is actually called  =init.el=. By default, Emacs reads (and loads) file such as "~/.emacs" or "~/.emacs.d/init.el" at startup, so the output of =org-babel-tangle= is automatically replacing the previous configuration file. If you want to avoid those conflicts, you might need to rename it, and manually replace your current =init.el= with whatever file has been produced by tangling this configuration file.
+Because I use a version system on those files, I don't mind conflicts with the
+currently loaded configuration file, and so the the generated file is actually
+called =init.el=. By default, Emacs reads (and loads) file such as "~/.emacs" or
+"~/.emacs.d/init.el" at startup, so the output of =org-babel-tangle= is
+automatically replacing the previous configuration file. If you want to avoid
+those conflicts, you might need to rename it, and manually replace your current
+=init.el= with whatever file has been produced by tangling this configuration
+file.
 
-To modify the name of the output, you can change it in the second line of this document, after the =:tangle= keyword. Note that neither this file not the tangled file are hardcoded in the Elisp code, and I use =user-emacs-directory= everywhere where one might expect an hardcoded location. it in this file. Indeed, you might want to have your configuration in a different location than =~/.emacs.d=, and as such, nothing is immediately broken !
+To modify the name of the output, you can change it in the second line of this
+document, after the =:tangle= keyword. Note that neither this file not the
+tangled file are hardcoded in the Elisp code, and I use =user-emacs-directory=
+everywhere where one might expect an hardcoded location. it in this file.
+Indeed, you might want to have your configuration in a different location than
+=~/.emacs.d=, and as such, nothing is immediately broken !
 
-Some commands have to be run manually whenever the generated =init.el= file is loaded for the first time, but they are always highlighted: whenever this is the case, the particular situation is explicitly signaled by the presence of the *MANUAL* keyword in front of those commands, and the necessary steps to ensure that everything is working as intended are detailed afterwards.
+Some commands have to be run manually whenever the generated =init.el= file is
+loaded for the first time, but they are always highlighted: whenever this is the
+case, the particular situation is explicitly signaled by the presence of the
+*MANUAL* keyword in front of those commands, and the necessary steps to ensure
+that everything is working as intended are detailed afterwards.
 
-If the =init.el= file cannot be properly loaded at startup, try to search for such keywords in this file and execute the corresponding commands.
+If the =init.el= file cannot be properly loaded at startup, try to search for
+such keywords in this file and execute the corresponding commands.
 
 * Initialization
 ** Lexical Binding
 
-This is quite a complex topic. More info on the Emacs side can be found [[info:elisp#Lexical Binding][here]], and more generally [[https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope_vs._dynamic_scope][on Wikipedia]].
-This could arguably be the default. Modern code should work fine with it, and code that /doesn't/ work with lexical binding, expecting dynamic binding everywhere, should be refactored.
+This is quite a complex topic. More info on the Emacs side can be found [[info:elisp#Lexical Binding][here]],
+and more generally [[https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexical_scope_vs._dynamic_scope][on Wikipedia]]. This could arguably be the default. Modern code
+should work fine with it, and code that /doesn't/ work with lexical binding,
+expecting dynamic binding everywhere, should be refactored.
 
 #+begin_src emacs-lisp
   ;; -*- lexical-binding: t -*-
@@ -27,14 +48,18 @@ This could arguably be the default. Modern code should work fine with it, and co
 
 ** Emacs performance
 
-First, we set things up so that Emacs starts /fast/ (and also with the frame maximized)
+First, we set things up so that Emacs starts /fast/ (and also with the frame
+maximized)
 
 #+begin_src emacs-lisp
   (set-frame-parameter nil 'fullscreen 'maximized)
   (setq gc-cons-threshold 100000000) ; 1e8 = 100 MB (default: 800kB)
 #+end_src
 
-Another thing that might be of interest is to know how long it took for Emacs to start. Although there is already a built-in function to do this (try to call =emacs-init-time= in any Emacs session), we want it to be automatically displayed anytime we start Emacs
+Another thing that might be of interest is to know how long it took for Emacs to
+start. Although there is already a built-in function to do this (try to call
+=emacs-init-time= in any Emacs session), we want it to be automatically
+displayed anytime we start Emacs
 
 #+begin_src emacs-lisp
   (defun lps/display-startup-time ()
@@ -62,11 +87,16 @@ Another thing that might be of interest is to know how long it took for Emacs to
 ** Configuration management
 *** Packages
 
-Then, we need to configure how we will install packages. We use another package manager that the default one: =use-package=.
+Then, we need to configure how we will install packages. We use another package
+manager that the default one: =use-package=.
 
-It makes both installation and customization easier, and the code is also simpler to read.
+It makes both installation and customization easier, and the code is also
+simpler to read.
 
-The first thing we do is check for a CLI argument, telling us that we should only use builtin packages; this might be useful to start Emacs in a "nice" state for us, e.g. during a fresh install or when debugging, while not loading any packages.
+The first thing we do is check for a CLI argument, telling us that we should
+only use builtin packages; this might be useful to start Emacs in a "nice" state
+for us, e.g. during a fresh install or when debugging, while not loading any
+packages.
 
 #+begin_src emacs-lisp
   (defvar lps/only-built-in-p nil
@@ -81,7 +111,9 @@ The first thing we do is check for a CLI argument, telling us that we should onl
     (setq lps/only-built-in-p t))
 #+end_src
 
-We now setup the built-in package manager, adding some online repositories to its available sources, and some personal extra packages that are too big to fit within this configuration file:
+We now setup the built-in package manager, adding some online repositories to
+its available sources, and some personal extra packages that are too big to fit
+within this configuration file:
 
 #+begin_src emacs-lisp
   ;; Initialize package sources
@@ -134,8 +166,14 @@ We now setup the built-in package manager, adding some online repositories to it
     (require pkg))
 #+end_src
 
-*MANUAL* You might want to configure =use-package= differently, as it is the tool used everywhere else in this configuration file to install and setup other packages. For example, the line
-=(setq use-package-always-ensure t)= is used to install all the packages mentioned in this file automatically if you do not already have them. Depending on your environment, you might want to consider another, more appropriate behaviour (/e.g./  if you lack space, time, if you use another OS, if you are already compiling some of those packages by yourself, and so on).
+*MANUAL* You might want to configure =use-package= differently, as it is the
+tool used everywhere else in this configuration file to install and setup other
+packages. For example, the line =(setq use-package-always-ensure t)= is used to
+install all the packages mentioned in this file automatically if you do not
+already have them. Depending on your environment, you might want to consider
+another, more appropriate behaviour (/e.g./ if you lack space, time, if you use
+another OS, if you are already compiling some of those packages by yourself, and
+so on).
 
 #+begin_src emacs-lisp
   (require 'use-package)
@@ -183,11 +221,14 @@ In order to benchmark the package loading, we use [[https://github.com/dholm/ben
     (add-hook 'after-init-hook 'benchmark-init/deactivate))
 #+end_src
 
-Because we will customize bindings, functions and so on, some variables are defined there so they are available in the following sections of this file.
+Because we will customize bindings, functions and so on, some variables are
+defined there so they are available in the following sections of this file.
 
 *** Some macros and utilities
 
-Although ~use-package~ is extensible and we could add some keywords to it, it is rather cumbersome and I prefer to define personal macros to deal with various operating systems and versions.
+Although ~use-package~ is extensible and we could add some keywords to it, it is
+rather cumbersome and I prefer to define personal macros to deal with various
+operating systems and versions.
 
 #+begin_src emacs-lisp
   (defmacro system-case (&rest cases)
@@ -327,9 +368,15 @@ We finally add a few bindings to manage our packages more efficiently.
 
 Emacs is not very secure as such. We try to fix this as best as we can.
 
-We explicitly fix how long passwords should be cached. A clever thing could be to distinguish between different environments, and use different values for /e.g./ the computer you use at work vs other computers. Another idea could be to ask the user if he wants his password to be cached for the current session, and if so, for how long.
+We explicitly fix how long passwords should be cached. A clever thing could be
+to distinguish between different environments, and use different values for
+/e.g./ the computer you use at work vs other computers. Another idea could be to
+ask the user if he wants his password to be cached for the current session, and
+if so, for how long.
 
-*MANUAL* In order to allow GPG passwords to be asked in the minibuffer, you need to add the line =allow-emacs-pinentry= to your =gpg-agent.conf= file, usually located in the =~/.gnupg/= directory on Linux.
+*MANUAL* In order to allow GPG passwords to be asked in the minibuffer, you need
+to add the line =allow-emacs-pinentry= to your =gpg-agent.conf= file, usually
+located in the =~/.gnupg/= directory on Linux.
 
 #+begin_src emacs-lisp
   (system-case
@@ -374,7 +421,9 @@ We explicitly fix how long passwords should be cached. A clever thing could be t
 
 ** Quick restart
 
-In order to test things more rapidly and to be able to apply configuration changes without ever leaving Emacs, we also install another package to restart Emacs with a simple command.
+In order to test things more rapidly and to be able to apply configuration
+changes without ever leaving Emacs, we also install another package to restart
+Emacs with a simple command.
 
 #+begin_src emacs-lisp
   (ensure-emacs-version 29
@@ -386,7 +435,12 @@ In order to test things more rapidly and to be able to apply configuration chang
 
 ** Saving the session
 
-Emacs is generally meant to be started once and stay up for long period of times. Even when using "emacs server" with =emacs --daemon= and emacsclient, although you can quickly create emacs frames and frequently quit them, the actual server is a long-running process. Nevertheless, you sometimes have to close it for whatever reason, and at those times it is nice if you can immediately start working from where you were the last time you quitted Emacs !
+Emacs is generally meant to be started once and stay up for long period of
+times. Even when using "emacs server" with =emacs --daemon= and emacsclient,
+although you can quickly create emacs frames and frequently quit them, the
+actual server is a long-running process. Nevertheless, you sometimes have to
+close it for whatever reason, and at those times it is nice if you can
+immediately start working from where you were the last time you quitted Emacs !
 
 #+begin_src emacs-lisp
   (use-package desktop
@@ -409,7 +463,9 @@ Emacs is generally meant to be started once and stay up for long period of times
     (desktop-restore-forces-onscreen nil))
 #+end_src
 
-We can also remember more information than "which files were opened"; the built-in ~save-place-mode~ remembers /where/ your point was the list time you opened a file.
+We can also remember more information than "which files were opened"; the
+built-in ~save-place-mode~ remembers /where/ your point was the list time you
+opened a file.
 
 #+begin_src emacs-lisp
   (use-package saveplace
@@ -423,8 +479,11 @@ We can also remember more information than "which files were opened"; the built-
 
 ** Server mode and emacsclient
 
-For various reasons, we might want to use Emacs in "server-mode": although it is not completely correct, the idea is that we start a daemon running "the real Emacs process" as a server, and we will simply connect clients to it to work with.
-There are small differences with the way Emacs normally works, so we deal with them in this section.
+For various reasons, we might want to use Emacs in "server-mode": although it is
+not completely correct, the idea is that we start a daemon running "the real
+Emacs process" as a server, and we will simply connect clients to it to work
+with. There are small differences with the way Emacs normally works, so we deal
+with them in this section.
 
 #+begin_src emacs-lisp
   (use-package server
@@ -434,7 +493,8 @@ There are small differences with the way Emacs normally works, so we deal with t
 
 ** Custom file
 
-We do not want Emacs to mess with our own =init.el= file, and so we tell it where to store all its precious customizations
+We do not want Emacs to mess with our own =init.el= file, and so we tell it
+where to store all its precious customizations
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -446,7 +506,8 @@ We do not want Emacs to mess with our own =init.el= file, and so we tell it wher
 
 ** Byte- and native compilation
 
-In this section, we configure how Emacs byte-compiles and/or natively compiles the source code of packages that we install.
+In this section, we configure how Emacs byte-compiles and/or natively compiles
+the source code of packages that we install.
 
 #+begin_src emacs-lisp
   (ensure-emacs-version 28
@@ -459,7 +520,9 @@ In this section, we configure how Emacs byte-compiles and/or natively compiles t
 ** Font and encoding
 *** Encoding and input
 
-Even if most of the time, you should be working with UTF-8, we still want to make sure that this is the default and that Emacs assumes that we are using UTF-8
+Even if most of the time, you should be working with UTF-8, we still want to
+make sure that this is the default and that Emacs assumes that we are using
+UTF-8
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -478,7 +541,10 @@ Even if most of the time, you should be working with UTF-8, we still want to mak
     (set-selection-coding-system 'utf-8))
 #+end_src
 
-Finally, as I am mostly using a French, AZERTY keyboard, some combinations are hard to input, /e.g./ everything of the form =C-^= or =M-~=. Indeed, those are dead keys, and cannot really be pressed at the same time than a modifier key. Hence, we simply "remap" (using translation maps, see the [[info:elisp#Translation Keymaps][manual]] !)
+Finally, as I am mostly using a French, AZERTY keyboard, some combinations are
+hard to input, /e.g./ everything of the form =C-^= or =M-~=. Indeed, those are
+dead keys, and cannot really be pressed at the same time than a modifier key.
+Hence, we simply "remap" (using translation maps, see the [[info:elisp#Translation Keymaps][manual]] !)
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -532,15 +598,20 @@ In this section, we configure the default fonts.
 
 ** Visual interface changes
 
-We remove all the unnecessary elements from the interface, /e.g./ menus, scroll bar and so on.
+We remove all the unnecessary elements from the interface, /e.g./ menus, scroll
+bar and so on.
 
-You can remove or partially modify this block of code if you are a beginner and want to keep some of elements available, especially to be able to navigate with the mouse.
+You can remove or partially modify this block of code if you are a beginner and
+want to keep some of elements available, especially to be able to navigate with
+the mouse.
 
-All the variable names are pretty explicit, so you should be able to customize this to your taste easily.
+All the variable names are pretty explicit, so you should be able to customize
+this to your taste easily.
 
 *** Startup
 
-Who wants to be told the same thing over and over again each time they start Emacs ?
+Who wants to be told the same thing over and over again each time they start
+Emacs ?
 #+begin_src emacs-lisp :noweb yes
   (use-package emacs
     :custom
@@ -568,7 +639,9 @@ However, we would like to see Emacs in full-screen if we are to use it
    (set-frame-parameter nil 'alpha-background 95))
 #+end_src
 
-We also don't want Emacs to be flashing and beeping at us whenver we do something wrong. Be quiet, please, error /messages/ are fine without VFX on top of them !
+We also don't want Emacs to be flashing and beeping at us whenver we do
+something wrong. Be quiet, please, error /messages/ are fine without VFX on top
+of them !
 
 #+NAME: bell
 #+begin_src emacs-lisp :tangle no
@@ -578,7 +651,8 @@ We also don't want Emacs to be flashing and beeping at us whenver we do somethin
 
 *** Menus and toolbars
 
-Emacs is very much keyboard-oriented. As such, we have little-to-no use of the various menus, toolbars and scrollbars that Emacs provides.
+Emacs is very much keyboard-oriented. As such, we have little-to-no use of the
+various menus, toolbars and scrollbars that Emacs provides.
 
 #+NAME: menus
 #+begin_src emacs-lisp :tangle no
@@ -591,7 +665,12 @@ Emacs is very much keyboard-oriented. As such, we have little-to-no use of the v
 
 *** Lines and columns
 
-Because we now have plenty of free space on our screen, we can sacrifice a bit of it to put useful information there, such as line numbers. We also want to see the current line and column in the modeline, and while we are at it, we also want Emacs to wrap our lines in modes where this makes sense, so that we never have to scroll horizontally to see the end of a long line (besides, how would we do it, now that we don't have a scrollbar anymore ?!)
+Because we now have plenty of free space on our screen, we can sacrifice a bit
+of it to put useful information there, such as line numbers. We also want to see
+the current line and column in the modeline, and while we are at it, we also
+want Emacs to wrap our lines in modes where this makes sense, so that we never
+have to scroll horizontally to see the end of a long line (besides, how would we
+do it, now that we don't have a scrollbar anymore ?!)
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -622,13 +701,15 @@ Because we now have plenty of free space on our screen, we can sacrifice a bit o
     (fill-column 80)                      ; default 70 is a bit low
     :hook
     ((prog-mode LaTeX-mode) . display-line-numbers-mode)
-    ((text-mode org-mode LaTeX-mode comint-mode) . visual-line-mode)
+    ((text-mode LaTeX-mode comint-mode) . visual-line-mode)
     (LaTeX-mode . auto-fill-mode))
 #+end_src
 
 *** Theme
 
-This is simply a way to change how Emacs looks. Some themes are more complete than other (they will modify how other packages look, like Magit, or even the minibuffer)
+This is simply a way to change how Emacs looks. Some themes are more complete
+than other (they will modify how other packages look, like Magit, or even the
+minibuffer)
 
 #+begin_src emacs-lisp
   ;; Themes
@@ -643,7 +724,10 @@ This is simply a way to change how Emacs looks. Some themes are more complete th
 
 *** Presentation
 
-As we tend to use ~beamer~ to make presentations (and therefore, the slides are in fact a PDF file), we wish to use Emacs as a nice viewer /for slideshows/. This includes hiding as much of the UI as possible, using full screen, and so on.
+As we tend to use ~beamer~ to make presentations (and therefore, the slides are
+in fact a PDF file), we wish to use Emacs as a nice viewer /for slideshows/.
+This includes hiding as much of the UI as possible, using full screen, and so
+on.
 
 #+begin_src emacs-lisp
   (when lps/only-built-in-p
@@ -760,7 +844,8 @@ As we tend to use ~beamer~ to make presentations (and therefore, the slides are 
 
 This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] looks.
 
-*MANUAL* If this is your first time running the init.el file, please run the following command:
+*MANUAL* If this is your first time running the init.el file, please run the
+following command:
 
 =M-x all-the-icons-install-fonts=
 
@@ -829,7 +914,8 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
                 :test 'equal))
 #+end_src
 
-We also want to add some extra information on the modeline, of the kind that we could get in a status bar from a typical window manager
+We also want to add some extra information on the modeline, of the kind that we
+could get in a status bar from a typical window manager
 
 #+begin_src emacs-lisp
   (use-package battery
@@ -854,7 +940,8 @@ We also want to add some extra information on the modeline, of the kind that we 
 
 *** Extra packages
 
-Some packages are used lated in the configuration, and we want to be able to use those comfortable modes.
+Some packages are used lated in the configuration, and we want to be able to use
+those comfortable modes.
 
 #+begin_src emacs-lisp
   (use-package beacon
@@ -871,7 +958,10 @@ Some packages are used lated in the configuration, and we want to be able to use
     :hook ((prog-mode LaTeX-mode) . highlight-numbers-mode))
 #+end_src
 
-Another built-in and useful package that often comes up is =hl-line=. When enabled, it simply highlights the current line (/i.e./ the one on which the point is). When dealing with tables, or "rigidly organized" data, it is often useful to be able to quickly tell what is on which line.
+Another built-in and useful package that often comes up is =hl-line=. When
+enabled, it simply highlights the current line (/i.e./ the one on which the
+point is). When dealing with tables, or "rigidly organized" data, it is often
+useful to be able to quickly tell what is on which line.
 
 #+begin_src emacs-lisp
   (use-package hl-line
@@ -883,7 +973,10 @@ Another built-in and useful package that often comes up is =hl-line=. When enabl
            . hl-line-mode))
 #+end_src
 
-Another useful thing, which is not strictly necessary but comfortable when working, is to have visual hints for words like "TODO", "FIXME" and the likes. Indeed, it is likely that if you use them in a text file or source code, there is something that you definitely /don't/ want to forget or miss !
+Another useful thing, which is not strictly necessary but comfortable when
+working, is to have visual hints for words like "TODO", "FIXME" and the likes.
+Indeed, it is likely that if you use them in a text file or source code, there
+is something that you definitely /don't/ want to forget or miss !
 
 #+begin_src emacs-lisp
   (use-package hl-todo
@@ -918,7 +1011,9 @@ Another useful thing, which is not strictly necessary but comfortable when worki
 
 ** Whitespaces
 
-First of all, we never want ~TAB~ to insert actual tab characters. We also don't like trailing whitespaces, so we delete them automatically when we save a buffer.
+First of all, we never want ~TAB~ to insert actual tab characters. We also don't
+like trailing whitespaces, so we delete them automatically when we save a
+buffer.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -947,7 +1042,8 @@ First of all, we never want ~TAB~ to insert actual tab characters. We also don't
       (join-line t beg end)))
 #+end_src
 
-Finally, as Emacs also has commands to work with pages (as opposed to paragraphs and so on), we improve the visual look of those pages breaks.
+Finally, as Emacs also has commands to work with pages (as opposed to paragraphs
+and so on), we improve the visual look of those pages breaks.
 
 #+begin_src emacs-lisp
   (use-package page-break-lines
@@ -956,7 +1052,11 @@ Finally, as Emacs also has commands to work with pages (as opposed to paragraphs
 
 ** Hydra
 
-[[https://github.com/abo-abo/hydra][Hydra]] is a package that is used to group several related commands into a family of bindings, all starting with the same prefix (= "hydra"). Whenever this common prefix is entered in a suitable mode, a panel shows up, showing all the user-defined commands that can now be invoked with a single keystroke instead of repeatedly using the same long prefix.
+[[https://github.com/abo-abo/hydra][Hydra]] is a package that is used to group several related commands into a family
+of bindings, all starting with the same prefix (= "hydra"). Whenever this common
+prefix is entered in a suitable mode, a panel shows up, showing all the
+user-defined commands that can now be invoked with a single keystroke instead of
+repeatedly using the same long prefix.
 
 #+begin_src emacs-lisp
   (use-package hydra
@@ -964,11 +1064,17 @@ Finally, as Emacs also has commands to work with pages (as opposed to paragraphs
     :bind-keymap ("C-c h" . lps/all-hydras-map))
 #+end_src
 
-All the hydras will now be defined after the package to which they correspond, or in the appropriate section. Most of them are modifications of hydras that can be found on the [[https://github.com/abo-abo/hydra/wiki][hydra wiki]].
+All the hydras will now be defined after the package to which they correspond,
+or in the appropriate section. Most of them are modifications of hydras that can
+be found on the [[https://github.com/abo-abo/hydra/wiki][hydra wiki]].
 
-Some hydras will be called less frequently and for other purposes than getting a "quick-and-dirty" access to commonly used functions. Hence, we will make them prettier (the compromise being that they are less minimalistic and take much more space visually)
+Some hydras will be called less frequently and for other purposes than getting a
+"quick-and-dirty" access to commonly used functions. Hence, we will make them
+prettier (the compromise being that they are less minimalistic and take much
+more space visually)
 
-*MANUAL* This is not a MELPA package. It can be found [[https://github.com/Ladicle/hydra-posframe][here]]. Install it and change the loading path according to your configuration.
+*MANUAL* This is not a MELPA package. It can be found [[https://github.com/Ladicle/hydra-posframe][here]]. Install it and
+change the loading path according to your configuration.
 
 #+begin_src emacs-lisp
   ;; Easier hydra definition
@@ -978,7 +1084,8 @@ Some hydras will be called less frequently and for other purposes than getting a
 
 ** Interactively change the UI
 
-This is one moment where a pretty hydra could help us change general UI parameters, such as the text size, some highlighting options and so on.
+This is one moment where a pretty hydra could help us change general UI
+parameters, such as the text size, some highlighting options and so on.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -1025,9 +1132,11 @@ This is one moment where a pretty hydra could help us change general UI paramete
 
 ** Minibuffer
 *** Generic tweaks
-First of all, some configuration to make all the minibuffer sessions more pleasant, regardless of the completion or narrowing system used.
+First of all, some configuration to make all the minibuffer sessions more
+pleasant, regardless of the completion or narrowing system used.
 
-We also add a few functions to change or improve completions, independently from the actual "completion framework" used.
+We also add a few functions to change or improve completions, independently from
+the actual "completion framework" used.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -1066,10 +1175,16 @@ We also add a few functions to change or improve completions, independently from
 #+end_src
 
 *** Vertico/Marginalia
-~ivy~ is a fantastic addition to Emacs, and it makes interacting with Emacs much more comfortable, be it for invoking commands or looking for function documentation, or quickly interacting with files without having to use a Dired buffer.
-However, it is /bloated/, and can feel slow at times. Moreover, if you only really use some of its functionalities, it can feel a bit overwhelming, and not worth the trouble of configuring everything.
+~ivy~ is a fantastic addition to Emacs, and it makes interacting with Emacs much
+more comfortable, be it for invoking commands or looking for function
+documentation, or quickly interacting with files without having to use a Dired
+buffer. However, it is /bloated/, and can feel slow at times. Moreover, if you
+only really use some of its functionalities, it can feel a bit overwhelming, and
+not worth the trouble of configuring everything.
 
-For this reason, we might want to take a look at some lightweight alternatives, built on top of the default completion/narrowing tools that Emacs provide, instead of using ~ivy~ or ~helm~ which use their own massive framework.
+For this reason, we might want to take a look at some lightweight alternatives,
+built on top of the default completion/narrowing tools that Emacs provide,
+instead of using ~ivy~ or ~helm~ which use their own massive framework.
 
 #+begin_src emacs-lisp
   (use-package icomplete
@@ -1107,9 +1222,13 @@ For this reason, we might want to take a look at some lightweight alternatives, 
           (backward-kill-word arg)))))
 #+end_src
 
-Emacs uses metadata to differentiate between several types of things for completion. For example, when using ~find-file~, Emacs attachs to each suggestion a bit of data to tell that they are actually files.
+Emacs uses metadata to differentiate between several types of things for
+completion. For example, when using ~find-file~, Emacs attachs to each
+suggestion a bit of data to tell that they are actually files.
 
-In order to add more information of this kind to those suggestions, and to interact with it more naturally, we use another package which integrates very well with ~vertico~
+In order to add more information of this kind to those suggestions, and to
+interact with it more naturally, we use another package which integrates very
+well with ~vertico~
 
 #+begin_src emacs-lisp
   (use-package marginalia
@@ -1150,7 +1269,10 @@ In order to add more information of this kind to those suggestions, and to inter
 
 ** Buffer and windows
 *** Buffer management
-Emacs is sometimes all over the place, opening buffers at seemingly random places, switching your focus only in some circumstances ... We will customize this behaviour so that we have a better control on what Emacs is doing when we open new buffers
+Emacs is sometimes all over the place, opening buffers at seemingly random
+places, switching your focus only in some circumstances ... We will customize
+this behaviour so that we have a better control on what Emacs is doing when we
+open new buffers
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -1213,7 +1335,8 @@ Emacs is sometimes all over the place, opening buffers at seemingly random place
                    (quit-restore ('window 'window nil nil)))))
 #+end_src
 
-We also improve the appearance (and functionalities) of the buffer that we get when we want to list all the buffers that are currently opened.
+We also improve the appearance (and functionalities) of the buffer that we get
+when we want to list all the buffers that are currently opened.
 
 #+begin_src emacs-lisp
   (use-package all-the-icons-ibuffer
@@ -1263,7 +1386,9 @@ We also improve the appearance (and functionalities) of the buffer that we get w
 
 *** Window management
 
-Because window management can be a bit tedious with the basic Emacs functionalities, we improve it a bit. First of all, we enable =winner-mode=, which allows us to "undo" and "redo" changes in the Windows' configuration.
+Because window management can be a bit tedious with the basic Emacs
+functionalities, we improve it a bit. First of all, we enable =winner-mode=,
+which allows us to "undo" and "redo" changes in the Windows' configuration.
 
 #+begin_src emacs-lisp
   (use-package winner
@@ -1306,7 +1431,11 @@ Because window management can be a bit tedious with the basic Emacs functionalit
         (remove-hook 'minibuffer-setup-hook 'lps/windmove-mode-local-off))))
 #+end_src
 
-Sometimes, we also want some very specific buffer to be associated to a certain window. As there is probably no general rule that would decide this for us, it is not possible to modify ~display-buffer-alist~ or other similar variables to get the desired behaviour. Hence, we will simply create a function that binds - or unbinds - the current buffer to the current window.
+Sometimes, we also want some very specific buffer to be associated to a certain
+window. As there is probably no general rule that would decide this for us, it
+is not possible to modify ~display-buffer-alist~ or other similar variables to
+get the desired behaviour. Hence, we will simply create a function that binds -
+or unbinds - the current buffer to the current window.
 
 #+begin_src emacs-lisp
   ;; Taken from https://emacs.stackexchange.com/questions/2189/how-can-i-prevent-a-command-from-using-specific-windows
@@ -1323,7 +1452,10 @@ Sometimes, we also want some very specific buffer to be associated to a certain 
 #+end_src
 
 ** Files
-Although /buffers/ are what Emacs really manipulates, they are in particular often used to deal with ... files. Hence, we need ways to do things specifically for buffer that are visiting files, and also related to file management in general.
+Although /buffers/ are what Emacs really manipulates, they are in particular
+often used to deal with ... files. Hence, we need ways to do things specifically
+for buffer that are visiting files, and also related to file management in
+general.
 
 A first thing that we do here is load some utilities:
 #+begin_src emacs-lisp
@@ -1332,7 +1464,8 @@ A first thing that we do here is load some utilities:
 
 *** Open file
 
-We often want to visit links. If the point is on a file path, for example, it is often useful to be able to quicky navigate to this file.
+We often want to visit links. If the point is on a file path, for example, it is
+often useful to be able to quicky navigate to this file.
 
 #+begin_src emacs-lisp
   (use-package ffap
@@ -1384,7 +1517,11 @@ We often want to visit links. If the point is on a file path, for example, it is
 #+end_src
 
 *** Rename and delete file
-Dired (or even your prefered shell) is the prefered way to deal with large amount of file manipulation (mass copying, moving and so on). For one-time actions though, it is preferable to have quick ways to rename a file, rather than having to open a Dired buffer, look for the specific file we are visiting, and so.
+Dired (or even your prefered shell) is the prefered way to deal with large
+amount of file manipulation (mass copying, moving and so on). For one-time
+actions though, it is preferable to have quick ways to rename a file, rather
+than having to open a Dired buffer, look for the specific file we are visiting,
+and so.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -1431,7 +1568,10 @@ Dired (or even your prefered shell) is the prefered way to deal with large amoun
 #+end_src
 
 *** Backup and auto-save
-By default, Emacs performs a lot of backups, allowing to recover both from unwanted modifications (/e.g./ modifying a file, saving it, and realizing later that you have overriden something important) or unexpected crashes. However, the way those files are handled is somewhat intrusive.
+By default, Emacs performs a lot of backups, allowing to recover both from
+unwanted modifications (/e.g./ modifying a file, saving it, and realizing later
+that you have overriden something important) or unexpected crashes. However, the
+way those files are handled is somewhat intrusive.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -1451,8 +1591,11 @@ By default, Emacs performs a lot of backups, allowing to recover both from unwan
 #+end_src
 
 *** Temporary files
-Emacs mainly works with /buffers/, but some programs and tools require things to be written to /files/. Sometimes, you only care about the content itself, and don't want the file to actually persist on disk: this is were temporary files come to the rescue !
-Emacs already offers convenience functions to create, save and work with temp files; we only make some wrappers around them.
+Emacs mainly works with /buffers/, but some programs and tools require things to
+be written to /files/. Sometimes, you only care about the content itself, and
+don't want the file to actually persist on disk: this is were temporary files
+come to the rescue ! Emacs already offers convenience functions to create, save
+and work with temp files; we only make some wrappers around them.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -1479,7 +1622,10 @@ Emacs already offers convenience functions to create, save and work with temp fi
 #+end_src
 
 ** Outline and folding
-Sometimes, when documents get bigger and bigger, it is useful to be able to temporarily hide stuff. The built-in ~narrow-to-\*~ commands can be useful to really focus on a part of the document, but we might want to be able to get a rough outline of the /whole/ document at any time, but in a less cluttered way.
+Sometimes, when documents get bigger and bigger, it is useful to be able to
+temporarily hide stuff. The built-in ~narrow-to-\*~ commands can be useful to
+really focus on a part of the document, but we might want to be able to get a
+rough outline of the /whole/ document at any time, but in a less cluttered way.
 
 #+begin_src emacs-lisp
   (use-package outline
@@ -1494,8 +1640,12 @@ Sometimes, when documents get bigger and bigger, it is useful to be able to temp
 #+end_src
 
 ** Scroll
-There are (obviously) many variables and functions controlling how scrolling works: amount of scroll, position of the point after a scroll, horizontal & vertical scrolls, and so on.
-We use the keyboard even for scrolling, so we want to have the nicest possible experience for this. On the other hand, sometimes, the mouse wheel can still be pretty convenient, so it's good to have a way to customize its behaviour too.
+There are (obviously) many variables and functions controlling how scrolling
+works: amount of scroll, position of the point after a scroll, horizontal &
+vertical scrolls, and so on. We use the keyboard even for scrolling, so we want
+to have the nicest possible experience for this. On the other hand, sometimes,
+the mouse wheel can still be pretty convenient, so it's good to have a way to
+customize its behaviour too.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -1508,15 +1658,22 @@ We use the keyboard even for scrolling, so we want to have the nicest possible e
 
 ** XWidget
 
-You can compile emacs with XWidget support to be able to visualize many things in a pretty way (/e.g./ HTML files or mails, render markdown ...). For this, you need to build Emacs with the =--with-xwidgets= flag.
+You can compile emacs with XWidget support to be able to visualize many things
+in a pretty way (/e.g./ HTML files or mails, render markdown ...). For this, you
+need to build Emacs with the =--with-xwidgets= flag.
 
 NOTE: YOu might need to call =export WEBKIT_FORCE_SANDBOX=0= for it to work.
 
 ** Help !
 *** Improve default help
-Emacs already has a /great/ documentation system, but it is still possible to improve it ! [[https://github.com/Wilfred/helpful][helpful]] makes things easier to remember and to use without having to search for documentation in multiple places.
+Emacs already has a /great/ documentation system, but it is still possible to
+improve it ! [[https://github.com/Wilfred/helpful][helpful]] makes things easier
+to remember and to use without having to search for documentation in multiple
+places.
 
-It will condense all the available information about something within a single Help buffer, and will add some documentation to the commands you are currently typing.
+It will condense all the available information about something within a single
+Help buffer, and will add some documentation to the commands you are currently
+typing.
 
 #+begin_src emacs-lisp
   ;; Helpful. Extra documentation when calling for help
@@ -1601,7 +1758,10 @@ We can also improve some of the other help commands:
 
 *** Info-mode
 
-Another useful built-in tool to read documentation is ~info-mode~. This is convenient major-mode used to read =.info= files, a GNU file format mainly used to write technical documentation; several GNU (and non-GNU) utilities and softwares have an Info manual, readable using this mode.
+Another useful built-in tool to read documentation is ~info-mode~. This is
+convenient major-mode used to read =.info= files, a GNU file format mainly used
+to write technical documentation; several GNU (and non-GNU) utilities and
+softwares have an Info manual, readable using this mode.
 
 #+begin_src emacs-lisp
   (use-package info
@@ -1619,7 +1779,8 @@ Another useful built-in tool to read documentation is ~info-mode~. This is conve
     (set-face-attribute 'info-colors-lisp-code-block nil :weight 'bold))
 #+end_src
 
-We also use a minor mode which renames info buffers into clearer names, rather than having =*info*= for every info page !
+We also use a minor mode which renames info buffers into clearer names, rather
+than having =*info*= for every info page !
 
 #+begin_src emacs-lisp
   (use-package info-rename-buffer
@@ -1629,9 +1790,14 @@ We also use a minor mode which renames info buffers into clearer names, rather t
 
 *** Which-key
 
-Because there are a lot of similar commands, it is quite easy to get lost. [[https://github.com/justbur/emacs-which-key][which-key]] is a package that shows all the available commands after having typed some prefix, meaning that knowing the beginning of a key sequence is enough to get the rest of the information.
+Because there are a lot of similar commands, it is quite easy to get lost.
+[[https://github.com/justbur/emacs-which-key][which-key]] is a package that shows all the available commands after having typed
+some prefix, meaning that knowing the beginning of a key sequence is enough to
+get the rest of the information.
 
-For example, if you press =C-c=, then a panel will appear at the bottom of the screen to show how you can currently continue this command, depending on which buffer you are in.
+For example, if you press =C-c=, then a panel will appear at the bottom of the
+screen to show how you can currently continue this command, depending on which
+buffer you are in.
 
 
 #+begin_src emacs-lisp
@@ -1648,8 +1814,10 @@ For example, if you press =C-c=, then a panel will appear at the bottom of the s
 
 *** Help at point
 
-By default, whenever you place your /mouse/ cursor over something - say, a hyperlink -, Emacs will display a help message in the echo area.
-However, we tend not to use the mouse at all, and in particular having to use the mouse for help would feel a little bit "backwards" compared to Emacs' general philosophy.
+By default, whenever you place your /mouse/ cursor over something - say, a
+hyperlink -, Emacs will display a help message in the echo area. However, we
+tend not to use the mouse at all, and in particular having to use the mouse for
+help would feel a little bit "backwards" compared to Emacs' general philosophy.
 
 #+begin_src emacs-lisp
   (use-package help-at-pt
@@ -1660,7 +1828,10 @@ However, we tend not to use the mouse at all, and in particular having to use th
     (help-at-pt-timer-delay 0.5))
 #+end_src
 
-We also add a way to use the mouse for help, with a typical menu appearing when you right-click on something. Of course, when using a keyboard, there are usually more powerful (even contextual) tools, but this is sometimes good enough.
+We also add a way to use the mouse for help, with a typical menu appearing when
+you right-click on something. Of course, when using a keyboard, there are
+usually more powerful (even contextual) tools, but this is sometimes good
+enough.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -1672,7 +1843,8 @@ We also add a way to use the mouse for help, with a typical menu appearing when 
 * Commands
 ** Disabled commands
 
-We want to use the full Emacs power. However, if you find yourself using repeatedly a dangerous command by mistake, you might want to disable it
+We want to use the full Emacs power. However, if you find yourself using
+repeatedly a dangerous command by mistake, you might want to disable it
 
 #+begin_src emacs-lisp
   ;; Don't disable any command
@@ -1685,9 +1857,13 @@ We want to use the full Emacs power. However, if you find yourself using repeate
 ** History
 *** Prescient
 
-There is a way to go even faster for completion. Indeed, when in doubt, why not suggest recent or popular completions ? That is exactly what ~prescient~ does, by sorting the suggestions according to their frequency or how recently we used them.
+There is a way to go even faster for completion. Indeed, when in doubt, why not
+suggest recent or popular completions ? That is exactly what ~prescient~ does,
+by sorting the suggestions according to their frequency or how recently we used
+them.
 
-This goes beyond commands, but can also be used for any kind of documentation lookup, with =describe-function= or =describe-variable= for example.
+This goes beyond commands, but can also be used for any kind of documentation
+lookup, with =describe-function= or =describe-variable= for example.
 
 #+begin_src emacs-lisp
   ;; Generic Prescient configuration
@@ -1710,7 +1886,11 @@ This goes beyond commands, but can also be used for any kind of documentation lo
 
 *** Other solutions
 
-Another lighter and built-in solution is the simpler package ~savehist~. If you want to use a lighter Emacs version, or if for some reason you want to stay "as close to the original Emacs", this is a perfectly fine solution, and its major drawback is that it does not work for "in-buffer" auto-completions (although it might be possible with a lot of tuning ?)
+Another lighter and built-in solution is the simpler package ~savehist~. If you
+want to use a lighter Emacs version, or if for some reason you want to stay "as
+close to the original Emacs", this is a perfectly fine solution, and its major
+drawback is that it does not work for "in-buffer" auto-completions (although it
+might be possible with a lot of tuning ?)
 
 #+begin_src emacs-lisp
   (use-package savehist
@@ -1722,7 +1902,10 @@ Another lighter and built-in solution is the simpler package ~savehist~. If you 
 
 ** Keycast
 
-I used to use a mode called =command-log-mode= to show in real time the keys that I was pressing and the commands that were executed (to demonstrate what Emacs can do,to make it easier for newcomers to follow what's happening, and so on). As of now, I consider =keycast= to simply be a better alternative.
+I used to use a mode called =command-log-mode= to show in real time the keys
+that I was pressing and the commands that were executed (to demonstrate what
+Emacs can do,to make it easier for newcomers to follow what's happening, and so
+on). As of now, I consider =keycast= to simply be a better alternative.
 
 #+begin_src emacs-lisp
   (use-package keycast
@@ -1745,7 +1928,9 @@ Typing "yes" and "no" might be a bit too tiring
 #+end_src
 
 ** Utilities
-~consult~ provides a lot of useful commands that can be used during a minibuffer session to act on the selection. Moreover, it comes with various utilities, such as flavours of ~isearch~ or ~grep~.
+~consult~ provides a lot of useful commands that can be used during a minibuffer
+session to act on the selection. Moreover, it comes with various utilities, such
+as flavours of ~isearch~ or ~grep~.
 #+begin_src emacs-lisp
   (use-package consult
     :defer t
@@ -1786,7 +1971,9 @@ Typing "yes" and "no" might be a bit too tiring
       (if (listp x) x (list x))))
 #+end_src
 
-Another package that tries to give contextual actions to act on "things" (files, buffers ...) is ~embark~. It also integrates very well with the default API, and is easily enhanced by packages such as ~marginalia~
+Another package that tries to give contextual actions to act on "things" (files,
+buffers ...) is ~embark~. It also integrates very well with the default API, and
+is easily enhanced by packages such as ~marginalia~
 
 #+begin_src emacs-lisp
   (use-package embark
@@ -1810,8 +1997,10 @@ Another package that tries to give contextual actions to act on "things" (files,
 
 ** Some useful commands
 *** Repeat commands
-Some commands are usually invoked several times in succession. For example, if you wish to resize a window, you might need to invoke =shrink-window= several times.
-If we need to define repeat maps, we will do it in the corresponding package rather than here.
+Some commands are usually invoked several times in succession. For example, if
+you wish to resize a window, you might need to invoke =shrink-window= several
+times. If we need to define repeat maps, we will do it in the corresponding
+package rather than here.
 
 #+begin_src emacs-lisp
   (ensure-emacs-version 28.0
@@ -1838,7 +2027,10 @@ If we need to define repeat maps, we will do it in the corresponding package rat
 #+end_src
 
 *** Remapping and better defaults
-Several commands are, surprinsingly, bound by default to some binding, while there exists (arguably) simpler and more intuitive/DWIM-like versions of those same commands. Most of the time, we really want to use those simpler commands, and so we remap them to be invoked in place of their "strict" counterpart.
+Several commands are, surprinsingly, bound by default to some binding, while
+there exists (arguably) simpler and more intuitive/DWIM-like versions of those
+same commands. Most of the time, we really want to use those simpler commands,
+and so we remap them to be invoked in place of their "strict" counterpart.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -1853,11 +2045,18 @@ Several commands are, surprinsingly, bound by default to some binding, while the
 
 * Editing
 
-   Emacs is fundamentally a text editor. It provides a lot of functions to deal with text, and a way to create macros, to automate things, to repeat something multiple times ... easily. However, because there are /so many/ available functions, we might need some help to navigate around and do fancy things.
+   Emacs is fundamentally a text editor. It provides a lot of functions to deal
+   with text, and a way to create macros, to automate things, to repeat
+   something multiple times ... easily. However, because there are /so many/
+   available functions, we might need some help to navigate around and do fancy
+   things.
 
 ** Special characters
 
-Sometimes, we need to insert other characters than the ones available directly "on the keyboard". In that case, Emacs provides several tools (input methods, possibly transient, etc), or you can even pick characters by their Unicode names or codepoints.
+Sometimes, we need to insert other characters than the ones available directly
+"on the keyboard". In that case, Emacs provides several tools (input methods,
+possibly transient, etc), or you can even pick characters by their Unicode names
+or codepoints.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -1868,7 +2067,11 @@ Sometimes, we need to insert other characters than the ones available directly "
 
 ** Multiple cursors
 
-A first improvement is the addition of multiple cursors. The "rectangle region" already gives a way to insert text simultaneously at several places, and to perform some easy operations on a rectangular area, but the [[https://github.com/magnars/multiple-cursors.el][multiple cursor]] package really increases the possibilities.
+A first improvement is the addition of multiple cursors. The "rectangle region"
+already gives a way to insert text simultaneously at several places, and to
+perform some easy operations on a rectangular area, but the
+[[https://github.com/magnars/multiple-cursors.el][multiple cursor]] package
+really increases the possibilities.
 
 #+begin_src emacs-lisp
   (use-package multiple-cursors
@@ -1935,15 +2138,26 @@ A first improvement is the addition of multiple cursors. The "rectangle region" 
       (put command 'repeat-map 'lps/multiple-cursors-repeat-map)))
 #+end_src
 
-The webpage specifies that the commands provided by this package are best invoked when bound to key sequence rather than by =M-x <mc/command-name>=, although some testing on my part seems to show that it still works relatively well most of the time.
+The webpage specifies that the commands provided by this package are best
+invoked when bound to key sequence rather than by =M-x <mc/command-name>=,
+although some testing on my part seems to show that it still works relatively
+well most of the time.
 
 ** Auto-completion
 
-We fundamentally use Emacs to write text. What would writing be without some kind of auto-completion ? Hence, we use a few tools to make the general experience of /writing text/ better, whether it is source code, simple sentences or even commands in the minibuffer.
+We fundamentally use Emacs to write text. What would writing be without some
+kind of auto-completion ? Hence, we use a few tools to make the general
+experience of /writing text/ better, whether it is source code, simple sentences
+or even commands in the minibuffer.
 
 *** Completion styles
 
-Emacs has a lot of built-in completions styles, telling it how to interpret the input: as a regexp, as initials, as a substring ... We add some other ones, and some possibilities to customize them or even change them on the fly. In order to separate how those styles work for in-buffer completion compared to their behaviour in minibuffer, we add hooks to the completion to change the completion styles on the fly.
+Emacs has a lot of built-in completions styles, telling it how to interpret the
+input: as a regexp, as initials, as a substring ... We add some other ones, and
+some possibilities to customize them or even change them on the fly. In order to
+separate how those styles work for in-buffer completion compared to their
+behaviour in minibuffer, we add hooks to the completion to change the completion
+styles on the fly.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -2026,7 +2240,12 @@ Emacs has a lot of built-in completions styles, telling it how to interpret the 
 
 *** Company
 
-Several packages are available to make auto-completion more efficient and intuitive than the built-in =completion-at-point= function. We use [[https://company-mode.github.io/][Company]] (stands for "comp[lete] any[thing]") as it integrates nicely with other packages that we use, is well-maintained and has a more modern interface than most of its counterparts such as =auto-complete=.
+Several packages are available to make auto-completion more efficient and
+intuitive than the built-in =completion-at-point= function. We use
+[[https://company-mode.github.io/][Company]] (stands for "comp[lete]
+any[thing]") as it integrates nicely with other packages that we use, is
+well-maintained and has a more modern interface than most of its counterparts
+such as =auto-complete=.
 
 #+begin_src emacs-lisp
   ;; Company. Auto-completion package
@@ -2104,7 +2323,8 @@ Several packages are available to make auto-completion more efficient and intuit
                     `(lambda () (interactive) (company-complete-number ,(car key-char)))))))
 #+end_src
 
-To have a cleaner interface and also a bit of documentation added to the suggested completions, we use two extra packages.
+To have a cleaner interface and also a bit of documentation added to the
+suggested completions, we use two extra packages.
 
 #+begin_src emacs-lisp
   (use-package company-box
@@ -2149,7 +2369,8 @@ To have a cleaner interface and also a bit of documentation added to the suggest
 
 *** Company backends
 
-A first backend that we want to consider is the one using snippets provided by ~yasnippet~
+A first backend that we want to consider is the one using snippets provided by
+~yasnippet~
 
 #+begin_src emacs-lisp
   (use-package company-yasnippet
@@ -2165,7 +2386,9 @@ A first backend that we want to consider is the one using snippets provided by ~
         (call-interactively 'company-complete))))
 #+end_src
 
-Most of the time, when writing text, we are going to use words over and over again in the same buffer. ~company-dabbrev~ will return completion candidates based on this content.
+Most of the time, when writing text, we are going to use words over and over
+again in the same buffer. ~company-dabbrev~ will return completion candidates
+based on this content.
 
 #+begin_src emacs-lisp
   (use-package company-dabbrev
@@ -2181,9 +2404,14 @@ Most of the time, when writing text, we are going to use words over and over aga
 ** Navigation
 *** Structure based
 
-We change a variable that makes sense for American writers, but not so much according to French conventions. The Emacs Manual recommends against it, as we are no longer able to distinguish a sentence ending from an abbreviation, but I do not use this type of abbreviation very often anyway (notable counterexamples nonetheless: /i.e./ and /e.g./).
+We change a variable that makes sense for American writers, but not so much
+according to French conventions. The Emacs Manual recommends against it, as we
+are no longer able to distinguish a sentence ending from an abbreviation, but I
+do not use this type of abbreviation very often anyway (notable counterexamples
+nonetheless: /i.e./ and /e.g./).
 
-We also add more convenient bindings to move paragraph by paragraph, and to deal with long lines.
+We also add more convenient bindings to move paragraph by paragraph, and to deal
+with long lines.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -2199,9 +2427,11 @@ We also add more convenient bindings to move paragraph by paragraph, and to deal
 #+end_src
 
 *** Text-search
-Final touch: we often use the "search" functions to move the point around, because it is often easier than mashing the ~C-f~ and ~C-n~ keys.
+Final touch: we often use the "search" functions to move the point around,
+because it is often easier than mashing the ~C-f~ and ~C-n~ keys.
 
-Hence, we add a few bindings to an already existing keymap, to make them easily accessible again.
+Hence, we add a few bindings to an already existing keymap, to make them easily
+accessible again.
 
 #+begin_src emacs-lisp
   (use-package isearch
@@ -2273,7 +2503,12 @@ Hence, we add a few bindings to an already existing keymap, to make them easily 
                        nil nil start end backward region-noncontiguous-p)))
 #+end_src
 
-The previously defined commands, along with ~Swiper~, are great to navigate in a buffer if you roughly know where you want to end. However, we sometimes want to move the point to a nearby, visible location, and instead of using and ~isearch~ and repeatedly use the forward and backward bindings, we want to be able to quickly jump there without thinking much, regardless of the current point position in the buffer.
+The previously defined commands, along with ~Swiper~, are great to navigate in a
+buffer if you roughly know where you want to end. However, we sometimes want to
+move the point to a nearby, visible location, and instead of using and ~isearch~
+and repeatedly use the forward and backward bindings, we want to be able to
+quickly jump there without thinking much, regardless of the current point
+position in the buffer.
 
 #+begin_src emacs-lisp
   (use-package avy
@@ -2293,11 +2528,23 @@ The previously defined commands, along with ~Swiper~, are great to navigate in a
 
 ** Rectangles
 
-Manipulating rectangles is a cool Emacs feature. You can select a region with the shape of a rectangle, copy and yank it, insert strings at the beginning of each line of the selection, and several other features.
+Manipulating rectangles is a cool Emacs feature. You can select a region with
+the shape of a rectangle, copy and yank it, insert strings at the beginning of
+each line of the selection, and several other features.
 
-Because the functions operating on rectangles are not always the easier to remember, we simply define a new Hydra referencing the most useful ones. We also bind keys that were seemingly forgotten.
+Because the functions operating on rectangles are not always the easier to
+remember, we simply define a new Hydra referencing the most useful ones. We also
+bind keys that were seemingly forgotten.
 
-There is even a hidden gem in Emacs, which usually goes unknown for a (IMO) stupid reason: it is ~cua-rectangle-mark-mode~, a (arguably better) different way to manipulate rectangles and rectangular regions with Emacs. Being related to CUA, with most people associate with "C-c/C-x/C-v bindings for copy-cut-paste" and which is therefore almost non-existent in discussion between "advanced" Emacs users, it is a feature that is generally absent from the list 'cool Emacs things that you can do, although the usual ~rectangle-mark-mode~ isn't. This is why we add a binding to ~rectangle-mark-mode~ to change the current selection type to the more advanced ~CUA~ one.
+There is even a hidden gem in Emacs, which usually goes unknown for a (IMO)
+stupid reason: it is ~cua-rectangle-mark-mode~, a (arguably better) different
+way to manipulate rectangles and rectangular regions with Emacs. Being related
+to CUA, with most people associate with "C-c/C-x/C-v bindings for
+copy-cut-paste" and which is therefore almost non-existent in discussion between
+"advanced" Emacs users, it is a feature that is generally absent from the list
+'cool Emacs things that you can do, although the usual ~rectangle-mark-mode~
+isn't. This is why we add a binding to ~rectangle-mark-mode~ to change the
+current selection type to the more advanced ~CUA~ one.
 
 
 #+begin_src emacs-lisp
@@ -2347,7 +2594,12 @@ There is even a hidden gem in Emacs, which usually goes unknown for a (IMO) stup
 
 ** Selection
 
-A useful tool to manipulate text and even source code is the [[https://github.com/magnars/expand-region.el][expand-region]] package, as it allows us to increase the selected region to match larger and larger /semantic/ units. For example, by using it repeatedly, you could select in this order a character, a word, a string containing this word, a sexp containing this string, and the function in this sexp is used.
+A useful tool to manipulate text and even source code is the
+[[https://github.com/magnars/expand-region.el][expand-region]] package, as it
+allows us to increase the selected region to match larger and larger /semantic/
+units. For example, by using it repeatedly, you could select in this order a
+character, a word, a string containing this word, a sexp containing this string,
+and the function in this sexp is used.
 
 #+begin_src emacs-lisp
   (use-package expand-region
@@ -2359,9 +2611,14 @@ A useful tool to manipulate text and even source code is the [[https://github.co
 
 We also define functions that Emacs is surprinsingly lacking.
 
-The first one is used to copy without deleting the current line (internally, it uses =kill-ring-save=, and so it can be used in a read-only context, unlike a sequence like =C-a C-k C-y=). It is also much quicker than variations on the sequence  =C-e C-SPC C-a M-w=.
+The first one is used to copy without deleting the current line (internally, it
+uses =kill-ring-save=, and so it can be used in a read-only context, unlike a
+sequence like =C-a C-k C-y=). It is also much quicker than variations on the
+sequence =C-e C-SPC C-a M-w=.
 
-The next one is used to select the current line. Once a line is marked, we can move it, delete it, copy it and so on easily. Having it on a single key binding is quicker than having to do something like =C-a C-SPC C-e=
+The next one is used to select the current line. Once a line is marked, we can
+move it, delete it, copy it and so on easily. Having it on a single key binding
+is quicker than having to do something like =C-a C-SPC C-e=
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -2427,7 +2684,10 @@ The next one is used to select the current line. Once a line is marked, we can m
 
 ** Mark management
 
-The mark is a key concept of Emacs. It is used to navigate, make selections, cycle through the jump history ... Because we use ~transient-mark-mode~ (the default, and frankly, the most modern and natural way for a lot of people), one command in particular needs to be improved
+The mark is a key concept of Emacs. It is used to navigate, make selections,
+cycle through the jump history ... Because we use ~transient-mark-mode~ (the
+default, and frankly, the most modern and natural way for a lot of people), one
+command in particular needs to be improved
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -2452,7 +2712,11 @@ The mark is a key concept of Emacs. It is used to navigate, make selections, cyc
 
 ** Moving stuff around
 
-A big part of editing text consists in moving already written lines, words or paragraphs around. Emacs provides a set of basic functions to do, with ~transpose-<chars/lines/sexps>~ and so on, but they are not very intuitive and a bit clumsy to use. This is why we use another package, which will allow us to move entire blocks of text much more naturally
+A big part of editing text consists in moving already written lines, words or
+paragraphs around. Emacs provides a set of basic functions to do, with
+~transpose-<chars/lines/sexps>~ and so on, but they are not very intuitive and a
+bit clumsy to use. This is why we use another package, which will allow us to
+move entire blocks of text much more naturally
 
 #+begin_src emacs-lisp
   (use-package drag-stuff
@@ -2463,7 +2727,9 @@ A big part of editing text consists in moving already written lines, words or pa
     (drag-stuff-define-keys))
 #+end_src
 
-Because we added other, more "Emacs-y" bindings to move by paragraphs, we are free to use the original bindings to do more useful stuff. Instead of simply /moving/ things here, we are duplicating them.
+Because we added other, more "Emacs-y" bindings to move by paragraphs, we are
+free to use the original bindings to do more useful stuff. Instead of simply
+/moving/ things here, we are duplicating them.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -2512,7 +2778,11 @@ Because we added other, more "Emacs-y" bindings to move by paragraphs, we are fr
 
 ** Undo
 
-Another light-weight option to improve on the built-in ~undo~, which tends to work better than some others choices (notably, =undo-tree=) with some built-in Emacs features such as as "undo-in-region", is =vundo=. It has become much more usable in newer versions of Emacs, where the undo systems has gained some new commands, making it behave more like in most other tools.
+Another light-weight option to improve on the built-in ~undo~, which tends to
+work better than some others choices (notably, =undo-tree=) with some built-in
+Emacs features such as as "undo-in-region", is =vundo=. It has become much more
+usable in newer versions of Emacs, where the undo systems has gained some new
+commands, making it behave more like in most other tools.
 
 #+begin_src emacs-lisp
   (use-package vundo
@@ -2530,7 +2800,10 @@ Another light-weight option to improve on the built-in ~undo~, which tends to wo
 
 ** Regexp
 
-We add a few functions that are used later in the config. Their purpose is more or less to "prevent" some commands from acting on some regions of the buffer, by deleting them, then processing the file, and inserting them somewhere else afterwards.
+We add a few functions that are used later in the config. Their purpose is more
+or less to "prevent" some commands from acting on some regions of the buffer, by
+deleting them, then processing the file, and inserting them somewhere else
+afterwards.
 
 #+begin_src emacs-lisp
   (defun lps/find-delete-forward-all-regexp (re &optional beg)
@@ -2558,7 +2831,10 @@ We add a few functions that are used later in the config. Their purpose is more 
           (insert (pop matches))))))
 #+end_src
 
-There are also various packages implementing ~grep~, ~ripgrep~ and so on. One of them is especially nice, and is called ~wgrep~. It does the same thing to ~grep~ buffer than ~wdired~ does to Dired ones: make them editable as plain text, and commit the changes to the files (or the filesystem, for Dired) !
+There are also various packages implementing ~grep~, ~ripgrep~ and so on. One of
+them is especially nice, and is called ~wgrep~. It does the same thing to ~grep~
+buffer than ~wdired~ does to Dired ones: make them editable as plain text, and
+commit the changes to the files (or the filesystem, for Dired) !
 
 #+begin_src emacs-lisp
   (use-package wgrep
@@ -2568,7 +2844,9 @@ There are also various packages implementing ~grep~, ~ripgrep~ and so on. One of
 #+end_src
 
 ** Align
-A very useful and yet relatively unknown Emacs built-in package is ~align~, which provides a few functions to align things according to several criteria, and acting on various parts of the buffer (region, section ...)
+A very useful and yet relatively unknown Emacs built-in package is ~align~,
+which provides a few functions to align things according to several criteria,
+and acting on various parts of the buffer (region, section ...)
 
 #+begin_src emacs-lisp
   (use-package align
@@ -2582,8 +2860,8 @@ A very useful and yet relatively unknown Emacs built-in package is ~align~, whic
 #+end_src
 
 ** Blank lines and lines manipulation
-We often want to insert, delete, in a word, /manipulate/ blank lines.
-Hence, we will define and rebind a few commands for that.
+We often want to insert, delete, in a word, /manipulate/ blank lines. Hence, we
+will define and rebind a few commands for that.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -2618,7 +2896,9 @@ Hence, we will define and rebind a few commands for that.
 
 ** Personal commands
 
-We also define a bunch of functions and commands related to editing text that are not provided in Emacs by default, and would be too specific to find in a package.
+We also define a bunch of functions and commands related to editing text that
+are not provided in Emacs by default, and would be too specific to find in a
+package.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -2763,7 +3043,12 @@ We also define a bunch of functions and commands related to editing text that ar
 * Programming
 ** Project management
 
-There used to be a fancy and recommended package named [[https://github.com/bbatsov/projectile][Projectile]]. However, Emacs evolved and some code to work with "projects" has been added and is now built-in. As such, I rely on this basic core of functionalities, upgraded (or not) with various packages that try to build on top of it, rather than reimplementing everything as Projectile did.
+There used to be a fancy and recommended package named
+[[https://github.com/bbatsov/projectile][Projectile]]. However, Emacs evolved
+and some code to work with "projects" has been added and is now built-in. As
+such, I rely on this basic core of functionalities, upgraded (or not) with
+various packages that try to build on top of it, rather than reimplementing
+everything as Projectile did.
 
 #+begin_src emacs-lisp
   (use-package project
@@ -2772,7 +3057,11 @@ There used to be a fancy and recommended package named [[https://github.com/bbat
     (project-vc-merge-submodules nil))
 #+end_src
 
-One package that extends the functionalities provided by the builtin ~project.el~ is [[https://github.com/mohkale/projection][Projection]]. In particular, it provides ways to compile, run, package, test the current project using some handcrafted rules to detect the "build manager" (.NET, CMake, meson and so on).
+One package that extends the functionalities provided by the builtin
+~project.el~ is [[https://github.com/mohkale/projection][Projection]]. In
+particular, it provides ways to compile, run, package, test the current project
+using some handcrafted rules to detect the "build manager" (.NET, CMake, meson
+and so on).
 
 #+begin_src emacs-lisp
   (use-package projection
@@ -2798,9 +3087,11 @@ One package that extends the functionalities provided by the builtin ~project.el
 
 ** Git
 *** Magit
-[[https://magit.vc/][Magit]] is a serious contender for the first place in the long list of "Reasons you should use Emacs", along with Org Mode.
+[[https://magit.vc/][Magit]] is a serious contender for the first place in the
+long list of "Reasons you should use Emacs", along with Org Mode.
 
-It is a Text User Interface to Git, which integrates most of Git commands, even the most advanced ones, while making it easy to use even for beginners.
+It is a Text User Interface to Git, which integrates most of Git commands, even
+the most advanced ones, while making it easy to use even for beginners.
 
 #+begin_src emacs-lisp
   (use-package magit
@@ -2859,7 +3150,8 @@ It is a Text User Interface to Git, which integrates most of Git commands, even 
       (add-hook 'magit-status-sections-hook hook 1)))
 #+end_src
 
-Being one of the most popular Emacs packages, there are various other packages that try to further improve it to integrate it with other Emacs tools.
+Being one of the most popular Emacs packages, there are various other packages
+that try to further improve it to integrate it with other Emacs tools.
 
 #+begin_src emacs-lisp
   (use-package magit-todos
@@ -2869,7 +3161,11 @@ Being one of the most popular Emacs packages, there are various other packages t
 #+end_src
 
 **** Transient
-In fact, the UI used by Magit can be used in several other applications, and is not specific to Magit itself. Nonetheless, Magit being the most prominent package using this library, we configure it here. In particular, we don't want to hide anything, although we keep some visual information to show commands that are "intended for experts".
+In fact, the UI used by Magit can be used in several other applications, and is
+not specific to Magit itself. Nonetheless, Magit being the most prominent
+package using this library, we configure it here. In particular, we don't want
+to hide anything, although we keep some visual information to show commands that
+are "intended for experts".
 
 #+begin_src emacs-lisp
   (use-package transient
@@ -2885,9 +3181,14 @@ In fact, the UI used by Magit can be used in several other applications, and is 
 
 *** Git-timemachine
 
-Another useful package is [[https://github.com/emacsmirror/git-timemachine][git-timemachine]], which allows to easily navigate the history of a git-controlled file with a few key presses.
+Another useful package is
+[[https://github.com/emacsmirror/git-timemachine][git-timemachine]], which
+allows to easily navigate the history of a git-controlled file with a few key
+presses.
 
-Although Magit is more or less able to do the same thing, the interface there is cleaner and you are less likely to get lost than in the fully-featured super-package that Magit is.
+Although Magit is more or less able to do the same thing, the interface there is
+cleaner and you are less likely to get lost than in the fully-featured
+super-package that Magit is.
 
 #+begin_src emacs-lisp
   (use-package git-timemachine
@@ -2895,11 +3196,19 @@ Although Magit is more or less able to do the same thing, the interface there is
 #+end_src
 
 *** Forge
-We will probably want to work with distant repositories, /e.g./ stored on a distant GitHub or GitLab host.
+We will probably want to work with distant repositories, /e.g./ stored on a
+distant GitHub or GitLab host.
 
-In order to integrate more tightly with those tools, and have access to more complex features than the basic ones provided by Git itself, we use a package called [[https://magit.vc/manual/forge/][Forge]]. For example, it will allow us to do pull-requests, or edit issues, directly from Emacs, rather than having to connect to the online GitHub website or to use another API provided by some other software.
+In order to integrate more tightly with those tools, and have access to more
+complex features than the basic ones provided by Git itself, we use a package
+called [[https://magit.vc/manual/forge/][Forge]]. For example, it will allow us
+to do pull-requests, or edit issues, directly from Emacs, rather than having to
+connect to the online GitHub website or to use another API provided by some
+other software.
 
-*MANUAL* In order to use this package, you need to have a personal "token", so that the server knows who you are ! To setup everything, follow the instructions in the Forge manual.
+*MANUAL* In order to use this package, you need to have a personal "token", so
+that the server knows who you are ! To setup everything, follow the instructions
+in the Forge manual.
 
 #+begin_src emacs-lisp
   (use-package forge
@@ -2909,7 +3218,9 @@ In order to integrate more tightly with those tools, and have access to more com
 #+end_src
 
 *** Diff and merge conflicts
-Whenever we use version control, merge conflicts will unavoidably arise. Hence, we need to be able to solve them as efficiently and clearly as possible, and Emacs provides a few tools for this.
+Whenever we use version control, merge conflicts will unavoidably arise. Hence,
+we need to be able to solve them as efficiently and clearly as possible, and
+Emacs provides a few tools for this.
 
 #+begin_src emacs-lisp
   (use-package smerge-mode
@@ -2943,7 +3254,11 @@ Whenever we use version control, merge conflicts will unavoidably arise. Hence, 
             (smerge-mode 1))))))
 #+end_src
 
-Although looking at, merging, and dealing with diffs in not strictly related to version control, I believe it is the appropriate time to talk about Ediff. Ediff is (one of the) the built-in modes to visualize side-by-side diffs of different files, and possibly edit and merge them. The defaults are a bit lacking, in particular when it comes to layout/UI, so this is one of the main changes we do.
+Although looking at, merging, and dealing with diffs in not strictly related to
+version control, I believe it is the appropriate time to talk about Ediff. Ediff
+is (one of the) the built-in modes to visualize side-by-side diffs of different
+files, and possibly edit and merge them. The defaults are a bit lacking, in
+particular when it comes to layout/UI, so this is one of the main changes we do.
 
 #+begin_src emacs-lisp
   (use-package ediff
@@ -2968,7 +3283,8 @@ Although looking at, merging, and dealing with diffs in not strictly related to 
 
 ** Parenthesis
 
-First of all, we want to easily be able to tell with a quick glance which parenthesis are matching
+First of all, we want to easily be able to tell with a quick glance which
+parenthesis are matching
 
 #+begin_src emacs-lisp
   ;; Always highlight matching parenthesis
@@ -2988,7 +3304,10 @@ First of all, we want to easily be able to tell with a quick glance which parent
     :hook ((prog-mode comint-mode) . rainbow-delimiters-mode))
 #+end_src
 
-Now, in order to work with structured text, such as source code, we want to be able to directly manipulate "expressions" rather than lines or words. This is why we use the following packages, as they provide a lot of functionalities to navigate and edit those expressions.
+Now, in order to work with structured text, such as source code, we want to be
+able to directly manipulate "expressions" rather than lines or words. This is
+why we use the following packages, as they provide a lot of functionalities to
+navigate and edit those expressions.
 
 #+begin_src emacs-lisp
   (use-package paredit
@@ -3080,7 +3399,8 @@ Now, in order to work with structured text, such as source code, we want to be a
         (call-interactively 'lisp-indent-adjust-parens))))
 #+end_src
 
-Finally, we also remap one built-in command to a (usually) more useful variant, which has the same behaviour as the paredit one.
+Finally, we also remap one built-in command to a (usually) more useful variant,
+which has the same behaviour as the paredit one.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -3111,10 +3431,18 @@ Finally, we also remap one built-in command to a (usually) more useful variant, 
 
 ** Better auto-completion
 
-The previous Auto-completion section was about the general editing experience. Here, we add extra tools that will be particularly interesting when editing some kind of source code, which is by nature much more repetitive and rigid.
+The previous Auto-completion section was about the general editing experience.
+Here, we add extra tools that will be particularly interesting when editing some
+kind of source code, which is by nature much more repetitive and rigid.
 
 *** Dynamic Abbreviations
-One of the default facilities provided by Emacs for auto-completion is ~dabbrev~. In short, it is a way to complete what you are currently typing using "stuff" with the same prefix, in some open buffer of your emacs session. You can restrict the source buffers in various ways, but this is the basic idea. It can be (conceptually) further improved by taking possible completions from other sources (such as filenames); the result is the built-in function ~hippie-expand~.
+One of the default facilities provided by Emacs for auto-completion is
+~dabbrev~. In short, it is a way to complete what you are currently typing using
+"stuff" with the same prefix, in some open buffer of your emacs session. You can
+restrict the source buffers in various ways, but this is the basic idea. It can
+be (conceptually) further improved by taking possible completions from other
+sources (such as filenames); the result is the built-in function
+~hippie-expand~.
 
 #+begin_src emacs-lisp
   (use-package hippie-exp
@@ -3123,7 +3451,8 @@ One of the default facilities provided by Emacs for auto-completion is ~dabbrev~
 
 *** YASnippet
 
-     A first useful package is YASnippet, which makes it easy to define and automatically insert snippets of code in various languages.
+     A first useful package is YASnippet, which makes it easy to define and
+     automatically insert snippets of code in various languages.
 
 #+begin_src emacs-lisp
   ;;YASnippet
@@ -3147,7 +3476,9 @@ One of the default facilities provided by Emacs for auto-completion is ~dabbrev~
     (lps/snippets-initialize))
 #+end_src
 
-It is even possible to define your own snippets. The following package contains a lot of useful snippets for various programming languages or tools, such a C++, Clojure, various Makefiles, Emacs' Org-Mode ...
+It is even possible to define your own snippets. The following package contains
+a lot of useful snippets for various programming languages or tools, such a C++,
+Clojure, various Makefiles, Emacs' Org-Mode ...
 
 #+begin_src emacs-lisp
   (use-package yasnippet-snippets
@@ -3157,7 +3488,13 @@ It is even possible to define your own snippets. The following package contains 
 ** Language Server Protocol
 *** Protocol
 
-    The [[https://en.wikipedia.org/wiki/Language_Server_Protocol][Language Server Protocol]] is a protocol which facilitates the use of several languages with various IDE. Instead of specifying a syntax, ..., for each pair "IDE/Language", it aims at abstracting the specifities of each language, so that each IDE will need to communicate with a server that will give back the information needed to do IDE-y things such as highlighting or auto-completion in an unified manner.
+    The [[https://en.wikipedia.org/wiki/Language_Server_Protocol][Language
+    Server Protocol]] is a protocol which facilitates the use of several
+    languages with various IDE. Instead of specifying a syntax, ..., for each
+    pair "IDE/Language", it aims at abstracting the specifities of each
+    language, so that each IDE will need to communicate with a server that will
+    give back the information needed to do IDE-y things such as highlighting or
+    auto-completion in an unified manner.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -3205,7 +3542,8 @@ It is even possible to define your own snippets. The following package contains 
 
 *** LSP-mode
 
-LSP-mode is the most featureful client for Emacs. It provides a lot of fancy stuff, especially in terms of UI: popups, graphical widgets ...
+LSP-mode is the most featureful client for Emacs. It provides a lot of fancy
+stuff, especially in terms of UI: popups, graphical widgets ...
 
 #+begin_src emacs-lisp
   ;; LSP mode. Useful IDE-like features
@@ -3232,7 +3570,10 @@ LSP-mode is the most featureful client for Emacs. It provides a lot of fancy stu
 
 *** Eglot
 
-There exists another implementation of the Language Server Protocol in Emacs, called [[https://github.com/joaotavora/eglot][eglot]]. It is much more integrated within "core" Emacs, as it only uses built-in packages, such as =project.el= instead of ~projectile~, or ~flymake~ rather than ~flycheck~.
+There exists another implementation of the Language Server Protocol in Emacs,
+called [[https://github.com/joaotavora/eglot][eglot]]. It is much more
+integrated within "core" Emacs, as it only uses built-in packages, such as
+=project.el= instead of ~projectile~, or ~flymake~ rather than ~flycheck~.
 
 #+begin_src emacs-lisp
   ;; Might not work, recommended to use package-install instead
@@ -3264,7 +3605,9 @@ There exists another implementation of the Language Server Protocol in Emacs, ca
 
 ** Errors and syntax checking
 
-Although there exists [[https://www.flycheck.org/en/latest/][Flycheck]], a modern on-the-fly syntax checking extension to Emacs, the built-in Flymake is sufficient for my purposes.
+Although there exists [[https://www.flycheck.org/en/latest/][Flycheck]], a
+modern on-the-fly syntax checking extension to Emacs, the built-in Flymake is
+sufficient for my purposes.
 
 #+begin_src emacs-lisp
   ;; Flycheck
@@ -3293,8 +3636,9 @@ Although there exists [[https://www.flycheck.org/en/latest/][Flycheck]], a moder
 #+end_src
 
 ** Compilation
-In several programming languages, it is useful to have a way to compile the current program easily.
-We will use the built-in ~compile~ command for this, and tune it as we need.
+In several programming languages, it is useful to have a way to compile the
+current program easily. We will use the built-in ~compile~ command for this, and
+tune it as we need.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -3321,7 +3665,8 @@ We will use the built-in ~compile~ command for this, and tune it as we need.
 
 ** Documentation
 
-Emacs has a built-in way to find, show, compose ... documentation: the package responsible for all of that is called ~eldoc~.
+Emacs has a built-in way to find, show, compose ... documentation: the package
+responsible for all of that is called ~eldoc~.
 
 #+begin_src emacs-lisp
   (use-package eldoc
@@ -3337,7 +3682,9 @@ Emacs has a built-in way to find, show, compose ... documentation: the package r
 
 ** REPL and CLI
 
-Many programming languages have, in one way or another, a REPL or a command-line interface. Although some modes will be configured independently, there are some tweaks that we want everywhere, regardless of the mode.
+Many programming languages have, in one way or another, a REPL or a command-line
+interface. Although some modes will be configured independently, there are some
+tweaks that we want everywhere, regardless of the mode.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -3350,7 +3697,8 @@ Many programming languages have, in one way or another, a REPL or a command-line
 
 ** Programming languages
 
-In this section, we fine-tune our editing tools for various programming languages.
+In this section, we fine-tune our editing tools for various programming
+languages.
 *** Python
 
 We need to specify which server LSP will use. Several packages are available.
@@ -3378,7 +3726,10 @@ The command ~pyls~ needs to be available on the ~PATH~ environment variable.
     (push 'company-indent-or-complete-common python-indent-trigger-commands))
 #+end_src
 
-Finally, we can improve the interpreter by allowing it to handle multi-line statements better. Terminal emulators are lame and have trouble doing it without massive changes (hello, IPython !), but this is Emacs, we can do whatever we want.
+Finally, we can improve the interpreter by allowing it to handle multi-line
+statements better. Terminal emulators are lame and have trouble doing it without
+massive changes (hello, IPython !), but this is Emacs, we can do whatever we
+want.
 
 #+begin_src emacs-lisp
   (use-package python-mls
@@ -3396,7 +3747,8 @@ Finally, we can improve the interpreter by allowing it to handle multi-line stat
 
 *** OCaml
 
-For OCaml, we do not use LSP mode, and we instead choose to work with a specific minor mode called [[https://github.com/ocaml/tuareg][Tuareg]].
+For OCaml, we do not use LSP mode, and we instead choose to work with a specific
+minor mode called [[https://github.com/ocaml/tuareg][Tuareg]].
 
 #+begin_src emacs-lisp
   ;; Tuareg (for OCaml and ML like languages)
@@ -3409,9 +3761,13 @@ For OCaml, we do not use LSP mode, and we instead choose to work with a specific
 
 *** C/C++
 
-For C and C++ (and ObjectiveC), as for Python, we need to install a server for LSP to use. We use the one called [[https://github.com/MaskRay/ccls/wiki/lsp-mode][ccls]].
+For C and C++ (and ObjectiveC), as for Python, we need to install a server for
+LSP to use. We use the one called
+[[https://github.com/MaskRay/ccls/wiki/lsp-mode][ccls]].
 
-*MANUAL* To use the ccls server, follow the instruction [[https://github.com/MaskRay/ccls/][here]], or simply install the available version from your distribution standard repositories.
+*MANUAL* To use the ccls server, follow the instruction
+[[https://github.com/MaskRay/ccls/][here]], or simply install the available
+version from your distribution standard repositories.
 
 #+begin_src emacs-lisp
   ;; C/C++
@@ -3441,7 +3797,11 @@ We also use custom compilation commands.
                                             buf-no-ext)))))
 #+end_src
 
-As C and C++ are also quite "close to the metal", it is often useful (for optimization or learning purposes) to view what the compiled code looks like. Of course, Emacs has ways to work with assembly (/e.g.,/ [[help:asm-mode][asm-mode]]), but we can even see the assembly code /while still editing the source/ !
+As C and C++ are also quite "close to the metal", it is often useful (for
+optimization or learning purposes) to view what the compiled code looks like. Of
+course, Emacs has ways to work with assembly (/e.g.,/
+[[help:asm-mode][asm-mode]]), but we can even see the assembly code /while still
+editing the source/ !
 
 #+begin_src emacs-lisp
   (use-package disaster
@@ -3476,7 +3836,9 @@ Orange Crab Language.
 #+end_src
 
 *** Assembly
-As mentioned in the previous sections, there are already a few tools to work with assembly code within Emacs. We add a few functions wrapping some command-line utilities from the GNU binutils package.
+As mentioned in the previous sections, there are already a few tools to work
+with assembly code within Emacs. We add a few functions wrapping some
+command-line utilities from the GNU binutils package.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -3503,9 +3865,13 @@ As mentioned in the previous sections, there are already a few tools to work wit
 
 *** Lisp
 **** Generic
-As Lisp dialects are often similar, at least syntactically, there are some packages who are interesting regardless of the exact language being used.
+As Lisp dialects are often similar, at least syntactically, there are some
+packages who are interesting regardless of the exact language being used.
 
-The first one is adapted to Common Lisp via a SLY extension, but was already implemented for Emacs Lisp before that. It - arguably - improves the macroexansion process, and allows one to quickly view what a macroexpansion is, /without/ actually modifying the source code.
+The first one is adapted to Common Lisp via a SLY extension, but was already
+implemented for Emacs Lisp before that. It - arguably - improves the
+macroexansion process, and allows one to quickly view what a macroexpansion is,
+/without/ actually modifying the source code.
 
 #+begin_src emacs-lisp
   (use-package macrostep
@@ -3516,9 +3882,12 @@ The first one is adapted to Common Lisp via a SLY extension, but was already imp
 
 **** Emacs Lisp
 
-Although Emacs comes with pretty good built-in functionalities, there is still room for improvement.
+Although Emacs comes with pretty good built-in functionalities, there is still
+room for improvement.
 
-[[https://github.com/Fanael/highlight-defined][highlight defined]] highlights defined Emacs Lisp symbols (functions, variable names, macros ...) in source code.
+[[https://github.com/Fanael/highlight-defined][highlight defined]] highlights
+defined Emacs Lisp symbols (functions, variable names, macros ...) in source
+code.
 
 #+begin_src emacs-lisp
   (use-package highlight-defined
@@ -3526,16 +3895,23 @@ Although Emacs comes with pretty good built-in functionalities, there is still r
 
 #+end_src
 
-[[https://github.com/Silex/elmacro][elmacro]] shows keyboard macros and interactive commands as Emacs Lisp, meaning that if you know /how/ to do something using advanced keyboard shortcuts or interactive commands, you can get for free an elisp code snippet that does exactly the same thing that you can reuse /e.g./ in a configuration file or in another function.
+[[https://github.com/Silex/elmacro][elmacro]] shows keyboard macros and
+interactive commands as Emacs Lisp, meaning that if you know /how/ to do
+something using advanced keyboard shortcuts or interactive commands, you can get
+for free an elisp code snippet that does exactly the same thing that you can
+reuse /e.g./ in a configuration file or in another function.
 
-Because it might be useful everywhere, we do not use it simply in =emacs-lisp-mode= and we activate it everywhere.
+Because it might be useful everywhere, we do not use it simply in
+=emacs-lisp-mode= and we activate it everywhere.
 
 #+begin_src emacs-lisp
   (use-package elmacro
     :defer t)
 #+end_src
 
-We define a useful function to evaluate an expression, and replace it with the result. This, in conjunction with macros and multiple cursors, is a great tool to automate otherwise boring tasks.
+We define a useful function to evaluate an expression, and replace it with the
+result. This, in conjunction with macros and multiple cursors, is a great tool
+to automate otherwise boring tasks.
 
 #+begin_src emacs-lisp
   (use-package emacs
@@ -3563,10 +3939,20 @@ We define a useful function to evaluate an expression, and replace it with the r
 
 **** Common Lisp
 
-We could, of course, use LSP to write Common Lisp code. However, Emacs already provides nice editing functionalities for programming in Lisp-like languages, and CL is no exception. On top of the built-in Emacs functions, we use another minor mode, specifically designed to write Common Lisp: [[https://common-lisp.net/project/slime/][SLIME]]. More precisely, we use a /fork/ of SLIME, known as [[https://github.com/joaotavora/sly][SLY]].
+We could, of course, use LSP to write Common Lisp code. However, Emacs already
+provides nice editing functionalities for programming in Lisp-like languages,
+and CL is no exception. On top of the built-in Emacs functions, we use another
+minor mode, specifically designed to write Common Lisp:
+[[https://common-lisp.net/project/slime/][SLIME]]. More precisely, we use a
+/fork/ of SLIME, known as [[https://github.com/joaotavora/sly][SLY]].
 
-*MANUAL* It is likely that ~sbcl~ is not already installed. Hence, in order to run the following code, you will need to install it. If you install it manuallyby compiling the source code, make sure that the ~sbcl~ command is available on the PATH, or modify  =:custom (inferior-lisp-program "<path/to/sbcl>")= accordingly in the following block.
-Moreover, if  you want to access the CL HyperSpec offline, you need to download it, and have ~common-lisp-hyperspec-root~ point towards it.
+*MANUAL* It is likely that ~sbcl~ is not already installed. Hence, in order to
+run the following code, you will need to install it. If you install it
+manuallyby compiling the source code, make sure that the ~sbcl~ command is
+available on the PATH, or modify =:custom (inferior-lisp-program
+"<path/to/sbcl>")= accordingly in the following block. Moreover, if you want to
+access the CL HyperSpec offline, you need to download it, and have
+~common-lisp-hyperspec-root~ point towards it.
 
 #+begin_src emacs-lisp
   ;; Make sure that sbcl is available on PATH
@@ -3768,7 +4154,9 @@ Moreover, if  you want to access the CL HyperSpec offline, you need to download 
           ("C-c C-s C-t" . sly-stickers-toggle-break-on-stickers)))
 #+end_src
 
-On top of this environment and compiler, we also need an access to external libraries and packages. A popular option is to use Quicklisp, for which there is a SLY integration.
+On top of this environment and compiler, we also need an access to external
+libraries and packages. A popular option is to use Quicklisp, for which there is
+a SLY integration.
 
 We also add extra-packages to facilitate some usual operations.
 
@@ -3879,7 +4267,10 @@ Finally, we add some snippets for an even faster programming experience:
 #+end_src
 
 **** Clojure
-Finally, another recent and promising Lisp, which is much more opinionated than Common Lisp and runs on the JVM. It is a functional language, with a strong emphasis on immutable data structure, and has various tools that make concurrent programming easy.
+Finally, another recent and promising Lisp, which is much more opinionated than
+Common Lisp and runs on the JVM. It is a functional language, with a strong
+emphasis on immutable data structure, and has various tools that make concurrent
+programming easy.
 
 #+begin_src emacs-lisp
   (use-package cider
@@ -3888,9 +4279,15 @@ Finally, another recent and promising Lisp, which is much more opinionated than 
 
 *** Haskell
 
-Haskell is a functional, strongly typed programming language. A variety of modes have been written for it, and are pretty much necessary, as Haskell's syntax and source files look nothing like "basic C/Java" at all and so we cannot simply use variants of ~c-mode~ to program in Haskell.
+Haskell is a functional, strongly typed programming language. A variety of modes
+have been written for it, and are pretty much necessary, as Haskell's syntax and
+source files look nothing like "basic C/Java" at all and so we cannot simply use
+variants of ~c-mode~ to program in Haskell.
 
-*MANUAL* [[https://www.haskell.org/cabal/][Cabal]] and [[https://github.com/ndmitchell/hoogle][Hoogle]] need to be installed separately. Once ~cabal~ is installed, you can just call =cabal update && cabal install hoogle= to install ~Hoogle~.
+*MANUAL* [[https://www.haskell.org/cabal/][Cabal]] and
+[[https://github.com/ndmitchell/hoogle][Hoogle]] need to be installed
+separately. Once ~cabal~ is installed, you can just call =cabal update && cabal
+install hoogle= to install ~Hoogle~.
 
 #+begin_src emacs-lisp
   (use-package haskell-mode
@@ -3912,10 +4309,24 @@ Haskell is a functional, strongly typed programming language. A variety of modes
     :after yasnippet haskell-mode)
 #+end_src
 
-For all the intelligent stuff (completion, refactoring ...), we will not bother setting up numerous fancy modes but we rely instead on LSP. Although it is not my preferred way of doing things, I am not a Haskell guru at all, and don't use it that much, so a simple "Out of the box" experience will be fine, even if it is a bit bloated and offers less customization facilities.
+For all the intelligent stuff (completion, refactoring ...), we will not bother
+setting up numerous fancy modes but we rely instead on LSP. Although it is not
+my preferred way of doing things, I am not a Haskell guru at all, and don't use
+it that much, so a simple "Out of the box" experience will be fine, even if it
+is a bit bloated and offers less customization facilities.
 
-*MANUAL* The language server needs to be installed manually. I use [[https://github.com/haskell/haskell-language-server][haskell-language-server]] in this config.
-Be careful when installing ~ghcup~ and the likes. In some cases, only your ~.bashrc~ will be modified to add ~~/.ghcup/...~ to your PATH environment variable. This makes Emacs unable to locate the correct binaries for the language server, even if you specify the full path to the wrapper (Emacs will then be able to correctly start the wrapper, but the wrapper itself won't be able to locate the correct binaries). In this case, simply move the corresponding line from your ~.bashrc~ (probably the last one, or towards the end of the file), to ~~/.profile~ or ~~/.bash_profile~, so the PATH is correctly setup even outside of interactive bash terminals and Emacs will always inherit it.
+*MANUAL* The language server needs to be installed manually. I use
+[[https://github.com/haskell/haskell-language-server][haskell-language-server]]
+in this config. Be careful when installing ~ghcup~ and the likes. In some cases,
+only your ~.bashrc~ will be modified to add ~~/.ghcup/...~ to your PATH
+environment variable. This makes Emacs unable to locate the correct binaries for
+the language server, even if you specify the full path to the wrapper (Emacs
+will then be able to correctly start the wrapper, but the wrapper itself won't
+be able to locate the correct binaries). In this case, simply move the
+corresponding line from your ~.bashrc~ (probably the last one, or towards the
+end of the file), to ~~/.profile~ or ~~/.bash_profile~, so the PATH is correctly
+setup even outside of interactive bash terminals and Emacs will always inherit
+it.
 
 #+begin_src emacs-lisp
   (use-package lsp-haskell
@@ -3926,7 +4337,8 @@ Be careful when installing ~ghcup~ and the likes. In some cases, only your ~.bas
 
 *** Web development
 **** Javascript
-The built-in ~js-mode~ is good, but as it is often the case with Emacs and popular languages, it has been improved in community packages.
+The built-in ~js-mode~ is good, but as it is often the case with Emacs and
+popular languages, it has been improved in community packages.
 
 #+begin_src emacs-lisp
   (use-package js2-mode
@@ -3937,7 +4349,8 @@ The built-in ~js-mode~ is good, but as it is often the case with Emacs and popul
     (js2-include-node-externs t))
 #+end_src
 
-We also a language server to help us with refactoring, completion and other fancy IDE-like features.
+We also a language server to help us with refactoring, completion and other
+fancy IDE-like features.
 
 #+begin_src emacs-lisp
   (use-package tide
@@ -3962,7 +4375,10 @@ We also a language server to help us with refactoring, completion and other fanc
 #+end_src
 
 **** HTML/CSS
-For HTML/CSS, we use another featureful package called =web-mode=. It can also be used to deal with Javascript or PHP code, but in my opinion, there are better alternatives for those specifically, so I only use =web-mode= for HTML/CSS (and their numerous variants ...).
+For HTML/CSS, we use another featureful package called =web-mode=. It can also
+be used to deal with Javascript or PHP code, but in my opinion, there are better
+alternatives for those specifically, so I only use =web-mode= for HTML/CSS (and
+their numerous variants ...).
 #+begin_src emacs-lisp
   (use-package web-mode
     :defer t
@@ -3973,7 +4389,11 @@ For HTML/CSS, we use another featureful package called =web-mode=. It can also b
     (web-mode . rainbow-mode))
 #+end_src
 
-Because HTML tends to be very verbose, we also want to be able to quickly type the usual boilerplate. We use =emmet-mode=, which implement a way to quickly expand (many) abbreviations into templates. It is somewhat similar to =Yasnippet=, with some differences nonetheless, and the two can be used at the same time so why would we have to choose ?
+Because HTML tends to be very verbose, we also want to be able to quickly type
+the usual boilerplate. We use =emmet-mode=, which implement a way to quickly
+expand (many) abbreviations into templates. It is somewhat similar to
+=Yasnippet=, with some differences nonetheless, and the two can be used at the
+same time so why would we have to choose ?
 
 #+begin_src emacs-lisp
   (use-package emmmet-mode
@@ -3986,7 +4406,8 @@ Because HTML tends to be very verbose, we also want to be able to quickly type t
 #+end_src
 
 *** Java
-Despite not being the best editor to program in Java, Emacs is still quite capable, in particular when using LSP.
+Despite not being the best editor to program in Java, Emacs is still quite
+capable, in particular when using LSP.
 
 #+begin_src emacs-lisp
   (use-package eglot-java
@@ -3996,7 +4417,8 @@ Despite not being the best editor to program in Java, Emacs is still quite capab
 
 ** Debug
 *** GUD
-Emacs already provides a large number of debuggers, under the name "Grand Unified Debugger".
+Emacs already provides a large number of debuggers, under the name "Grand
+Unified Debugger".
 
 #+begin_src emacs-lisp
   (use-package gdb-mi
@@ -4005,9 +4427,14 @@ Emacs already provides a large number of debuggers, under the name "Grand Unifie
     :hook (gdb-mode . gdb-many-windows))
 #+end_src
 
-For a more recent and, in some settings, featureful debugging experience, there is the DAP protocol, playing the same role than LSP for the programming experience (auto-completion, jump-to definition/reference, etc).
+For a more recent and, in some settings, featureful debugging experience, there
+is the DAP protocol, playing the same role than LSP for the programming
+experience (auto-completion, jump-to definition/reference, etc).
 
-The general protocol exists independently from Emacs, and we therefore have to choose a client for it, just as we do with LSP. We choose ~dape~, which is the "closest to built-in" compared to the alternative ~dap-mode~ (same difference than in ~eglot~ vs ~lsp-mode~).
+The general protocol exists independently from Emacs, and we therefore have to
+choose a client for it, just as we do with LSP. We choose ~dape~, which is the
+"closest to built-in" compared to the alternative ~dap-mode~ (same difference
+than in ~eglot~ vs ~lsp-mode~).
 
 #+begin_src emacs-lisp
   (use-package dape
@@ -4021,7 +4448,9 @@ The general protocol exists independently from Emacs, and we therefore have to c
 
 ** Other tools
 *** ANTLR
-[[https://fr.wikipedia.org/wiki/ANTLR][ANTLR]] is a tool that is used to write compilers and interpreters, by producing a lexer and a parser (and potentially several other things) from a grammar.
+[[https://fr.wikipedia.org/wiki/ANTLR][ANTLR]] is a tool that is used to write
+compilers and interpreters, by producing a lexer and a parser (and potentially
+several other things) from a grammar.
 
 #+begin_src emacs-lisp
   (use-package antlr-mode
@@ -4034,7 +4463,9 @@ The general protocol exists independently from Emacs, and we therefore have to c
 
 *** SageMath
 
-[[https://www.sagemath.org/][SageMath]] (or simply ~Sage~) is a general-purpose mathematics system, built-on top of many other open-source softwares, that are combined and made accessible from a common Python interface.
+[[https://www.sagemath.org/][SageMath]] (or simply ~Sage~) is a general-purpose
+mathematics system, built-on top of many other open-source softwares, that are
+combined and made accessible from a common Python interface.
 
 #+begin_src emacs-lisp
   (use-package sage-shell-mode
@@ -4052,7 +4483,8 @@ The general protocol exists independently from Emacs, and we therefore have to c
 
 *** Graphviz
 
-Graphviz is a simple tool to visualize graphs. It used a custom file format, usually withe extension ~.dot~.
+Graphviz is a simple tool to visualize graphs. It used a custom file format,
+usually withe extension ~.dot~.
 
 #+begin_src emacs-lisp
   (use-package graphviz-dot-mode
@@ -4067,11 +4499,13 @@ Graphviz is a simple tool to visualize graphs. It used a custom file format, usu
 
    [[https://orgmode.org/][Org Mode]] is one of the best reasons to use Emacs.
 
-   It acts as a markup language, can deal with planning, manage spreadsheets, do project planning, run code blocks to do literate programming ...
+   It acts as a markup language, can deal with planning, manage spreadsheets, do
+   project planning, run code blocks to do literate programming ...
 
 ** Basic configuration
 
-We change the general feel of Org Mode documents by using other indentation rules, by changing the headers appearance, and a few other minor changes.
+We change the general feel of Org Mode documents by using other indentation
+rules, by changing the headers appearance, and a few other minor changes.
 
 #+begin_src emacs-lisp :noweb yes
   (use-package org-bullets
@@ -4164,7 +4598,10 @@ We change the general feel of Org Mode documents by using other indentation rule
       (lps/org-font-setup)
       (org-indent-mode 1)
       ;; (variable-pitch-mode 1)
-      (visual-line-mode 1)
+      (setq-local olivetti-minimum-body-width (+ 4 fill-column))
+      (olivetti-mode 1)
+      (visual-line-mode -1)
+      (auto-fill-mode 1)
       (lps/windmove-mode-local-off)
       (org-cdlatex-mode 1)
       (setq-local electric-pair-inhibit-predicate
@@ -4335,7 +4772,8 @@ We add a bunch of functions to facilitate the direct edition of Org files
 
 ** Font and faces
 
-In order for Org Mode to feel like a document instead of code, we use a different font.
+In order for Org Mode to feel like a document instead of code, we use a
+different font.
 
 #+NAME: org-fonts
 #+begin_src emacs-lisp :tangle no
@@ -4369,7 +4807,10 @@ In order for Org Mode to feel like a document instead of code, we use a differen
 
 ** Org Babel and blocks
 
-Org babel is what allows us to write code and execute it, all within the same document. More generally, Org has a notion of structured "block", with various templates, serving various purposes (code snippets in programming languages, quotations, examples ...).
+Org babel is what allows us to write code and execute it, all within the same
+document. More generally, Org has a notion of structured "block", with various
+templates, serving various purposes (code snippets in programming languages,
+quotations, examples ...).
 
 We also add templates to insert code blocks with a few key presses.
 
@@ -4428,7 +4869,9 @@ We also add templates to insert code blocks with a few key presses.
 
 ** Org Export
 
-Org-mode can export an ~.org~ document to various other formats, for example $\LaTeX$, ~.odt~ or ~HTML~. There are a lot of options for those different backends, and you can even define your own backends easily.
+Org-mode can export an ~.org~ document to various other formats, for example
+$\LaTeX$, ~.odt~ or ~HTML~. There are a lot of options for those different
+backends, and you can even define your own backends easily.
 
 *** HTML
 
@@ -4461,7 +4904,13 @@ Org-mode can export an ~.org~ document to various other formats, for example $\L
 
 **** Abbreviations
 
-A useful feature, offered by some static website generators (e.g. [[https://getpelican.com/][Pelican]] ...), consists in defining some "abbreviations" along with a description, all occurrences of which being replaced in the exported document by a HTML ~abbr~ element. This is a built-in feature of Org-mode, but is easily added, using ~org-export-before-parsing-hook~, regular expressions tricks, and the alread-existing Org parsing capabilities.
+A useful feature, offered by some static website generators (e.g.
+[[https://getpelican.com/][Pelican]] ...), consists in defining some
+"abbreviations" along with a description, all occurrences of which being
+replaced in the exported document by a HTML ~abbr~ element. This is a built-in
+feature of Org-mode, but is easily added, using
+~org-export-before-parsing-hook~, regular expressions tricks, and the
+alread-existing Org parsing capabilities.
 
 #+NAME: org-export-abbr
 #+begin_src emacs-lisp :tangle no
@@ -4560,7 +5009,14 @@ A useful feature, offered by some static website generators (e.g. [[https://getp
 
 **** Anchors names
 
-By default, Org exports automatically generated section names for healines, section and so on. This means in particular that the generated IDs are modified each time the file is re-exported, and that it is also meaningless. This code tries to fix it, by generating IDs depending on the current section, possibly using sections higher up in the tree until the ID is unique. The code is taken, and might be adapted, from [[https://github.com/alphapapa/unpackaged.el?tab=readme-ov-file#export-to-html-with-useful-anchors][Alphapapa's list of unpackaged but still useful functions]].
+By default, Org exports automatically generated section names for healines,
+section and so on. This means in particular that the generated IDs are modified
+each time the file is re-exported, and that it is also meaningless. This code
+tries to fix it, by generating IDs depending on the current section, possibly
+using sections higher up in the tree until the ID is unique. The code is taken,
+and might be adapted, from
+[[https://github.com/alphapapa/unpackaged.el?tab=readme-ov-file#export-to-html-with-useful-anchors][Alphapapa's
+list of unpackaged but still useful functions]].
 
 #+NAME: org-export-id-nodes
 #+begin_src emacs-lisp :tangle no
@@ -4657,7 +5113,12 @@ By default, Org exports automatically generated section names for healines, sect
 
 ** Org Agenda
 
-Not only is Org Mode great to write structured documents that can be exported to pretty much anything we want - including tangled to produce source code using literate programming -, it is also a powerful to ... *org*anize things. A built-in functionality is the agenda, where you can schedule tasks, set deadlines, configure reminders, the frequency at which you will need to repeat a given task, and so on.
+Not only is Org Mode great to write structured documents that can be exported to
+pretty much anything we want - including tangled to produce source code using
+literate programming -, it is also a powerful to ... *org*anize things. A
+built-in functionality is the agenda, where you can schedule tasks, set
+deadlines, configure reminders, the frequency at which you will need to repeat a
+given task, and so on.
 
 #+begin_src emacs-lisp
   (use-package org-agenda
@@ -4912,7 +5373,10 @@ Not only is Org Mode great to write structured documents that can be exported to
 
 ** Org Roam
 
-Org-Roam is another *huge* package based on org-mode. It is a "plain-text [obviously] knowledge management system". To be more concrete, it gives a way to link, reference, archive ... many "notes", each of those being a - usually small - file.
+Org-Roam is another *huge* package based on org-mode. It is a "plain-text
+[obviously] knowledge management system". To be more concrete, it gives a way to
+link, reference, archive ... many "notes", each of those being a - usually
+small - file.
 
 #+begin_src emacs-lisp
   (use-package org-roam
@@ -4946,7 +5410,8 @@ Org-Roam is another *huge* package based on org-mode. It is a "plain-text [obvio
     (org-roam-db-autosync-mode))
 #+end_src
 
-As usual with those popular packages, we can enhance them using various other small packages from the community.
+As usual with those popular packages, we can enhance them using various other
+small packages from the community.
 
 #+begin_src emacs-lisp
   (use-package consult-org-roam
@@ -4962,7 +5427,10 @@ As usual with those popular packages, we can enhance them using various other sm
     (consult-org-roam-mode))
 #+end_src
 
-To improve this note-taking system, we would like to be able to visualize the graph produced by all (or a part of) our notes. By default, ~org-roam~ is able to use ~graphviz~ to produce such a visual plotting, but other methods exist, and produce objects with which we can interact.
+To improve this note-taking system, we would like to be able to visualize the
+graph produced by all (or a part of) our notes. By default, ~org-roam~ is able
+to use ~graphviz~ to produce such a visual plotting, but other methods exist,
+and produce objects with which we can interact.
 
 #+begin_src emacs-lisp
   (use-package org-roam-ui
@@ -4980,9 +5448,12 @@ To improve this note-taking system, we would like to be able to visualize the gr
 * LaTeX and PDF
 *** PDF viewer
 
-Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tools]].
+Rather than =doc-view=, we use [[https://github.com/politza/pdf-tools][PDF
+Tools]].
 
-*MANUAL* This package might require some external libraries to be installed. Please refer to the linked page to see exactly what you need to do on your system.
+*MANUAL* This package might require some external libraries to be installed.
+Please refer to the linked page to see exactly what you need to do on your
+system.
 
 #+begin_src emacs-lisp
   ;; Might require extra libs to work, see https://github.com/politza/pdf-tools
@@ -5060,7 +5531,9 @@ Rather than =doc-view=, we  use [[https://github.com/politza/pdf-tools][PDF Tool
         ()))))
 #+end_src
 
-We also add the (generally useful) feature of remembering where we left a PDF when we last closed it. This is especially useful for longer documents, such as manuals, books, or especially long articles.
+We also add the (generally useful) feature of remembering where we left a PDF
+when we last closed it. This is especially useful for longer documents, such as
+manuals, books, or especially long articles.
 
 #+begin_src emacs-lisp
   (use-package saveplace-pdf-view
@@ -5069,11 +5542,16 @@ We also add the (generally useful) feature of remembering where we left a PDF wh
 
 *** PDF modification
 
-Sometimes, we don't only want to view PDF, but also to modify them, for example split, concatenate, extract pages ... or add a table of contents.
+Sometimes, we don't only want to view PDF, but also to modify them, for example
+split, concatenate, extract pages ... or add a table of contents.
 
-Once again, we rely on external CLI tools and some wrapper Emacs package that make using those tools easier.
+Once again, we rely on external CLI tools and some wrapper Emacs package that
+make using those tools easier.
 
-*MANUAL* As explained on [[https://github.com/dalanicolai/doc-tools-toc][the package webpage]], you need to install some utilities: ~pdftotext~ from poppler-utils, ~pdfoutline~ from fntsample, and ~tesseract~ (sometimes packages as ~tesseract-ocr~).
+*MANUAL* As explained on [[https://github.com/dalanicolai/doc-tools-toc][the
+package webpage]], you need to install some utilities: ~pdftotext~ from
+poppler-utils, ~pdfoutline~ from fntsample, and ~tesseract~ (sometimes packages
+as ~tesseract-ocr~).
 
 #+begin_src emacs-lisp
   (use-package doc-toc
@@ -5089,7 +5567,8 @@ Once again, we rely on external CLI tools and some wrapper Emacs package that ma
 
 *** LaTeX
 
-It is also possible to configure Emacs to comfortably write and edit LaTeX documents, using the famous tool AUCTeX.
+It is also possible to configure Emacs to comfortably write and edit LaTeX
+documents, using the famous tool AUCTeX.
 
 **** General configuration
 
@@ -5418,7 +5897,8 @@ It is also possible to configure Emacs to comfortably write and edit LaTeX docum
 
 **** Folding
 
-AUCTeX comes with a built-in way to temporarily hide ("fold") environments, macro, etc.
+AUCTeX comes with a built-in way to temporarily hide ("fold") environments,
+macro, etc.
 
 #+begin_src emacs-lisp
   (use-package tex-fold
@@ -5445,7 +5925,8 @@ AUCTeX comes with a built-in way to temporarily hide ("fold") environments, macr
 #+end_src
 
 **** Beamer
-Beamer, a (the !) LaTeX document class used to produce presentations, slideshows and so on, is a beast in itself. We configure it separately in this section.
+Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
+and so on, is a beast in itself. We configure it separately in this section.
 
 #+NAME: beamer-mode
 #+begin_src emacs-lisp :tangle no
@@ -5735,7 +6216,8 @@ Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
 
 **** References
 
-We also configure BibTeX and other packages that allow us to insert quickly bibliography, labels, and various kinds of references in our documents.
+We also configure BibTeX and other packages that allow us to insert quickly
+bibliography, labels, and various kinds of references in our documents.
 
 ***** Bibtex files
 
@@ -5915,7 +6397,11 @@ We slightly extend BibTeX so that it can work with tags !
     ())
 #+end_src
 
-I often download articles from the Internet: in that setting, as I do not use browser extensions of separate software to manage my bibliography, the quick-and-dirty solution is to copy the BibTeX citation from the Internet too, and then using ~org-capture~, insert it at the right place, and link it to the downloaded PDF file /via/ the usual ~org-ref-*~ tools.
+I often download articles from the Internet: in that setting, as I do not use
+browser extensions of separate software to manage my bibliography, the
+quick-and-dirty solution is to copy the BibTeX citation from the Internet too,
+and then using ~org-capture~, insert it at the right place, and link it to the
+downloaded PDF file /via/ the usual ~org-ref-*~ tools.
 
 #+NAME: bibtex-capture
 #+begin_src emacs-lisp :tangle no
@@ -5936,7 +6422,9 @@ I often download articles from the Internet: in that setting, as I do not use br
 
 ***** LaTeX integration
 
-Another useful package to deal with references, bibliography, citations and so on, is [[https://www.gnu.org/software/emacs/manual/html_mono/reftex.html][RefTeX]].
+Another useful package to deal with references, bibliography, citations and so
+on, is
+[[https://www.gnu.org/software/emacs/manual/html_mono/reftex.html][RefTeX]].
 
 #+begin_src emacs-lisp
   (use-package reftex
@@ -6030,7 +6518,10 @@ Another useful package to deal with references, bibliography, citations and so o
 
 ***** Web integration
 
-Finally, we also want a way to do everything from Emacs, and it starts with /finding/ the BibTeX entry that we want to put in our =.bib= file. Hence, we use a package that will look on the Internet for us, and automatically insert the BibTex entries where we need them.
+Finally, we also want a way to do everything from Emacs, and it starts with
+/finding/ the BibTeX entry that we want to put in our =.bib= file. Hence, we use
+a package that will look on the Internet for us, and automatically insert the
+BibTex entries where we need them.
 
 #+begin_src emacs-lisp
   (use-package biblio
@@ -6078,7 +6569,10 @@ Finally, we also want a way to do everything from Emacs, and it starts with /fin
 
 ***** Bibliography management UI
 
-The next packages are used to manage the bibliography in itself: download articles, add some bibtex entries from simple queries directly within Emacs, add functions to search our bibliography, or even setup a note system with packages extending Org Roam !
+The next packages are used to manage the bibliography in itself: download
+articles, add some bibtex entries from simple queries directly within Emacs, add
+functions to search our bibliography, or even setup a note system with packages
+extending Org Roam !
 
 #+begin_src emacs-lisp
   (use-package bibtex-completion
@@ -6220,7 +6714,9 @@ The next packages are used to manage the bibliography in itself: download articl
                     (cdr (assoc field-name lps/bibtex-completion-format-entry-properties)))))))))
 #+end_src
 
-Because =bibtex-completion= is mainly an interface, we use a wrapper around it to actually use its functionnalities. As I don't use Helm or Ivy, I simply use the plain ~completing-read~ interface used by default by =org-ref=.
+Because =bibtex-completion= is mainly an interface, we use a wrapper around it
+to actually use its functionnalities. As I don't use Helm or Ivy, I simply use
+the plain ~completing-read~ interface used by default by =org-ref=.
 
 #+begin_src emacs-lisp
   (use-package doi-utils
@@ -6501,7 +6997,9 @@ Because =bibtex-completion= is mainly an interface, we use a wrapper around it t
   }\n"))
 #+end_src
 
-We integrate all the previous stuff with org-roam. This means that we can store notes (and look for them) in a slightly more satisfactory way than "plain" org-files !
+We integrate all the previous stuff with org-roam. This means that we can store
+notes (and look for them) in a slightly more satisfactory way than "plain"
+org-files !
 
 #+begin_src emacs-lisp
   (use-package org-roam-bibtex
@@ -6543,7 +7041,9 @@ We integrate all the previous stuff with org-roam. This means that we can store 
       (orb-note-actions--run orb-note-actions-interface citekey)))
 #+end_src
 
-Another useful thing is to view the entire bibliography as a table, with more or less information: this makes it easier to filter, sort, navigate bibliography possibly split in several files.
+Another useful thing is to view the entire bibliography as a table, with more or
+less information: this makes it easier to filter, sort, navigate bibliography
+possibly split in several files.
 
 #+begin_src emacs-lisp
   (use-package biblio-list
@@ -6559,12 +7059,22 @@ Another useful thing is to view the entire bibliography as a table, with more or
 #+end_src
 
 ***** Multibib
-There are various packages to deal with having multiple bibliography in a file (not /input/ files, which is handled by LaTeX anyway, and for which RefTeX is fine, but in the /output/). One of those packages is =multibib=, and as it works quite well and as there is already a style file for it, I will use this one and improve on it.
+There are various packages to deal with having multiple bibliography in a file
+(not /input/ files, which is handled by LaTeX anyway, and for which RefTeX is
+fine, but in the /output/). One of those packages is =multibib=, and as it works
+quite well and as there is already a style file for it, I will use this one and
+improve on it.
 
-The biggest problem is that =multibib= creates several =.aux= files, which Emacs knows nothing about, and so RefTeX does not pickup on them and does not automatically compile them to the appropriate =.bbl=.
-We override this behaviour as follows:
-- Create a new function to compile the "master file", running BibTeX "as usual" but changing the /following/ operations by using another sentinel function. This modified BibTeX function will override the usual ~TeX-run-BibTeX~.
-- Make other functions to deal specifically with the bibliography =.aux= files generated by the =multibib= packages. Those functions will be called repeatedly, processing one file at a time until they are all compiled.
+The biggest problem is that =multibib= creates several =.aux= files, which Emacs
+knows nothing about, and so RefTeX does not pickup on them and does not
+automatically compile them to the appropriate =.bbl=. We override this behaviour
+as follows:
+- Create a new function to compile the "master file", running BibTeX "as usual"
+  but changing the /following/ operations by using another sentinel function.
+  This modified BibTeX function will override the usual ~TeX-run-BibTeX~.
+- Make other functions to deal specifically with the bibliography =.aux= files
+  generated by the =multibib= packages. Those functions will be called
+  repeatedly, processing one file at a time until they are all compiled.
 
 #+NAME: bibtex-multibib
 #+begin_src emacs-lisp :tangle no
@@ -6649,7 +7159,10 @@ We override this behaviour as follows:
 
 **** Preview
 
-Instead of recompiling the source code to generate a complete PDF to visualize /e..g/ our mathematical formulas, AUCTeX also gives us the possibility to preview them inlines (as well as other - configurables - constructs, such as figures, matrices, and so on).
+Instead of recompiling the source code to generate a complete PDF to visualize
+/e..g/ our mathematical formulas, AUCTeX also gives us the possibility to
+preview them inlines (as well as other - configurables - constructs, such as
+figures, matrices, and so on).
 
 #+begin_src emacs-lisp
   (use-package preview
@@ -6674,7 +7187,10 @@ Instead of recompiling the source code to generate a complete PDF to visualize /
 
 **** Fast input
 
-AucTeX already includes a lot of shortcuts and ways to be more efficient when typing LaTeX source code, /e.g./ with ~LaTeX-math-mode~ or the various environments and sections that can be quickly entered. Some packages make this even faster.
+AucTeX already includes a lot of shortcuts and ways to be more efficient when
+typing LaTeX source code, /e.g./ with ~LaTeX-math-mode~ or the various
+environments and sections that can be quickly entered. Some packages make this
+even faster.
 
 #+begin_src emacs-lisp
   (use-package cdlatex
@@ -6850,7 +7366,9 @@ AucTeX already includes a lot of shortcuts and ways to be more efficient when ty
                   (throw 'stop t)))))))))
 #+end_src
 
-Another thing that is painful when writing LaTeX is dealing with tables. Thankfully, some packages try to alleviate this, and make editing several kind of table-like environments easier.
+Another thing that is painful when writing LaTeX is dealing with tables.
+Thankfully, some packages try to alleviate this, and make editing several kind
+of table-like environments easier.
 
 #+begin_src emacs-lisp
   (use-package latex-table-wizard
@@ -6864,11 +7382,21 @@ Another thing that is painful when writing LaTeX is dealing with tables. Thankfu
 ** Eshell
 *** General configuration
 
-Contrary to ~term~ and ~shell~ (respectively invoked by =M-x <term/shell>=), [[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]] is not /emulating/ anything: it is, on its own, a shell-like command interpreter implemented in Emacs Lisp. As such, it provides (most of) the usual commands such as ~grep~, ~ls~ and so on, as well as an extra binding to Emacs (for example, you can redirect the output of any command to an Emacs buffer). For this reason, you can use ~eshell~ on any system that is able to run Emacs, as there is no external dependency.
+Contrary to ~term~ and ~shell~ (respectively invoked by =M-x <term/shell>=),
+[[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]] is
+not /emulating/ anything: it is, on its own, a shell-like command interpreter
+implemented in Emacs Lisp. As such, it provides (most of) the usual commands
+such as ~grep~, ~ls~ and so on, as well as an extra binding to Emacs (for
+example, you can redirect the output of any command to an Emacs buffer). For
+this reason, you can use ~eshell~ on any system that is able to run Emacs, as
+there is no external dependency.
 
-In fact, some of those commands are reimplemented in Emacs Lisp (/e.g./ ~cat~), some of them are using the Emacs tools (for example ~grep~), and unknown commands are passed to the /real/ commandline.
+In fact, some of those commands are reimplemented in Emacs Lisp (/e.g./ ~cat~),
+some of them are using the Emacs tools (for example ~grep~), and unknown
+commands are passed to the /real/ commandline.
 
-A more in-depth guide can be found [[https://www.masteringemacs.org/article/complete-guide-mastering-eshell][here]].
+A more in-depth guide can be found
+[[https://www.masteringemacs.org/article/complete-guide-mastering-eshell][here]].
 
 We install a few packages which make eshell easier to use.
 
@@ -6985,9 +7513,13 @@ We install a few packages which make eshell easier to use.
 #+end_src
 
 *** Bash/Fish completion
-We use two packages to have a more powerful completion system in ~eshell~. The UI is akin to the one used by vanilla Emacs - it opens another buffer whenever you try to complete and there are more than one candidates - but it is still usable.
+We use two packages to have a more powerful completion system in ~eshell~. The
+UI is akin to the one used by vanilla Emacs - it opens another buffer whenever
+you try to complete and there are more than one candidates - but it is still
+usable.
 
-*MANUAL*  The second package, =fish-completion=, needs ~fish~ to be installed on the system (and that a ~fish~ executable can be found on the path).
+*MANUAL* The second package, =fish-completion=, needs ~fish~ to be installed on
+ the system (and that a ~fish~ executable can be found on the path).
 #+begin_src emacs-lisp
   (system-case
    (gnu/linux
@@ -7005,7 +7537,11 @@ We use two packages to have a more powerful completion system in ~eshell~. The U
 
 *** Aliases and commands
 **** Aliases from .bashrc
-*MANUAL* One thing that we might want to do is to be able to use aliases defined in =.bashrc= in ~eshell~. There are [[https://www.emacswiki.org/emacs/EshellAlias][several solutions]] to this problem, and the one I use only allows us to use bash aliases in ~eshell~ and not the contrary, for example.
+*MANUAL* One thing that we might want to do is to be able to use aliases defined
+in =.bashrc= in ~eshell~. There are
+[[https://www.emacswiki.org/emacs/EshellAlias][several solutions]] to this
+problem, and the one I use only allows us to use bash aliases in ~eshell~ and
+not the contrary, for example.
 
 We can do this by adding the following line at the end of the =.bashrc= file:
 
@@ -7013,9 +7549,16 @@ We can do this by adding the following line at the end of the =.bashrc= file:
   alias | sed -E "s/^alias ([^=]+)='(.*)'$/alias \1 \2 \$*/g; s/'\\\''/'/g;" >~/.emacs.d/eshell/alias
 #+end_src
 
-It will simply go through the =.bashrc= file whenever you open a bash terminal, and each time it sees a line starting with ~alias~, it will generate the corresponding alias in an appropriate syntax and put it in the =eshell/alias= file where ~eshell~ reads its aliases. This is not a very convincing solution for a few reasons, the main ones being that this process is executed "from the bash side" (and so requires us to start a bash shell or to at least execute the =.bashrc= file), and that it overrides the =eshell/alias= file each time.
+It will simply go through the =.bashrc= file whenever you open a bash terminal,
+and each time it sees a line starting with ~alias~, it will generate the
+corresponding alias in an appropriate syntax and put it in the =eshell/alias=
+file where ~eshell~ reads its aliases. This is not a very convincing solution
+for a few reasons, the main ones being that this process is executed "from the
+bash side" (and so requires us to start a bash shell or to at least execute the
+=.bashrc= file), and that it overrides the =eshell/alias= file each time.
 
-Another solution is to parse the aliases each time we start ~eshell~. We do this by reading the =.bashrc= file and extracting the aliases.
+Another solution is to parse the aliases each time we start ~eshell~. We do this
+by reading the =.bashrc= file and extracting the aliases.
 
 #+begin_src emacs-lisp
   ;; Inspired from https://github.com/daviderestivo/load-bash-alias/blob/master/load-bash-alias.el
@@ -7059,7 +7602,8 @@ Another solution is to parse the aliases each time we start ~eshell~. We do this
 #+end_src
 
 **** Specific to Eshell
-Some of our aliases will come from =.bashrc=. However, we still want to add aliases that make sense in ~eshell~.
+Some of our aliases will come from =.bashrc=. However, we still want to add
+aliases that make sense in ~eshell~.
 #+begin_src emacs-lisp
   (use-package em-alias
     :ensure nil
@@ -7125,9 +7669,15 @@ Because those are useful functions, we bind them globally.
 
 *** Dirvish
 
-[[https://github.com/alexluigit/dirvish/][Dirvish]] is (almost) a drop-in replacement for Dired. As it is essentially a big wrapper around the built-in Dired, most of the customizations (bindings, some defaults ...) are kept ! However, you may find that some of your old customizations have become unneeded, for Dirvish provides more options, or already has the "good" default behaviour, and so on.
+[[https://github.com/alexluigit/dirvish/][Dirvish]] is (almost) a drop-in
+replacement for Dired. As it is essentially a big wrapper around the built-in
+Dired, most of the customizations (bindings, some defaults ...) are kept !
+However, you may find that some of your old customizations have become unneeded,
+for Dirvish provides more options, or already has the "good" default behaviour,
+and so on.
 
-*MANUAL* To enable all the options provided by Dirvish, you need to install the =fd= and =mediainfo= command-line tools.
+*MANUAL* To enable all the options provided by Dirvish, you need to install the
+=fd= and =mediainfo= command-line tools.
 
 #+begin_src emacs-lisp
   (system-case
@@ -7248,8 +7798,11 @@ Because those are useful functions, we bind them globally.
 #+end_src
 
 ** TRAMP
-According to its own description, [[info:TRAMP][TRAMP]] is a "remote file editing package for Emacs". This is a bit misleading, as TRAMP is also used to execute commands as another user, for example.
-It is quite heavily customizable. However, I do not use it that much, and I am just defining a function here to help me remember the easy-to-forget syntax.
+According to its own description, [[info:TRAMP][TRAMP]] is a "remote file
+editing package for Emacs". This is a bit misleading, as TRAMP is also used to
+execute commands as another user, for example. It is quite heavily customizable.
+However, I do not use it that much, and I am just defining a function here to
+help me remember the easy-to-forget syntax.
 
 #+begin_src emacs-lisp
   (use-package tramp
@@ -7288,7 +7841,12 @@ It is quite heavily customizable. However, I do not use it that much, and I am j
 #+end_src
 
 ** Dotfiles
-In the \*nix world, We call /dotfiles/ files that are used to configure software, applications or packages (they are generally /hidden/ files, whose names start with a dot, hence the name). Various conventions are used in those files, specifying similar but not identical DSL to configure each software, and Emacs might have trouble choosing the right config by itself. In this section, we try to improve the general look & fell of those dotfiles.
+In the \*nix world, We call /dotfiles/ files that are used to configure
+software, applications or packages (they are generally /hidden/ files, whose
+names start with a dot, hence the name). Various conventions are used in those
+files, specifying similar but not identical DSL to configure each software, and
+Emacs might have trouble choosing the right config by itself. In this section,
+we try to improve the general look & fell of those dotfiles.
 
 #+begin_src emacs-lisp
   (use-package conf-mode
@@ -7298,7 +7856,13 @@ In the \*nix world, We call /dotfiles/ files that are used to configure software
 
 ** Tools
 *** Disk usage
-Although ~Dired~ is a powerful tool, it still lacks a neat feature, namely, it doesn't show the /recursive/ size of the folders. We can usually do one of two things: either write a lot of Elisp to include this into ~Dired~ (and risk breaking things), or use a shell and functions such as ~du~. We choose a third way, which consists in using a standalone package doing exactly what we want, with extra functionalities, such as interactive sorting and filtering, deletion of files, and so on, all within the same buffer.
+Although ~Dired~ is a powerful tool, it still lacks a neat feature, namely, it
+doesn't show the /recursive/ size of the folders. We can usually do one of two
+things: either write a lot of Elisp to include this into ~Dired~ (and risk
+breaking things), or use a shell and functions such as ~du~. We choose a third
+way, which consists in using a standalone package doing exactly what we want,
+with extra functionalities, such as interactive sorting and filtering, deletion
+of files, and so on, all within the same buffer.
 
 #+begin_src emacs-lisp
   (use-package disk-usage
@@ -7310,7 +7874,10 @@ Although ~Dired~ is a powerful tool, it still lacks a neat feature, namely, it d
 
 *** Processes
 
-There are two usual ways to interact with processes via Emacs. The first one is ~proced~, which lists all the processes running on the system, and the other is ~list-processes~, which only lists subprocesses ran by Emacs (such as a PDF server, a mail indexer, and so on)
+There are two usual ways to interact with processes via Emacs. The first one is
+~proced~, which lists all the processes running on the system, and the other is
+~list-processes~, which only lists subprocesses ran by Emacs (such as a PDF
+server, a mail indexer, and so on)
 
 #+begin_src emacs-lisp
   (use-package proced
@@ -7361,7 +7928,8 @@ There are two usual ways to interact with processes via Emacs. The first one is 
 
 *** Systemd
 
-I am personally not completely opposed to using systemd. Therefore, I sometimes need to edit or work with systemd services.
+I am personally not completely opposed to using systemd. Therefore, I sometimes
+need to edit or work with systemd services.
 
 #+begin_src emacs-lisp
   (use-package systemd
@@ -7370,7 +7938,14 @@ I am personally not completely opposed to using systemd. Therefore, I sometimes 
 
 *** Printer
 
-Printing things on Linux can be cumbersome. Most desktop environments (GNOME, KDE ...) will provide some kind of wrappers around the default utilities, but they are often only available for the corresponding applications (meaning that you might have trouble printing stuff from /outside/ applications provided by the DE). On the other hand, Emacs tries, but somewhat unsuccessfully, to give some kind of abstraction over the printing process. We go an extra step further and also use a package that improves the UI for printing stuff, using ~transient~.
+Printing things on Linux can be cumbersome. Most desktop environments (GNOME,
+KDE ...) will provide some kind of wrappers around the default utilities, but
+they are often only available for the corresponding applications (meaning that
+you might have trouble printing stuff from /outside/ applications provided by
+the DE). On the other hand, Emacs tries, but somewhat unsuccessfully, to give
+some kind of abstraction over the printing process. We go an extra step further
+and also use a package that improves the UI for printing stuff, using
+~transient~.
 
 #+begin_src emacs-lisp
   (use-package transient-extras-lp
@@ -7384,7 +7959,10 @@ Printing things on Linux can be cumbersome. Most desktop environments (GNOME, KD
 
 *** Emacs Everywhere
 
-Being used to write any kind of text into Emacs, it is probably easier to do so /everywhere/ ! We use the following package, implemented in Elisp (and so, not requiring to install any external tool besides the dependencies), to be able to use Emacs to fill any text field in any application.
+Being used to write any kind of text into Emacs, it is probably easier to do so
+/everywhere/ ! We use the following package, implemented in Elisp (and so, not
+requiring to install any external tool besides the dependencies), to be able to
+use Emacs to fill any text field in any application.
 
 #+begin_src emacs-lisp
   (use-package emacs-everywhere
@@ -7422,7 +8000,9 @@ Being used to write any kind of text into Emacs, it is probably easier to do so 
 * Email
 ** General
 
-Emacs already comes with a builtin mail client, =gnus=. We use another client in this configuration, but some code is shared and reused from the already-existing Emacs functionality.
+Emacs already comes with a builtin mail client, =gnus=. We use another client in
+this configuration, but some code is shared and reused from the already-existing
+Emacs functionality.
 
 #+begin_src emacs-lisp
   (use-package message
@@ -7484,19 +8064,32 @@ Emacs already comes with a builtin mail client, =gnus=. We use another client in
 
 ** mbsync
 
-We already configured Emacs to be our main Git client, and to be a PDF Viewer. We can go one step further, and use Emacs as a mail client.
+We already configured Emacs to be our main Git client, and to be a PDF Viewer.
+We can go one step further, and use Emacs as a mail client.
 
-There are already built-in tools to do this, for example [[https://www.gnus.org/][Gnus]]. However, they tend to be slow, and there are better alternatives. The one we use is combines several tools.
+There are already built-in tools to do this, for example
+[[https://www.gnus.org/][Gnus]]. However, they tend to be slow, and there are
+better alternatives. The one we use is combines several tools.
 
-First of all, ~mbsync~. It synchronizes a local database to a distant one. It can be configured using the =~/.mbsyncrc= file. It is an alternative to ~offlineimap~, which is apparently slower and tends to crash a bit more.
+First of all, ~mbsync~. It synchronizes a local database to a distant one. It
+can be configured using the =~/.mbsyncrc= file. It is an alternative to
+~offlineimap~, which is apparently slower and tends to crash a bit more.
 
-*MANUAL* ~mbsync~ needs to be installed separately. It might be available in the ~isync~ package.
+*MANUAL* ~mbsync~ needs to be installed separately. It might be available in the
+~isync~ package.
 
 ** mu4e
 
-The actual mail client that we use is a frontend to =mu=, called [[https://github.com/djcb/mu/tree/master/mu4e][mu4e]]. Depending on your Linux distribution, you might encounter some troubles with the following code, as the syntax might have changed between the versions and I might have modified internal functions that no longer exist (or do not yet exist in your version !).
+The actual mail client that we use is a frontend to =mu=, called
+[[https://github.com/djcb/mu/tree/master/mu4e][mu4e]]. Depending on your Linux
+distribution, you might encounter some troubles with the following code, as the
+syntax might have changed between the versions and I might have modified
+internal functions that no longer exist (or do not yet exist in your version !).
 
-*MANUAL* You need to install ~mu4e~ separately, either from the standard repositories of your distribution or directly from source. Once installed, you will need to execute a few commands to initialize everything, so please refer to the package documentation.
+*MANUAL* You need to install ~mu4e~ separately, either from the standard
+repositories of your distribution or directly from source. Once installed, you
+will need to execute a few commands to initialize everything, so please refer to
+the package documentation.
 
 *** General configuration
 #+begin_src emacs-lisp :noweb yes
@@ -7674,7 +8267,10 @@ The actual mail client that we use is a frontend to =mu=, called [[https://githu
     (setq mu4e-view-buffer-name-func 'lps/mu4e-view-buffer-name-func))
 #+end_src
 
-In order to provide contextual mail completion, address, server synchronization ... mu4e relies on /contexts/, essentially mappings between local maildirs, mail addresses, and a bunch of local variables that are indenpendently setup per context.
+In order to provide contextual mail completion, address, server synchronization
+... mu4e relies on /contexts/, essentially mappings between local maildirs, mail
+addresses, and a bunch of local variables that are indenpendently setup per
+context.
 
 #+NAME: mu4e-contexts
 #+begin_src emacs-lisp :tangle no
@@ -7758,7 +8354,9 @@ In order to provide contextual mail completion, address, server synchronization 
                   (smtpmail-stream-type  . ssl)))))
 #+end_src
 
-As ~mu4e~ provides a lot of query options to filter mails, sometimes you can forget what the syntax is. To make some non-trivial queries easier to write, we add some interactive functions for the most common options.
+As ~mu4e~ provides a lot of query options to filter mails, sometimes you can
+forget what the syntax is. To make some non-trivial queries easier to write, we
+add some interactive functions for the most common options.
 
 #+NAME: mu4e-build-query
 #+begin_src emacs-lisp :tangle no
@@ -8037,7 +8635,10 @@ As ~mu4e~ provides a lot of query options to filter mails, sometimes you can for
 
 *** Integrate with other Emacs tools
 **** Attachments from Dired
-One point that is a bit infuriating with the current state of ~mu4e~ is how you are supposed to manage attachments. In particular, you have to navigate in a whole filetree, everytime you want to attach a file. To my knowledge, there is no "easy and immediate" way to /e.g./ attach several files at once.
+One point that is a bit infuriating with the current state of ~mu4e~ is how you
+are supposed to manage attachments. In particular, you have to navigate in a
+whole filetree, everytime you want to attach a file. To my knowledge, there is
+no "easy and immediate" way to /e.g./ attach several files at once.
 
 To patch this, we use a few tricks with ~gnus-dired~
 
@@ -8071,9 +8672,16 @@ To patch this, we use a few tricks with ~gnus-dired~
 
 **** Org MIME
 
-~mu4e~ in itself is not really able to send HTML e-mails. However, it is nowadays a given that people you are sending e-mails too are going to be able to visualize HTML-ized content, and they might even /assume/ that this is the case - meaning that a plain text e-mail will loo strange and/or unprofessional.
+~mu4e~ in itself is not really able to send HTML e-mails. However, it is
+nowadays a given that people you are sending e-mails too are going to be able to
+visualize HTML-ized content, and they might even /assume/ that this is the
+case - meaning that a plain text e-mail will loo strange and/or unprofessional.
 
-To deal with this problem, we use a ~org~ package, called [[https://github.com/org-mime/org-mime][Org MIME]], which uses the MIME protocol to encode the content of our email. Moreover, it allows us to write e-mails with the full power of ~org-mode~'s syntax and editing tools, and directly export them in HTML.
+To deal with this problem, we use a ~org~ package, called
+[[https://github.com/org-mime/org-mime][Org MIME]], which uses the MIME protocol
+to encode the content of our email. Moreover, it allows us to write e-mails with
+the full power of ~org-mode~'s syntax and editing tools, and directly export
+them in HTML.
 
 #+begin_src emacs-lisp
   (use-package org-mime
@@ -8113,7 +8721,11 @@ To deal with this problem, we use a ~org~ package, called [[https://github.com/o
 
 **** Org agenda
 
-Sometimes, people send calendar invitations via Email. Most of the time, this means that there is a =text/calendar= attachment to the message, and luckily, Gnus already knows how to deal with them ! It can also be integrated with org-agenda; however, I find this integration a bit lacking, and override some of the built-in functions.
+Sometimes, people send calendar invitations via Email. Most of the time, this
+means that there is a =text/calendar= attachment to the message, and luckily,
+Gnus already knows how to deal with them ! It can also be integrated with
+org-agenda; however, I find this integration a bit lacking, and override some of
+the built-in functions.
 
 #+begin_src emacs-lisp
   (use-package gnus-icalendar
@@ -8173,8 +8785,11 @@ Sometimes, people send calendar invitations via Email. Most of the time, this me
 
 ** Other improvements
 
-This section is dedicated to minor improvements to the mailing workflow.
-For example, a thing that is often embarassing is sending a mail without its attachment. We try to prevent this by having a package scan the content of the message, and if it finds evidence of an absent attachment, it will gently remind us.
+This section is dedicated to minor improvements to the mailing workflow. For
+example, a thing that is often embarassing is sending a mail without its
+attachment. We try to prevent this by having a package scan the content of the
+message, and if it finds evidence of an absent attachment, it will gently remind
+us.
 
 #+begin_src emacs-lisp
   (use-package message-attachment-reminder
@@ -8194,7 +8809,9 @@ For example, a thing that is often embarassing is sending a mail without its att
 
 * Web
 ** Gemini
-An alternative to the traditional HTTP-world wide web, using a simpler protocol. See what [[https://drewdevault.com/][Drew DeVault]] has to say about it on his blog !
+An alternative to the traditional HTTP-world wide web, using a simpler protocol.
+See what [[https://drewdevault.com/][Drew DeVault]] has to say about it on his
+blog !
 #+begin_src emacs-lisp
   (use-package elpher
     :defer t)
@@ -8202,7 +8819,9 @@ An alternative to the traditional HTTP-world wide web, using a simpler protocol.
 
 * Reading and writing
 
-Emacs is, obviously, quite good at dealing with text. Hence, it is natural to wonder whether there are packages conceived to make reading (or writing !) books or long articles more pleasant. Indeed, there are !
+Emacs is, obviously, quite good at dealing with text. Hence, it is natural to
+wonder whether there are packages conceived to make reading (or writing !) books
+or long articles more pleasant. Indeed, there are !
 
 #+begin_src emacs-lisp
   (use-package olivetti
@@ -8233,7 +8852,8 @@ In fact, we can even read EPUB files with Emacs.
 
 ** Spelling
 
-Emacs comes with a few ways to do spell checking and does a good job at highlighting mistakes with /e.g./ =flyspell-mode=.
+Emacs comes with a few ways to do spell checking and does a good job at
+highlighting mistakes with /e.g./ =flyspell-mode=.
 
 #+begin_src emacs-lisp
   (use-package ispell
@@ -8458,7 +9078,8 @@ Emacs comes with a few ways to do spell checking and does a good job at highligh
         (lps/flyspell-on-for-buffer-type))))
 #+end_src
 
-We add a few wrappers around this built-in functionality, mostly for convenience.
+We add a few wrappers around this built-in functionality, mostly for
+convenience.
 
 #+begin_src emacs-lisp
   (use-package flyspell-correct
@@ -8468,7 +9089,9 @@ We add a few wrappers around this built-in functionality, mostly for convenience
           ("C-$" . flyspell-correct-wrapper)))
 #+end_src
 
-Because we might read and write text in several languages, we use a package which will try to automatically detect which language the current buffer uses, and switch dictionaries accordingly.
+Because we might read and write text in several languages, we use a package
+which will try to automatically detect which language the current buffer uses,
+and switch dictionaries accordingly.
 
 #+begin_src emacs-lisp
   (use-package guess-language
@@ -8488,8 +9111,11 @@ Because we might read and write text in several languages, we use a package whic
 * Other
 ** Artist and picture modes
 
-Although listed in my "Fun" section, those are actually useful tools. They can be used to comment, or simply illustrate, some ideas, pretty much regardless of the current (major) mode.
-Those modes allow you to draw geometric shapes, such as lines (non-necessarily horizontal or vertical), rectangles, ellipsis ... using the mouse or even the keyboard.
+Although listed in my "Fun" section, those are actually useful tools. They can
+be used to comment, or simply illustrate, some ideas, pretty much regardless of
+the current (major) mode. Those modes allow you to draw geometric shapes, such
+as lines (non-necessarily horizontal or vertical), rectangles, ellipsis ...
+using the mouse or even the keyboard.
 
 #+begin_src emacs-lisp
   (use-package artist
@@ -8532,7 +9158,8 @@ Those modes allow you to draw geometric shapes, such as lines (non-necessarily h
 
 ** Calendar
 
-Emacs comes with a builtin calendar. Being French, I decide to format dates using an european style, and to use "French holidays"
+Emacs comes with a builtin calendar. Being French, I decide to format dates
+using an european style, and to use "French holidays"
 
 #+begin_src emacs-lisp
   (use-package calendar
@@ -8599,11 +9226,21 @@ Emacs comes with a builtin calendar. Being French, I decide to format dates usin
                   )))
 #+end_src
 
-Moreover, it is sometimes useful to see a full-fledged, full-screen, complete calendar. For this, we use Calfw, a "calendar framework for Emacs". It is less useful than ~org-agenda~ for integrating with Org-mode (priorities, TODOs, tags and so on), but is a very nice frontend/visualisation tool.
+Moreover, it is sometimes useful to see a full-fledged, full-screen, complete
+calendar. For this, we use Calfw, a "calendar framework for Emacs". It is less
+useful than ~org-agenda~ for integrating with Org-mode (priorities, TODOs, tags
+and so on), but is a very nice frontend/visualisation tool.
 
-In particular, it integrates somewhat nicely with ~org-agenda~: it can read the content of the agenda, using internally ~org-agenda-get-day-entries~, and so any modification done to ~org-agenda~ "sources" will appear in Calfw. For example, enabling the diary in Org /will/ show the diary entries (holidays, etc ...) in Calfw.
+In particular, it integrates somewhat nicely with ~org-agenda~: it can read the
+content of the agenda, using internally ~org-agenda-get-day-entries~, and so any
+modification done to ~org-agenda~ "sources" will appear in Calfw. For example,
+enabling the diary in Org /will/ show the diary entries (holidays, etc ...) in
+Calfw.
 
-Although not been updated in the last 7 years at the time of writing (2024), it is still quite featureful and stable, and does not have that many bugs - moreover, it is quite well documented, and any break can probably be fixed by an Emacs user.
+Although not been updated in the last 7 years at the time of writing (2024), it
+is still quite featureful and stable, and does not have that many bugs -
+moreover, it is quite well documented, and any break can probably be fixed by an
+Emacs user.
 
 #+begin_src emacs-lisp
   (use-package calfw
@@ -8678,7 +9315,11 @@ Although not been updated in the last 7 years at the time of writing (2024), it 
 * News and RSS feed
 ** Elfeed
 
-Because it is text-oriented, Emacs is a completely viable option to be a RSS feed reader. Indeed, it can display, search, filter ... all the different information that you can expect when using RSS feeds, but you also have the whole power of Emacs to configure everything according to your need, /e.g./ infinite flexibility for search filters, bookmarks and so on.
+Because it is text-oriented, Emacs is a completely viable option to be a RSS
+feed reader. Indeed, it can display, search, filter ... all the different
+information that you can expect when using RSS feeds, but you also have the
+whole power of Emacs to configure everything according to your need, /e.g./
+infinite flexibility for search filters, bookmarks and so on.
 
 #+begin_src emacs-lisp :noweb yes
   (use-package elfeed
@@ -8713,7 +9354,8 @@ Because it is text-oriented, Emacs is a completely viable option to be a RSS fee
     <<elfeed-dashboard>>)
 #+end_src
 
-We add a way to view and download articles from several online archives (Arxiv, HAL ...)
+We add a way to view and download articles from several online archives (Arxiv,
+HAL ...)
 
 #+NAME: elfeed-arxiv
 #+begin_src emacs-lisp :tangle no
@@ -8863,7 +9505,8 @@ We add a way to view and download articles from several online archives (Arxiv, 
       (arxiv-get-pdf-add-bibtex-entry num bibfile pdfdir)))
 #+end_src
 
-As the default syntax to manage and organize the various RSS feeds is a bit tedious, we use another package which this whole process painless.
+As the default syntax to manage and organize the various RSS feeds is a bit
+tedious, we use another package which this whole process painless.
 
 #+begin_src emacs-lisp
   (use-package elfeed-org
@@ -8885,7 +9528,8 @@ As the default syntax to manage and organize the various RSS feeds is a bit tedi
                               rmh-elfeed-org-tree-id)))
 #+end_src
 
-Finally, because Elfeed is somewhat complicated to use, we also add a dashboard to make viewing the frequent and interesting queries easier.
+Finally, because Elfeed is somewhat complicated to use, we also add a dashboard
+to make viewing the frequent and interesting queries easier.
 
 #+NAME: elfeed-dashboard
 #+begin_src emacs-lisp :tangle no
@@ -9103,7 +9747,8 @@ Finally, because Elfeed is somewhat complicated to use, we also add a dashboard 
 
 *** Elfeed-tube
 
-Elfeed can also be used as a Youtube "viewer" - and much more, /i.e./ it is incredible to read subtitles, archive stuff and so on.
+Elfeed can also be used as a Youtube "viewer" - and much more, /i.e./ it is
+incredible to read subtitles, archive stuff and so on.
 
 #+begin_src emacs-lisp
   (use-package elfeed-tube
@@ -9136,7 +9781,8 @@ Elfeed can also be used as a Youtube "viewer" - and much more, /i.e./ it is incr
           ("C-c C-y" . elfeed-tube-mpv)))
 #+end_src
 
-Finally, and because we might use this on old computers or with bad network, we fix some annoying problems in the =mpv.el= package
+Finally, and because we might use this on old computers or with bad network, we
+fix some annoying problems in the =mpv.el= package
 
 #+begin_src emacs-lisp
   (use-package mpv
@@ -9188,7 +9834,10 @@ Finally, and because we might use this on old computers or with bad network, we 
         t)))
 #+end_src
 
-We might also need to edit, fix, add or even write subtitles. Even without even linking Emacs and MPV, subtitle files are often not perfect, and either contain typos, poor translations, or are simply off-sync, and we use Emacs to edit them as we would with any other text-based format.
+We might also need to edit, fix, add or even write subtitles. Even without even
+linking Emacs and MPV, subtitle files are often not perfect, and either contain
+typos, poor translations, or are simply off-sync, and we use Emacs to edit them
+as we would with any other text-based format.
 
 #+begin_src emacs-lisp
   (use-package subed
@@ -9203,16 +9852,25 @@ We might also need to edit, fix, add or even write subtitles. Even without even 
 - Have a split window like mu4e when browsing feed (need to change ~elfeed-show-entry-switch~)
 - Fix dashboard for newer mu4e versions !
 ** Biblio
-- Fix auto titles/key in biblio: ~org-ref-title-case~ and ~org-ref-lower-case-words~, ~bibtex-autokey-titlewords~ and ~bibtex-autokey-titleword-ignore~, and my own variable ~lps/do-not-capitalize-list~
-- Add a way to "tag" bibtex entries. Likely a decent solution: add a TAGS field to entries, as a list of coma-separated tags.
+- Fix auto titles/key in biblio: ~org-ref-title-case~ and
+  ~org-ref-lower-case-words~, ~bibtex-autokey-titlewords~ and
+  ~bibtex-autokey-titleword-ignore~, and my own variable
+  ~lps/do-not-capitalize-list~
+- Add a way to "tag" bibtex entries. Likely a decent solution: add a TAGS field
+  to entries, as a list of coma-separated tags.
   - Add function to add/remove tag
   - Add function to search only articles of a given tag (or tag combination ?)
-  - Maybe change bibtex-format-entry functions to show tags (more or less succintly ?)
-- Fix ~bibtex-autokey-demangle-name~ so that it correctly handles "long names": it currently assumes that a long name is of the form 'particle + relevant-stuff', while there might be surnames with a space where everything is to be kept.
+  - Maybe change bibtex-format-entry functions to show tags (more or less
+    succintly ?)
+- Fix ~bibtex-autokey-demangle-name~ so that it correctly handles "long names":
+  it currently assumes that a long name is of the form 'particle +
+  relevant-stuff', while there might be surnames with a space where everything
+  is to be kept.
 - Try ~consult-bibtex~ ?
 
 ** Generic
-Use functions that have been added to Emacs rather than mine, or use a macro to decide according to the version:
+Use functions that have been added to Emacs rather than mine, or use a macro to
+decide according to the version:
 - [ ] duplicate-dwim (29.1)
 - [ ] rename-visited-file (29.1)
 - [ ] Some maps defined by default repeat-mode
@@ -9228,27 +9886,48 @@ To explore:
 - [ ] defvar-keymap
 
 ** Org mode
-- [X] Fix (or check what breaks if fix) ~org-element-latex-fragment-parser~ so that it recognizes "dollars" followed by a dash directly (and no space+dash).
+- [X] Fix (or check what breaks if fix) ~org-element-latex-fragment-parser~ so
+  that it recognizes "dollars" followed by a dash directly (and no space+dash).
   - Solution: See [[https://orgmode.org/worg/org-syntax.html#LaTeX_Fragments][the Org syntax reference]] with additional syntax for LaTeX
-- Add way to draw automata/trees easily without using artist mode (maybe TikZ integration ?)
-- [X] Fix HTML files opening in Chrome sometimes (somewhat complicated. Some keywords: mailcap, sensible-browser, the /etc/mailcap file).
+- Add way to draw automata/trees easily without using artist mode (maybe TikZ
+  integration ?)
+- [X] Fix HTML files opening in Chrome sometimes (somewhat complicated. Some
+  keywords: mailcap, sensible-browser, the /etc/mailcap file).
   - Solution: delete chrome.
-- Add a proper "personal org math mode" to typeset math, and setup/remove options (~org-cdlatex~, electric-pair twists, some protected blocks, etc).
-- Maybe already done: add a way to jump /from/ the agenda /to/ a Cafw buffer (the other direction is already implemented, I believe) displaying "the same content" (if both directions are unimplemented: do them both ?)
-- Improve colours of the displayed items in Calfw ? Maybe reuse ~org-agenda-category-icon-alist~, or other display code from the agenda ? Likely function to modify/variable to set: ~cfw:org-schedule-summary-transformer~.
+- Add a proper "personal org math mode" to typeset math, and setup/remove
+  options (~org-cdlatex~, electric-pair twists, some protected blocks, etc).
+- Maybe already done: add a way to jump /from/ the agenda /to/ a Cafw buffer
+  (the other direction is already implemented, I believe) displaying "the same
+  content" (if both directions are unimplemented: do them both ?)
+- Improve colours of the displayed items in Calfw ? Maybe reuse
+  ~org-agenda-category-icon-alist~, or other display code from the agenda ?
+  Likely function to modify/variable to set:
+  ~cfw:org-schedule-summary-transformer~.
 - Add a way to export ~.ics~ invitations from =mu4e= to the agenda
-  - Partially done in the file =gnus-icalendar=, e.g. see the function ~gnus-icalendar-sync-event-to-org~ and the variable ~gnus-icalendar-org-enabled-p~
-- Check that the "useful IDs" generated in the HTML export also work in LaTeX exports (or any other, really), and fix it otherwise. Probably feasible using a toggle of the mode.
+  - Partially done in the file =gnus-icalendar=, e.g. see the function
+    ~gnus-icalendar-sync-event-to-org~ and the variable
+    ~gnus-icalendar-org-enabled-p~
+- Check that the "useful IDs" generated in the HTML export also work in LaTeX
+  exports (or any other, really), and fix it otherwise. Probably feasible using
+  a toggle of the mode.
 ** Printing
-Not particularly Emacs-related, but: find a way to specify a username/password to ~lp~ when printing using either the built-in functions or ~transient-extras-lp-*~
+Not particularly Emacs-related, but: find a way to specify a username/password
+to ~lp~ when printing using either the built-in functions or
+~transient-extras-lp-*~
 
 ** PDF/LaTeX
 *** Styles
 - For =multibbl=
 - More generally: override and improve ~TeX-command-default~, this is probably where things need to be done.
 *** Documentation
-- Improve the documentation function: jump to a manual depending on current packages (not word at point ...), /then/ look in index for word at point (using personal function ~lps/pdf-maybe-goto-index~), possibly streamlining the experience using a modified version of ~pdf-read-links-*~ if possible so that the word at point is automatically pre-selected and I only need to press enter if it is "automatically" found in the Index.
-  - Also catch the potential call to latex2e documentation: open info manual instead of pdf.
+- Improve the documentation function: jump to a manual depending on current
+  packages (not word at point ...), /then/ look in index for word at point
+  (using personal function ~lps/pdf-maybe-goto-index~), possibly streamlining
+  the experience using a modified version of ~pdf-read-links-*~ if possible so
+  that the word at point is automatically pre-selected and I only need to press
+  enter if it is "automatically" found in the Index.
+  - Also catch the potential call to latex2e documentation: open info manual
+    instead of pdf.
 
 ** TRAMP
 

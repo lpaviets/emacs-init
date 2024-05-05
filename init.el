@@ -442,7 +442,7 @@ fboundp."
   (fill-column 80)                      ; default 70 is a bit low
   :hook
   ((prog-mode LaTeX-mode) . display-line-numbers-mode)
-  ((text-mode org-mode LaTeX-mode comint-mode) . visual-line-mode)
+  ((text-mode LaTeX-mode comint-mode) . visual-line-mode)
   (LaTeX-mode . auto-fill-mode))
 
 ;; Themes
@@ -3289,7 +3289,10 @@ call the associated function interactively. Otherwise, call the
     (lps/org-font-setup)
     (org-indent-mode 1)
     ;; (variable-pitch-mode 1)
-    (visual-line-mode 1)
+    (setq-local olivetti-minimum-body-width (+ 4 fill-column))
+    (olivetti-mode 1)
+    (visual-line-mode -1)
+    (auto-fill-mode 1)
     (lps/windmove-mode-local-off)
     (org-cdlatex-mode 1)
     (setq-local electric-pair-inhibit-predicate
