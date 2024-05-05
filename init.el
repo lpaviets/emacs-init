@@ -4887,6 +4887,8 @@ Does not read any argument: this is to be able to add it both to
   :bind
   (:map TeX-mode-map
         ("C-c M-n" . reftex-parse-all))
+  (:map reftex-mode-map
+        ([remap reftex-label] . lps/reftex-insert-or-rename-label))
   :custom
   (reftex-plug-into-AUCTeX t)
   (reftex-trust-label-prefix '("sec:" "def:" "ex:"
@@ -4927,7 +4929,15 @@ Does not read any argument: this is to be able to add it both to
                    (file-name-nondirectory (buffer-file-name))))
                  "--")
               "")
-            (reftex-string-to-label string))))
+            (reftex-string-to-label string)))
+
+  (defun lps/reftex-insert-or-rename-label ()
+    (interactive)
+    (reftex-access-scan-info current-prefix-arg)
+    (if (equal (TeX-current-macro) "label")
+        (reftex-change-label (reftex-this-word "-a-zA-Z0-9_*.:") ; avoid a prompt
+                             (reftex-label nil t))
+      (reftex-label))))
 
 (use-package reftex-cite
   :diminish
