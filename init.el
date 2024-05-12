@@ -1899,6 +1899,18 @@ the current selection by line."
          (not arg)
        arg))))
 
+(use-package visible-mark
+  :init
+  (global-visible-mark-mode 1)
+  :custom-face
+  (visible-mark-face1 ((t (;; :underline
+                           ;; (:color "DarkViolet" :position -1)
+                           :background
+                           "DarkViolet"))))
+  :custom
+  (visible-mark-max 1)
+  (visible-mark-faces `(visible-mark-face1)))
+
 (use-package drag-stuff
   :config
   (setq drag-stuff-except-modes '(org-mode

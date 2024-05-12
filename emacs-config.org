@@ -2703,6 +2703,25 @@ command in particular needs to be improved
          arg))))
 #+end_src
 
+As several commands can act on the mark without it being visible, it might be
+nice to be able to /see/ the mark position at all time -- in particular,
+~exchange-point-and-mark~ would benefit from this, as we could immediately see
+where the point would end up.
+
+#+begin_src emacs-lisp
+  (use-package visible-mark
+    :init
+    (global-visible-mark-mode 1)
+    :custom-face
+    (visible-mark-face1 ((t (;; :underline
+                             ;; (:color "DarkViolet" :position -1)
+                             :background
+                             "DarkViolet"))))
+    :custom
+    (visible-mark-max 1)
+    (visible-mark-faces `(visible-mark-face1)))
+#+end_src
+
 ** Moving stuff around
 
 A big part of editing text consists in moving already written lines, words or
