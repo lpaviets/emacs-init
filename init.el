@@ -303,12 +303,12 @@ fboundp."
   :init
   ;; Only use desktop-save-mode automatically in daemon mode
   ;; Otherwise, just manually restore/save stuff
-  ;; (add-hook 'server-after-make-frame-hook
-  ;;           (lambda ()
-  ;;             (let ((desktop-load-locked-desktop t))
-  ;;               (desktop-save-mode 1)
-  ;;               (desktop-read (car desktop-path)))))
-  (desktop-save-mode 1)
+  (add-hook 'server-after-make-frame-hook
+            (lambda ()
+              (let ((desktop-load-locked-desktop t))
+                (desktop-save-mode 1)
+                (desktop-read (car desktop-path)))))
+  ;; (desktop-save-mode 1)
   :custom
   (desktop-restore-frames t) ;; Otherwise buggy with daemon-mode
   (desktop-path (list (locate-user-emacs-file "desktop-saves/")))
@@ -4827,6 +4827,26 @@ Does not read any argument: this is to be able to add it both to
           (bibtex-kill-field)))))
 
   (add-hook 'bibtex-clean-entry-hook 'lps/bibtex-keep-only-doi-if-url)
+
+  ;; Inspired by `bibtex-autokey-demangle-name'
+  ;; Not very robust, might get updated for some edge cases later
+  ;; This only deals with some very easy cases, that I encouter most
+  ;; frequently.
+  (defun lps/bibtex-reformat-rearrange-name (fullname)
+    ;; TODO !
+    ;; Hard: how do I distinguish programmatically between:
+    ;; First Last1 de Last2
+    ;; First1 Last1 Last2
+    ;; First1 First2 Last1
+    ;; First de Last
+    ;; First1 First2 Last1 Last2
+    )
+
+  (defun lps/bibtex-reformat-clean-names ()
+    (let ((names (bibtex-autokey-get-field "author\\|editor")))
+      (mapconcat 'lps/bibtex-reformat-rearrange-name
+                 (split-string names "[ \t\n]+and[ \t\n]+")
+                 " and ")))
 
   ;; Bibtex tags
   (defvar lps/bibtex-tags '(("Topological Full Group" . "tfg")
