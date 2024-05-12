@@ -640,26 +640,6 @@ the mode-line and the usual non-full-screen Emacs are restored."
               global-mode-string
               :test 'equal))
 
-(use-package battery
-  :ensure nil
-  :only-built-in t
-  :disabled t
-  :config
-  (when (and battery-status-function
-              (let ((status (battery-format "%B" (funcall battery-status-function))))
-                (not (or (string-match-p "N/A" status)
-                         (string-match-p "unknown" status)))))
-      (display-battery-mode 1)))
-
-(use-package time
-  :ensure nil
-  :only-built-in t
-  :custom
-  (display-time-24hr-format t)
-  (display-time-format "[%H:%M]")
-  :init
-  (display-time-mode 1))
-
 (use-package beacon
   :init
   (add-hook-once 'post-command-hook 'beacon-mode)
