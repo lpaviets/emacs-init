@@ -23,6 +23,17 @@
 (add-hook 'emacs-startup-hook #'lps/display-garbage-collection)
 (add-hook 'emacs-startup-hook #'lps/restore-gc-cons)
 
+;; This avoids a lot of regexp matches between filenames and
+;; this large list of handlers.
+;; TODO: make sure this does not break with TRAMP and desktop-read ?
+(defvar file-name-handler-alist-old file-name-handler-alist)
+
+(setq file-name-handler-alist nil)
+
+(add-hook 'after-init-hook
+          (lambda ()
+            (setq file-name-handler-alist file-name-handler-alist-old)))
+
 (defvar lps/only-built-in-p nil
   "Variable indicating if we can load, or even download, packages
 that are not built-in.
@@ -7679,6 +7690,9 @@ If TEXT does not have a range, return nil."
   \\{lps/elfeed-dashboard-mode-map}."
     (setq truncate-lines t)
     (setq-local revert-buffer-function #'lps/elfeed-dashboard--redraw)
+    (when (featurep 'elfeed-org)
+      (unless elfeed-feeds
+        (lps/elfeed-org-reread)))
     (read-only-mode 1)))
 
 (use-package elfeed-org

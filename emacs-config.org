@@ -84,6 +84,21 @@ displayed anytime we start Emacs
 
 #+end_src
 
+In order to speed-up the startup, we also make a few more tweaks:
+
+#+begin_src emacs-lisp
+  ;; This avoids a lot of regexp matches between filenames and
+  ;; this large list of handlers.
+  ;; TODO: make sure this does not break with TRAMP and desktop-read ?
+  (defvar file-name-handler-alist-old file-name-handler-alist)
+
+  (setq file-name-handler-alist nil)
+
+  (add-hook 'after-init-hook
+            (lambda ()
+              (setq file-name-handler-alist file-name-handler-alist-old)))
+#+end_src
+
 ** Configuration management
 *** Packages
 
@@ -9787,6 +9802,9 @@ to make viewing the frequent and interesting queries easier.
   \\{lps/elfeed-dashboard-mode-map}."
     (setq truncate-lines t)
     (setq-local revert-buffer-function #'lps/elfeed-dashboard--redraw)
+    (when (featurep 'elfeed-org)
+      (unless elfeed-feeds
+        (lps/elfeed-org-reread)))
     (read-only-mode 1))
 #+end_src
 
