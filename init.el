@@ -213,21 +213,15 @@ fboundp."
                            (let ,bindings
                              (apply ,wrap-fun ,wrap-args))))))
 
-(defmacro defun-override (name-or-old-new-name lambda-list &rest body)
+(defmacro defun-override (prefixed-old-name lambda-list &rest body)
   (declare (doc-string 3) (indent 2))
-  (let* ((name
-          (if (listp name-or-old-new-name)
-              (cadr name-or-old-new-name)
-            name-or-old-new-name))
-         (old-name
-          (if (listp name-or-old-new-name)
-              (car name-or-old-new-name)
-            (intern (string-trim-left (symbol-name name-or-old-new-name) "lps/")))))
+  (let* ((old-name (intern (string-trim-left (symbol-name prefixed-old-name)
+                                             "lps/"))))
     `(progn
-       (defun ,name ,lambda-list
+       (defun ,prefixed-old-name ,lambda-list
          ,@body)
 
-       (advice-add ',old-name :override ',name))))
+       (advice-add ',old-name :override ',prefixed-old-name))))
 
 (defun add-hook-once (hook function &optional depth local)
   (let (fun-add fun-remove)
@@ -6938,7 +6932,7 @@ You can bind this to the key C-c i in GNUS or mail by adding to
                (or internal-messagep
                    (re-search-forward "^$" nil t)
                    (point-min))))
-             (limit (copy-marker  ; End of region we will spell check.
+             (limit (copy-marker        ; End of region we will spell check.
                      (cond
                       ((not ispell-message-text-end) (point-max))
                       ((char-or-string-p ispell-message-text-end)
@@ -6947,7 +6941,7 @@ You can bind this to the key C-c i in GNUS or mail by adding to
                          (point-max)))
                       (t (min (point-max)
                               (funcall ispell-message-text-end))))))
-             (default-prefix ; Vanilla cite prefix used for cite-regexp)
+             (default-prefix         ; Vanilla cite prefix used for cite-regexp)
               (if (ispell-non-empty-string mail-yank-prefix)
                   "   \\|\t"))
              (cite-regexp               ;Prefix of quoted text
@@ -7031,7 +7025,7 @@ You can bind this to the key C-c i in GNUS or mail by adding to
               (when (and mimep (not boundary))
                 (goto-char (point-min))
                 (re-search-forward "Content-[^ \t]*:" end-of-headers t)
-                (forward-line -1) ; following fn starts one line above
+                (forward-line -1)       ; following fn starts one line above
                 (ispell-mime-skip-part nil)
                 ;; if message-text-end region, limit may be less than point.
                 (if (> (point) limit)
@@ -7069,7 +7063,13 @@ You can bind this to the key C-c i in GNUS or mail by adding to
             (mapcar #'list (ispell-valid-dictionary-list)))
        nil t)))
     (ispell-change-dictionary dict)
-    (lps/ispell-change-personal-dictionary dict)))
+    (lps/ispell-change-personal-dictionary dict))
+
+  (TeX-ispell-skip-setcar
+   `(("\\\\newglossaryentry" ispell-tex-arg-end)
+     ("\\\\colorlet" ispell-tex-arg-end 2)
+     ("\\\\definecolor" ispell-tex-arg-end 3)
+     ("\\\\\\(re\\)?newtcolorbox" ispell-tex-arg-end 2))))
 
 (use-package flyspell
   :bind
