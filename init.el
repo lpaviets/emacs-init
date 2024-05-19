@@ -3272,7 +3272,18 @@ call the associated function interactively. Otherwise, call the
 
     ;; Ensure that anything that should be fixed-pitch in Org files appears that way
     (dolist (face '((org-block fixed-pitch :foreground unspecified :extend t)
-                    (org-block-begin-line italic :foreground "dark gray" :background "#1d1d2b" :inherit fixed-pitch :height 1.0)
+                    (org-block-begin-line italic
+                                          :foreground "dark gray"
+                                          :background "#1d1d2b"
+                                          :inherit fixed-pitch
+                                          :height 1.0
+                                          :overline "dim gray")
+                    (org-block-end-line italic
+                                        :foreground "dark gray"
+                                        :background "#1d1d2b"
+                                        :inherit fixed-pitch
+                                        :height 1.0
+                                        :underline (:color "dim gray" :position -1))
                     (org-code (shadow fixed-pitch))
                     (org-table (shadow fixed-pitch))
                     (org-verbatim (shadow fixed-pitch))
