@@ -213,6 +213,10 @@ fboundp."
                            (let ,bindings
                              (apply ,wrap-fun ,wrap-args))))))
 
+(defvar lps/defun-overriden nil
+  "List of overriden functions by `defun-override'. Used to keep track of
+the internal changes made by this config.")
+
 (defmacro defun-override (prefixed-old-name lambda-list &rest body)
   (declare (doc-string 3) (indent 2))
   (let* ((old-name (intern (string-trim-left (symbol-name prefixed-old-name)
@@ -221,7 +225,9 @@ fboundp."
        (defun ,prefixed-old-name ,lambda-list
          ,@body)
 
-       (advice-add ',old-name :override ',prefixed-old-name))))
+       (advice-add ',old-name :override ',prefixed-old-name)
+
+       (add-to-list 'lps/defun-overriden ',old-name))))
 
 (defun add-hook-once (hook function &optional depth local)
   (let (fun-add fun-remove)
@@ -2890,7 +2896,7 @@ call the associated function interactively. Otherwise, call the
 
   ;; Redefinition: do not pop-up or show the MREPL buffer
   ;; Also, a few hacks to center the window properly
-  (defun sly-mrepl-on-connection ()
+  (defun-override lps/sly-mrepl-on-connection ()
     (let* ((inferior-buffer
             (and (sly-process) (process-buffer (sly-process))))
            (inferior-window
@@ -2966,7 +2972,7 @@ call the associated function interactively. Otherwise, call the
         ("C-d C-r" . sly-register-local-projects))
   :config
   ;; Redefine the sly-quickload function to also list local projects
-  (defun sly-quickload (system)
+  (defun-override lps/sly-quickload (system)
     "Interactive command made available in lisp-editing files."
     (interactive
      (list (completing-read "QL system? "
@@ -2984,20 +2990,20 @@ call the associated function interactively. Otherwise, call the
     (sly-message "ql:quickloading %s..." system))
 
   ;; Redefine the modeline construct: takes too much space
-  (defun sly-quicklisp--mode-line-construct ()
-  "A little pretty indicator in the mode-line"
-  `(:propertize ,(cond (sly-quicklisp--enabled-dists
-                        (format "QL(%s)" (length sly-quicklisp--enabled-dists)))
-                       (sly-quicklisp-mode
-                        "QL")
-                       (t
-                        "-"))
-                face sly-quicklisp-indicator-face
-                mouse-face mode-line-highlight
-                help-echo ,(if sly-quicklisp--enabled-dists
-                               (format "Enabled dists %s"
-                                       sly-quicklisp--enabled-dists)
-                             "NO QL dists reported so far. Load a system using `sly-quickload'")))
+  (defun-override lps/sly-quicklisp--mode-line-construct ()
+    "A little pretty indicator in the mode-line"
+    `(:propertize ,(cond (sly-quicklisp--enabled-dists
+                          (format "QL(%s)" (length sly-quicklisp--enabled-dists)))
+                         (sly-quicklisp-mode
+                          "QL")
+                         (t
+                          "-"))
+                  face sly-quicklisp-indicator-face
+                  mouse-face mode-line-highlight
+                  help-echo ,(if sly-quicklisp--enabled-dists
+                                 (format "Enabled dists %s"
+                                         sly-quicklisp--enabled-dists)
+                               "NO QL dists reported so far. Load a system using `sly-quickload'")))
 
   (defun sly-register-local-projects ()
     (interactive)
@@ -3041,7 +3047,7 @@ call the associated function interactively. Otherwise, call the
   :config
   ;; Bug in the initial implementation, runs isearch instead of multi-isearch ?
   ;; Initial implementation also reinvents the wheel -> multi-isearch-files already exists
-  (defun sly-asdf-isearch-system (sys-name)
+  (defun-override lps/sly-asdf-isearch-system (sys-name)
     "Run function `multi-isearch-files' on the files of an ASDF system SYS-NAME."
     (interactive (list (sly-asdf-read-system-name nil nil)))
     (let ((files (mapcar 'sly-from-lisp-filename
@@ -4580,7 +4586,7 @@ return `nil'."
   ;; rather than read-from-minibuffer
   ;; This allows Vertico to do its job
   (with-eval-after-load 'multi-prompt
-    (defun multi-prompt-key-value
+    (defun-override lps/multi-prompt-key-value
         (prompt table &optional predicate require-match initial-input
                 hist def inherit-input-method)
       "Read multiple strings, with completion and key=value support.
@@ -5067,7 +5073,7 @@ entries if needed.")
 
   ;; Rewrite: shortcuts the evaluation !
   ;; Now only executes up until finding a non-NIL return value
-  (defun bibtex-completion-key-at-point ()
+  (defun-override lps/bibtex-completion-key-at-point ()
     "Return the key of the BibTeX entry at point.
 The functions used to match the keys are defined in
 `bibtex-completion-key-at-point-functions'."
@@ -5513,7 +5519,7 @@ present in the list of authors or in the title of the article"
   (add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t)
 
   ;; Dirty way to reduce noise when idle-y
-  (defun preview-active-string (ov)
+  (defun-override lps/preview-active-string (ov)
     "Generate before-string for active image overlay OV."
     (preview-make-clickable
      (overlay-get ov 'preview-map)
@@ -5969,7 +5975,7 @@ PWD is not in a git repo (or the git command is not found)."
 
     ;; Fix a bug, see
     ;; https://github.com/alexluigit/dirvish/pull/251/commits/600b81d5b8adc8532cb31b72c9cf2fc981c678e9
-    (defun dirvish--mode-line-fmt-setter (left right &optional header)
+    (defun-override lps/dirvish--mode-line-fmt-setter (left right &optional header)
       "Set the `dirvish--mode-line-fmt'.
 LEFT and RIGHT are segments aligned to left/right respectively.
 If HEADER, set the `dirvish--header-line-fmt' instead."
@@ -6093,7 +6099,7 @@ If HEADER, set the `dirvish--header-line-fmt' instead."
   ;; Small bug in French version of %b: does not produce
   ;; 6 characters-long time string for processes started earlier
   ;; in the same year
-  (defun proced-format-start (start)
+  (defun-override lps/proced-format-start (start)
     "Format time START.
 The return string is always 6 characters wide."
     (let ((d-start (decode-time start))
@@ -6897,7 +6903,7 @@ recent versions of mu4e."
       (ispell-message)))
 
 ;;; Redefinition of ispell-message to work with mu4e
-  (defun ispell-message ()
+  (defun-override lps/ispell-message ()
     "Check the spelling of a mail message or news post.
 Don't check spelling of message headers except the Subject field.
 Don't check included messages.
@@ -7730,7 +7736,7 @@ If TEXT does not have a range, return nil."
   (defvar lps/mpv-on-start-timeout 5)
   :config
   ;; Redefine it to use a custom timeout duration
-  (defun mpv-start (&rest args)
+  (defun-override lps/mpv-start (&rest args)
     "Start an mpv process with the specified ARGS.
 
 If there already is an mpv process controlled by this Emacs
