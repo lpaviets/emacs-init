@@ -1205,7 +1205,10 @@ buffer name already resembles a file name"
         (when (or (< pos (point-min))
                   (> pos (point-max)))
           (widen))
-        (goto-char pos)))))
+        (goto-char pos)
+        ;; Needed ? Might slow things a bit but ensures right mode, for some
+        ;; reason it is otherwise sometimes opened in fundamental-mode
+        (revert-buffer nil t)))))
 
 (use-package emacs
   :ensure nil
