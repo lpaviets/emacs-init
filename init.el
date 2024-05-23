@@ -3995,7 +3995,7 @@ Refer to `org-agenda-prefix-format' for more information."
   (org-roam-db-autosync-mode))
 
 (use-package consult-org-roam
-  :after consult org-roam
+  :after org-roam
   :bind
   (:map lps/org-roam-map
         ("F" . consult-org-roam-file-find)
@@ -4758,12 +4758,12 @@ The return value is the string as entered in the minibuffer."
   :config
   (require 'bibtex-completion)
   ;; Fix accentuation
-  (dolist (a '((("\"o" "\\\"o" "\\o") . "o") ; "o,\"o,\o,\oe -> oe
-               (("\"O" "\\\"O" "\\O") . "O") ; "O,\"O,\O,\OE -> Oe
-               (("\"a" "\\\"a") . "a")       ; "a,\"a,\ae -> ae
-               (("\"A" "\\\"A") . "A")       ; "A,\"A,\AE    -> Ae
-               (("\"u" "\\\"u") . "u")       ; "u,\"u        -> ue
-               (("\"U" "\\\"U") . "U")))     ; "U,\"U        -> Ue
+  (dolist (a '((("\"o" "\\\"o" "\\o") . "o") ; "o,\"o,\o,\oe ---  oe
+               (("\"O" "\\\"O" "\\O") . "O") ; "O,\"O,\O,\OE ---  Oe
+               (("\"a" "\\\"a") . "a")       ; "a,\"a,\ae    ---  ae
+               (("\"A" "\\\"A") . "A")       ; "A,\"A,\AE    ---  Ae
+               (("\"u" "\\\"u") . "u")       ; "u,\"u        ---  ue
+               (("\"U" "\\\"U") . "U")))     ; "U,\"U        ---  Ue
     (add-to-list 'bibtex-autokey-transcriptions
                  (cons (regexp-opt (car a)) (cdr a))
                  nil
@@ -5195,7 +5195,8 @@ governed by the variable `bibtex-completion-display-formats'."
                          field-width
                        (- width (cddr format)))
                      0 ?\s))
-                  (cdr (assoc field-name lps/bibtex-completion-format-entry-properties)))))))))
+                  (cdr (assoc field-name
+                              lps/bibtex-completion-format-entry-properties)))))))))
 
 (use-package doi-utils
   :after org-ref-bibtex
@@ -5213,43 +5214,6 @@ governed by the variable `bibtex-completion-display-formats'."
   (advice-ensure-bindings org-ref-read-key ((orderless-matching-styles
                                              (cons 'char-fold-to-regexp
                                                    orderless-matching-styles))))
-
-  ;; Define custom functions to download from math websites
-  (defun aom-pdf-url (*doi-utils-redirect*)
-    "Get a url to the pdf from *DOI-UTILS-REDIRECT* for Annals of Mathematics urls.
-  A URL looks like https://annals.math.princeton.edu/YEAR/VOL-N/PAGE
-  The PDF is typically (but not always ...) at
-   https://annals.math.princeton.edu/wp-content/uploads/annals-vVOL-nN-PAGE-s.pdf"
-    (when (string-match
-           "^\\(https?://annals.math.princeton.edu\\)/\\([0-9]*\\)/\\([0-9]*\\)-\\([0-3]\\)/\\(p[0-9]*\\)"
-           *doi-utils-redirect*)
-      (let ((start (match-string-no-properties 1 *doi-utils-redirect*))
-            (year (match-string-no-properties 2 *doi-utils-redirect*))
-            (vol (match-string-no-properties 3 *doi-utils-redirect*))
-            (issue (match-string-no-properties 4 *doi-utils-redirect*))
-            (page (match-string-no-properties 5 *doi-utils-redirect*)))
-        (concat start "/wp-content/uploads/annals-v"
-                vol "-n" issue "-" page "-s.pdf"))))
-
-  (defun doi-utils-get-ems-pdf-url (*doi-utils-redirect*)
-    (let ((first-url
-           (with-current-buffer (url-retrieve-synchronously *doi-utils-redirect*)
-             (goto-char (point-min))
-             (when (re-search-forward "/content/serial-article-files/[0-9]+" nil t)
-               (match-string-no-properties 0)))))
-      (when first-url
-        (concat "https://ems.press" first-url))))
-
-  (defun ems-pdf-url (*doi-utils-redirect*)
-    "Get a url to the pdf from *DOI-UTILS-REDIRECT* for EMS (European
-Mathematical Society) urls.
-  A URL looks like https://ems.press/journals/...
-  The PDF url is hidden in the page content"
-    (when (string-match "^https?://ems.press/journals/" *doi-utils-redirect*)
-      (doi-utils-get-ems-pdf-url *doi-utils-redirect*)))
-
-  (add-to-list 'doi-utils-pdf-url-functions 'aom-pdf-url)
-  (add-to-list 'doi-utils-pdf-url-functions 'ems-pdf-url)
 
   ;; Override to also use another list of functions
   (defun-override lps/doi-utils-get-pdf-url-from-anywhere (doi)
