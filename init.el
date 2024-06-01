@@ -6208,11 +6208,7 @@ confirmation when sending a non-multipart MIME mail")
   ;; should be reflected there too !
   (smtpmail-debug-info t)
   (smtpmail-debug-verb t)
-  (smtpmail-servers-requiring-authorization "ovh")
-  (smtpmail-smtp-user "paviets201")
-  (smtpmail-smtp-server "smtp.unicaen.fr")
-  (smtpmail-smtp-service 465)
-  (smtpmail-stream-type 'ssl))
+  (smtpmail-servers-requiring-authorization "ovh"))
 
 (use-package mu4e
   :ensure nil
@@ -6310,18 +6306,6 @@ recent versions of mu4e."
       (goto-char (or thread-beg (point-min)))))
 
 ;;; Main view and global stuff
-  ;; Bookmarks
-  (add-to-list 'mu4e-bookmarks `(:name
-                                 "Important"
-                                 :query ,(mapconcat 'identity
-                                                    '("maildir:/Orange/Important"
-                                                      "maildir:/Unicaen/Important"
-                                                      "maildir:/ENS_Lyon/Important"
-                                                      "maildir:/Personal/Important")
-                                                    " OR ")
-                                 :key   ?i)
-               t)
-
   ;; Taken from mu4e~stop in mu4e-utils.el
   ;; Do not kill mu process
   (defun lps/mu4e-kill-buffers ()
@@ -6358,85 +6342,23 @@ recent versions of mu4e."
 
     (setq mu4e-view-buffer-name-func 'lps/mu4e-view-buffer-name-func))
 
-;;; Contexts
-  ;; Before making a new context:
-  ;; - Make sure that the [sent/trash/drafts] folders are correctly named, to avoid duplicates
-  ;; - Don't forget to modify .mbsyncrc and .authinfo.gpg to correctly authenticate against
-  ;; the IMAP and SMTP servers
-  ;; - Make sure that your smpt-user ID, the port (smtp-service), etc, are the right ones; different
-  ;; SMTP servers have different expectations, and there is no universal configuration
+;;; Contexts and private setup
+  (defvar lps/private-mail-setup-file
+    (locate-user-emacs-file "extra-packages/private/mail-setup.el")
+    "Personal configuration, including mu4e-contexts. Private, as it
+  contains mail addresses, etc.")
 
-  (setq mu4e-contexts
-        (list
-         ;; School account
-         (make-mu4e-context
-          :name "Unicaen"
-          :match-func
-          (lambda (msg)
-            (when msg
-              (string-prefix-p "/Unicaen" (mu4e-message-field msg :maildir))))
-          :vars '((user-mail-address  . "leo.paviet-salomon@unicaen.fr")
-                  (user-full-name     . "Leo Paviet Salomon")
-                  (mu4e-drafts-folder . "/Unicaen/Drafts")
-                  (mu4e-sent-folder   . "/Unicaen/Sent")
-                  (mu4e-refile-folder . "/Unicaen/Archive")
-                  (mu4e-trash-folder  . "/Unicaen/Trash")
-                  (smtpmail-smtp-user    . "paviets201")
-                  (smtpmail-smtp-server  . "smtp.unicaen.fr")
-                  (smtpmail-smtp-service . 465)
-                  (smtpmail-stream-type  . ssl)))
+  (defun lps/check-mail-setup ()
+    (if (and (file-exists-p "~/.mbsyncrc")
+             (file-exists-p "~/.mbsyncpass/")
+             (file-exists-p lps/private-mail-setup-file)
+             (executable-find "mbsync")
+             (executable-find "mu"))
+        'mail-ok
+      (error "Mail seems not to be properly setup.")))
 
-         (make-mu4e-context
-          :name "Orange"
-          :match-func
-          (lambda (msg)
-            (when msg
-              (string-prefix-p "/Orange" (mu4e-message-field msg :maildir))))
-          :vars '((user-mail-address  . "leo.paviet.salomon@orange.fr")
-                  (user-full-name     . "Leo Paviet Salomon")
-                  (mu4e-drafts-folder . "/Orange/DRAFT")
-                  (mu4e-sent-folder   . "/Orange/OUTBOX")
-                  (mu4e-refile-folder . "/Orange/Archive")
-                  (mu4e-trash-folder  . "/Orange/TRASH")
-                  (smtpmail-smtp-user    . "leo.paviet.salomon@orange.fr")
-                  (smtpmail-smtp-server  . "smtp.orange.fr")
-                  (smtpmail-smtp-service . 465)
-                  (smtpmail-stream-type  . ssl)))
-
-         (make-mu4e-context
-          :name "ENS_Lyon"
-          :match-func
-          (lambda (msg)
-            (when msg
-              (string-prefix-p "/ENS_Lyon" (mu4e-message-field msg :maildir))))
-          :vars '((user-mail-address  . "leo.paviet-salomon@ens-lyon.fr")
-                  (user-full-name     . "Leo Paviet Salomon")
-                  (mu4e-drafts-folder . "/ENS_Lyon/Brouillons")
-                  (mu4e-sent-folder   . "/ENS_Lyon/Elements_envoyes")
-                  ;;(mu4e-sent-messages-behavior . 'delete) ;; Not sure yet, better be safe
-                  (mu4e-refile-folder . "/ENS_Lyon/Archive")
-                  (mu4e-trash-folder  . "/ENS_Lyon/Corbeille")
-                  (smtpmail-smtp-user    . "lpaviets")
-                  (smtpmail-smtp-server  . "smtp.ens-lyon.fr")
-                  (smtpmail-smtp-service . 587)
-                  (smtpmail-stream-type  . starttls)))
-
-         (make-mu4e-context
-          :name "Personal"
-          :match-func
-          (lambda (msg)
-            (when msg
-              (string-prefix-p "/Personal" (mu4e-message-field msg :maildir))))
-          :vars '((user-mail-address  . "mail@lpaviets.org")
-                  (user-full-name     . "Leo Paviet Salomon")
-                  (mu4e-drafts-folder . "/Personal/Drafts")
-                  (mu4e-sent-folder   . "/Personal/Sent Items")
-                  (mu4e-refile-folder . "/Personal/Archive")
-                  (mu4e-trash-folder  . "/Personal/Deleted Items")
-                  (smtpmail-smtp-user    . "mail@lpaviets.org")
-                  (smtpmail-smtp-server  . "smtp.mail.ovh.ca")
-                  (smtpmail-smtp-service . 465)
-                  (smtpmail-stream-type  . ssl)))))
+  (when (lps/check-mail-setup)
+    (load lps/private-mail-setup-file))
 
 ;;; Queries
   (defun lps/mu4e-read-range (fun initial-prompt)
@@ -6587,22 +6509,6 @@ recent versions of mu4e."
 
     If the second element is a function, it will be called with two
     elements: the field content, and the message itself.")
-
-  (defvar lps/mu4e-headers-propertize-context
-    '(("Orange" "red4")
-      ("Unicaen" "blue3")
-      ("ENS_Lyon" "green4")
-      ("Personal" "dark violet"))
-    "Alist of (CONTEXT-NAME FACE-OR-FUNCTION)
-
-    If the second element is a function, it will be called with the
-    header corresponding to the current message.
-
-    If it is a string, it will be assumed to be a colour; in that
-    case, header will be prefixed with \"█ \", coloured in this
-    colour.
-
-    Otherwise, it is a symbol naming a face.")
 
   (defun lps/mu4e~headers-field-handler (f-w msg)
     "Create a description of the field of MSG described by F-W."
