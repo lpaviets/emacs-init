@@ -6212,7 +6212,9 @@ confirmation when sending a non-multipart MIME mail")
 
 (use-package mu4e
   :ensure nil
-  :load-path "/usr/local/share/emacs/site-lisp/mu4e" ;; Might be needed.
+  ;; Unclear which one is used a priori
+  :load-path ("/usr/share/emacs/site-lisp/mu4e"
+              "/usr/local/share/emacs/site-lisp/mu4e")
   :commands mu4e
   :bind (("C-c e" . mu4e)
          :map mu4e-compose-mode-map
