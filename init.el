@@ -4569,7 +4569,8 @@ return `nil'."
         ([remap beginning-of-defun] . LaTeX-find-matching-begin)
         ([remap end-of-defun] . LaTeX-find-matching-end)
         ("C-S-b" . lps/LaTeX-prev-math)
-        ("C-S-f" . lps/LaTeX-next-math))
+        ("C-S-f" . lps/LaTeX-next-math)
+        ("C-c C-$" . lps/LaTeX-switch-inline-display-math))
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . subword-mode)
@@ -4653,6 +4654,32 @@ The return value is the string as entered in the minibuffer."
     (while (not (texmathp))
       (forward-char 1)))
 
+  (defun lps/LaTeX-switch-inline-display-math ()
+    (interactive)
+    (let ((delims  '("$" "\\[")))
+      (save-excursion
+        (when (texmathp)
+          (let ((delim (car texmathp-why))
+                (bound (cdr texmathp-why))
+                (marker nil))
+            (cond
+             ((equal delim "$")
+              (goto-char bound)
+              (delete-char 1)
+              (insert "\\[")
+              (save-excursion
+                (search-forward "$")
+                (delete-backward-char 1)
+                (insert "\\]")))
+             ((equal delim "\\[")
+              (goto-char bound)
+              (delete-char 2)
+              (insert "$")
+              (save-excursion
+                (search-forward "\\]")
+                (delete-backward-char 2)
+                (insert "$")))))))))
+
   ;; Improve fontification
   (defun lps/latex-fontification ()
     (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8")
@@ -4666,7 +4693,7 @@ The return value is the string as entered in the minibuffer."
                                ("sbox" ""))
                              'function))
 
-  ;;; Improved compilation
+;;; Improved compilation
   ;; Full recompile
   (defun lps/TeX-recompile-all ()
     ;; Clean everything
@@ -6212,9 +6239,10 @@ confirmation when sending a non-multipart MIME mail")
 
 (use-package mu4e
   :ensure nil
-  ;; Unclear which one is used a priori
-  :load-path ("/usr/share/emacs/site-lisp/mu4e"
-              "/usr/local/share/emacs/site-lisp/mu4e")
+  ;; Add several paths: might be needed, and unclear where each distrib installs
+  ;; it, so we add them all
+  :load-path ("/usr/local/share/emacs/site-lisp/mu4e"
+              "/usr/share/emacs/site-lisp/mu4e")
   :commands mu4e
   :bind (("C-c e" . mu4e)
          :map mu4e-compose-mode-map
@@ -6249,6 +6277,10 @@ confirmation when sending a non-multipart MIME mail")
   (mu4e-change-filenames-when-moving t) ; Avoid mail syncing issues with mbsync
   ;; Refresh mail every 5 minutes
   (mu4e-update-interval (* 5 60))
+  ;; Could be fixed to also use GPG with some kind of loopback:
+  ;; (format "INSIDE_EMACS=%s mbsync -a" emacs-version)
+  ;; or something like that. However,
+  ;; might have some funny interactions: don't use it for now
   (mu4e-get-mail-command "mbsync -a")
   (mu4e-index-update-in-background t)
   (mu4e-hide-index-messages t)
@@ -6966,6 +6998,9 @@ You can bind this to the key C-c i in GNUS or mail by adding to
 (use-package flyspell
   :bind
   ("C-S-<f8>" . lps/flyspell-toggle)
+  (:map flyspell-mode-map
+        ("C-c $" . nil)
+        ("C-c C-$" . flyspell-correct-word-before-point))
   :config
   ;; From https://www.emacswiki.org/emacs/FlySpell
   (defun lps/flyspell-on-for-buffer-type ()
