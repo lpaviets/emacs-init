@@ -268,6 +268,8 @@ the internal changes made by this config.")
 
   (use-package pinentry
     :defer t
+    ;; Apparently no longer needed in recent GPG/Emacs versions
+    :disabled t
     :after epa
     :custom
     (epg-pinentry-mode 'loopback)

@@ -134,3 +134,4 @@ flycheck_*.el
 /tutorial/
 /eglot-java-eclipse-jdt-cache/*
 /dirvish/
+/extra-packages/private
