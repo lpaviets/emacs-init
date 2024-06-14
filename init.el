@@ -4572,7 +4572,7 @@ return `nil'."
         ([remap end-of-defun] . LaTeX-find-matching-end)
         ("C-S-b" . lps/LaTeX-prev-math)
         ("C-S-f" . lps/LaTeX-next-math)
-        ("C-c C-$" . lps/LaTeX-switch-inline-display-math))
+        ("C-c $" . lps/LaTeX-switch-inline-display-math))
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . subword-mode)
@@ -7002,6 +7002,7 @@ You can bind this to the key C-c i in GNUS or mail by adding to
   ("C-S-<f8>" . lps/flyspell-toggle)
   (:map flyspell-mode-map
         ("C-c $" . nil)
+        ("C-," . nil) ; conflicts with Embark
         ("C-c C-$" . flyspell-correct-word-before-point))
   :config
   ;; From https://www.emacswiki.org/emacs/FlySpell
