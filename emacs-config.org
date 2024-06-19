@@ -5503,16 +5503,19 @@ system.
               pdf-view-auto-slice-minor-mode ; add to defaults
               ;; pdf-virtual-global-minor-mode
               ))
-      :bind (:map pdf-view-mode-map
-                  ("C-s" . isearch-forward)
-                  ("C-c ?" . lps/pdf-maybe-goto-index)
-                  ("<C-down>" . pdf-view-scroll-up-or-next-page)
-                  ("<C-up>" . pdf-view-scroll-down-or-previous-page)
-                  ("<C-left>" . image-scroll-right)
-                  ("<C-right>" . image-scroll-left)
-                  ("s a" . pdf-view-auto-slice-minor-mode)
-                  ("G" . pdf-view-goto-label)
-                  ("<f11>" . lps/slideshow-mode))
+      :bind
+      (:map pdf-view-mode-map
+            ("C-s" . isearch-forward)
+            ("C-c ?" . lps/pdf-maybe-goto-index)
+            ("<C-down>" . pdf-view-scroll-up-or-next-page)
+            ("<C-up>" . pdf-view-scroll-down-or-previous-page)
+            ("<C-left>" . image-scroll-right)
+            ("<C-right>" . image-scroll-left)
+            ("s a" . pdf-view-auto-slice-minor-mode)
+            ("G" . pdf-view-goto-label)
+            ("<f11>" . lps/slideshow-mode))
+      (:map pdf-isearch-active-mode-map
+            ("C-<return>" . lps/pdf-isearch-sync-backward-search))
       :custom
       (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                               "-pointsize" "%P"
@@ -5524,6 +5527,19 @@ system.
       (pdf-view-selection-style 'glyph)
       :config
       (pdf-tools-install :no-query)
+
+      ;; Appearance
+      ;; TODO: improve colours to fit with general theme
+      (set-face-foreground 'pdf-isearch-match "black")
+      (set-face-background 'pdf-isearch-match "magenta")
+      (pdf-util--clear-faces-cache)
+
+      (defun lps/pdf-isearch-sync-backward-search ()
+        (interactive)
+        (cl-destructuring-bind ((left top right bot))
+            pdf-isearch-current-match
+          (isearch-exit)
+          (pdf-sync-backward-search left top)))
 
       (defun lps/pdf-maybe-goto-index ()
         "Tries to guess where the index of the document is,
