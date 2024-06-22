@@ -1659,9 +1659,8 @@ NOTE: YOu might need to call =export WEBKIT_FORCE_SANDBOX=0= for it to work.
 ** Help !
 *** Improve default help
 Emacs already has a /great/ documentation system, but it is still possible to
-improve it ! [[https://github.com/Wilfred/helpful][helpful]] makes things easier
-to remember and to use without having to search for documentation in multiple
-places.
+improve it ! [[https://github.com/Wilfred/helpful][helpful]] makes things easier to remember and to use without having
+to search for documentation in multiple places.
 
 It will condense all the available information about something within a single
 Help buffer, and will add some documentation to the commands you are currently
@@ -2174,7 +2173,8 @@ styles on the fly.
     (orderless-style-dispatchers '(lps/orderless-initialism-if-semicolon
                                    lps/orderless-substring-if-equal
                                    lps/orderless-flex-if-twiddle
-                                   lps/orderless-without-if-bang))
+                                   lps/orderless-without-if-bang
+                                   orderless-kwd-dispatch))
 
     :config
     ;; From the Orderless package documentation
@@ -5514,8 +5514,6 @@ system.
             ("s a" . pdf-view-auto-slice-minor-mode)
             ("G" . pdf-view-goto-label)
             ("<f11>" . lps/slideshow-mode))
-      (:map pdf-isearch-active-mode-map
-            ("C-<return>" . lps/pdf-isearch-sync-backward-search))
       :custom
       (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                               "-pointsize" "%P"
@@ -5530,9 +5528,12 @@ system.
 
       ;; Appearance
       ;; TODO: improve colours to fit with general theme
-      (set-face-foreground 'pdf-isearch-match "black")
-      (set-face-background 'pdf-isearch-match "magenta")
-      (pdf-util--clear-faces-cache)
+      (with-eval-after-load 'pdf-isearch
+        (set-face-foreground 'pdf-isearch-match "black")
+        (set-face-background 'pdf-isearch-match "magenta")
+        (pdf-util--clear-faces-cache)
+        (define-key pdf-isearch-active-mode-map
+                    (kbd "C-<return>") 'lps/pdf-isearch-sync-backward-search))
 
       (defun lps/pdf-isearch-sync-backward-search ()
         (interactive)
@@ -7866,6 +7867,8 @@ help me remember the easy-to-forget syntax.
   (use-package tramp
     :bind
     ("C-x C-S-f" . lps/tramp-find-file)
+    :custom
+    (ange-ftp-netrc-filename "~/.authinfo.gpg")
     :hook
     (shell-mode . lps/remote-shell-setup)
     :config
@@ -8701,6 +8704,7 @@ the built-in functions.
 #+begin_src emacs-lisp
   (use-package gnus-icalendar
     :defer t
+    :ensure nil
     :config
     (defun lps/gnus-icalendar-org-setup ()
       (progn

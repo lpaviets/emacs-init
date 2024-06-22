@@ -1490,7 +1490,8 @@ buffer name already resembles a file name"
   (orderless-style-dispatchers '(lps/orderless-initialism-if-semicolon
                                  lps/orderless-substring-if-equal
                                  lps/orderless-flex-if-twiddle
-                                 lps/orderless-without-if-bang))
+                                 lps/orderless-without-if-bang
+                                 orderless-kwd-dispatch))
 
   :config
   ;; From the Orderless package documentation
@@ -4054,8 +4055,6 @@ Refer to `org-agenda-prefix-format' for more information."
           ("s a" . pdf-view-auto-slice-minor-mode)
           ("G" . pdf-view-goto-label)
           ("<f11>" . lps/slideshow-mode))
-    (:map pdf-isearch-active-mode-map
-          ("C-<return>" . lps/pdf-isearch-sync-backward-search))
     :custom
     (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                             "-pointsize" "%P"
@@ -4070,9 +4069,12 @@ Refer to `org-agenda-prefix-format' for more information."
 
     ;; Appearance
     ;; TODO: improve colours to fit with general theme
-    (set-face-foreground 'pdf-isearch-match "black")
-    (set-face-background 'pdf-isearch-match "magenta")
-    (pdf-util--clear-faces-cache)
+    (with-eval-after-load 'pdf-isearch
+      (set-face-foreground 'pdf-isearch-match "black")
+      (set-face-background 'pdf-isearch-match "magenta")
+      (pdf-util--clear-faces-cache)
+      (define-key pdf-isearch-active-mode-map
+                  (kbd "C-<return>") 'lps/pdf-isearch-sync-backward-search))
 
     (defun lps/pdf-isearch-sync-backward-search ()
       (interactive)
@@ -6060,6 +6062,8 @@ If HEADER, set the `dirvish--header-line-fmt' instead."
 (use-package tramp
   :bind
   ("C-x C-S-f" . lps/tramp-find-file)
+  :custom
+  (ange-ftp-netrc-filename "~/.authinfo.gpg")
   :hook
   (shell-mode . lps/remote-shell-setup)
   :config
@@ -6727,6 +6731,7 @@ recent versions of mu4e."
 
 (use-package gnus-icalendar
   :defer t
+  :ensure nil
   :config
   (defun lps/gnus-icalendar-org-setup ()
     (progn
