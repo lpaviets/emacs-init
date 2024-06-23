@@ -485,7 +485,15 @@ immediately start working from where you were the last time you quitted Emacs !
     (desktop-modes-not-to-save '(tags-table-mode     ; default
                                  eglot--managed-mode ; seems buggy ?
                                  ))
-    (desktop-restore-forces-onscreen nil))
+    (desktop-restore-forces-onscreen nil)
+    (desktop-buffers-not-to-save-function 'lps/desktop-buffers-not-to-save-function)
+    :config
+    (defun lps/desktop-buffers-not-to-save-function (filename bufname mode &rest rest)
+      (cond
+       ((provided-mode-derived-p mode 'dired-mode)
+        (let ((dirname (car (nth 4 rest))))
+          (not (string-match-p "/s?ftp:" dirname))))
+       (t t))))
 #+end_src
 
 We can also remember more information than "which files were opened"; the
@@ -1499,6 +1507,7 @@ often useful to be able to quicky navigate to this file.
                         (expand-file-name recentf-save-file)
                         "/usr/local/share/emacs/"
                         "bookmarks$"
+                        "^/s?ftp:"
                         (expand-file-name "~/Mail/")))
       (add-to-list 'recentf-exclude excl)))
 
@@ -1928,6 +1937,7 @@ Typing "yes" and "no" might be a bit too tiring
 ~consult~ provides a lot of useful commands that can be used during a minibuffer
 session to act on the selection. Moreover, it comes with various utilities, such
 as flavours of ~isearch~ or ~grep~.
+
 #+begin_src emacs-lisp
   (use-package consult
     :defer t
@@ -5471,8 +5481,7 @@ and produce objects with which we can interact.
 * LaTeX and PDF
 *** PDF viewer
 
-Rather than =doc-view=, we use [[https://github.com/politza/pdf-tools][PDF
-Tools]].
+Rather than =doc-view=, we use [[https://github.com/politza/pdf-tools][PDF Tools]].
 
 *MANUAL* This package might require some external libraries to be installed.
 Please refer to the linked page to see exactly what you need to do on your
@@ -7793,6 +7802,27 @@ and so on.
                                           (nreverse shortcuts))))
       :config
       (remove-hook 'dired-mode-hook 'all-the-icons-dired-mode)
+
+      ;; Fix a potential bug with Dirvish and TRAMP (SFTP in particular):
+      (defun-override lps/dirvish-noselect-tramp (fn dir flags remote)
+        "Return the Dired buffer at DIR with listing FLAGS.
+  Save the REMOTE host to `dirvish-tramp-hosts'.
+  FN is the original `dired-noselect' closure."
+        (let* ((saved-flags (cdr (assoc remote dirvish-tramp-hosts #'equal)))
+               (ftp? (tramp-ftp-file-name-p dir))
+               (short-flags "-Alh")
+               (default-directory dir)
+               (dired-buffers nil)
+               (buffer (cond (ftp? (funcall fn dir short-flags))
+                             (saved-flags (funcall fn dir saved-flags))
+                             ;; ((= (process-file "ls" nil nil nil "--version") 0)
+                             ;;  (push (cons remote flags) dirvish-tramp-hosts)
+                             ;;  (funcall fn dir flags))
+                             (t (push (cons remote short-flags) dirvish-tramp-hosts)
+                                (funcall fn dir short-flags)))))
+          (with-current-buffer buffer
+            (dirvish-prop :tramp (tramp-dissect-file-name dir))
+            buffer)))
 
       ;; Fix a bug, see
       ;; https://github.com/alexluigit/dirvish/pull/251/commits/600b81d5b8adc8532cb31b72c9cf2fc981c678e9

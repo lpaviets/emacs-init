@@ -330,7 +330,15 @@ the internal changes made by this config.")
   (desktop-modes-not-to-save '(tags-table-mode     ; default
                                eglot--managed-mode ; seems buggy ?
                                ))
-  (desktop-restore-forces-onscreen nil))
+  (desktop-restore-forces-onscreen nil)
+  (desktop-buffers-not-to-save-function 'lps/desktop-buffers-not-to-save-function)
+  :config
+  (defun lps/desktop-buffers-not-to-save-function (filename bufname mode &rest rest)
+    (cond
+     ((provided-mode-derived-p mode 'dired-mode)
+      (let ((dirname (car (nth 4 rest))))
+        (not (string-match-p "/s?ftp:" dirname))))
+     (t t))))
 
 (use-package saveplace
   :ensure nil
@@ -1059,6 +1067,7 @@ one if none exists."
                       (expand-file-name recentf-save-file)
                       "/usr/local/share/emacs/"
                       "bookmarks$"
+                      "^/s?ftp:"
                       (expand-file-name "~/Mail/")))
     (add-to-list 'recentf-exclude excl)))
 
@@ -5997,6 +6006,27 @@ PWD is not in a git repo (or the git command is not found)."
                                         (nreverse shortcuts))))
     :config
     (remove-hook 'dired-mode-hook 'all-the-icons-dired-mode)
+
+    ;; Fix a potential bug with Dirvish and TRAMP (SFTP in particular):
+    (defun-override lps/dirvish-noselect-tramp (fn dir flags remote)
+      "Return the Dired buffer at DIR with listing FLAGS.
+Save the REMOTE host to `dirvish-tramp-hosts'.
+FN is the original `dired-noselect' closure."
+      (let* ((saved-flags (cdr (assoc remote dirvish-tramp-hosts #'equal)))
+             (ftp? (tramp-ftp-file-name-p dir))
+             (short-flags "-Alh")
+             (default-directory dir)
+             (dired-buffers nil)
+             (buffer (cond (ftp? (funcall fn dir short-flags))
+                           (saved-flags (funcall fn dir saved-flags))
+                           ;; ((= (process-file "ls" nil nil nil "--version") 0)
+                           ;;  (push (cons remote flags) dirvish-tramp-hosts)
+                           ;;  (funcall fn dir flags))
+                           (t (push (cons remote short-flags) dirvish-tramp-hosts)
+                              (funcall fn dir short-flags)))))
+        (with-current-buffer buffer
+          (dirvish-prop :tramp (tramp-dissect-file-name dir))
+          buffer)))
 
     ;; Fix a bug, see
     ;; https://github.com/alexluigit/dirvish/pull/251/commits/600b81d5b8adc8532cb31b72c9cf2fc981c678e9

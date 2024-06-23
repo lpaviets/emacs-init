@@ -122,6 +122,7 @@
         hydra-multiple-cursors/nil
         iedit-switch-to-mc-mode
         lps/duplicate-line-or-region-down
+        mc--insert-number-and-increase
         next-buffer
         org-insert-link
         org-shiftright
