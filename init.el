@@ -1913,6 +1913,8 @@ the current selection by line."
                            ;; (:color "DarkViolet" :position -1)
                            :background
                            "DarkViolet"))))
+  (visible-mark-active ((t (:background
+                            "Magenta"))))
   :custom
   (visible-mark-max 1)
   (visible-mark-faces `(visible-mark-face1)))
@@ -3758,7 +3760,6 @@ call the associated function interactively. Otherwise, call the
   (org-agenda-show-inherited-tags nil)
   ;; Window configuration
   (org-agenda-restore-windows-after-quit t)
-  (org-agenda-window-setup 'other-window)
   (org-tag-alist
    '((:startgroup)
      ;; Put mutually exclusive tags here
@@ -6300,8 +6301,8 @@ confirmation when sending a non-multipart MIME mail")
          :map mu4e-compose-mode-map
          ("C-c h" . lps/org-mime-htmlize-preserve-secure-and-attach)
          (:map mu4e-main-mode-map
-               ("q" . lps/mu4e-kill-buffers)
-               ("Q" . mu4e-quit))
+               ("Q" . lps/mu4e-kill-buffers)
+               ("q" . lps/mu4e-quit))
          (:map mu4e-search-minor-mode-map
                ("C-S-s" . lps/mu4e-build-query))
          (:map mu4e-view-mode-map
@@ -6413,6 +6414,13 @@ recent versions of mu4e."
      (buffer-list))
 
     ;; Update mail and index when leaving
+    (unless (and (buffer-live-p mu4e--update-buffer)
+                 (process-live-p (get-buffer-process mu4e--update-buffer)))
+      (mu4e-update-mail-and-index t)))
+
+  (defun lps/mu4e-quit (&optional stop)
+    (interactive "P")
+    (mu4e-quit (not stop))
     (unless (and (buffer-live-p mu4e--update-buffer)
                  (process-live-p (get-buffer-process mu4e--update-buffer)))
       (mu4e-update-mail-and-index t)))
