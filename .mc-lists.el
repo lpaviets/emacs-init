@@ -56,6 +56,7 @@
         mark-sexp
         mark-word
         org-beginning-of-line
+        org-cycle
         org-delete-char
         org-emphasize
         org-end-of-line

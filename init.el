@@ -3471,6 +3471,9 @@ call the associated function interactively. Otherwise, call the
                ;; Empty row: end the table.
                (delete-region (line-beginning-position) (line-end-position))
                (org-return))
+              ;; FIXME: could be more robust
+              ((= (point) (line-end-position))
+               (org-table-insert-row 'below))
               (t
                ;; Non-empty row: call `org-return'.
                (org-return))))
@@ -5596,6 +5599,7 @@ present in the list of authors or in the title of the article"
      (?L ("\\Lambda" "\\limits"))
      (?c ("\\mathcal{?}" "\\mathbb{?}" "\\mathfrak{?}"))
      (?\( ("\\langle ?\\rangle" "\\left"))
+     (?F ("\\Phi"))
      (?N ("\\mathbb{N}" "\\mathbb{N}^{2}"))
      (?Z ("\\mathbb{Z}" "\\mathbb{Z}^{2}" "\\Zeta"))
      (?R ("\\mathbb{R}" "\\mathbb{R}^{2}"))
