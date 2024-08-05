@@ -4541,6 +4541,9 @@ rules, by changing the headers appearance, and a few other minor changes.
      ;; '("◉" "○" "●" "○" "●" "○" "●")
      ))
 
+  (use-package org-appear
+    :hook (org-mode . org-appear-mode))
+
   (use-package org
     :only-built-in t
     :defer t
@@ -4586,6 +4589,7 @@ rules, by changing the headers appearance, and a few other minor changes.
     (org-return-follows-link t)
     (org-imenu-depth 4)
     (org-catch-invisible-edits 'show)
+    (org-hide-emphasis-markers t)
     (org-latex-packages-alist '(("" "amsfonts" t) ("" "lps-tex-style" t)))
     (org-preview-latex-default-process (if (executable-find "dvisvgm")
                                            'dvisvgm

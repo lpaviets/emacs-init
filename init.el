@@ -3201,6 +3201,9 @@ call the associated function interactively. Otherwise, call the
    ;; '("◉" "○" "●" "○" "●" "○" "●")
    ))
 
+(use-package org-appear
+  :hook (org-mode . org-appear-mode))
+
 (use-package org
   :only-built-in t
   :defer t
@@ -3246,6 +3249,7 @@ call the associated function interactively. Otherwise, call the
   (org-return-follows-link t)
   (org-imenu-depth 4)
   (org-catch-invisible-edits 'show)
+  (org-hide-emphasis-markers t)
   (org-latex-packages-alist '(("" "amsfonts" t) ("" "lps-tex-style" t)))
   (org-preview-latex-default-process (if (executable-find "dvisvgm")
                                          'dvisvgm
