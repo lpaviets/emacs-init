@@ -5625,7 +5625,11 @@ present in the list of authors or in the title of the article"
      ("invlim"      "Insert \\varprojlim_{}{}"
       "\\varprojlim_{?}{}" cdlatex-position-cursor nil nil t)
      ("dirlim"      "Insert \\varinjlim_{}{}"
-      "\\varinjlim_{?}{}" cdlatex-position-cursor nil nil t)))
+      "\\varinjlim_{?}{}" cdlatex-position-cursor nil nil t)
+     ("fl"          "Insert \\lfloor \\rfloor"
+      "\\lfloor ?\\rfloor" cdlatex-position-cursor nil nil t)
+     ("ceil"        "Insert \\lceil \\rceil"
+      "\\lceil ?\\rceil" cdlatex-position-cursor nil nil t)))
 
   :config
   (defun lps/LaTeX-indent ()
