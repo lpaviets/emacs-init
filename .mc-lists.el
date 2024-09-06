@@ -124,6 +124,7 @@
         iedit-switch-to-mc-mode
         lps/duplicate-line-or-region-down
         mc--insert-number-and-increase
+        mouse-drag-secondary
         next-buffer
         org-insert-link
         org-shiftright

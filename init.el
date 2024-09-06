@@ -3892,6 +3892,54 @@ Refer to `org-agenda-prefix-format' for more information."
                 org-agenda-custom-commands
                 :test 'equal)))
 
+(use-package khalel
+  :after org-agenda
+  :custom
+  (khalel-import-org-file (lps/org-expand-file-name "agenda/calendar-sync.org"))
+  ;; (khalel-import-org-file-confirm-overwrite nil)
+  (khalel-import-end-date "+1y")
+  (khalel-import-format "* {title} {cancelled} :{calendar}:
+:PROPERTIES:\n:CALENDAR: {calendar}
+:CATEGORY: %%%{calendar}%%%
+:LOCATION: {location}
+:ID: {uid}
+:END:
+- When: <{start-date-long} {start-time}>--<{end-date-long} {end-time}>
+- Where: {location}
+- Description: {description}
+- URL: {url}\n- Organizer: {organizer}
+
+[[elisp:(khalel-edit-calendar-event)][Edit this event]]\
+    [[elisp:(progn (khalel-run-vdirsyncer) (khalel-import-events))]\
+[Sync and update all]]
+") ;; Hackish way to add category: should depend on the calendar ...
+  :config
+  (khalel-add-capture-template)
+
+;;; Replace the occurrences of %%%SOMETHING%%% by
+  (defvar lps/khalel-calendar-to-category '(("ade" "Lectures")))
+  (defun lps/khalel-fix-item-category (item)
+    (with-temp-buffer
+      (insert item)
+      (goto-char (point-min))
+      (while (re-search-forward "%%%\\(.*\\)%%%" nil t)
+        (let* ((match (match-string 1))
+               (replacement (or (cadr (assoc-string match
+                                                    lps/khalel-calendar-to-category))
+                                match)))
+          (replace-match replacement)))
+      (buffer-substring (point-min) (point-max))))
+
+  (defun lps/khalel-fix-all-items-categories (content-list)
+    (let ((fixed-list nil))
+      (dolist (content content-list)
+        (push (lps/khalel-fix-item-category content)
+              fixed-list))
+      (nreverse fixed-list)))
+
+  (advice-add 'khalel--get-buffer-content-list
+              :filter-return 'lps/khalel-fix-all-items-categories))
+
 (use-package org-capture
   :after org
   :ensure nil
