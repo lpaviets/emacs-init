@@ -5351,7 +5351,9 @@ integrate everything together, we use an Emacs package.
     (khalel-add-capture-template)
 
   ;;; Replace the occurrences of %%%SOMETHING%%% by
-    (defvar lps/khalel-calendar-to-category '(("ade" "Lectures")))
+    (defvar lps/khalel-calendar-to-category '(("ade" "Lectures")
+                                              ("loria" "Workplace")
+                                              ("ul" "Workplace")))
     (defun lps/khalel-fix-item-category (item)
       (with-temp-buffer
         (insert item)
@@ -10009,6 +10011,8 @@ To explore:
 - Check that the "useful IDs" generated in the HTML export also work in LaTeX
   exports (or any other, really), and fix it otherwise. Probably feasible using
   a toggle of the mode.
+- Check that khalel/Khal integration works properly, and fix the apparent bug in
+  org-capture integration
 ** Printing
 Not particularly Emacs-related, but: find a way to specify a username/password
 to ~lp~ when printing using either the built-in functions or

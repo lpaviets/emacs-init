@@ -55,6 +55,7 @@
         mark-paragraph
         mark-sexp
         mark-word
+        mouse-set-region
         org-beginning-of-line
         org-cycle
         org-delete-char

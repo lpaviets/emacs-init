@@ -3917,7 +3917,9 @@ Refer to `org-agenda-prefix-format' for more information."
   (khalel-add-capture-template)
 
 ;;; Replace the occurrences of %%%SOMETHING%%% by
-  (defvar lps/khalel-calendar-to-category '(("ade" "Lectures")))
+  (defvar lps/khalel-calendar-to-category '(("ade" "Lectures")
+                                            ("loria" "Workplace")
+                                            ("ul" "Workplace")))
   (defun lps/khalel-fix-item-category (item)
     (with-temp-buffer
       (insert item)
