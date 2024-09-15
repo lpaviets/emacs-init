@@ -48,6 +48,7 @@
         lps/insert-quotes
         lps/kill-region-or-word-dwim
         lps/lisp-indent-adjust-parens
+        lps/org-maybe-surround-*
         lps/select-line
         lps/transpose-sexp-backward
         lps/transpose-sexp-forward
@@ -62,6 +63,8 @@
         org-emphasize
         org-end-of-line
         org-kill-line
+        org-meta-return
+        org-metaright
         org-self-insert-command
         org-yank
         paredit-backslash

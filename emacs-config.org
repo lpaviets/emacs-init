@@ -5348,6 +5348,7 @@ integrate everything together, we use an Emacs package.
   [Sync and update all]]
   ") ;; Hackish way to add category: should depend on the calendar ...
     :config
+    (require 'org-capture)
     (khalel-add-capture-template)
 
   ;;; Replace the occurrences of %%%SOMETHING%%% by

@@ -3914,6 +3914,7 @@ Refer to `org-agenda-prefix-format' for more information."
 [Sync and update all]]
 ") ;; Hackish way to add category: should depend on the calendar ...
   :config
+  (require 'org-capture)
   (khalel-add-capture-template)
 
 ;;; Replace the occurrences of %%%SOMETHING%%% by
