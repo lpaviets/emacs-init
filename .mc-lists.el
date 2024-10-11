@@ -33,6 +33,7 @@
         end-of-buffer
         end-of-visual-line
         eval-last-sexp
+        fill-paragraph
         forward-sentence
         forward-sexp
         hungry-delete-backward
@@ -108,6 +109,8 @@
 (setq mc/cmds-to-run-once
       '(
         consult-line
+        dired-do-compress-to
+        dired-toggle-read-only
         helpful-key
         hydra-multiple-cursors/body
         hydra-multiple-cursors/mc/edit-beginnings-of-lines-and-exit

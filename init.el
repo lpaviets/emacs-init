@@ -1708,7 +1708,7 @@ buffer name already resembles a file name"
         ("x" . isearch-forward-regexp))
   :custom
   ;; Interpret whitespaces as "anything but a newline"
-  (search-whitespace-regexp "[-\\/_ \\t.]+")
+  (search-whitespace-regexp "[-\\/_ \t.\n]+")
   (isearch-regexp-lax-whitespace t)
   (isearch-yank-on-move t)
   (isearch-allow-scroll t)
@@ -1774,6 +1774,7 @@ buffer name already resembles a file name"
   (avy-keys '(?q ?s ?d ?f ?g ?h ?j ?k ?l ?m))
   (avy-all-windows nil)
   (avy-single-candidate-jump t)
+  (avy-case-fold-search nil)
   (avy-timeout-seconds 0.5)
   (avy-translate-char-function '(lambda (c) (if (= c 32) ?q c))))
 
@@ -5652,6 +5653,7 @@ present in the list of authors or in the title of the article"
      (?& ("\\wedge" "\\bigwedge"))
      (?* ("\\times" "\\ast"))
      (?L ("\\Lambda" "\\limits"))
+     (?Q ("\\Theta" "\\mathbb{Q}"))
      (?c ("\\mathcal{?}" "\\mathbb{?}" "\\mathfrak{?}"))
      (?\( ("\\langle ?\\rangle" "\\left"))
      (?F ("\\Phi"))
@@ -6384,8 +6386,8 @@ confirmation when sending a non-multipart MIME mail")
   ;; Might avoid unwanted drafts
   (mu4e-compose-mode . lps/disable-auto-save-mode)
   :custom
-  (mu4e-compose-context-policy 'always-ask)
-  (mu4e-context-policy 'pick-first)
+  (mu4e-compose-context-policy 'ask)
+  (mu4e-context-policy 'ask)
   (mu4e-confirm-quit nil)
   (mu4e-use-fancy-chars t)              ; ASCII-only time is over
   (mu4e-headers-precise-alignment t)    ; and fix alignment !
@@ -6422,8 +6424,8 @@ confirmation when sending a non-multipart MIME mail")
   (defun lps/mu4e-view-mime-part-action ()
     "Wrapper around `mu4e-view-mime-part-action' with better prompt
 
-This is just a call to `mu4e-view-mime-part-action' in more
-recent versions of mu4e."
+  This is just a call to `mu4e-view-mime-part-action' in more
+  recent versions of mu4e."
     (interactive)
     (version-case mu4e-mu
       ("1.11" (call-interactively 'mu4e-view-mime-part-action))
@@ -6454,6 +6456,15 @@ recent versions of mu4e."
     (interactive)
     (let ((thread-beg (mu4e-thread-prev)))
       (goto-char (or thread-beg (point-min)))))
+
+  (defun lps/mu4e-check-wide-reply (args)
+    (let ((wide (car args)))
+      (when (and (not wide)
+                 (mu4e-message-field-at-point :cc))
+        (list (y-or-n-p "CC found in original message, but not composing a wide reply.
+Change to wide reply ?")))))
+
+  (advice-add 'mu4e-compose-reply :filter-args 'lps/mu4e-check-wide-reply)
 
 ;;; Main view and global stuff
   ;; Taken from mu4e~stop in mu4e-utils.el
@@ -6640,6 +6651,20 @@ recent versions of mu4e."
                                                             (+ 20 6 10 22 15))))))))
 
   ;; (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
+
+  (defcustom lps/mu4e-header-line-format
+    '(:eval (lps/mu4e-header-line-format))
+    "Format of the header line in `mu4e-compose-mode' and `mu4e-view-mode'.")
+
+  (defun lps/mu4e-header-line-format ()
+    (format " > %s " (mu4e-context-name (mu4e-context-current))))
+
+  (defun lps/mu4e-setup-header-line ()
+    (setq-local header-line-format lps/mu4e-header-line-format))
+
+  (dolist (hook '(mu4e-compose-mode-hook
+                  mu4e-view-mode-hook))
+    (add-hook hook 'lps/mu4e-setup-header-line))
 
   ;; Inspired by mu4e-column-faces-mode
   ;; Taken from mu4e-column-faces

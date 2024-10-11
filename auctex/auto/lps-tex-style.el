@@ -1,8 +1,10 @@
+;; -*- lexical-binding: t; -*-
+
 (TeX-add-style-hook
  "lps-tex-style"
  (lambda ()
    (TeX-add-to-alist 'LaTeX-provided-package-options
-                     '(("fontenc" "T1") ("inputenc" "utf8")))
+                     '(("fontenc" "T1") ("inputenc" "utf8") ("tikz" "") ("tikz-cd" "") ("amsmath" "") ("amssymb" "") ("amsthm" "") ("amsfonts" "") ("stmaryrd" "") ("mathtools" "") ("thm-restate" "") ("hyperref" "") ("cleveref" "") ("url" "") ("subcaption" "") ("relsize" "") ("ifthen" "") ("graphicx" "") ("xcolor" "") ("tcolorbox" "") ("listings" "")))
    (add-to-list 'LaTeX-verbatim-environments-local "lstlisting")
    (add-to-list 'LaTeX-verbatim-macros-with-braces-local "path")
    (add-to-list 'LaTeX-verbatim-macros-with-braces-local "url")
@@ -54,6 +56,7 @@
     '("altgroup" 1)
     '("symgroup" 1)
     '("derivedsg" 1)
+    '("grouppres" 2)
     '("homom" 2)
     '("homot" 1)
     '("pfg" 1)
@@ -66,6 +69,7 @@
     '("liftfree" 1)
     '("prelift" 1)
     '("lift" 1)
+    '("bigballn" 1)
     '("balln" 1)
     '("decproblem" 1)
     '("compclass" 1)
@@ -75,6 +79,10 @@
     '("card" 1)
     '("norm" 1)
     '("intervalint" 1)
+    '("intervaloo" 1)
+    '("intervaloc" 1)
+    '("intervalco" 1)
+    '("intervalcc" 1)
     '("interval" 1)
     '("domain" 1)
     '("weight" 2)
@@ -94,8 +102,10 @@
     "argmax"
     "argmin")
    (LaTeX-add-environments
-    '("subproof" LaTeX-env-args ["argument"] 0))
+    '("subproof" LaTeX-env-args ["argument"] 0)
+    '("testcolors" LaTeX-env-args ["argument"] 0))
    (LaTeX-add-amsthm-newtheorems
+    "proposition"
     "corollary"
     "lemma"
     "theorem"
@@ -103,11 +113,12 @@
     "example"
     "examples"
     "conjecture"
-    "proposition"
     "remark"
     "notation"
     "observation"
     "claim"
-    "question"))
+    "question")
+   (LaTeX-add-xcolor-definecolors
+    "TNeutral"))
  :latex)
 
