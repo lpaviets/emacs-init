@@ -1344,8 +1344,6 @@ buffer name already resembles a file name"
   ("M-g o" . consult-outline)
   (:map isearch-mode-map
         ([remap isearch-edit-string] . consult-isearch-history))
-  (:map lps/system-tools-map
-        ("C-f" . consult-file-externally))
   :custom
   (consult-narrow-key "<")
   (xref-show-definitions-function 'consult-xref)
@@ -4074,7 +4072,9 @@ Refer to `org-agenda-prefix-format' for more information."
         ("b" . consult-org-roam-backlinks)
         ("s" . consult-org-roam-search))
   :custom
-  (consult-org-roam-grep-func #'consult-grep)
+  (consult-org-roam-grep-func (if (executable-find "rg")
+                                  'consult-ripgrep
+                                'consult-grep))
   :config
   (consult-org-roam-mode))
 
