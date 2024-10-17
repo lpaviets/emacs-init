@@ -282,7 +282,7 @@ the internal changes made by this config.")
   (use-package auth-source
     :defer t
     :custom
-    (auth-sources (remove "~/.authinfo" auth-sources))
+    (auth-sources '("secrets:default" "~/.authinfo.gpg"))
     (auth-source-cache-expiry 86400) ;; All day
 
     :config
