@@ -6511,6 +6511,8 @@ Change to wide reply ?")))))
     (setq mu4e-view-buffer-name-func 'lps/mu4e-view-buffer-name-func))
 
 ;;; Contexts and private setup
+  (require 'secrets)
+
   (defvar lps/private-mail-setup-file
     (locate-user-emacs-file "extra-packages/private/mail-setup.el")
     "Personal configuration, including mu4e-contexts. Private, as it
@@ -6518,7 +6520,7 @@ Change to wide reply ?")))))
 
   (defun lps/check-mail-setup ()
     (if (and (file-exists-p "~/.mbsyncrc")
-             (file-exists-p "~/.mbsyncpass/")
+             ;; (file-exists-p "~/.mbsyncpass/") ; Now using secrets services
              (file-exists-p lps/private-mail-setup-file)
              (executable-find "mbsync")
              (executable-find "mu"))
