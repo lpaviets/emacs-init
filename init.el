@@ -325,7 +325,7 @@ the internal changes made by this config.")
   :custom
   (desktop-restore-frames t) ;; Otherwise buggy with daemon-mode
   (desktop-path (list (locate-user-emacs-file "desktop-saves/")))
-  (desktop-restore-eager (if (daemonp) t 10))
+  (desktop-restore-eager (if (daemonp) 0 10))
   (desktop-lazy-verbose nil)
   (desktop-modes-not-to-save '(tags-table-mode     ; default
                                eglot--managed-mode ; seems buggy ?
@@ -3945,7 +3945,7 @@ Refer to `org-agenda-prefix-format' for more information."
 (use-package org-capture
   :after org
   :ensure nil
-  :init
+  :preface
   (defun lps/org-capture-make-generic-timestamp-template (abbrev name file &optional extra)
     `(,abbrev
       ,name entry
