@@ -6460,8 +6460,10 @@ confirmation when sending a non-multipart MIME mail")
   (defun lps/mu4e-check-wide-reply (args)
     (let ((wide (car args)))
       (when (and (not wide)
-                 (mu4e-message-field-at-point :cc))
-        (list (y-or-n-p "CC found in original message, but not composing a wide reply.
+                 (or (mu4e-message-field-at-point :cc)
+                     (< 1 (length (mu4e-message-field-at-point :to)))))
+        (list (y-or-n-p "Multiple recipients found in original message, but not composing
+a wide reply.
 Change to wide reply ?")))))
 
   (advice-add 'mu4e-compose-reply :filter-args 'lps/mu4e-check-wide-reply)
