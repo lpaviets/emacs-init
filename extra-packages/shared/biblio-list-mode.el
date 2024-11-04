@@ -352,6 +352,7 @@ entry at point."
     (dolist (file (or files biblio-list-files))
       (with-temp-buffer
         (insert-file-contents file)
+        (bibtex-mode)
         (goto-char (point-min))
         (bibtex-map-entries (lambda (&rest args)
                               (push (cons (bibtex-parse-entry t) file)

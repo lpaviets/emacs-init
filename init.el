@@ -3829,7 +3829,8 @@ call the associated function interactively. Otherwise, call the
                           ("Books"        . "📚")
                           ("Movies"       . "🎥")
                           ("Workplace"    . "🏢")
-                          ("Others"       . "❓")))
+                          ("Others"       . "❓")
+                          ("Games"        . "🎮")))
     (cl-pushnew (list (car tag-and-icon)
                       (list (substring-no-properties (cdr tag-and-icon)))
                       nil nil
@@ -4966,14 +4967,37 @@ Does not read any argument: this is to be able to add it both to
   ;; This only deals with some very easy cases, that I encouter most
   ;; frequently.
   (defun lps/bibtex-reformat-rearrange-name (fullname)
-    ;; TODO !
-    ;; Hard: how do I distinguish programmatically between:
-    ;; First Last1 de Last2
-    ;; First1 Last1 Last2
-    ;; First1 First2 Last1
-    ;; First de Last
-    ;; First1 First2 Last1 Last2
-    )
+    (defun bibtex-autokey-demangle-name (fullname)
+      "Get the last part from a well-formed FULLNAME and perform abbreviations."
+      (let* (case-fold-search
+             (name (cond ((string-match "\\(^[[:upper:]][^,]*\\)," fullname)
+                          ;; Name is of the form "Before Last, First" or
+                          ;; "Before Last, Jr, First"
+                          ;; --> Take everything before the comma
+                          (match-string 1 fullname))
+                         ((string-match "\\([[:upper:]][^, ]*\\)[^,]*," fullname)
+                          ;; Name is of the form "von Last, First" or
+                          ;; "von Last, Jr, First"
+                          ;; --> Take the first capital part before the comma
+                          (match-string 1 fullname))
+                         ((string-match "\\([^, ]*\\)," fullname)
+                          ;; Strange name: we have a comma, but nothing capital
+                          ;; So we accept even lowercase names
+                          (match-string 1 fullname))
+                         ((string-match "\\(\\<[[:lower:]][^ ]* +\\)+\\([[:upper:]][^ ]*\\)"
+                                        fullname)
+                          ;; name is of the form "First von Last", "von Last",
+                          ;; "First von von Last", or "d'Last"
+                          ;; --> take the first capital part after the "von" parts
+                          (match-string 2 fullname))
+                         ((string-match "\\([^ ]+\\) *\\'" fullname)
+                          ;; name is of the form "First Middle Last" or "Last"
+                          ;; --> take the last token
+                          (match-string 1 fullname))
+                         (t (user-error "Name `%s' is incorrectly formed"
+                                        fullname)))))
+        (funcall bibtex-autokey-name-case-convert-function
+                 (bibtex-autokey-abbrev (string-replace " " "_" name) bibtex-autokey-name-length)))))
 
   (defun lps/bibtex-reformat-clean-names ()
     (let ((names (bibtex-autokey-get-field "author\\|editor")))
