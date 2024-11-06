@@ -2205,10 +2205,19 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
   (defun-override lps/projection-ibuffer--current-project (project)
     "Open an IBuffer window showing only buffers in PROJECT."
     (ibuffer nil (format "*%s Buffers*" (project-name project))
-             (list (cons 'projection-root project)))))
+             (list (cons 'projection-root project))))
+
+  (when (fboundp 'which-key-mode)
+    (add-to-list 'which-key-replacement-alist
+                 '((nil . "\\<projection-commands") . (nil . "[P]"))
+                 nil
+                 'equal)))
 
 (use-package projection-multi
-  :after projection)
+  :after projection
+  :bind (:map projection-map
+              ("C" . projection-multi-compile)
+              ("P" . projection-multi-compile)))
 
 (use-package projection-multi-embark
   :after (embark projection-multi)
@@ -2618,18 +2627,30 @@ Does not insert a space before the inserted opening parenthesis"
   :config
   (defvar lps/auto-compile-command-alist nil
     "Alist containing commands to run to automatically compile the
-current file. Elements are of the form (MODE . COMMAND) where
-COMMAND is a function or a symbol")
+current file.
+
+ Elements are of the form (MODE . COMMAND) where COMMAND is a
+function or a symbol. COMMAND can also be a string, in which case
+it is passed as-is to the `compile' function.")
 
   (defun lps/auto-compile ()
     "If the current major mode is in `lps/auto-compile-command-alist',
 call the associated function interactively. Otherwise, call the
 `compile' command"
     (interactive)
-    (let ((command (or (cdr (assoc major-mode
-                                   lps/auto-compile-command-alist))
-                       'compile)))
-      (call-interactively command))))
+    (let ((command (or (alist-get major-mode lps/auto-compile-command-alist)
+                       (alist-get (alist-get major-mode major-mode-remap-alist)
+                                  lps/auto-compile-command-alist))))
+      (cond
+       ((functionp command)
+        (call-interactively command))
+       ((string command)
+        (call-interactively 'compile command))
+       (t
+        (call-interactively 'compile)))))
+
+  (defun lps/add-auto-compile-mode (mode command)
+    (add-to-list 'lps/auto-compile-command-alist (cons mode command))))
 
 (use-package eldoc
   :custom
@@ -2658,8 +2679,7 @@ call the associated function interactively. Otherwise, call the
     (save-excursion
       (call-interactively 'run-python)))
 
-  (add-to-list 'lps/auto-compile-command-alist
-               (cons 'python-mode 'python-shell-send-buffer))
+  (lps/add-auto-compile-mode 'python-mode 'python-shell-send-buffer)
 
   (push 'company-indent-or-complete-common python-indent-trigger-commands))
 
@@ -2807,8 +2827,7 @@ call the associated function interactively. Otherwise, call the
   (sly-net-coding-system 'utf-8-unix)
   (sly-complete-symbol-function 'sly-flex-completions)
   :config
-  (add-to-list 'lps/auto-compile-command-alist
-               (cons 'lisp-mode 'sly-compile-and-load-file))
+  (lps/add-auto-compile-mode 'lisp-mode 'sly-compile-and-load-file)
 
   (setq common-lisp-hyperspec-root
         (concat "file://"
@@ -3152,6 +3171,12 @@ call the associated function interactively. Otherwise, call the
 (use-package eglot-java
   :after eglot
   :hook (java-mode . eglot-java-mode))
+
+(use-package csharp-mode
+  :defer t
+  :hook (csharp-mode . eglot)
+  :config
+  (lps/add-auto-compile-mode 'csharp-mode "dotnet build"))
 
 (use-package gdb-mi
   :ensure nil
@@ -4239,8 +4264,7 @@ pre-filled with WORD."
   (TeX-debug-warnings nil)
   (TeX-error-overview-open-after-TeX-run t)
   :config
-  (add-to-list 'lps/auto-compile-command-alist
-               (cons 'latex-mode 'lps/TeX-recompile-all))
+  (lps/add-auto-compile-mode 'LaTeX-mode 'lps/TeX-recompile-all)
 
   ;; SyncTeX forward and inverse Search
   (setq TeX-source-correlate-mode t
