@@ -4425,8 +4425,7 @@ their numerous variants ...).
   (use-package web-mode
     :defer t
     :mode
-    (("\\.html?" . web-mode)
-     ("\\.css" . web-mode))
+    (("\\.html?" . web-mode))
     :hook
     (web-mode . rainbow-mode))
 #+end_src

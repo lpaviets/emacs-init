@@ -3155,8 +3155,7 @@ call the associated function interactively. Otherwise, call the
 (use-package web-mode
   :defer t
   :mode
-  (("\\.html?" . web-mode)
-   ("\\.css" . web-mode))
+  (("\\.html?" . web-mode))
   :hook
   (web-mode . rainbow-mode))
 
