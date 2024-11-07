@@ -3173,7 +3173,7 @@ call the associated function interactively. Otherwise, call the
 
 (use-package csharp-mode
   :defer t
-  :hook (csharp-mode . eglot)
+  :hook (csharp-mode . eglot-ensure)
   :config
   (lps/add-auto-compile-mode 'csharp-mode "dotnet build"))
 

@@ -4464,7 +4464,7 @@ work with Linux and non-Visual Studio (Code) editors is not that easy.
 #+begin_src emacs-lisp
   (use-package csharp-mode
     :defer t
-    :hook (csharp-mode . eglot)
+    :hook (csharp-mode . eglot-ensure)
     :config
     (lps/add-auto-compile-mode 'csharp-mode "dotnet build"))
 #+end_src
