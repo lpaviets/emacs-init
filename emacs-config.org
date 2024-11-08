@@ -4652,7 +4652,7 @@ than in ~eglot~ vs ~lsp-mode~).
   (use-package dape
     :defer t
     :custom
-    (dape-buffer-window-arrangement 'gud)
+    (dape-buffer-window-arrangement 'right)
     :config
     (add-hook 'dape-on-stopped-hooks 'dape-info)
     (add-hook 'dape-on-stopped-hooks 'dape-repl))
@@ -10191,3 +10191,40 @@ to ~lp~ when printing using either the built-in functions or
 ** TRAMP
 
 - Fix dirvish and sudoedit
+
+** Compilation
+
+- Fix ~compile-multi~ to default to ~comint~ when called with a "run" command,
+  typically defined by ~projection-multi-compile~: as of <2024-11-07 Thu>, the
+  function is defined by
+#+begin_src emacs-lisp :tangle no
+  (defun compile-multi (&optional query command)
+    "Multi-target interface to compile.
+  With optional argument QUERY allow user to modify compilation command before
+  running. COMMAND when set will be used instead of prompting the user for a
+  compile-multi command."
+    (interactive "P")
+    (let* ((default-directory (or (and compile-multi-default-directory
+                                       (funcall compile-multi-default-directory))
+                                  default-directory))
+           (compile-cmd
+            (or command
+                (plist-get (cdr (or (compile-multi--get-task)
+                                    (user-error "compile-multi: Invalid task read from user")))
+                           :command))))
+      (cond
+       ((stringp compile-cmd)
+        (when query
+          (setq compile-cmd
+                (compilation-read-command compile-cmd)))
+        (compile compile-cmd (consp query)))
+       ((functionp compile-cmd)
+        (if query
+            (eval-expression
+             (read--expression "Eval: " (format "(%s)" compile-cmd)))
+          (funcall compile-cmd)))
+       (t (error "Don't know how to run the command %s" compile-cmd)))))
+#+end_src
+The ~compile-cmd~ variable has the necessary information (in its string
+properties) to know what "type" of command it is, but there is no easy advice
+here.

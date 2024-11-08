@@ -3343,7 +3343,7 @@ for a list of valid rules, to adapt this function."
 (use-package dape
   :defer t
   :custom
-  (dape-buffer-window-arrangement 'gud)
+  (dape-buffer-window-arrangement 'right)
   :config
   (add-hook 'dape-on-stopped-hooks 'dape-info)
   (add-hook 'dape-on-stopped-hooks 'dape-repl))
