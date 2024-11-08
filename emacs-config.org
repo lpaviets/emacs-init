@@ -350,6 +350,16 @@ operating systems and versions.
       (setf fun-remove (lambda ()
                          (remove-hook hook fun-add)))
       (add-hook hook fun-add depth local)))
+
+  ;; Poor man's benchmark macro
+  (defmacro measure-time (&rest body)
+    "Measure the time it takes to evaluate BODY."
+    (let ((cur-time (gensym "TIME"))
+          (res (gensym "RES")))
+      `(let ((,cur-time (current-time)))
+         (let ((,res (progn ,@body)))
+           (message "%.06f" (float-time (time-since ,cur-time)))
+           ,res))))
 #+end_src
 
 *** Personal keymaps
@@ -2603,7 +2613,73 @@ and the function in this sexp is used.
     :bind
     ("C-=" . er/expand-region)
     :custom
-    (shift-select-mode nil))
+    (shift-select-mode nil)
+    :hook (org-mode . lps/er-org-mode-remove-unused)
+    :config
+    ;; Override this function:
+    (defun-override lps/er--expand-region-1 ()
+      "Increase selected region by semantic units.
+  Basically it runs all the mark-functions in `er/try-expand-list'
+  and chooses the one that increases the size of the region while
+  moving point or mark as little as possible."
+      (let* ((p1 (point))
+             (p2 (if (use-region-p) (mark) (point)))
+             (start (min p1 p2))
+             (end (max p1 p2))
+             (try-list er/try-expand-list)
+             (best-start (point-min))
+             (best-end (point-max))
+             ;; (set-mark-default-inactive nil)
+             )
+
+        ;; add hook to clear history on buffer changes
+        (unless er/history
+          (add-hook 'after-change-functions #'er/clear-history t t))
+
+        ;; remember the start and end points so we can contract later
+        ;; unless we're already at maximum size
+        (unless (and (= start best-start)
+                     (= end best-end))
+          (push (cons p1 p2) er/history))
+
+        (when (and expand-region-skip-whitespace
+                   (er--point-is-surrounded-by-white-space)
+                   (= start end))
+          (skip-chars-forward er--space-str)
+          (setq start (point)))
+
+        ;; FIXME: LPS: Only difference is here, we move the wrapping by
+        ;; `er--save-excursion' one level up so it wraps the entire try-list
+        ;; instead of being called at each step.
+        (er--save-excursion
+         (while try-list
+           (ignore-errors
+             (funcall (car try-list))
+             (when (and (region-active-p)
+                        (er--this-expansion-is-better start end best-start best-end))
+               (setq best-start (point))
+               (setq best-end (mark))
+               (when (and er--show-expansion-message (not (minibufferp)))
+                 (message "%S" (car try-list)))))
+           (setq try-list (cdr try-list))))
+
+        (setq deactivate-mark nil)
+        ;; if smart cursor enabled, decide to put it at start or end of region:
+        (if (and expand-region-smart-cursor
+                 (not (= start best-start)))
+            (progn (goto-char best-end)
+                   (set-mark best-start))
+          (goto-char best-start)
+          (set-mark best-end))
+
+        (er--copy-region-to-register)
+
+        (when (and (= best-start (point-min))
+                   (= best-end (point-max))) ;; We didn't find anything new, so exit early
+          'early-exit)))
+
+    (defun lps/er-org-mode-remove-unused ()
+      (setq-local er/try-expand-list (remove 'er/mark-org-code-block er/try-expand-list))))
 #+end_src
 
 We also define functions that Emacs is surprinsingly lacking.
@@ -4707,43 +4783,43 @@ choose a client for it, just as we do with LSP. We choose ~dape~, which is the
 than in ~eglot~ vs ~lsp-mode~).
 
 #+begin_src emacs-lisp
-  (use-package dape
-    :defer t
-    :hook
-    (dape-display-source . pulse-momentary-highlight-one-line)
-    :custom
-    (dape-buffer-window-arrangement 'right)
-    (dape-inlay-hints t)
-    (dape-debug t)
-    :config
-    (add-hook 'dape-on-stopped-hooks 'dape-info)
-    (add-hook 'dape-on-stopped-hooks 'dape-repl)
+    (use-package dape
+      :defer t
+      :hook
+      (dape-display-source . pulse-momentary-highlight-one-line)
+      :custom
+      (dape-buffer-window-arrangement 'right)
+      (dape-inlay-hints t)
+      (dape-debug t)
+      :config
+      (add-hook 'dape-on-stopped-hooks 'dape-info)
+      (add-hook 'dape-on-stopped-hooks 'dape-repl)
 
-    (dape-breakpoint-global-mode 1)
+      (dape-breakpoint-global-mode 1)
 
-    ;; Fix some debugger issues
-    (defun lps/netcoredbg-program ()
-      (let ((dlls (file-expand-wildcards
-                   (file-name-concat "bin" "Debug" "*" "*.dll"))))
-        (if dlls
-            (file-relative-name (file-relative-name (car dlls)))
-          ".dll"
-          (dape-cwd))))
+      ;; Fix some debugger issues
+      (defun lps/netcoredbg-program ()
+        (let ((dlls (file-expand-wildcards
+                     (file-name-concat "bin" "Debug" "*" "*.dll"))))
+          (if dlls
+              (file-relative-name (file-relative-name (car dlls)))
+            ".dll"
+            (dape-cwd))))
 
-    (add-to-list 'dape-configs '(netcoredbg
-                                 modes
-                                 (csharp-mode csharp-ts-mode)
-                                 ensure dape-ensure-command
-                                 command "netcoredbg"
-                                 command-args ["--interpreter=vscode"]
-                                 :request "launch"
-                                 :cwd dape-cwd
-                                 :program
-                                 lps/netcoredbg-program
-                                 :stopAtEntry t
-                                 :console "externalTerminal")
-                 nil
-                 'equal))
+      (add-to-list 'dape-configs '(netcoredbg
+                                   modes
+                                   (csharp-mode csharp-ts-mode)
+                                   ensure dape-ensure-command
+                                   command "netcoredbg"
+                                   command-args ["--interpreter=vscode"]
+                                   :request "launch"
+                                   :cwd dape-cwd
+                                   :program
+                                   lps/netcoredbg-program
+                                   :stopAtEntry t
+                                   :console "externalTerminal")
+                   nil
+                   'equal))
 #+end_src
 
 ** Other tools
@@ -10231,6 +10307,18 @@ To explore:
 - [X] Fix HTML files opening in Chrome sometimes (somewhat complicated. Some
   keywords: mailcap, sensible-browser, the /etc/mailcap file).
   - Solution: delete chrome.
+- [ ] Improve ~expand-region~ in org-mode: it is very slow for the following reason:
+  - Each function call (to try and mark an element) is wrapped by
+    ~er--save-excursion~, which in ~org-mode~ simply calls ~er/save-org-mode-excursion~
+  - This function in turns calls ~org-save-outline-visibility~
+  - This is /very/ slow in large files: needs to traverse the entire file to
+    collect folded region, and fold/unfold everything afterwards
+  - This is probably useless: it /should/ be enough to save the state once, and
+    restore it then, up to some edge-cases (region overlapping with a folded
+    region, etc) which IMO should be "ignorable" in daily use.
+  - For some reason though, wrapping the entire expansion phase in a unique
+    ~er--save-excursion~ produces some artifacts (some headings get unfolded,
+    can't explain why).
 - Add a proper "personal org math mode" to typeset math, and setup/remove
   options (~org-cdlatex~, electric-pair twists, some protected blocks, etc).
 - Maybe already done: add a way to jump /from/ the agenda /to/ a Cafw buffer

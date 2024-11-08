@@ -239,6 +239,16 @@ the internal changes made by this config.")
                        (remove-hook hook fun-add)))
     (add-hook hook fun-add depth local)))
 
+;; Poor man's benchmark macro
+(defmacro measure-time (&rest body)
+  "Measure the time it takes to evaluate BODY."
+  (let ((cur-time (gensym "TIME"))
+        (res (gensym "RES")))
+    `(let ((,cur-time (current-time)))
+       (let ((,res (progn ,@body)))
+         (message "%.06f" (float-time (time-since ,cur-time)))
+         ,res))))
+
 (use-package emacs
   :ensure nil
   :init
@@ -1823,7 +1833,73 @@ buffer name already resembles a file name"
   :bind
   ("C-=" . er/expand-region)
   :custom
-  (shift-select-mode nil))
+  (shift-select-mode nil)
+  :hook (org-mode . lps/er-org-mode-remove-unused)
+  :config
+  ;; Override this function:
+  (defun-override lps/er--expand-region-1 ()
+    "Increase selected region by semantic units.
+Basically it runs all the mark-functions in `er/try-expand-list'
+and chooses the one that increases the size of the region while
+moving point or mark as little as possible."
+    (let* ((p1 (point))
+           (p2 (if (use-region-p) (mark) (point)))
+           (start (min p1 p2))
+           (end (max p1 p2))
+           (try-list er/try-expand-list)
+           (best-start (point-min))
+           (best-end (point-max))
+           ;; (set-mark-default-inactive nil)
+           )
+
+      ;; add hook to clear history on buffer changes
+      (unless er/history
+        (add-hook 'after-change-functions #'er/clear-history t t))
+
+      ;; remember the start and end points so we can contract later
+      ;; unless we're already at maximum size
+      (unless (and (= start best-start)
+                   (= end best-end))
+        (push (cons p1 p2) er/history))
+
+      (when (and expand-region-skip-whitespace
+                 (er--point-is-surrounded-by-white-space)
+                 (= start end))
+        (skip-chars-forward er--space-str)
+        (setq start (point)))
+
+      ;; FIXME: LPS: Only difference is here, we move the wrapping by
+      ;; `er--save-excursion' one level up so it wraps the entire try-list
+      ;; instead of being called at each step.
+      (er--save-excursion
+       (while try-list
+         (ignore-errors
+           (funcall (car try-list))
+           (when (and (region-active-p)
+                      (er--this-expansion-is-better start end best-start best-end))
+             (setq best-start (point))
+             (setq best-end (mark))
+             (when (and er--show-expansion-message (not (minibufferp)))
+               (message "%S" (car try-list)))))
+         (setq try-list (cdr try-list))))
+
+      (setq deactivate-mark nil)
+      ;; if smart cursor enabled, decide to put it at start or end of region:
+      (if (and expand-region-smart-cursor
+               (not (= start best-start)))
+          (progn (goto-char best-end)
+                 (set-mark best-start))
+        (goto-char best-start)
+        (set-mark best-end))
+
+      (er--copy-region-to-register)
+
+      (when (and (= best-start (point-min))
+                 (= best-end (point-max))) ;; We didn't find anything new, so exit early
+        'early-exit)))
+
+  (defun lps/er-org-mode-remove-unused ()
+    (setq-local er/try-expand-list (remove 'er/mark-org-code-block er/try-expand-list))))
 
 (use-package emacs
   :ensure nil
