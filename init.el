@@ -2211,7 +2211,25 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
     (add-to-list 'which-key-replacement-alist
                  '((nil . "\\<projection-commands") . (nil . "[P]"))
                  nil
-                 'equal)))
+                 'equal))
+
+  ;; Fix the "run" command to use a comint compilation buffer.
+  (defun-override lps/projection-commands--run-command-for-type (project
+                                                                 command
+                                                                 cmd-type
+                                                                 pre-hook
+                                                                 post-hook)
+    "Run COMMAND for PROJECT as CMD-TYPE."
+    (run-hook-with-args pre-hook :project project)
+    (let ((default-directory (project-root project)))
+      (cond
+       ((stringp command)
+        (compile command (eq cmd-type 'run))) ;; 'run': interactive "compilation"
+       ((commandp command)
+        (call-interactively command))
+       (t
+        (user-error "Do not know how to run %s command %s" cmd-type command))))
+    (run-hook-with-args post-hook :project project)))
 
 (use-package projection-multi
   :after projection
@@ -3380,11 +3398,41 @@ for a list of valid rules, to adapt this function."
 
 (use-package dape
   :defer t
+  :hook
+  (dape-display-source . pulse-momentary-highlight-one-line)
   :custom
   (dape-buffer-window-arrangement 'right)
+  (dape-inlay-hints t)
+  (dape-debug t)
   :config
   (add-hook 'dape-on-stopped-hooks 'dape-info)
-  (add-hook 'dape-on-stopped-hooks 'dape-repl))
+  (add-hook 'dape-on-stopped-hooks 'dape-repl)
+
+  (dape-breakpoint-global-mode 1)
+
+  ;; Fix some debugger issues
+  (defun lps/netcoredbg-program ()
+    (let ((dlls (file-expand-wildcards
+                 (file-name-concat "bin" "Debug" "*" "*.dll"))))
+      (if dlls
+          (file-relative-name (file-relative-name (car dlls)))
+        ".dll"
+        (dape-cwd))))
+
+  (add-to-list 'dape-configs '(netcoredbg
+                               modes
+                               (csharp-mode csharp-ts-mode)
+                               ensure dape-ensure-command
+                               command "netcoredbg"
+                               command-args ["--interpreter=vscode"]
+                               :request "launch"
+                               :cwd dape-cwd
+                               :program
+                               lps/netcoredbg-program
+                               :stopAtEntry t
+                               :console "externalTerminal")
+               nil
+               'equal))
 
 (use-package antlr-mode
   :mode ("\\.g4\\'" . antlr-mode)

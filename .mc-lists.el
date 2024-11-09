@@ -39,6 +39,7 @@
         hungry-delete-backward
         hungry-delete-forward
         hydra--negative-argument
+        json-pretty-print
         kill-region
         kill-sexp
         kill-visual-line
@@ -99,6 +100,7 @@
         reftex-label
         reindent-then-newline-and-indent
         replace-string
+        search-forward
         transpose-sexps
         undo-redo
         wdired--self-insert
@@ -137,7 +139,6 @@
         org-insert-link
         org-shiftright
         previous-buffer
-        search-forward
         sly-compile-defun
         swiper-mc
         wdired-finish-edit
