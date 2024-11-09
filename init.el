@@ -3173,11 +3173,34 @@ call the associated function interactively. Otherwise, call the
 
 (use-package csharp-mode
   :defer t
-  :hook (csharp-mode . eglot-ensure)
+  :init
+  (when (treesit-available-p)
+    (add-hook-once 'csharp-mode-hook 'csharp-ts-mode))
+  :hook
+  (csharp-mode . eglot-ensure)
   :config
   (lps/add-auto-compile-mode 'csharp-mode "dotnet build")
 
-  ;; Adapted from https://github.com/theschmocker/dotfiles/blob/33944638a5a59ddba01b64066daf50d46e5f0c3a/emacs/.doom.d/config.el#L807
+  ;; Let project.el work even when project is not version controlled
+  (cl-defmethod project-root ((project (head csharp)))
+    (cdr project))
+
+  ;; TODO: what happens if there are nested ones, i.e. project within a project
+  ;; ? Should we go to the highest or stop at the first csproj/sln file
+  ;; encountered ?
+  (defun lps/project-try-csharp (dir)
+    (let* ((detect (lambda (dir)
+                     (directory-files dir nil "\\.\\(sln\\|csproj\\)$" t 1)))
+           (root (locate-dominating-file dir detect)))
+      (when root
+        (cons 'csharp root))))
+
+  ;; Add it *before* the usual functions: see TODO above
+  (add-to-list 'project-find-functions 'lps/project-try-csharp)
+
+
+  ;; FIXME: Adapted from
+  ;; https://github.com/theschmocker/dotfiles/blob/33944638a5a59ddba01b64066daf50d46e5f0c3a/emacs/.doom.d/config.el#L807
   ;; Works for the version 23.0 of the grammar.
   (defun lps/reapply-csharp-ts-mode-font-lock-settings ()
     "Fixes csharp-ts-mode font lock with latest version of parser
@@ -3330,7 +3353,22 @@ for a list of valid rules, to adapt this function."
                (preproc_region
                 "#region" @font-lock-preprocessor-face
                 (preproc_arg) @font-lock-comment-face)
-               (preproc_endregion) @font-lock-preprocessor-face)))))
+               (preproc_endregion) @font-lock-preprocessor-face))))
+    (font-lock-fontify-buffer))
+
+  ;; FIXME: Fix a typo in `projection' package: test and run commands are invertex
+  (with-eval-after-load 'projection
+    (setq projection-project-type-dotnet
+          (projection-type
+           :name 'dotnet
+           :predicate (defun projection-dotnet-project-p ()
+                        (or (file-expand-wildcards "?*.csproj")
+                            (file-expand-wildcards "?*.fsproj")
+                            (file-expand-wildcards "?*.sln")))
+           :build "dotnet build"
+           :test  "dotnet test"
+           :run   "dotnet run"))
+    (add-to-list 'projection-project-types projection-project-type-dotnet))
 
   (add-hook 'csharp-ts-mode-hook
             'lps/reapply-csharp-ts-mode-font-lock-settings))

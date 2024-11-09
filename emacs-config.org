@@ -3103,7 +3103,25 @@ and so on).
       (add-to-list 'which-key-replacement-alist
                    '((nil . "\\<projection-commands") . (nil . "[P]"))
                    nil
-                   'equal)))
+                   'equal))
+
+    ;; Fix the "run" command to use a comint compilation buffer.
+    (defun-override lps/projection-commands--run-command-for-type (project
+                                                                   command
+                                                                   cmd-type
+                                                                   pre-hook
+                                                                   post-hook)
+      "Run COMMAND for PROJECT as CMD-TYPE."
+      (run-hook-with-args pre-hook :project project)
+      (let ((default-directory (project-root project)))
+        (cond
+         ((stringp command)
+          (compile command (eq cmd-type 'run))) ;; 'run': interactive "compilation"
+         ((commandp command)
+          (call-interactively command))
+         (t
+          (user-error "Do not know how to run %s command %s" cmd-type command))))
+      (run-hook-with-args post-hook :project project)))
 
   (use-package projection-multi
     :after projection
@@ -4464,11 +4482,34 @@ work with Linux and non-Visual Studio (Code) editors is not that easy.
 #+begin_src emacs-lisp
   (use-package csharp-mode
     :defer t
-    :hook (csharp-mode . eglot-ensure)
+    :init
+    (when (treesit-available-p)
+      (add-hook-once 'csharp-mode-hook 'csharp-ts-mode))
+    :hook
+    (csharp-mode . eglot-ensure)
     :config
     (lps/add-auto-compile-mode 'csharp-mode "dotnet build")
 
-    ;; Adapted from https://github.com/theschmocker/dotfiles/blob/33944638a5a59ddba01b64066daf50d46e5f0c3a/emacs/.doom.d/config.el#L807
+    ;; Let project.el work even when project is not version controlled
+    (cl-defmethod project-root ((project (head csharp)))
+      (cdr project))
+
+    ;; TODO: what happens if there are nested ones, i.e. project within a project
+    ;; ? Should we go to the highest or stop at the first csproj/sln file
+    ;; encountered ?
+    (defun lps/project-try-csharp (dir)
+      (let* ((detect (lambda (dir)
+                       (directory-files dir nil "\\.\\(sln\\|csproj\\)$" t 1)))
+             (root (locate-dominating-file dir detect)))
+        (when root
+          (cons 'csharp root))))
+
+    ;; Add it *before* the usual functions: see TODO above
+    (add-to-list 'project-find-functions 'lps/project-try-csharp)
+
+
+    ;; FIXME: Adapted from
+    ;; https://github.com/theschmocker/dotfiles/blob/33944638a5a59ddba01b64066daf50d46e5f0c3a/emacs/.doom.d/config.el#L807
     ;; Works for the version 23.0 of the grammar.
     (defun lps/reapply-csharp-ts-mode-font-lock-settings ()
       "Fixes csharp-ts-mode font lock with latest version of parser
@@ -4621,7 +4662,22 @@ work with Linux and non-Visual Studio (Code) editors is not that easy.
                  (preproc_region
                   "#region" @font-lock-preprocessor-face
                   (preproc_arg) @font-lock-comment-face)
-                 (preproc_endregion) @font-lock-preprocessor-face)))))
+                 (preproc_endregion) @font-lock-preprocessor-face))))
+      (font-lock-fontify-buffer))
+
+    ;; FIXME: Fix a typo in `projection' package: test and run commands are invertex
+    (with-eval-after-load 'projection
+      (setq projection-project-type-dotnet
+            (projection-type
+             :name 'dotnet
+             :predicate (defun projection-dotnet-project-p ()
+                          (or (file-expand-wildcards "?*.csproj")
+                              (file-expand-wildcards "?*.fsproj")
+                              (file-expand-wildcards "?*.sln")))
+             :build "dotnet build"
+             :test  "dotnet test"
+             :run   "dotnet run"))
+      (add-to-list 'projection-project-types projection-project-type-dotnet))
 
     (add-hook 'csharp-ts-mode-hook
               'lps/reapply-csharp-ts-mode-font-lock-settings))
@@ -4660,9 +4716,8 @@ than in ~eglot~ vs ~lsp-mode~).
 
 ** Other tools
 *** ANTLR
-[[https://fr.wikipedia.org/wiki/ANTLR][ANTLR]] is a tool that is used to write
-compilers and interpreters, by producing a lexer and a parser (and potentially
-several other things) from a grammar.
+[[https://fr.wikipedia.org/wiki/ANTLR][ANTLR]] is a tool that is used to write compilers and interpreters, by producing a
+lexer and a parser (and potentially several other things) from a grammar.
 
 #+begin_src emacs-lisp
   (use-package antlr-mode
@@ -4675,9 +4730,9 @@ several other things) from a grammar.
 
 *** SageMath
 
-[[https://www.sagemath.org/][SageMath]] (or simply ~Sage~) is a general-purpose
-mathematics system, built-on top of many other open-source softwares, that are
-combined and made accessible from a common Python interface.
+[[https://www.sagemath.org/][SageMath]] (or simply ~Sage~) is a general-purpose mathematics system, built-on top
+of many other open-source softwares, that are combined and made accessible from
+a common Python interface.
 
 #+begin_src emacs-lisp
   (use-package sage-shell-mode
@@ -5151,11 +5206,10 @@ backends, and you can even define your own backends easily.
 
 **** Abbreviations
 
-A useful feature, offered by some static website generators (e.g.
-[[https://getpelican.com/][Pelican]] ...), consists in defining some
-"abbreviations" along with a description, all occurrences of which being
-replaced in the exported document by a HTML ~abbr~ element. This is a built-in
-feature of Org-mode, but is easily added, using
+A useful feature, offered by some static website generators (e.g. [[https://getpelican.com/][Pelican]] ...),
+consists in defining some "abbreviations" along with a description, all
+occurrences of which being replaced in the exported document by a HTML ~abbr~
+element. This is a built-in feature of Org-mode, but is easily added, using
 ~org-export-before-parsing-hook~, regular expressions tricks, and the
 alread-existing Org parsing capabilities.
 
@@ -5261,9 +5315,8 @@ section and so on. This means in particular that the generated IDs are modified
 each time the file is re-exported, and that it is also meaningless. This code
 tries to fix it, by generating IDs depending on the current section, possibly
 using sections higher up in the tree until the ID is unique. The code is taken,
-and might be adapted, from
-[[https://github.com/alphapapa/unpackaged.el?tab=readme-ov-file#export-to-html-with-useful-anchors][Alphapapa's
-list of unpackaged but still useful functions]].
+and might be adapted, from [[https://github.com/alphapapa/unpackaged.el?tab=readme-ov-file#export-to-html-with-useful-anchors][Alphapapa's list of unpackaged but still useful
+functions]].
 
 #+NAME: org-export-id-nodes
 #+begin_src emacs-lisp :tangle no
@@ -6816,8 +6869,7 @@ downloaded PDF file /via/ the usual ~org-ref-*~ tools.
 ***** LaTeX integration
 
 Another useful package to deal with references, bibliography, citations and so
-on, is
-[[https://www.gnu.org/software/emacs/manual/html_mono/reftex.html][RefTeX]].
+on, is [[https://www.gnu.org/software/emacs/manual/html_mono/reftex.html][RefTeX]].
 
 #+begin_src emacs-lisp
   (use-package reftex
@@ -7428,9 +7480,9 @@ possibly split in several files.
 **** Preview
 
 Instead of recompiling the source code to generate a complete PDF to visualize
-/e..g/ our mathematical formulas, AUCTeX also gives us the possibility to
-preview them inlines (as well as other - configurables - constructs, such as
-figures, matrices, and so on).
+/e..g/ our mathematical formulas, AUCTeX also gives us the possibility to preview
+them inlines (as well as other - configurables - constructs, such as figures,
+matrices, and so on).
 
 #+begin_src emacs-lisp
   (use-package preview
@@ -7456,9 +7508,8 @@ figures, matrices, and so on).
 **** Fast input
 
 AucTeX already includes a lot of shortcuts and ways to be more efficient when
-typing LaTeX source code, /e.g./ with ~LaTeX-math-mode~ or the various
-environments and sections that can be quickly entered. Some packages make this
-even faster.
+typing LaTeX source code, /e.g./ with ~LaTeX-math-mode~ or the various environments
+and sections that can be quickly entered. Some packages make this even faster.
 
 #+begin_src emacs-lisp
   (use-package cdlatex
@@ -7656,21 +7707,19 @@ of table-like environments easier.
 ** Eshell
 *** General configuration
 
-Contrary to ~term~ and ~shell~ (respectively invoked by =M-x <term/shell>=),
-[[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]] is
+Contrary to ~term~ and ~shell~ (respectively invoked by =M-x <term/shell>=), [[https://www.gnu.org/software/emacs/manual/html_mono/eshell.html][eshell]] is
 not /emulating/ anything: it is, on its own, a shell-like command interpreter
 implemented in Emacs Lisp. As such, it provides (most of) the usual commands
-such as ~grep~, ~ls~ and so on, as well as an extra binding to Emacs (for
-example, you can redirect the output of any command to an Emacs buffer). For
-this reason, you can use ~eshell~ on any system that is able to run Emacs, as
-there is no external dependency.
+such as ~grep~, ~ls~ and so on, as well as an extra binding to Emacs (for example,
+you can redirect the output of any command to an Emacs buffer). For this reason,
+you can use ~eshell~ on any system that is able to run Emacs, as there is no
+external dependency.
 
-In fact, some of those commands are reimplemented in Emacs Lisp (/e.g./ ~cat~),
-some of them are using the Emacs tools (for example ~grep~), and unknown
-commands are passed to the /real/ commandline.
+In fact, some of those commands are reimplemented in Emacs Lisp (/e.g./ ~cat~), some
+of them are using the Emacs tools (for example ~grep~), and unknown commands are
+passed to the /real/ commandline.
 
-A more in-depth guide can be found
-[[https://www.masteringemacs.org/article/complete-guide-mastering-eshell][here]].
+A more in-depth guide can be found [[https://www.masteringemacs.org/article/complete-guide-mastering-eshell][here]].
 
 We install a few packages which make eshell easier to use.
 
@@ -7787,13 +7836,12 @@ We install a few packages which make eshell easier to use.
 #+end_src
 
 *** Bash/Fish completion
-We use two packages to have a more powerful completion system in ~eshell~. The
-UI is akin to the one used by vanilla Emacs - it opens another buffer whenever
-you try to complete and there are more than one candidates - but it is still
-usable.
+We use two packages to have a more powerful completion system in ~eshell~. The UI
+is akin to the one used by vanilla Emacs - it opens another buffer whenever you
+try to complete and there are more than one candidates - but it is still usable.
 
-*MANUAL* The second package, =fish-completion=, needs ~fish~ to be installed on
- the system (and that a ~fish~ executable can be found on the path).
+*MANUAL* The second package, =fish-completion=, needs ~fish~ to be installed on the
+ system (and that a ~fish~ executable can be found on the path).
 #+begin_src emacs-lisp
   (system-case
    (gnu/linux
@@ -10191,40 +10239,3 @@ to ~lp~ when printing using either the built-in functions or
 ** TRAMP
 
 - Fix dirvish and sudoedit
-
-** Compilation
-
-- Fix ~compile-multi~ to default to ~comint~ when called with a "run" command,
-  typically defined by ~projection-multi-compile~: as of <2024-11-07 Thu>, the
-  function is defined by
-#+begin_src emacs-lisp :tangle no
-  (defun compile-multi (&optional query command)
-    "Multi-target interface to compile.
-  With optional argument QUERY allow user to modify compilation command before
-  running. COMMAND when set will be used instead of prompting the user for a
-  compile-multi command."
-    (interactive "P")
-    (let* ((default-directory (or (and compile-multi-default-directory
-                                       (funcall compile-multi-default-directory))
-                                  default-directory))
-           (compile-cmd
-            (or command
-                (plist-get (cdr (or (compile-multi--get-task)
-                                    (user-error "compile-multi: Invalid task read from user")))
-                           :command))))
-      (cond
-       ((stringp compile-cmd)
-        (when query
-          (setq compile-cmd
-                (compilation-read-command compile-cmd)))
-        (compile compile-cmd (consp query)))
-       ((functionp compile-cmd)
-        (if query
-            (eval-expression
-             (read--expression "Eval: " (format "(%s)" compile-cmd)))
-          (funcall compile-cmd)))
-       (t (error "Don't know how to run the command %s" compile-cmd)))))
-#+end_src
-The ~compile-cmd~ variable has the necessary information (in its string
-properties) to know what "type" of command it is, but there is no easy advice
-here.
