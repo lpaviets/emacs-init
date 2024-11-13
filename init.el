@@ -3508,7 +3508,19 @@ for a list of valid rules, to adapt this function."
                                :stopAtEntry t
                                :console "externalTerminal")
                nil
-               'equal))
+               'equal)
+
+  ;; (add-to-list 'dape-configs '(netcoredbg-attach
+  ;;                              modes (csharp-mode csharp-ts-mode)
+  ;;                              ensure dape-ensure-command
+  ;;                              command "netcoredbg"
+  ;;                              command-args ["--interpreter=vscode"]
+  ;;                              :request "attach"
+  ;;                              :cwd dape-cwd
+  ;;                              :port 4711
+  ;;                              :processId (lambda ()
+  ;;                                           (read-number "Process ID: "))))
+  )
 
 (use-package antlr-mode
   :mode ("\\.g4\\'" . antlr-mode)
@@ -3537,6 +3549,7 @@ for a list of valid rules, to adapt this function."
 
 (use-package treesit
   :defer t
+  :ensure nil
   :custom
   (treesit-font-lock-level 4))
 
@@ -6796,8 +6809,8 @@ confirmation when sending a non-multipart MIME mail")
   (defun lps/mu4e-view-mime-part-action ()
     "Wrapper around `mu4e-view-mime-part-action' with better prompt
 
-  This is just a call to `mu4e-view-mime-part-action' in more
-  recent versions of mu4e."
+This is just a call to `mu4e-view-mime-part-action' in more recent
+versions of mu4e."
     (interactive)
     (version-case mu4e-mu
       ("1.11" (call-interactively 'mu4e-view-mime-part-action))

@@ -4783,43 +4783,55 @@ choose a client for it, just as we do with LSP. We choose ~dape~, which is the
 than in ~eglot~ vs ~lsp-mode~).
 
 #+begin_src emacs-lisp
-    (use-package dape
-      :defer t
-      :hook
-      (dape-display-source . pulse-momentary-highlight-one-line)
-      :custom
-      (dape-buffer-window-arrangement 'right)
-      (dape-inlay-hints t)
-      (dape-debug t)
-      :config
-      (add-hook 'dape-on-stopped-hooks 'dape-info)
-      (add-hook 'dape-on-stopped-hooks 'dape-repl)
+  (use-package dape
+    :defer t
+    :hook
+    (dape-display-source . pulse-momentary-highlight-one-line)
+    :custom
+    (dape-buffer-window-arrangement 'right)
+    (dape-inlay-hints t)
+    (dape-debug t)
+    :config
+    (add-hook 'dape-on-stopped-hooks 'dape-info)
+    (add-hook 'dape-on-stopped-hooks 'dape-repl)
 
-      (dape-breakpoint-global-mode 1)
+    (dape-breakpoint-global-mode 1)
 
-      ;; Fix some debugger issues
-      (defun lps/netcoredbg-program ()
-        (let ((dlls (file-expand-wildcards
-                     (file-name-concat "bin" "Debug" "*" "*.dll"))))
-          (if dlls
-              (file-relative-name (file-relative-name (car dlls)))
-            ".dll"
-            (dape-cwd))))
+    ;; Fix some debugger issues
+    (defun lps/netcoredbg-program ()
+      (let ((dlls (file-expand-wildcards
+                   (file-name-concat "bin" "Debug" "*" "*.dll"))))
+        (if dlls
+            (file-relative-name (file-relative-name (car dlls)))
+          ".dll"
+          (dape-cwd))))
 
-      (add-to-list 'dape-configs '(netcoredbg
-                                   modes
-                                   (csharp-mode csharp-ts-mode)
-                                   ensure dape-ensure-command
-                                   command "netcoredbg"
-                                   command-args ["--interpreter=vscode"]
-                                   :request "launch"
-                                   :cwd dape-cwd
-                                   :program
-                                   lps/netcoredbg-program
-                                   :stopAtEntry t
-                                   :console "externalTerminal")
-                   nil
-                   'equal))
+    (add-to-list 'dape-configs '(netcoredbg
+                                 modes
+                                 (csharp-mode csharp-ts-mode)
+                                 ensure dape-ensure-command
+                                 command "netcoredbg"
+                                 command-args ["--interpreter=vscode"]
+                                 :request "launch"
+                                 :cwd dape-cwd
+                                 :program
+                                 lps/netcoredbg-program
+                                 :stopAtEntry t
+                                 :console "externalTerminal")
+                 nil
+                 'equal)
+
+    ;; (add-to-list 'dape-configs '(netcoredbg-attach
+    ;;                              modes (csharp-mode csharp-ts-mode)
+    ;;                              ensure dape-ensure-command
+    ;;                              command "netcoredbg"
+    ;;                              command-args ["--interpreter=vscode"]
+    ;;                              :request "attach"
+    ;;                              :cwd dape-cwd
+    ;;                              :port 4711
+    ;;                              :processId (lambda ()
+    ;;                                           (read-number "Process ID: "))))
+    )
 #+end_src
 
 ** Other tools
@@ -4883,6 +4895,7 @@ based on regular expressions) highlighting.
 #+begin_src emacs-lisp
   (use-package treesit
     :defer t
+    :ensure nil
     :custom
     (treesit-font-lock-level 4))
 #+end_src
@@ -8625,8 +8638,8 @@ the package documentation.
     (defun lps/mu4e-view-mime-part-action ()
       "Wrapper around `mu4e-view-mime-part-action' with better prompt
 
-    This is just a call to `mu4e-view-mime-part-action' in more
-    recent versions of mu4e."
+  This is just a call to `mu4e-view-mime-part-action' in more recent
+  versions of mu4e."
       (interactive)
       (version-case mu4e-mu
         ("1.11" (call-interactively 'mu4e-view-mime-part-action))
