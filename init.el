@@ -3650,32 +3650,36 @@ for a list of valid rules, to adapt this function."
                     (org-level-6 . 1.0)
                     (org-level-7 . 1.0)
                     (org-level-8 . 1.0)))
-      (set-face-attribute (car face) nil :weight 'regular :height (cdr face) :inherit 'fixed-pitch))
+      (let ((name (car face))
+            (height (cdr face)))
+        (set-face-attribute name nil :weight 'regular :height height :inherit '(fixed-pitch))))
 
     ;; Ensure that anything that should be fixed-pitch in Org files appears that way
     (dolist (face '((org-block fixed-pitch :foreground unspecified :extend t)
-                    (org-block-begin-line italic
+                    (org-block-begin-line (italic)
                                           :foreground "dark gray"
                                           :background "#1d1d2b"
                                           :inherit fixed-pitch
-                                          :height 1.0
+                                          ;; :height 1.0
                                           :overline "dim gray")
-                    (org-block-end-line italic
+                    (org-block-end-line (italic)
                                         :foreground "dark gray"
                                         :background "#1d1d2b"
                                         :inherit fixed-pitch
-                                        :height 1.0
+                                        ;; :height 1.0
                                         :underline (:color "dim gray" :position -1))
                     (org-code (shadow fixed-pitch))
                     (org-table (shadow fixed-pitch))
                     (org-verbatim (shadow fixed-pitch))
                     (org-special-keyword (font-lock-comment-face fixed-pitch))
                     (org-meta-line (font-lock-comment-face fixed-pitch))
-                    (org-checkbox fixed-pitch)
-                    (org-formula fixed-pitch)
+                    (org-checkbox (fixed-pitch))
+                    (org-formula (fixed-pitch))
                     (org-link (link fixed-pitch))))
       (cl-destructuring-bind (name inherit &rest args) face
-        (apply 'set-face-attribute name nil :inherit inherit args))))
+        (apply 'set-face-attribute name nil
+               :inherit inherit
+               args))))
 
   (advice-add 'org-read-date :around 'lps/windmove-mode-local-off-around)
 
@@ -5131,9 +5135,12 @@ The return value is the string as entered in the minibuffer."
                 (delete-backward-char 2)
                 (insert "$")))))))))
 
+  (custom-theme-set-faces
+   lps/default-theme
+   '(font-latex-sedate-face ((t (:foreground "#aab5b8"))) t))
+
   ;; Improve fontification
   (defun lps/latex-fontification ()
-    (set-face-attribute 'font-latex-sedate-face nil :foreground "#aab5b8")
     (font-latex-add-keywords '(("newenvironment" "*{[[")
                                ("renewenvironment" "*{[[")
                                ("newcommand" "*|{\\[[")
@@ -6190,6 +6197,19 @@ Does not run `cdlatex-tab-hook.'"
   :bind
   (:map TeX-mode-map
         ("C-|" . latex-table-wizard)))
+
+(use-package emacs
+  :ensure nil
+  :mode ("\\.bash_aliases" . sh-mode))
+
+(system-case
+ (gnu/linux
+  (use-package vterm
+    :defer t
+    :if module-file-suffix
+    :bind
+    (:map lps/system-tools-map
+          ("t" . vterm)))))
 
 ;; eshell
 (use-package eshell-did-you-mean
