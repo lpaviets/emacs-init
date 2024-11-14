@@ -6206,10 +6206,14 @@ Does not run `cdlatex-tab-hook.'"
  (gnu/linux
   (use-package vterm
     :defer t
-    :if module-file-suffix
+    :if module-file-suffix)
+
+  (use-package vterm-toggle
+    :after vterm
     :bind
     (:map lps/system-tools-map
-          ("t" . vterm)))))
+          ("t" . vterm-toggle)
+          ("T" . vterm-toggle-cd)))))
 
 ;; eshell
 (use-package eshell-did-you-mean

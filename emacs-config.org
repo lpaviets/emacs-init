@@ -7855,10 +7855,15 @@ we need a generic terminal, compatible with usual CLI tools/shell commands.
    (gnu/linux
     (use-package vterm
       :defer t
-      :if module-file-suffix
+      :if module-file-suffix)
+
+    (use-package vterm-toggle
+      :after vterm
       :bind
       (:map lps/system-tools-map
-            ("t" . vterm)))))
+            ("t" . vterm-toggle))
+      (:map vterm-mode-map
+            ("C-<RET>" . vterm-toggle-insert-cd)))))
 #+end_src
 
 ** Eshell
