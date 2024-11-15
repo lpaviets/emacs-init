@@ -631,7 +631,6 @@ the mode-line and the usual non-full-screen Emacs are restored."
                                  (cons (remove-pos-from-symbol (car it)) (cdr it)))))
       (setq doom-modeline-fn-alist (mapcar remove-pos-from-seg doom-modeline-fn-alist)
             doom-modeline-var-alist (mapcar remove-pos-from-seg doom-modeline-var-alist))))
-
   ;; Hide encoding in modeline when UTF-8(-unix)
   (defun lps/hide-utf-8-encoding ()
     (setq-local doom-modeline-buffer-encoding
@@ -2718,6 +2717,8 @@ Does not insert a space before the inserted opening parenthesis"
   :bind
   (:map prog-mode-map
         ("<f5>" . lps/auto-compile))
+  :custom
+  (compilation-message-face nil)
   :config
   (defvar lps/auto-compile-command-alist nil
     "Alist containing commands to run to automatically compile the
@@ -4103,7 +4104,12 @@ for a list of valid rules, to adapt this function."
             (inc-suffixf ref)))
         ref)))
 
-  (lps/org-export-html-with-useful-ids-mode 1))
+  (lps/org-export-html-with-useful-ids-mode 1)
+  (defun lps/org-build-meta-strip-trailing-slash (res)
+    (replace-regexp-in-string " ?/>\n$" ">\n" res))
+
+  (advice-add 'org-html--build-meta-entry
+              :filter-return 'lps/org-build-meta-strip-trailing-slash))
 
 (use-package org-agenda
   :after org
@@ -4511,6 +4517,58 @@ Refer to `org-agenda-prefix-format' for more information."
       (pdf-util--clear-faces-cache)
       (define-key pdf-isearch-active-mode-map
                   (kbd "C-<return>") 'lps/pdf-isearch-sync-backward-search))
+
+    ;; ;; Fix scaling of page when prompting for links
+    ;; ;; Taken from https://github.com/vedang/pdf-tools/pull/223/commits
+    ;; (with-eval-after-load 'pdf-links
+    ;;   (defun-override lps/pdf-links-read-link-action (prompt)
+    ;;     "Using PROMPT, interactively read a link-action.
+    ;;
+    ;; See `pdf-links-action-perform' for the interface."
+    ;;
+    ;;     (pdf-util-assert-pdf-window)
+    ;;     (let* ((links (pdf-cache-pagelinks
+    ;;                    (pdf-view-current-page)))
+    ;;            (keys (pdf-links-read-link-action--create-keys
+    ;;                   (length links)))
+    ;;            (key-strings (mapcar (apply-partially 'apply 'string)
+    ;;                                 keys))
+    ;;            (alist (cl-mapcar 'cons keys links))
+    ;;            (size (pdf-view-image-size))
+    ;;            (colors (pdf-util-face-colors
+    ;;                     'pdf-links-read-link pdf-view-dark-minor-mode))
+    ;;            (args (list
+    ;;                   :foreground (car colors)
+    ;;                   :background (cdr colors)
+    ;;                   :formats
+    ;;                   `((?c . ,(lambda (_edges) (pop key-strings)))
+    ;;                     (?P . ,(number-to-string
+    ;;                             (max 1 (* (cdr size)
+    ;;                                       (pdf-util-frame-scale-factor)
+    ;;                                       pdf-links-convert-pointsize-scale)))))
+    ;;                   :commands pdf-links-read-link-convert-commands
+    ;;                   :apply (pdf-util-scale-relative-to-pixel
+    ;;                           (mapcar (lambda (l)
+    ;;                                     (mapcar (lambda (x)
+    ;;                                               (* x (pdf-util-frame-scale-factor)))
+    ;;                                             (cdr (assq 'edges l))))
+    ;;                                   links)))))
+    ;;       (unless links
+    ;;         (error "No links on this page"))
+    ;;       (unwind-protect
+    ;;           (let ((image-data
+    ;;                  (pdf-cache-get-image
+    ;;                   (pdf-view-current-page)
+    ;;                   (car size) (car size) 'pdf-links-read-link-action)))
+    ;;             (unless image-data
+    ;;               (setq image-data (apply 'pdf-util-convert-page args ))
+    ;;               (pdf-cache-put-image
+    ;;                (pdf-view-current-page)
+    ;;                (car size) image-data 'pdf-links-read-link-action))
+    ;;             (pdf-view-display-image
+    ;;              (pdf-view-create-image image-data t))
+    ;;             (pdf-links-read-link-action--read-chars prompt alist))
+    ;;         (pdf-view-redisplay)))))
 
     (defun lps/pdf-isearch-sync-backward-search ()
       (interactive)
@@ -6486,8 +6544,8 @@ PWD is not in a git repo (or the git command is not found)."
     ;; Fix a potential bug with Dirvish and TRAMP (SFTP in particular):
     (defun-override lps/dirvish-noselect-tramp (fn dir flags remote)
       "Return the Dired buffer at DIR with listing FLAGS.
-Save the REMOTE host to `dirvish-tramp-hosts'.
-FN is the original `dired-noselect' closure."
+    Save the REMOTE host to `dirvish-tramp-hosts'.
+    FN is the original `dired-noselect' closure."
       (let* ((saved-flags (cdr (assoc remote dirvish-tramp-hosts #'equal)))
              (ftp? (tramp-ftp-file-name-p dir))
              (short-flags "-Alh")
@@ -6508,8 +6566,8 @@ FN is the original `dired-noselect' closure."
     ;; https://github.com/alexluigit/dirvish/pull/251/commits/600b81d5b8adc8532cb31b72c9cf2fc981c678e9
     (defun-override lps/dirvish--mode-line-fmt-setter (left right &optional header)
       "Set the `dirvish--mode-line-fmt'.
-LEFT and RIGHT are segments aligned to left/right respectively.
-If HEADER, set the `dirvish--header-line-fmt' instead."
+    LEFT and RIGHT are segments aligned to left/right respectively.
+    If HEADER, set the `dirvish--header-line-fmt' instead."
       (cl-labels ((expand (segments)
                     (cl-loop for s in segments collect
                              (if (stringp s) s
