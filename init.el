@@ -6209,11 +6209,12 @@ Does not run `cdlatex-tab-hook.'"
     :if module-file-suffix)
 
   (use-package vterm-toggle
-    :after vterm
     :bind
     (:map lps/system-tools-map
-          ("t" . vterm-toggle)
-          ("T" . vterm-toggle-cd)))))
+          ("t" . vterm-toggle))
+    (:map vterm-mode-map
+          ("C-RET" . vterm-toggle-insert-cd)
+          ("C-<return>" . vterm-toggle-insert-cd)))))
 
 ;; eshell
 (use-package eshell-did-you-mean
