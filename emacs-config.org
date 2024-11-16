@@ -8155,6 +8155,7 @@ and so on.
     (use-package dirvish
       :after dired
       :bind
+      ("C-c j" . dirvish-quick-access)
       (:map dirvish-mode-map
             ("TAB" . dirvish-subtree-toggle)
             ("a" . dirvish-quick-access)

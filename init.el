@@ -6491,6 +6491,7 @@ PWD is not in a git repo (or the git command is not found)."
   (use-package dirvish
     :after dired
     :bind
+    ("C-c j" . dirvish-quick-access)
     (:map dirvish-mode-map
           ("TAB" . dirvish-subtree-toggle)
           ("a" . dirvish-quick-access)
