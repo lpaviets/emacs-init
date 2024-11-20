@@ -3786,10 +3786,12 @@ tune it as we need.
                          (alist-get (alist-get major-mode major-mode-remap-alist)
                                     lps/auto-compile-command-alist))))
         (cond
-         ((functionp command)
+         ((commandp command)
           (call-interactively command))
-         ((string command)
+         ((stringp command)
           (call-interactively 'compile command))
+         ((null command)
+          (error "No auto-compile command specified in %s" major-mode))
          (t
           (call-interactively 'compile)))))
 
@@ -3916,18 +3918,16 @@ We also use custom compilation commands.
 #+begin_src emacs-lisp
   (use-package emacs
     :ensure nil
-    :hook
-    ((c-mode c++-mode) . lps/c-c++-mode-basic-compile-command)
     :config
     (defun lps/c-c++-mode-basic-compile-command ()
+      (interactive)
       (let* ((buf (file-name-nondirectory (or (buffer-file-name) (buffer-name))))
              (buf-no-ext (file-name-sans-extension buf))
              (c-mode-p (eq major-mode 'c-mode))
              (compiler (if c-mode-p "gcc " "g++ ")))
-        (setq-local compile-command (concat compiler
-                                            buf
-                                            " -o "
-                                            buf-no-ext)))))
+        (compile (concat compiler buf " -o " buf-no-ext))))
+
+    (lps/add-auto-compile-mode 'c-mode 'lps/c-c++-mode-basic-compile-command))
 #+end_src
 
 As C and C++ are also quite "close to the metal", it is often useful (for

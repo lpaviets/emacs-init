@@ -2737,10 +2737,12 @@ call the associated function interactively. Otherwise, call the
                        (alist-get (alist-get major-mode major-mode-remap-alist)
                                   lps/auto-compile-command-alist))))
       (cond
-       ((functionp command)
+       ((commandp command)
         (call-interactively command))
        ((string command)
         (call-interactively 'compile command))
+       ((null command)
+        (error "No auto-compile command specified in %s" major-mode))
        (t
         (call-interactively 'compile)))))
 
@@ -2810,6 +2812,7 @@ call the associated function interactively. Otherwise, call the
   ((c-mode c++-mode) . lps/c-c++-mode-basic-compile-command)
   :config
   (defun lps/c-c++-mode-basic-compile-command ()
+    (interactive)
     (let* ((buf (file-name-nondirectory (or (buffer-file-name) (buffer-name))))
            (buf-no-ext (file-name-sans-extension buf))
            (c-mode-p (eq major-mode 'c-mode))
@@ -2817,7 +2820,9 @@ call the associated function interactively. Otherwise, call the
       (setq-local compile-command (concat compiler
                                           buf
                                           " -o "
-                                          buf-no-ext)))))
+                                          buf-no-ext))))
+
+  (lps/add-auto-compile-mode 'c-mode 'lps/c-c++-mode-basic-compile-command))
 
 (use-package disaster
   :defer t
