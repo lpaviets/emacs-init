@@ -424,7 +424,7 @@ the internal changes made by this config.")
         (let ((font-name (car new-font))
               (font-val (cadr new-font)))
           (when (member font-val all-fonts)
-            (set-face-font font-name font-val))))))
+            (set-face-attribute font-name nil :family font-val))))))
 
   (if (daemonp)
       (add-hook 'after-make-frame-functions
@@ -1235,6 +1235,7 @@ buffer name already resembles a file name"
   :custom
   (apropos-documentation-sort-by-scores t)
   (describe-char-unidata-list t)
+  (what-cursor-show-names t)
   :bind
   (:map help-map
         ("u" . describe-face)

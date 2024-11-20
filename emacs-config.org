@@ -632,7 +632,7 @@ In this section, we configure the default fonts.
           (let ((font-name (car new-font))
                 (font-val (cadr new-font)))
             (when (member font-val all-fonts)
-              (set-face-font font-name font-val))))))
+              (set-face-attribute font-name nil :family font-val))))))
 
     (if (daemonp)
         (add-hook 'after-make-frame-functions
@@ -1739,6 +1739,7 @@ We can also improve some of the other help commands:
     :custom
     (apropos-documentation-sort-by-scores t)
     (describe-char-unidata-list t)
+    (what-cursor-show-names t)
     :bind
     (:map help-map
           ("u" . describe-face)
@@ -10421,6 +10422,7 @@ applied upstream.
   (advice-add 'org-html--build-meta-entry
               :filter-return 'lps/org-build-meta-strip-trailing-slash)
 #+end_src
+
 * TODO Things to do or to fix
 ** Elfeed
 - Find a neat way to have bookmarks/pre-configured filters.
