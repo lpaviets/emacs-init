@@ -4898,18 +4898,6 @@ We change the general feel of Org Mode documents by using other indentation
 rules, by changing the headers appearance, and a few other minor changes.
 
 #+begin_src emacs-lisp :noweb yes
-  (use-package org-bullets
-    :hook (org-mode . org-bullets-mode)
-    :custom
-    (org-bullets-bullet-list
-     '("✡" "⎈" "✽" "✲" "✱" "✻" "✼" "✽" "✾" "✿" "❀" "❁" "❂" "❃" "❄" "❅" "❆" "❇")
-     ;; '("◉" "⁑" "⁂" "❖" "✮" "✱" "✸")
-     ;; '("◉" "○" "●" "○" "●" "○" "●")
-     ))
-
-  (use-package org-appear
-    :hook (org-mode . org-appear-mode))
-
   (use-package org
     :only-built-in t
     :defer t
@@ -5167,7 +5155,55 @@ We add a bunch of functions to facilitate the direct edition of Org files
         (org-return)))))
 #+end_src
 
-** Font and faces
+** Org appearance
+
+We setup here various things related to the general look & feel of Org files,
+mainly using external packages, as some configuration is already done in other
+sections of this file.
+
+#+begin_src emacs-lisp
+  (use-package org-bullets
+    :hook (org-mode . org-bullets-mode)
+    :custom
+    (org-bullets-bullet-list
+     '("✡" "⎈" "✽" "✲" "✱" "✻" "✼" "✽" "✾" "✿" "❀" "❁" "❂" "❃" "❄" "❅" "❆" "❇")
+     ;; '("◉" "⁑" "⁂" "❖" "✮" "✱" "✸")
+     ;; '("◉" "○" "●" "○" "●" "○" "●")
+     ))
+
+  (use-package org-appear
+    :hook (org-mode . org-appear-mode))
+
+  (use-package org-modern
+    :defer t
+    :hook (org-modern-mode . lps/org-modern)
+    :custom
+    (org-modern-fold-stars '(("▶" . "▼")
+                             ("▷" . "▽")
+                             ;; ("⯈" . "⯆") ; unavailable in my font of choice
+                             ("▸" . "▾")
+                             ("▹" . "▿")))
+    (org-modern-checkbox `((?X . ,(propertize "☑" 'face '(:height 1.8)))
+                           (?- . ,(propertize #("☐–" 0 2 (composition ((2)))) 'face '(:height 1.8)))
+                           (?\s . ,(propertize "☐" 'face '(:height 1.8)))))
+    (org-modern-table-vertical 1)
+    :config
+    (defun lps/org-modern-on ()
+      (when (bound-and-true-p org-bullets-mode)
+        (org-bullets-mode -1))
+      ;; TODO: fix org-ellipsis ? Can't be made buffer local ...
+      (font-lock-fontify-buffer))
+
+    (defun lps/org-modern-off ()
+      (revert-buffer))
+
+    (defun lps/org-modern ()
+      (if org-modern-mode
+          (lps/org-modern-on)
+        (lps/org-modern-off))))
+#+end_src
+
+*** Font and faces
 
 In order for Org Mode to feel like a document instead of code, we use a
 different font.
@@ -10509,7 +10545,8 @@ to ~lp~ when printing using either the built-in functions or
 ** PDF/LaTeX
 *** Styles
 - For =multibbl=
-- More generally: override and improve ~TeX-command-default~, this is probably where things need to be done.
+- More generally: override and improve ~TeX-command-default~, this is probably
+  where things need to be done.
 *** Documentation
 - Improve the documentation function: jump to a manual depending on current
   packages (not word at point ...), /then/ look in index for word at point

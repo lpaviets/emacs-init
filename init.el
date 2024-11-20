@@ -2740,7 +2740,7 @@ call the associated function interactively. Otherwise, call the
       (cond
        ((commandp command)
         (call-interactively command))
-       ((string command)
+       ((stringp command)
         (call-interactively 'compile command))
        ((null command)
         (error "No auto-compile command specified in %s" major-mode))
@@ -2809,8 +2809,6 @@ call the associated function interactively. Otherwise, call the
 
 (use-package emacs
   :ensure nil
-  :hook
-  ((c-mode c++-mode) . lps/c-c++-mode-basic-compile-command)
   :config
   (defun lps/c-c++-mode-basic-compile-command ()
     (interactive)
@@ -2818,10 +2816,7 @@ call the associated function interactively. Otherwise, call the
            (buf-no-ext (file-name-sans-extension buf))
            (c-mode-p (eq major-mode 'c-mode))
            (compiler (if c-mode-p "gcc " "g++ ")))
-      (setq-local compile-command (concat compiler
-                                          buf
-                                          " -o "
-                                          buf-no-ext))))
+      (compile (concat compiler buf " -o " buf-no-ext))))
 
   (lps/add-auto-compile-mode 'c-mode 'lps/c-c++-mode-basic-compile-command))
 
@@ -3560,18 +3555,6 @@ for a list of valid rules, to adapt this function."
   :custom
   (treesit-font-lock-level 4))
 
-(use-package org-bullets
-  :hook (org-mode . org-bullets-mode)
-  :custom
-  (org-bullets-bullet-list
-   '("✡" "⎈" "✽" "✲" "✱" "✻" "✼" "✽" "✾" "✿" "❀" "❁" "❂" "❃" "❄" "❅" "❆" "❇")
-   ;; '("◉" "⁑" "⁂" "❖" "✮" "✱" "✸")
-   ;; '("◉" "○" "●" "○" "●" "○" "●")
-   ))
-
-(use-package org-appear
-  :hook (org-mode . org-appear-mode))
-
 (use-package org
   :only-built-in t
   :defer t
@@ -3908,6 +3891,46 @@ for a list of valid rules, to adapt this function."
     (interactive)
     (call-interactively 'org-insert-structure-template)
     (call-interactively 'org-edit-special)))
+
+(use-package org-bullets
+  :hook (org-mode . org-bullets-mode)
+  :custom
+  (org-bullets-bullet-list
+   '("✡" "⎈" "✽" "✲" "✱" "✻" "✼" "✽" "✾" "✿" "❀" "❁" "❂" "❃" "❄" "❅" "❆" "❇")
+   ;; '("◉" "⁑" "⁂" "❖" "✮" "✱" "✸")
+   ;; '("◉" "○" "●" "○" "●" "○" "●")
+   ))
+
+(use-package org-appear
+  :hook (org-mode . org-appear-mode))
+
+(use-package org-modern
+  :defer t
+  :hook (org-modern-mode . lps/org-modern)
+  :custom
+  (org-modern-fold-stars '(("▶" . "▼")
+                           ("▷" . "▽")
+                           ;; ("⯈" . "⯆") ; unavailable in my font of choice
+                           ("▸" . "▾")
+                           ("▹" . "▿")))
+  (org-modern-checkbox `((?X . ,(propertize "☑" 'face '(:height 1.8)))
+                         (?- . ,(propertize #("☐–" 0 2 (composition ((2)))) 'face '(:height 1.8)))
+                         (?\s . ,(propertize "☐" 'face '(:height 1.8)))))
+  (org-modern-table-vertical 1)
+  :config
+  (defun lps/org-modern-on ()
+    (when (bound-and-true-p org-bullets-mode)
+      (org-bullets-mode -1))
+    ;; TODO: fix org-ellipsis ? Can't be made buffer local ...
+    (font-lock-fontify-buffer))
+
+  (defun lps/org-modern-off ()
+    (revert-buffer))
+
+  (defun lps/org-modern ()
+    (if org-modern-mode
+        (lps/org-modern-on)
+      (lps/org-modern-off))))
 
 (use-package ox-html
   :after org
