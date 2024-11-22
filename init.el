@@ -2371,6 +2371,9 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
                                   (,(expand-file-name "These"
                                                       (xdg-user-dir "DOCUMENTS"))
                                    . 2)
+                                  (,(expand-file-name "Work/"
+                                                      (xdg-user-dir "DOCUMENTS"))
+                                   . 3)
                                   (,(expand-file-name "~/.dotfiles") . 0)
                                   (,user-emacs-directory . 0)
                                   (,org-directory . 0)))
@@ -2378,6 +2381,21 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
                                             (local . hide)
                                             (tracked . hide)
                                             (module . hide)))
+  (magit-repolist-columns '(("Name"    25 magit-repolist-column-ident
+                             ())
+                            ("Version" 25 magit-repolist-column-version
+                             ((:sort magit-repolist-version<)))
+                            ("B<U"      3 magit-repolist-column-unpulled-from-upstream
+                             (;; (:help-echo "Upstream changes not in branch")
+                              (:right-align t)
+                              (:sort <)))
+                            ("B>U"      3 magit-repolist-column-unpushed-to-upstream
+                             (;; (:help-echo "Local changes not in upstream")
+                              (:right-align t)
+                              (:sort <)))
+                            ("Flags"    4 magit-repolist-column-flags)
+                            ("Path"    99 magit-repolist-column-path
+                             ())))
   :config
   (dolist (action '(stage-all-changes unstage-all-changes))
     (add-to-list 'magit-no-confirm action))
