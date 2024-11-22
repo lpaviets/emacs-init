@@ -4770,7 +4770,6 @@ than in ~eglot~ vs ~lsp-mode~).
 
 #+begin_src emacs-lisp
   (use-package dape
-    :defer t
     :hook
     (dape-display-source . pulse-momentary-highlight-one-line)
     :custom
@@ -5570,7 +5569,6 @@ given task, and so on.
 
 #+begin_src emacs-lisp
   (use-package org-agenda
-    :after org
     :ensure nil
     :hook
     (org-agenda-mode . lps/windmove-mode-local-off)
@@ -5789,7 +5787,6 @@ integrate everything together, we use an Emacs package.
 
 #+begin_src emacs-lisp
   (use-package org-capture
-    :after org
     :ensure nil
     :preface
     (defun lps/org-capture-make-generic-timestamp-template (abbrev name file &optional extra)

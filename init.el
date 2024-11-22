@@ -3508,7 +3508,6 @@ for a list of valid rules, to adapt this function."
   :hook (gdb-mode . gdb-many-windows))
 
 (use-package dape
-  :defer t
   :hook
   (dape-display-source . pulse-momentary-highlight-one-line)
   :custom
@@ -4174,7 +4173,6 @@ for a list of valid rules, to adapt this function."
               :filter-return 'lps/org-build-meta-strip-trailing-slash))
 
 (use-package org-agenda
-  :after org
   :ensure nil
   :hook
   (org-agenda-mode . lps/windmove-mode-local-off)
@@ -4378,7 +4376,6 @@ Refer to `org-agenda-prefix-format' for more information."
               :filter-return 'lps/khalel-fix-all-items-categories))
 
 (use-package org-capture
-  :after org
   :ensure nil
   :preface
   (defun lps/org-capture-make-generic-timestamp-template (abbrev name file &optional extra)
