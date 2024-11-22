@@ -340,6 +340,7 @@ the internal changes made by this config.")
   (desktop-modes-not-to-save '(tags-table-mode     ; default
                                eglot--managed-mode ; seems buggy ?
                                ))
+  (desktop-restore-frames nil)
   (desktop-restore-forces-onscreen nil)
   (desktop-buffers-not-to-save-function 'lps/desktop-buffers-not-to-save-function)
   :config
@@ -631,6 +632,38 @@ the mode-line and the usual non-full-screen Emacs are restored."
                                  (cons (remove-pos-from-symbol (car it)) (cdr it)))))
       (setq doom-modeline-fn-alist (mapcar remove-pos-from-seg doom-modeline-fn-alist)
             doom-modeline-var-alist (mapcar remove-pos-from-seg doom-modeline-var-alist))))
+
+  ;; Fix an Eldoc bug ? Doc seems to pop in a random buffer, and so
+  ;; force-mode-line-update doesn't refresh the "current" mode-line. Still
+  ;; somewhat bad: the doc might appear in a dimmed buffer, and so it is hard to
+  ;; "find" at first glance, and moreover is dimmed itself so hard to read. Still,
+  ;; better than nothing.
+
+  ;; TODO: make a *proper* fix, so that Eldoc puts documentation in the correct
+  ;; buffer, and so that force-mode-line-update is enough to update it (without
+  ;; changing other buffers' modelines)
+  (defun-override lps/doom-modeline-eldoc-minibuffer-message (format-string &rest args)
+    "Display message specified by FORMAT-STRING and ARGS on the mode-line as needed.
+  This function displays the message produced by formatting ARGS
+  with FORMAT-STRING on the mode line when the current buffer is a minibuffer.
+  Otherwise, it displays the message like `message' would."
+    (if (minibufferp)
+        (progn
+          (add-hook 'minibuffer-exit-hook
+                    (lambda () (setq eldoc-mode-line-string nil
+                                     ;; https://debbugs.gnu.org/16920
+                                     eldoc-last-message nil))
+                    nil t)
+          (with-current-buffer
+              (window-buffer
+               (or (window-in-direction 'above (minibuffer-window))
+                   (minibuffer-selected-window)
+                   (get-largest-window)))
+            (setq eldoc-mode-line-string
+                  (when (stringp format-string)
+                    (apply #'format-message format-string args)))
+            (force-mode-line-update 'all))) ; only diff is in the non-nil arg here
+      (apply #'message format-string args)))
   ;; Hide encoding in modeline when UTF-8(-unix)
   (defun lps/hide-utf-8-encoding ()
     (setq-local doom-modeline-buffer-encoding
