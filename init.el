@@ -3970,7 +3970,7 @@ for a list of valid rules, to adapt this function."
   :hook (org-mode . org-appear-mode))
 
 (use-package org-modern
-  :defer t
+  :after org
   :hook (org-modern-mode . lps/org-modern)
   :custom
   (org-modern-fold-stars '(("▶" . "▼")
@@ -3995,7 +3995,9 @@ for a list of valid rules, to adapt this function."
   (defun lps/org-modern ()
     (if org-modern-mode
         (lps/org-modern-on)
-      (lps/org-modern-off))))
+      (lps/org-modern-off)))
+
+  (global-org-modern-mode 1))
 
 (use-package ox-html
   :after org
