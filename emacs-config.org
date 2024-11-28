@@ -4910,6 +4910,30 @@ based on regular expressions) highlighting.
    It acts as a markup language, can deal with planning, manage spreadsheets, do
    project planning, run code blocks to do literate programming ...
 
+** Fast LaTeX-preview: custom branch
+
+*MANUAL* We do something that I do not usually do, which is installing a package
+straight from an online repo outside of MELPA/ELPA & co. This is because there
+is a new feature improving drastically LaTeX previews in Org files (and possibly
+elsewhere), that we want to try before it gets merged upstream. We also modify
+the ~:load-path~ of Org, to point to our newly installed version of Org rather
+than the built-in one. Follow the instruction given [[https://abode.karthinks.com/org-latex-preview/][here]] and in particular
+delete the ~.eln~ and ~.elc files associated with Org.
+
+#+begin_src emacs-lisp
+  (unless (package-installed-p 'org-mode)
+    (package-vc-install '(org-mode
+                          :url "https://code.tecosaur.net/tec/org-mode.git"
+                          :branch "dev"
+                          :vc-backend Git)))
+
+  (defvar lps/new-org-mode (locate-user-emacs-file "elpa/org-mode/lisp/"))
+
+  (use-package org-latex-preview
+    :defer t
+    :hook (org-mode . org-latex-preview-auto-mode))
+#+end_src
+
 ** Basic configuration
 
 We change the general feel of Org Mode documents by using other indentation
@@ -4919,6 +4943,7 @@ rules, by changing the headers appearance, and a few other minor changes.
   (use-package org
     :only-built-in t
     :defer t
+    :load-path lps/new-org-mode
     :hook (org-mode . lps/org-mode-setup)
     :bind
     (:map org-mode-map
@@ -4962,7 +4987,9 @@ rules, by changing the headers appearance, and a few other minor changes.
     (org-imenu-depth 4)
     (org-catch-invisible-edits 'show)
     (org-hide-emphasis-markers t)
-    (org-latex-packages-alist '(("" "amsfonts" t) ("" "lps-tex-style" t)))
+    (org-latex-packages-alist '(("" "amsfonts" t)
+                                ;; ("" "lps-tex-style" t) ; bugged atm
+                                ))
     (org-preview-latex-default-process (if (executable-find "dvisvgm")
                                            'dvisvgm
                                          'dvipng))
@@ -5905,7 +5932,6 @@ small - file.
 
 #+begin_src emacs-lisp
   (use-package org-roam
-    :after org
     :init
     (defvar lps/org-roam-map (make-sparse-keymap))
     :custom

@@ -3605,9 +3605,22 @@ for a list of valid rules, to adapt this function."
   :custom
   (treesit-font-lock-level 4))
 
+(unless (package-installed-p 'org-mode)
+  (package-vc-install '(org-mode
+                        :url "https://code.tecosaur.net/tec/org-mode.git"
+                        :branch "dev"
+                        :vc-backend Git)))
+
+(defvar lps/new-org-mode (locate-user-emacs-file "elpa/org-mode/lisp/"))
+
+(use-package org-latex-preview
+  :defer t
+  :hook (org-mode . org-latex-preview-auto-mode))
+
 (use-package org
   :only-built-in t
   :defer t
+  :load-path lps/new-org-mode
   :hook (org-mode . lps/org-mode-setup)
   :bind
   (:map org-mode-map
@@ -3651,7 +3664,9 @@ for a list of valid rules, to adapt this function."
   (org-imenu-depth 4)
   (org-catch-invisible-edits 'show)
   (org-hide-emphasis-markers t)
-  (org-latex-packages-alist '(("" "amsfonts" t) ("" "lps-tex-style" t)))
+  (org-latex-packages-alist '(("" "amsfonts" t)
+                              ;; ("" "lps-tex-style" t) ; bugged atm
+                              ))
   (org-preview-latex-default-process (if (executable-find "dvisvgm")
                                          'dvisvgm
                                        'dvipng))
@@ -4485,7 +4500,6 @@ Refer to `org-agenda-prefix-format' for more information."
       (lps/org-ask-location))))
 
 (use-package org-roam
-  :after org
   :init
   (defvar lps/org-roam-map (make-sparse-keymap))
   :custom
