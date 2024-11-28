@@ -19,11 +19,11 @@ those conflicts, you might need to rename it, and manually replace your current
 file.
 
 To modify the name of the output, you can change it in the second line of this
-document, after the =:tangle= keyword. Note that neither this file not the
-tangled file are hardcoded in the Elisp code, and I use =user-emacs-directory=
-everywhere where one might expect an hardcoded location. it in this file.
-Indeed, you might want to have your configuration in a different location than
-=~/.emacs.d=, and as such, nothing is immediately broken !
+document, after the =:tangle= keyword. Note that neither this file not the tangled
+file are hardcoded in the Elisp code, and I use =user-emacs-directory= everywhere
+where one might expect an hardcoded location. Indeed, you might want to have
+your configuration in a different location than =~/.emacs.d=, and as such, nothing
+is immediately broken !
 
 Some commands have to be run manually whenever the generated =init.el= file is
 loaded for the first time, but they are always highlighted: whenever this is the
