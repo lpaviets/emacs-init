@@ -5705,7 +5705,8 @@ given task, and so on.
                             ("Movies"       . "🎥")
                             ("Workplace"    . "🏢")
                             ("Others"       . "❓")
-                            ("Games"        . "🎮")))
+                            ("Games"        . "🎮")
+                            ("Short-term"   . "⚠️")))
       (cl-pushnew (list (car tag-and-icon)
                         (list (substring-no-properties (cdr tag-and-icon)))
                         nil nil

@@ -4297,7 +4297,8 @@ for a list of valid rules, to adapt this function."
                           ("Movies"       . "🎥")
                           ("Workplace"    . "🏢")
                           ("Others"       . "❓")
-                          ("Games"        . "🎮")))
+                          ("Games"        . "🎮")
+                          ("Short-term"   . "⚠️")))
     (cl-pushnew (list (car tag-and-icon)
                       (list (substring-no-properties (cdr tag-and-icon)))
                       nil nil
