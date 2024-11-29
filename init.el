@@ -2833,16 +2833,8 @@ call the associated function interactively. Otherwise, call the
   (push 'company-indent-or-complete-common python-indent-trigger-commands))
 
 (use-package python-mls
-  :disabled t
   :after python
-  :config
-  (python-mls-setup)
-
-  (defun lps/python-mls-prompt-fix (fun &rest args)
-    (when python-mls-mode
-      (apply fun args)))
-
-  (advice-add 'python-mls-check-prompt :around 'lps/python-mls-prompt-fix))
+  :hook (inferior-python-mode . python-mls-mode))
 
 ;; Tuareg (for OCaml and ML like languages)
 (use-package tuareg
@@ -3984,6 +3976,11 @@ for a list of valid rules, to adapt this function."
                          (?\s . ,(propertize "☐" 'face '(:height 1.8)))))
   (org-modern-table-vertical 1)
   :config
+  ;; Labels/"buttons" are too small IMO
+  (set-face-attribute 'org-modern-label nil :height 0.95)
+  ;; Already taken care of in the general org font configuration
+  (set-face-attribute 'org-modern-block-name nil :height 1.0)
+
   (defun lps/org-modern-on ()
     (when (bound-and-true-p org-bullets-mode)
       (org-bullets-mode -1))
