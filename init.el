@@ -3749,7 +3749,8 @@ for a list of valid rules, to adapt this function."
     (lps/windmove-mode-local-off)
     (org-cdlatex-mode 1)
     (setq-local electric-pair-inhibit-predicate
-                'lps/electric-pair-inhibit-predicate-org))
+                'lps/electric-pair-inhibit-predicate-org)
+    (setq-local TeX-electric-math '("\\(" . "\\)")))
 
   ;; Improve org edition
   (defun lps/electric-pair-inhibit-predicate-org (char)

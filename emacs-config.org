@@ -5032,7 +5032,8 @@ rules, by changing the headers appearance, and a few other minor changes.
       (lps/windmove-mode-local-off)
       (org-cdlatex-mode 1)
       (setq-local electric-pair-inhibit-predicate
-                  'lps/electric-pair-inhibit-predicate-org))
+                  'lps/electric-pair-inhibit-predicate-org)
+      (setq-local TeX-electric-math '("\\(" . "\\)")))
 
     ;; Improve org edition
     <<org-editing>>
