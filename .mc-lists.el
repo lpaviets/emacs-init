@@ -133,6 +133,7 @@
         hydra-multiple-cursors/nil
         iedit-switch-to-mc-mode
         lps/duplicate-line-or-region-down
+        lps/eglot-mc-symbol-at-point
         mc--insert-number-and-increase
         mouse-drag-secondary
         next-buffer

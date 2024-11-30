@@ -1466,6 +1466,37 @@ buffer name already resembles a file name"
   :init
   (defvar lps/multiple-cursors-map (make-sparse-keymap))
   (defvar lps/multiple-cursors-repeat-map (make-sparse-keymap))
+
+  (defun lps/eglot-mc-symbol-at-point ()
+    (interactive)
+    (if (and (bound-and-true-p eglot--managed-mode)
+             (eglot-server-capable :documentHighlightProvider))
+        (let ((buf (current-buffer)))
+          (let* ((highlights
+                  (eglot--request
+                   (eglot--current-server-or-lose)
+                   :textDocument/documentHighlight (eglot--TextDocumentPositionParams)))
+                 eglot-current
+                 eglot-offset
+                 (positions (eglot--when-buffer-window buf
+                              (mapcar
+                               (eglot--lambda ((DocumentHighlight) range)
+                                 (pcase-let ((`(,beg . ,end)
+                                              (eglot-range-region range)))
+                                   (when (<= beg (point) end)
+                                     (setq eglot-current beg)
+                                     (setq eglot-offset (- (point) beg)))
+                                   beg))
+                               highlights))))
+            (mc/remove-fake-cursors)
+            (let ((master (point)))
+              (mc/save-excursion
+               (dolist (sym positions)
+                 (goto-char (+ sym eglot-offset))
+                 (mc/create-fake-cursor-at-point)))
+              (mc/maybe-multiple-cursors-mode))))
+      (mc/mark-all-like-this-in-defun)))
+
   :bind
   ("<M-S-mouse-1>" . mc/add-cursor-on-click)
   (:map mc/keymap
@@ -1479,8 +1510,8 @@ buffer name already resembles a file name"
         ("<left>" . mc/unmark-previous-like-this)
         ("a" . mc/mark-all-like-this)
         ("A" . mc/mark-all-dwim)
-        ("d" . mc/mark-all-symbols-like-this-in-defun)
-        ("D" . mc/mark-all-like-this-in-defun))
+        ("d" . lps/eglot-mc-symbol-at-point)
+        ("D" . mc/mark-all-symbols-like-this-in-defun))
   (:map lps/multiple-cursors-repeat-map
         ("<down>" . mc/mark-next-like-this)
         ("<up>" . mc/mark-previous-like-this)

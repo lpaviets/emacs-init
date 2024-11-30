@@ -2090,6 +2090,37 @@ really increases the possibilities.
     :init
     (defvar lps/multiple-cursors-map (make-sparse-keymap))
     (defvar lps/multiple-cursors-repeat-map (make-sparse-keymap))
+
+    (defun lps/eglot-mc-symbol-at-point ()
+      (interactive)
+      (if (and (bound-and-true-p eglot--managed-mode)
+               (eglot-server-capable :documentHighlightProvider))
+          (let ((buf (current-buffer)))
+            (let* ((highlights
+                    (eglot--request
+                     (eglot--current-server-or-lose)
+                     :textDocument/documentHighlight (eglot--TextDocumentPositionParams)))
+                   eglot-current
+                   eglot-offset
+                   (positions (eglot--when-buffer-window buf
+                                (mapcar
+                                 (eglot--lambda ((DocumentHighlight) range)
+                                   (pcase-let ((`(,beg . ,end)
+                                                (eglot-range-region range)))
+                                     (when (<= beg (point) end)
+                                       (setq eglot-current beg)
+                                       (setq eglot-offset (- (point) beg)))
+                                     beg))
+                                 highlights))))
+              (mc/remove-fake-cursors)
+              (let ((master (point)))
+                (mc/save-excursion
+                 (dolist (sym positions)
+                   (goto-char (+ sym eglot-offset))
+                   (mc/create-fake-cursor-at-point)))
+                (mc/maybe-multiple-cursors-mode))))
+        (mc/mark-all-like-this-in-defun)))
+
     :bind
     ("<M-S-mouse-1>" . mc/add-cursor-on-click)
     (:map mc/keymap
@@ -2103,8 +2134,8 @@ really increases the possibilities.
           ("<left>" . mc/unmark-previous-like-this)
           ("a" . mc/mark-all-like-this)
           ("A" . mc/mark-all-dwim)
-          ("d" . mc/mark-all-symbols-like-this-in-defun)
-          ("D" . mc/mark-all-like-this-in-defun))
+          ("d" . lps/eglot-mc-symbol-at-point)
+          ("D" . mc/mark-all-symbols-like-this-in-defun))
     (:map lps/multiple-cursors-repeat-map
           ("<down>" . mc/mark-next-like-this)
           ("<up>" . mc/mark-previous-like-this)
@@ -3711,9 +3742,9 @@ stuff, especially in terms of UI: popups, graphical widgets ...
 *** Eglot
 
 There exists another implementation of the Language Server Protocol in Emacs,
-called [[https://github.com/joaotavora/eglot][eglot]]. It is much more
-integrated within "core" Emacs, as it only uses built-in packages, such as
-=project.el= instead of ~projectile~, or ~flymake~ rather than ~flycheck~.
+called [[https://github.com/joaotavora/eglot][eglot]]. It is much more integrated within "core" Emacs, as it only uses
+built-in packages, such as =project.el= instead of ~projectile~, or ~flymake~ rather
+than ~flycheck~.
 
 #+begin_src emacs-lisp
   ;; Might not work, recommended to use package-install instead
@@ -3909,12 +3940,10 @@ minor mode called [[https://github.com/ocaml/tuareg][Tuareg]].
 *** C/C++
 
 For C and C++ (and ObjectiveC), as for Python, we need to install a server for
-LSP to use. We use the one called
-[[https://github.com/MaskRay/ccls/wiki/lsp-mode][ccls]].
+LSP to use. We use the one called [[https://github.com/MaskRay/ccls/wiki/lsp-mode][ccls]].
 
-*MANUAL* To use the ccls server, follow the instruction
-[[https://github.com/MaskRay/ccls/][here]], or simply install the available
-version from your distribution standard repositories.
+*MANUAL* To use the ccls server, follow the instruction [[https://github.com/MaskRay/ccls/][here]], or simply install
+the available version from your distribution standard repositories.
 
 #+begin_src emacs-lisp
   ;; C/C++
@@ -3944,9 +3973,8 @@ We also use custom compilation commands.
 
 As C and C++ are also quite "close to the metal", it is often useful (for
 optimization or learning purposes) to view what the compiled code looks like. Of
-course, Emacs has ways to work with assembly (/e.g.,/
-[[help:asm-mode][asm-mode]]), but we can even see the assembly code /while still
-editing the source/ !
+course, Emacs has ways to work with assembly (/e.g.,/ [[help:asm-mode][asm-mode]]), but we can even
+see the assembly code /while still editing the source/ !
 
 #+begin_src emacs-lisp
   (use-package disaster
@@ -4030,9 +4058,8 @@ macroexansion process, and allows one to quickly view what a macroexpansion is,
 Although Emacs comes with pretty good built-in functionalities, there is still
 room for improvement.
 
-[[https://github.com/Fanael/highlight-defined][highlight defined]] highlights
-defined Emacs Lisp symbols (functions, variable names, macros ...) in source
-code.
+[[https://github.com/Fanael/highlight-defined][highlight defined]] highlights defined Emacs Lisp symbols (functions, variable
+names, macros ...) in source code.
 
 #+begin_src emacs-lisp
   (use-package highlight-defined
@@ -4040,11 +4067,11 @@ code.
 
 #+end_src
 
-[[https://github.com/Silex/elmacro][elmacro]] shows keyboard macros and
-interactive commands as Emacs Lisp, meaning that if you know /how/ to do
-something using advanced keyboard shortcuts or interactive commands, you can get
-for free an elisp code snippet that does exactly the same thing that you can
-reuse /e.g./ in a configuration file or in another function.
+[[https://github.com/Silex/elmacro][elmacro]] shows keyboard macros and interactive commands as Emacs Lisp, meaning
+that if you know /how/ to do something using advanced keyboard shortcuts or
+interactive commands, you can get for free an elisp code snippet that does
+exactly the same thing that you can reuse /e.g./ in a configuration file or in
+another function.
 
 Because it might be useful everywhere, we do not use it simply in
 =emacs-lisp-mode= and we activate it everywhere.
@@ -4087,17 +4114,15 @@ to automate otherwise boring tasks.
 We could, of course, use LSP to write Common Lisp code. However, Emacs already
 provides nice editing functionalities for programming in Lisp-like languages,
 and CL is no exception. On top of the built-in Emacs functions, we use another
-minor mode, specifically designed to write Common Lisp:
-[[https://common-lisp.net/project/slime/][SLIME]]. More precisely, we use a
-/fork/ of SLIME, known as [[https://github.com/joaotavora/sly][SLY]].
+minor mode, specifically designed to write Common Lisp: [[https://common-lisp.net/project/slime/][SLIME]]. More precisely,
+we use a /fork/ of SLIME, known as [[https://github.com/joaotavora/sly][SLY]].
 
-*MANUAL* It is likely that ~sbcl~ is not already installed. Hence, in order to
-run the following code, you will need to install it. If you install it
-manuallyby compiling the source code, make sure that the ~sbcl~ command is
-available on the PATH, or modify =:custom (inferior-lisp-program
-"<path/to/sbcl>")= accordingly in the following block. Moreover, if you want to
-access the CL HyperSpec offline, you need to download it, and have
-~common-lisp-hyperspec-root~ point towards it.
+*MANUAL* It is likely that ~sbcl~ is not already installed. Hence, in order to run
+the following code, you will need to install it. If you install it manuallyby
+compiling the source code, make sure that the ~sbcl~ command is available on the
+PATH, or modify =:custom (inferior-lisp-program "<path/to/sbcl>")= accordingly in
+the following block. Moreover, if you want to access the CL HyperSpec offline,
+you need to download it, and have ~common-lisp-hyperspec-root~ point towards it.
 
 #+begin_src emacs-lisp
   ;; Make sure that sbcl is available on PATH
@@ -4460,14 +4485,13 @@ it that much, so a simple "Out of the box" experience will be fine, even if it
 is a bit bloated and offers less customization facilities.
 
 *MANUAL* The language server needs to be installed manually. I use
-[[https://github.com/haskell/haskell-language-server][haskell-language-server]]
-in this config. Be careful when installing ~ghcup~ and the likes. In some cases,
-only your ~.bashrc~ will be modified to add ~~/.ghcup/...~ to your PATH
-environment variable. This makes Emacs unable to locate the correct binaries for
-the language server, even if you specify the full path to the wrapper (Emacs
-will then be able to correctly start the wrapper, but the wrapper itself won't
-be able to locate the correct binaries). In this case, simply move the
-corresponding line from your ~.bashrc~ (probably the last one, or towards the
+[[https://github.com/haskell/haskell-language-server][haskell-language-server]] in this config. Be careful when installing ~ghcup~ and the
+likes. In some cases, only your ~.bashrc~ will be modified to add ~~/.ghcup/...~ to
+your PATH environment variable. This makes Emacs unable to locate the correct
+binaries for the language server, even if you specify the full path to the
+wrapper (Emacs will then be able to correctly start the wrapper, but the wrapper
+itself won't be able to locate the correct binaries). In this case, simply move
+the corresponding line from your ~.bashrc~ (probably the last one, or towards the
 end of the file), to ~~/.profile~ or ~~/.bash_profile~, so the PATH is correctly
 setup even outside of interactive bash terminals and Emacs will always inherit
 it.
@@ -4481,8 +4505,8 @@ it.
 
 *** Web development
 **** Javascript
-The built-in ~js-mode~ is good, but as it is often the case with Emacs and
-popular languages, it has been improved in community packages.
+The built-in ~js-mode~ is good, but as it is often the case with Emacs and popular
+languages, it has been improved in community packages.
 
 #+begin_src emacs-lisp
   (use-package js2-mode
@@ -4519,8 +4543,8 @@ fancy IDE-like features.
 #+end_src
 
 **** HTML/CSS
-For HTML/CSS, we use another featureful package called =web-mode=. It can also
-be used to deal with Javascript or PHP code, but in my opinion, there are better
+For HTML/CSS, we use another featureful package called =web-mode=. It can also be
+used to deal with Javascript or PHP code, but in my opinion, there are better
 alternatives for those specifically, so I only use =web-mode= for HTML/CSS (and
 their numerous variants ...).
 #+begin_src emacs-lisp
@@ -4534,9 +4558,9 @@ their numerous variants ...).
 
 Because HTML tends to be very verbose, we also want to be able to quickly type
 the usual boilerplate. We use =emmet-mode=, which implement a way to quickly
-expand (many) abbreviations into templates. It is somewhat similar to
-=Yasnippet=, with some differences nonetheless, and the two can be used at the
-same time so why would we have to choose ?
+expand (many) abbreviations into templates. It is somewhat similar to =Yasnippet=,
+with some differences nonetheless, and the two can be used at the same time so
+why would we have to choose ?
 
 #+begin_src emacs-lisp
   (use-package emmmet-mode
@@ -4775,8 +4799,8 @@ experience (auto-completion, jump-to definition/reference, etc).
 
 The general protocol exists independently from Emacs, and we therefore have to
 choose a client for it, just as we do with LSP. We choose ~dape~, which is the
-"closest to built-in" compared to the alternative ~dap-mode~ (same difference
-than in ~eglot~ vs ~lsp-mode~).
+"closest to built-in" compared to the alternative ~dap-mode~ (same difference than
+in ~eglot~ vs ~lsp-mode~).
 
 #+begin_src emacs-lisp
   (use-package dape
@@ -5363,8 +5387,8 @@ We also add templates to insert code blocks with a few key presses.
 ** Org Export
 
 Org-mode can export an ~.org~ document to various other formats, for example
-$\LaTeX$, ~.odt~ or ~HTML~. There are a lot of options for those different
-backends, and you can even define your own backends easily.
+\(\LaTeX\), ~.odt~ or ~HTML~. There are a lot of options for those different backends,
+and you can even define your own backends easily.
 
 *** HTML
 
@@ -9136,16 +9160,15 @@ To patch this, we use a few tricks with ~gnus-dired~
 
 **** Org MIME
 
-~mu4e~ in itself is not really able to send HTML e-mails. However, it is
-nowadays a given that people you are sending e-mails too are going to be able to
-visualize HTML-ized content, and they might even /assume/ that this is the
-case - meaning that a plain text e-mail will loo strange and/or unprofessional.
+~mu4e~ in itself is not really able to send HTML e-mails. However, it is nowadays
+a given that people you are sending e-mails too are going to be able to
+visualize HTML-ized content, and they might even /assume/ that this is the case -
+meaning that a plain text e-mail will loo strange and/or unprofessional.
 
-To deal with this problem, we use a ~org~ package, called
-[[https://github.com/org-mime/org-mime][Org MIME]], which uses the MIME protocol
-to encode the content of our email. Moreover, it allows us to write e-mails with
-the full power of ~org-mode~'s syntax and editing tools, and directly export
-them in HTML.
+To deal with this problem, we use a ~org~ package, called [[https://github.com/org-mime/org-mime][Org MIME]], which uses the
+MIME protocol to encode the content of our email. Moreover, it allows us to
+write e-mails with the full power of ~org-mode~'s syntax and editing tools, and
+directly export them in HTML.
 
 #+begin_src emacs-lisp
   (use-package org-mime
@@ -9186,10 +9209,10 @@ them in HTML.
 **** Org agenda
 
 Sometimes, people send calendar invitations via Email. Most of the time, this
-means that there is a =text/calendar= attachment to the message, and luckily,
-Gnus already knows how to deal with them ! It can also be integrated with
-org-agenda; however, I find this integration a bit lacking, and override some of
-the built-in functions.
+means that there is a =text/calendar= attachment to the message, and luckily, Gnus
+already knows how to deal with them ! It can also be integrated with org-agenda;
+however, I find this integration a bit lacking, and override some of the
+built-in functions.
 
 #+begin_src emacs-lisp
   (use-package gnus-icalendar
