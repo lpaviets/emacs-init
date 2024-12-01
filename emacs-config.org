@@ -2192,6 +2192,10 @@ kind of auto-completion ? Hence, we use a few tools to make the general
 experience of /writing text/ better, whether it is source code, simple sentences
 or even commands in the minibuffer.
 
+#+begin_src emacs-lisp
+  (setq tab-always-indent 'complete)
+#+end_src
+
 *** Completion styles
 
 Emacs has a lot of built-in completions styles, telling it how to interpret the
@@ -2293,6 +2297,7 @@ such as =auto-complete=.
 #+begin_src emacs-lisp
   ;; Company. Auto-completion package
   (use-package company
+    :disabled t
     :defer t
     :bind
     ("TAB" . company-indent-or-complete-common)
@@ -2400,7 +2405,7 @@ suggested completions, we use two extra packages.
 
 #+end_src
 
-*** Company backends
+**** Company backends
 
 A first backend that we want to consider is the one using snippets provided by
 ~yasnippet~
@@ -2432,6 +2437,60 @@ based on this content.
     (company-dabbrev-ignore-case 'keep-prefix)
     (company-dabbrev-downcase nil)
     (company-dabbrev-minimum-length 4))
+#+end_src
+
+*** Corfu
+
+[[https://github.com/minad/corfu][Corfu]] is a frontend for ~completion-in-region~, which performs a role similar to
+=autocomplete= or =company=: provide a "popup" when trying to complete in a buffer
+(rather than in a minibuffer). It mostly relies on built-in Emacs functionality,
+while =company= typically reimplements a lot of /ad-hoc/ functionality.
+
+#+begin_src emacs-lisp
+  (use-package corfu
+    :defer t
+    :custom
+    (corfu-preview-current nil)
+    (corfu-min-width 25)
+    (corfu-count 20)
+    :bind
+    (:map corfu-map
+          ("C-s" . corfu-insert-separator))
+    :init
+    (add-hook-once 'pre-command-hook 'global-corfu-mode))
+
+  (use-package corfu-popupinfo
+    :custom
+    (corfu-popupinfo-delay 0.2)
+    (corfu-popupinfo-max-height 30)
+    (corfu-popupinfo-min-width 40)
+    :hook
+    (corfu-mode . corfu-popupinfo-mode))
+
+  (use-package corfu-indexed
+    :hook
+    (corfu-mode . corfu-indexed-mode))
+
+  (use-package kind-icon
+    :after corfu
+    ;; :custom
+    ;; (kind-icon-blend-background t)
+    ;; (kind-icon-default-face 'corfu-default) ; only needed with blend-background
+    :config
+    (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+#+end_src
+
+**** Cape
+
+As for =company=, =corfu= can be improved using additional "backends", rather than
+using only the built-in ~completion-at-point-functions~.
+
+#+begin_src emacs-lisp
+  (use-package cape
+    :defer t
+    :init
+    (dolist (cape-backend '(cape-dabbrev cape-file cape-elisp-block))
+      (add-hook 'completion-at-point-functions cape-backend)))
 #+end_src
 
 ** Navigation
@@ -8375,7 +8434,7 @@ help me remember the easy-to-forget syntax.
                            file))))
 
     (defun lps/remote-shell-setup ()
-      (when (and (fboundp 'company-mode)
+      (when (and (bound-and-true-p company-mode)
                  (file-remote-p default-directory))
         (company-mode -1))))
 #+end_src

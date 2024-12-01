@@ -1555,6 +1555,8 @@ buffer name already resembles a file name"
                      mc/mark-all-like-this))
     (put command 'repeat-map 'lps/multiple-cursors-repeat-map)))
 
+(setq tab-always-indent 'complete)
+
 (use-package emacs
   :ensure nil
   :when lps/only-built-in-p
@@ -1635,6 +1637,7 @@ buffer name already resembles a file name"
 
 ;; Company. Auto-completion package
 (use-package company
+  :disabled t
   :defer t
   :bind
   ("TAB" . company-indent-or-complete-common)
@@ -1755,6 +1758,44 @@ buffer name already resembles a file name"
   (company-dabbrev-ignore-case 'keep-prefix)
   (company-dabbrev-downcase nil)
   (company-dabbrev-minimum-length 4))
+
+(use-package corfu
+  :defer t
+  :custom
+  (corfu-preview-current nil)
+  (corfu-min-width 25)
+  (corfu-count 20)
+  :bind
+  (:map corfu-map
+        ("C-s" . corfu-insert-separator))
+  :init
+  (add-hook-once 'pre-command-hook 'global-corfu-mode))
+
+(use-package corfu-popupinfo
+  :custom
+  (corfu-popupinfo-delay 0.2)
+  (corfu-popupinfo-max-height 30)
+  (corfu-popupinfo-min-width 40)
+  :hook
+  (corfu-mode . corfu-popupinfo-mode))
+
+(use-package corfu-indexed
+  :hook
+  (corfu-mode . corfu-indexed-mode))
+
+(use-package kind-icon
+  :after corfu
+  ;; :custom
+  ;; (kind-icon-blend-background t)
+  ;; (kind-icon-default-face 'corfu-default) ; only needed with blend-background
+  :config
+  (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
+
+(use-package cape
+  :defer t
+  :init
+  (dolist (cape-backend '(cape-dabbrev cape-file cape-elisp-block))
+    (add-hook 'completion-at-point-functions cape-backend)))
 
 (use-package emacs
   :ensure nil
@@ -6779,7 +6820,7 @@ PWD is not in a git repo (or the git command is not found)."
                          file))))
 
   (defun lps/remote-shell-setup ()
-    (when (and (fboundp 'company-mode)
+    (when (and (bound-and-true-p company-mode)
                (file-remote-p default-directory))
       (company-mode -1))))
 
