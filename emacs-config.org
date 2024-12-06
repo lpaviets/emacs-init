@@ -6538,7 +6538,8 @@ documents, using the famous tool AUCTeX.
                                'function))
 
   ;;; Improved compilation
-    <<tex-better-compilation>>)
+    <<tex-better-compilation>>
+    )
 #+end_src
 
 
@@ -6555,6 +6556,7 @@ documents, using the famous tool AUCTeX.
       (TeX-command-sequence t t)))
 
   ;; Improve compile region
+  ;; TODO: Fix to also work with biblatex/biber
   (defun lps/LaTeX-add-bib-to-compile-region ()
     (let (bibstyle bibpath)
       (with-current-buffer TeX-region-master-buffer
@@ -6573,7 +6575,7 @@ documents, using the famous tool AUCTeX.
                 (mapconcat 'identity bibpath ",")
                 "}\n"))))
 
-  (add-hook 'TeX-region-hook 'lps/LaTeX-add-bib-to-compile-region)
+  ;; (add-hook 'TeX-region-hook 'lps/LaTeX-add-bib-to-compile-region)
 #+end_src
 
 **** Folding

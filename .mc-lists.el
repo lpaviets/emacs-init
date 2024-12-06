@@ -12,6 +12,7 @@
         TeX-insert-dollar
         TeX-insert-macro
         TeX-insert-sub-or-superscript
+        TeX-newline
         backward-sexp
         backward-up-list
         beginning-of-visual-line
@@ -29,6 +30,7 @@
         down-list
         downcase-dwim
         drag-stuff-down
+        drag-stuff-up
         electric-newline-and-maybe-indent
         end-of-buffer
         end-of-visual-line

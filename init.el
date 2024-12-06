@@ -5385,6 +5385,7 @@ The return value is the string as entered in the minibuffer."
       (TeX-command-sequence t t)))
 
   ;; Improve compile region
+  ;; TODO: Fix to also work with biblatex/biber
   (defun lps/LaTeX-add-bib-to-compile-region ()
     (let (bibstyle bibpath)
       (with-current-buffer TeX-region-master-buffer
@@ -5403,7 +5404,8 @@ The return value is the string as entered in the minibuffer."
                 (mapconcat 'identity bibpath ",")
                 "}\n"))))
 
-  (add-hook 'TeX-region-hook 'lps/LaTeX-add-bib-to-compile-region))
+  ;; (add-hook 'TeX-region-hook 'lps/LaTeX-add-bib-to-compile-region)
+  )
 
 (use-package tex-fold
   :defer t
