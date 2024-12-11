@@ -4989,14 +4989,14 @@ return `nil'."
             "[A-Za-z*]+}.*?[ \t\n]*?"
             (regexp-quote TeX-esc)
             "frametitle[ \t]*{"
-            "\\([[:ascii:]]+?\\)}\n"))
+            "\\(.+?\\)}\n"))
 
   (defun lps/TeX-fold-frame (type)
     "Hide the frame at point.
 
   Return non-nil if a frame was found and folded, nil otherwise."
     (when (and (eq type 'env)
-               (eq major-mode 'latex-mode)
+               (memq major-mode '(latex-mode LaTeX-mode))
                (string= (LaTeX-current-environment) "frame"))
       (when-let ((item-start (condition-case nil
                                  (save-excursion
