@@ -4217,9 +4217,13 @@ you need to download it, and have ~common-lisp-hyperspec-root~ point towards it.
 
     (define-key sly-prefix-map (kbd "C-v") sly-selector-map)
 
-    (defun lps/sly-company-setup ()
-      (setq-local company-prescient-sort-length-enable nil)
-      (setq-local company-backends '(company-capf)))
+    (defun lps/sly-completion-setup ()
+      (when (fboundp 'company-mode)
+        (setq-local company-prescient-sort-length-enable nil)
+        (setq-local company-backends '(company-capf)))
+      ;; Hack cause SLY hijacks completion to add advices & co ...
+      (when (bound-and-true-p corfu-mode)
+        (corfu-mode 1)))
 
     (defun lps/sly-start-repl ()
       (unless (sly-connected-p)
@@ -4237,7 +4241,7 @@ you need to download it, and have ~common-lisp-hyperspec-root~ point towards it.
     ;;              '(lisp-mode . lps/desktop-restore-lisp-file-no-repl)
     ;;              nil 'equal)
 
-    (add-hook 'sly-mode-hook 'lps/sly-company-setup)
+    (add-hook 'sly-mode-hook 'lps/sly-completion-setup)
     (add-hook 'sly-minibuffer-setup-hook 'paredit-mode)
 
     ;; Don't use Ido, just use our default
@@ -6193,6 +6197,46 @@ manuals, books, or especially long articles.
 #+begin_src emacs-lisp
   (use-package saveplace-pdf-view
     :after pdf-view)
+#+end_src
+
+We define a minor mode to help us keep track of the time spent on each /label/ in
+a PDF file: this is useful when rehearsing presentations that must fit in some
+fixed duration.
+
+#+begin_src emacs-lisp :tangle no
+  (defvar-local pdf-view-timetrack-last-pagelabel nil)
+  (defvar-local pdf-view-timetrack-last-time nil)
+
+  (defun pdf-view-timetrack-page-change ()
+    (let ((current-pagelabel (pdf-view-current-pagelabel)))
+      (when (/= pdf-view-timetrack-last-pagelabel
+                current-pagelabel)
+        (pdf-view-timetrack-log pdf-view-timetrack-last-pagelabel
+                                (- (current-time) pdf-view-timetrack-last-time))
+        (setq-local pdf-view-timetrack-last-pagelabel current-pagelabel)
+        (setq-local pdf-view-timetrack-last-time (current-time)))))
+
+  (defun pdf-view-timetrack-log (last-label time))
+
+  (defun pdf-view-timetrack-start-recording ()
+    (interactive))
+
+  (defun pdf-view-timetrack-stop-recording ()
+    (interactive))
+
+  (defun pdf-view-timetrack-reset ()
+    (interactive))
+
+  (defun pdf-view-timetrack-make-report ()
+    (interactive))
+
+  (define-minor-mode pdf-view-timetrack-mode
+    "Minor mode to keep track of the time spent on each page of a PDF
+  file.
+
+  This is intended to be used with Beamer presentations,
+  where the page label (rather than the PDF page itself) changes
+  after each frame, but can be used in any kind of PDF.")
 #+end_src
 
 *** PDF modification

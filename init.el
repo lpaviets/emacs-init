@@ -3046,9 +3046,13 @@ call the associated function interactively. Otherwise, call the
 
   (define-key sly-prefix-map (kbd "C-v") sly-selector-map)
 
-  (defun lps/sly-company-setup ()
-    (setq-local company-prescient-sort-length-enable nil)
-    (setq-local company-backends '(company-capf)))
+  (defun lps/sly-completion-setup ()
+    (when (fboundp 'company-mode)
+      (setq-local company-prescient-sort-length-enable nil)
+      (setq-local company-backends '(company-capf)))
+    ;; Hack cause SLY hijacks completion to add advices & co ...
+    (when (bound-and-true-p corfu-mode)
+      (corfu-mode 1)))
 
   (defun lps/sly-start-repl ()
     (unless (sly-connected-p)
@@ -3066,7 +3070,7 @@ call the associated function interactively. Otherwise, call the
   ;;              '(lisp-mode . lps/desktop-restore-lisp-file-no-repl)
   ;;              nil 'equal)
 
-  (add-hook 'sly-mode-hook 'lps/sly-company-setup)
+  (add-hook 'sly-mode-hook 'lps/sly-completion-setup)
   (add-hook 'sly-minibuffer-setup-hook 'paredit-mode)
 
   ;; Don't use Ido, just use our default
