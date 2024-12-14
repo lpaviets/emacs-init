@@ -3046,6 +3046,8 @@ call the associated function interactively. Otherwise, call the
 
   (define-key sly-prefix-map (kbd "C-v") sly-selector-map)
 
+  (sly-symbol-completion-mode -1)
+
   (defun lps/sly-completion-setup ()
     (when (fboundp 'company-mode)
       (setq-local company-prescient-sort-length-enable nil)
@@ -3201,7 +3203,7 @@ call the associated function interactively. Otherwise, call the
   ;; an asynchronous manner, so it returns before the REPL
   ;; is actually setup.
   (defun lps/sly-setup ()
-    (lps/sly-company-setup)
+    (lps/sly-completion-setup)
     ;; Why does SLY disable it ???
     (setq-local comint-scroll-to-bottom-on-input t)
     ;; (sly-switch-to-most-recent 'lisp-mode)
