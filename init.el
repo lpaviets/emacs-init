@@ -1677,7 +1677,7 @@ buffer name already resembles a file name"
                       company-oddmuse))
 
   :config
-  (global-company-mode t) ;; Should be loaded when pressing <TAB> for the first time
+  ;; (global-company-mode t) ;; Should be loaded when pressing <TAB> for the first time
 
   ;; Don't use orderless for company
   (advice-ensure-bindings company--perform ((completion-styles '(basic
