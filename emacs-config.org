@@ -846,11 +846,14 @@ on.
           (delete-region beg end)
           (if reset
               (insert (apply 'propertize contents revert-props))
-            (let ((color (read-color "Colour: "))
-                  (size (read-number "Size: ")))
+            (let* ((color (read-color "Colour: "))
+                   (size (read-number "Size: " -1)))
               (insert (propertize contents
                                   'font-lock-face
-                                  `(:foreground ,color :height ,size)
+                                  `(,@(unless (string= color "")
+                                        `(:foreground ,color))
+                                    ,@(unless (= size -1)
+                                        `(:height ,size)))
                                   'old-props
                                   old-props))))))))
 
@@ -4112,6 +4115,14 @@ macroexansion process, and allows one to quickly view what a macroexpansion is,
           ("e" . macrostep-expand)))
 #+end_src
 
+We also define a basic, personal file extension that we use to store lisp data
+in several projects (where "lisp data" really mean "basic s-expressions"):
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :mode ("\\.lispdata\\'" . lisp-data-mode))
+#+end_src
+
 **** Emacs Lisp
 
 Although Emacs comes with pretty good built-in functionalities, there is still
@@ -5894,7 +5905,8 @@ integrate everything together, we use an Emacs package.
   ;;; Replace the occurrences of %%%SOMETHING%%% by
     (defvar lps/khalel-calendar-to-category '(("ade" "Lectures")
                                               ("loria" "Workplace")
-                                              ("ul" "Workplace")))
+                                              ("ul" "Workplace")
+                                              ("mocqua" "Seminars")))
     (defun lps/khalel-fix-item-category (item)
       (with-temp-buffer
         (insert item)

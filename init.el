@@ -566,11 +566,14 @@ the internal changes made by this config.")
         (delete-region beg end)
         (if reset
             (insert (apply 'propertize contents revert-props))
-          (let ((color (read-color "Colour: "))
-                (size (read-number "Size: ")))
+          (let* ((color (read-color "Colour: "))
+                 (size (read-number "Size: " -1)))
             (insert (propertize contents
                                 'font-lock-face
-                                `(:foreground ,color :height ,size)
+                                `(,@(unless (string= color "")
+                                      `(:foreground ,color))
+                                  ,@(unless (= size -1)
+                                      `(:height ,size)))
                                 'old-props
                                 old-props))))))))
 
@@ -2985,6 +2988,9 @@ call the associated function interactively. Otherwise, call the
   (:map lps/quick-edit-map
         ("e" . macrostep-expand)))
 
+(use-package emacs
+  :mode ("\\.lispdata\\'" . lisp-data-mode))
+
 (use-package highlight-defined
   :hook (emacs-lisp-mode . highlight-defined-mode))
 
@@ -4464,7 +4470,8 @@ Refer to `org-agenda-prefix-format' for more information."
 ;;; Replace the occurrences of %%%SOMETHING%%% by
   (defvar lps/khalel-calendar-to-category '(("ade" "Lectures")
                                             ("loria" "Workplace")
-                                            ("ul" "Workplace")))
+                                            ("ul" "Workplace")
+                                            ("mocqua" "Seminars")))
   (defun lps/khalel-fix-item-category (item)
     (with-temp-buffer
       (insert item)
