@@ -4349,6 +4349,9 @@ for a list of valid rules, to adapt this function."
      (search . " %i %(lps/agenda-category 15)")))
 
   :config
+  ;; TODO: check sometimes to see if it has been fixed/how to fix it
+  (add-to-list 'warning-suppress-types '(org-element org-element-parser) nil 'equal)
+
   ;; Faces
   (set-face-attribute 'org-agenda-date nil :italic t :underline nil)
   (set-face-attribute 'org-agenda-date-today nil :italic t :underline nil)
