@@ -4698,6 +4698,47 @@ Refer to `org-agenda-prefix-format' for more information."
       (define-key pdf-isearch-active-mode-map
                   (kbd "C-<return>") 'lps/pdf-isearch-sync-backward-search))
 
+    ;; Modeline
+    ;; Add a way to view current section in the modeline
+    ;; (defvar lps/pdf-view-modeline-section-separator "/")
+    ;; (defvar lps/pdf-view-modeline-trim-section-title-regexp "[0-9. ]+")
+
+    ;; ;; TODO: fix, fails when PDF has no outline
+    ;; (defun lps/pdf-view-current-sections ()
+    ;;   (let ((buf (pdf-outline-noselect))
+    ;;         link depth title)
+    ;;     (with-current-buffer buf
+    ;;       (save-excursion
+    ;;         (pdf-outline-move-to-current-page)
+    ;;         (reverse (cl-loop for link = (pdf-outline-link-at-pos)
+    ;;                           collect (alist-get 'title link)
+    ;;                           while (< 1 (alist-get 'depth link))
+    ;;                           do (pdf-outline-up-heading 1)))))))
+
+    ;; (defvar-local lps/doom-modeline--pdf-section nil)
+    ;; (defun lps/doom-modeline-update-pdf-section ()
+    ;;   "Update PDF section."
+    ;;   (setq lps/doom-modeline--pdf-section
+    ;;         (mapconcat (lambda (str)
+    ;;                      (string-trim-left str lps/pdf-view-modeline-trim-section-title-regexp))
+    ;;                    (lps/pdf-view-current-sections)
+    ;;                    lps/pdf-view-modeline-section-separator)))
+
+    ;; (add-hook 'pdf-view-change-page-hook 'lps/doom-modeline-update-pdf-section)
+
+    ;; (doom-modeline-def-segment pdf-section
+    ;;   (propertize (format "(%s)" lps/doom-modeline--pdf-section)
+    ;;               'face `(:foreground "wheat" :italic t)))
+
+    ;; (doom-modeline-def-modeline 'lps/pdf
+    ;;   '(bar window-number modals matches buffer-info pdf-pages pdf-section)
+    ;;   '(compilation misc-info major-mode process vcs time))
+
+    ;; (add-to-list 'doom-modeline-mode-alist
+    ;;              (cons 'pdf-view-mode 'lps/pdf)
+    ;;              nil
+    ;;              'equal)
+
     ;; ;; Fix scaling of page when prompting for links
     ;; ;; Taken from https://github.com/vedang/pdf-tools/pull/223/commits
     ;; (with-eval-after-load 'pdf-links
