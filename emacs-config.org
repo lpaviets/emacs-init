@@ -8931,7 +8931,10 @@ the package documentation.
     <<mu4e-build-query>>
 
   ;;; Appearance
-    <<mu4e-appearance>>)
+    <<mu4e-appearance>>
+
+  ;;; Other modes
+    <<mu4e-raw-view>>)
 #+end_src
 
 #+NAME: mu4e-global
@@ -9456,6 +9459,20 @@ us.
                    "pièce-jointe"
                    "t'envoie"
                    "vous envoie"))))
+#+end_src
+
+We also marginally improve the way raw email look, just in case we ever need to
+look at those directly.
+
+#+NAME: mu4e-raw-view
+#+begin_src emacs-lisp :tangle no
+  (defun lps/raw-view-add ()
+    (font-lock-add-keywords nil `(("^[a-zA-Z-]+?: " . 'gnus-header-name)
+                                  ("\\b[a-zA-Z-]+?=" . 'gnus-header-subject)
+                                  (,thing-at-point-email-regexp . 'gnus-header-from)))
+    (font-lock-fontify-buffer))
+
+  (add-hook 'mu4e-raw-view-mode-hook 'lps/raw-view-add)
 #+end_src
 
 * Web

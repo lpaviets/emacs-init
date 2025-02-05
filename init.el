@@ -7490,7 +7490,16 @@ Change to wide reply ?")))))
                      (concat
                       (mu4e~headers-docid-cookie docid)
                       mu4e~mark-fringe line "\n")
-                     'docid docid 'msg msg))))))))))))
+                     'docid docid 'msg msg)))))))))))
+
+;;; Other modes
+  (defun lps/raw-view-add ()
+    (font-lock-add-keywords nil `(("^[a-zA-Z-]+?: " . 'gnus-header-name)
+                                  ("\\b[a-zA-Z-]+?=" . 'gnus-header-subject)
+                                  (,thing-at-point-email-regexp . 'gnus-header-from)))
+    (font-lock-fontify-buffer))
+
+  (add-hook 'mu4e-raw-view-mode-hook 'lps/raw-view-add))
 
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired
