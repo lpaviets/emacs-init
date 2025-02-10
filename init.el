@@ -435,35 +435,6 @@ the internal changes made by this config.")
     (lps/set-default-fonts)))
 
 (use-package emacs
-  :custom
-  (inhibit-startup-message t)
-  (initial-scratch-message nil)
-  :init
-  ;; Emacs frame startup
-  ;; Maximize the Emacs frame at startup
-  (add-to-list 'default-frame-alist '(fullscreen . maximized))
-  (ensure-emacs-version 29
-   (add-to-list 'default-frame-alist '(alpha-background . 95))
-   (set-frame-parameter nil 'alpha-background 95))
-
-  ;; Bell
-  (setq ring-bell-function 'ignore)
-  (setq visible-bell nil)
-
-  ;; Menus
-  ;; Doom inspired: don't call the functions directly
-  (push '(menu-bar-lines . 0)   default-frame-alist)
-  (push '(tool-bar-lines . 0)   default-frame-alist)
-  (push '(vertical-scroll-bars) default-frame-alist)
-
-  (setq scroll-bar-mode nil
-        tool-bar-mode nil
-        menu-bar-mode nil)
-
-  (tooltip-mode -1)
-  (set-fringe-mode 10))
-
-(use-package emacs
   :init
   (column-number-mode t)
 
@@ -718,7 +689,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
 
 (use-package hl-todo
   :init
-  (global-hl-todo-mode 1)
+  (add-hook-once 'find-file-hook 'global-hl-todo-mode)
   :bind
   (:map hl-todo-mode-map
         ("C-c t p" . hl-todo-previous)
@@ -2918,12 +2889,13 @@ call the associated function interactively. Otherwise, call the
   (setq tuareg-indent-align-with-first-arg t)
   (setq tuareg-match-patterns-aligned t))
 
-;; C/C++
-;; See https://github.com/MaskRay/ccls/wiki/lsp-mode
-(use-package ccls
-  :defer t
-  :config
-  (setq ccls-executable (executable-find "ccls")))
+(use-package cc-mode
+  :custom
+  (c-tab-always-indent tab-always-indent)
+  :bind
+  (:map c-mode-base-map
+        ("TAB" . indent-for-tab-command)
+        ("<tab>" . indent-for-tab-command)))
 
 (use-package emacs
   :ensure nil
@@ -2939,7 +2911,7 @@ call the associated function interactively. Otherwise, call the
   (lps/add-auto-compile-mode 'c-mode 'lps/c-c++-mode-basic-compile-command))
 
 (use-package disaster
-  :defer t
+  :after cc-mode
   :bind
   (:map c-mode-base-map
         ("C-c C-d" . disaster)))
@@ -3871,7 +3843,7 @@ for a list of valid rules, to adapt this function."
                                (call-interactively #'org-self-insert-command)))
                   collect `(define-key org-mode-map (kbd ,key) #',name))))
 
-  (lps/def-org-maybe-surround "~" "=" "*" "/" "+")
+  (lps/def-org-maybe-surround "~" "=" "*" "/" "+" "_")
 
   ;; Improved RETURN
   ;; Adapted from https://github.com/alphapapa/unpackaged.el
@@ -7493,13 +7465,10 @@ Change to wide reply ?")))))
                      'docid docid 'msg msg)))))))))))
 
 ;;; Other modes
-  (defun lps/raw-view-add ()
-    (font-lock-add-keywords nil `(("^[a-zA-Z-]+?: " . 'gnus-header-name)
-                                  ("\\b[a-zA-Z-]+?=" . 'gnus-header-subject)
-                                  (,thing-at-point-email-regexp . 'gnus-header-from)))
-    (font-lock-fontify-buffer))
-
-  (add-hook 'mu4e-raw-view-mode-hook 'lps/raw-view-add))
+  (font-lock-add-keywords 'mu4e-raw-view-mode
+                          `(("^[a-zA-Z_-]+?: " . 'gnus-header-name)
+                            ("\\b[a-zA-Z_-]+?=" . 'gnus-header-subject)
+                            (,thing-at-point-email-regexp . 'gnus-header-from))))
 
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired

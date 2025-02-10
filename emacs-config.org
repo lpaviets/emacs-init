@@ -659,20 +659,17 @@ this to your taste easily.
 
 Who wants to be told the same thing over and over again each time they start
 Emacs ?
-#+begin_src emacs-lisp :noweb yes
-  (use-package emacs
-    :custom
-    (inhibit-startup-message t)
-    (initial-scratch-message nil)
-    :init
-    ;; Emacs frame startup
-    <<fullscreen-alpha>>
+#+begin_src emacs-lisp :noweb yes :tangle "early-init.el"
+  (setq inhibit-startup-message t
+        initial-scratch-message nil)
+  ;; Emacs frame startup
+  <<fullscreen-alpha>>
 
-    ;; Bell
-    <<bell>>
+  ;; Bell
+  <<bell>>
 
-    ;; Menus
-    <<menus>>)
+  ;; Menus
+  <<menus>>
 #+end_src
 
 However, we would like to see Emacs in full-screen if we are to use it
@@ -681,9 +678,9 @@ However, we would like to see Emacs in full-screen if we are to use it
 #+begin_src emacs-lisp :tangle no
   ;; Maximize the Emacs frame at startup
   (add-to-list 'default-frame-alist '(fullscreen . maximized))
-  (ensure-emacs-version 29
-   (add-to-list 'default-frame-alist '(alpha-background . 95))
-   (set-frame-parameter nil 'alpha-background 95))
+  (when (version<= "29" emacs-version)
+    (add-to-list 'default-frame-alist '(alpha-background . 95))
+    (set-frame-parameter nil 'alpha-background 95))
 #+end_src
 
 We also don't want Emacs to be flashing and beeping at us whenver we do
@@ -993,7 +990,7 @@ is something that you definitely /don't/ want to forget or miss !
 #+begin_src emacs-lisp
   (use-package hl-todo
     :init
-    (global-hl-todo-mode 1)
+    (add-hook-once 'find-file-hook 'global-hl-todo-mode)
     :bind
     (:map hl-todo-mode-map
           ("C-c t p" . hl-todo-previous)
@@ -4001,19 +3998,18 @@ minor mode called [[https://github.com/ocaml/tuareg][Tuareg]].
 
 *** C/C++
 
-For C and C++ (and ObjectiveC), as for Python, we need to install a server for
-LSP to use. We use the one called [[https://github.com/MaskRay/ccls/wiki/lsp-mode][ccls]].
-
-*MANUAL* To use the ccls server, follow the instruction [[https://github.com/MaskRay/ccls/][here]], or simply install
-the available version from your distribution standard repositories.
+We first configure a few default parameters, some of which are overriden by
+Emacs' standard ~cc-mode~ and the like, in order to have a consistent experience
+with other programming languages.
 
 #+begin_src emacs-lisp
-  ;; C/C++
-  ;; See https://github.com/MaskRay/ccls/wiki/lsp-mode
-  (use-package ccls
-    :defer t
-    :config
-    (setq ccls-executable (executable-find "ccls")))
+  (use-package cc-mode
+    :custom
+    (c-tab-always-indent tab-always-indent)
+    :bind
+    (:map c-mode-base-map
+          ("TAB" . indent-for-tab-command)
+          ("<tab>" . indent-for-tab-command)))
 #+end_src
 
 We also use custom compilation commands.
@@ -4040,7 +4036,7 @@ see the assembly code /while still editing the source/ !
 
 #+begin_src emacs-lisp
   (use-package disaster
-    :defer t
+    :after cc-mode
     :bind
     (:map c-mode-base-map
           ("C-c C-d" . disaster)))
@@ -5180,7 +5176,7 @@ We add a bunch of functions to facilitate the direct edition of Org files
                                (call-interactively #'org-self-insert-command)))
                   collect `(define-key org-mode-map (kbd ,key) #',name))))
 
-  (lps/def-org-maybe-surround "~" "=" "*" "/" "+")
+  (lps/def-org-maybe-surround "~" "=" "*" "/" "+" "_")
 
   ;; Improved RETURN
   ;; Adapted from https://github.com/alphapapa/unpackaged.el
@@ -9466,13 +9462,10 @@ look at those directly.
 
 #+NAME: mu4e-raw-view
 #+begin_src emacs-lisp :tangle no
-  (defun lps/raw-view-add ()
-    (font-lock-add-keywords nil `(("^[a-zA-Z-]+?: " . 'gnus-header-name)
-                                  ("\\b[a-zA-Z-]+?=" . 'gnus-header-subject)
-                                  (,thing-at-point-email-regexp . 'gnus-header-from)))
-    (font-lock-fontify-buffer))
-
-  (add-hook 'mu4e-raw-view-mode-hook 'lps/raw-view-add)
+  (font-lock-add-keywords 'mu4e-raw-view-mode
+                          `(("^[a-zA-Z_-]+?: " . 'gnus-header-name)
+                            ("\\b[a-zA-Z_-]+?=" . 'gnus-header-subject)
+                            (,thing-at-point-email-regexp . 'gnus-header-from)))
 #+end_src
 
 * Web
