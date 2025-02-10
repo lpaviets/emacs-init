@@ -658,10 +658,14 @@ this to your taste easily.
 *** Startup
 
 Who wants to be told the same thing over and over again each time they start
-Emacs ?
+Emacs ? We add here some customizations both for convenience, and faster
+startup.
+
 #+begin_src emacs-lisp :noweb yes :tangle "early-init.el"
   (setq inhibit-startup-message t
-        initial-scratch-message nil)
+        initial-scratch-message ";; (lisp-interaction-mode)
+  ;; (org-mode)" ; Hack to speedup startup, but have easy mode change !
+        initial-major-mode 'fundamental-mode)
   ;; Emacs frame startup
   <<fullscreen-alpha>>
 
