@@ -2780,6 +2780,7 @@ Does not insert a space before the inserted opening parenthesis"
         ("g i" . eglot-find-implementation)
         ("g t" . eglot-find-typeDefinition)
         ("a" . eglot-code-actions)
+        ("f" . eglot-format)
         ("h" . eldoc))
   :custom
   (eglot-ignored-server-capabilities '(:documentHighlightProvider))
@@ -4032,9 +4033,11 @@ for a list of valid rules, to adapt this function."
   (org-modern-table-vertical 1)
   :config
   ;; Labels/"buttons" are too small IMO
-  (set-face-attribute 'org-modern-label nil :height 0.95)
-  ;; Already taken care of in the general org font configuration
-  (set-face-attribute 'org-modern-block-name nil :height 1.0)
+  (dolist (face '(org-modern-label
+                  org-modern-todo
+                  org-modern-priority
+                  org-modern-block-name))
+    (set-face-attribute face nil :height 1.0))
 
   (defun lps/org-modern-on ()
     (when (bound-and-true-p org-bullets-mode)
@@ -4286,6 +4289,7 @@ for a list of valid rules, to adapt this function."
   (org-agenda-show-inherited-tags nil)
   ;; Window configuration
   (org-agenda-restore-windows-after-quit t)
+  (org-agenda-tags-column -110) ; `auto' is flaky with org-modern, emojis & co
   (org-tag-alist
    '((:startgroup)
      ;; Put mutually exclusive tags here

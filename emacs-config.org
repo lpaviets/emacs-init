@@ -663,8 +663,8 @@ startup.
 
 #+begin_src emacs-lisp :noweb yes :tangle "early-init.el"
   (setq inhibit-startup-message t
-        initial-scratch-message ";; (lisp-interaction-mode)
-  ;; (org-mode)" ; Hack to speedup startup, but have easy mode change !
+        ;; Hack to speedup startup, but have easy mode change !
+        initial-scratch-message ";; (lisp-interaction-mode)\n;; (org-mode)\n\n"
         initial-major-mode 'fundamental-mode)
   ;; Emacs frame startup
   <<fullscreen-alpha>>
@@ -3830,6 +3830,7 @@ than ~flycheck~.
           ("g i" . eglot-find-implementation)
           ("g t" . eglot-find-typeDefinition)
           ("a" . eglot-code-actions)
+          ("f" . eglot-format)
           ("h" . eldoc))
     :custom
     (eglot-ignored-server-capabilities '(:documentHighlightProvider))
@@ -5326,9 +5327,11 @@ sections of this file.
     (org-modern-table-vertical 1)
     :config
     ;; Labels/"buttons" are too small IMO
-    (set-face-attribute 'org-modern-label nil :height 0.95)
-    ;; Already taken care of in the general org font configuration
-    (set-face-attribute 'org-modern-block-name nil :height 1.0)
+    (dolist (face '(org-modern-label
+                    org-modern-todo
+                    org-modern-priority
+                    org-modern-block-name))
+      (set-face-attribute face nil :height 1.0))
 
     (defun lps/org-modern-on ()
       (when (bound-and-true-p org-bullets-mode)
@@ -5738,6 +5741,7 @@ given task, and so on.
     (org-agenda-show-inherited-tags nil)
     ;; Window configuration
     (org-agenda-restore-windows-after-quit t)
+    (org-agenda-tags-column -110) ; `auto' is flaky with org-modern, emojis & co
     (org-tag-alist
      '((:startgroup)
        ;; Put mutually exclusive tags here

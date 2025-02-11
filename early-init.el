@@ -1,6 +1,6 @@
 (setq inhibit-startup-message t
-      initial-scratch-message ";; (lisp-interaction-mode)
-;; (org-mode)" ; Hack to speedup startup, but have easy mode change !
+      ;; Hack to speedup startup, but have easy mode change !
+      initial-scratch-message ";; (lisp-interaction-mode)\n;; (org-mode)\n\n"
       initial-major-mode 'fundamental-mode)
 ;; Emacs frame startup
 ;; Maximize the Emacs frame at startup
