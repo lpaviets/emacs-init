@@ -4665,7 +4665,6 @@ work with Linux and non-Visual Studio (Code) editors is not that easy.
 
 #+begin_src emacs-lisp :noweb yes
   (use-package csharp-mode
-    :defer t
     :init
     (when (treesit-available-p)
       (add-hook-once 'csharp-mode-hook 'csharp-ts-mode))

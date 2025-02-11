@@ -24,6 +24,7 @@
         company-indent-or-complete-common
         counsel-M-x
         cycle-spacing
+        default-indent-new-line
         delete-indentation
         delete-region
         dired-next-line
@@ -67,6 +68,7 @@
         org-delete-char
         org-emphasize
         org-end-of-line
+        org-force-self-insert
         org-kill-line
         org-meta-return
         org-metaright
@@ -87,6 +89,7 @@
         paredit-forward-kill-word
         paredit-forward-slurp-sexp
         paredit-forward-up
+        paredit-join-sexps
         paredit-kill
         paredit-meta-doublequote
         paredit-newline

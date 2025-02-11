@@ -3367,7 +3367,6 @@ call the associated function interactively. Otherwise, call the
   :hook (java-mode . eglot-java-mode))
 
 (use-package csharp-mode
-  :defer t
   :init
   (when (treesit-available-p)
     (add-hook-once 'csharp-mode-hook 'csharp-ts-mode))
