@@ -136,3 +136,4 @@ flycheck_*.el
 /dirvish/
 /extra-packages/private
 /tree-sitter/
+org-*.tex

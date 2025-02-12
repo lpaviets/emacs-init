@@ -4289,7 +4289,7 @@ for a list of valid rules, to adapt this function."
   (org-agenda-show-inherited-tags nil)
   ;; Window configuration
   (org-agenda-restore-windows-after-quit t)
-  (org-agenda-tags-column -110) ; `auto' is flaky with org-modern, emojis & co
+  (org-agenda-tags-column -110)   ; `auto' is flaky with org-modern, emojis & co
   (org-tag-alist
    '((:startgroup)
      ;; Put mutually exclusive tags here
@@ -4338,7 +4338,8 @@ for a list of valid rules, to adapt this function."
       (format (concat (make-string 40 ?-) "\n%s") old)))
 
   ;; Icons and categories
-  (dolist (tag-and-icon `(("Lectures"     . "🏫")
+  (dolist (tag-and-icon `(("."            . "❔")
+                          ("Lectures"     . "🏫")
                           ("Conference"   . "👥")
                           ("Talk"         . "🔊")
                           ("Exam"         . "💯")
