@@ -7078,12 +7078,27 @@ confirmation when sending a non-multipart MIME mail")
   (mu4e-headers-fields '((:human-date . 22)
                          (:flags . 6)
                          (:mailing-list . 12)
+                         (:prio . 5)
                          (:from-or-to . 22)
                          (:subject . 100)))
   ;; Improve completion
   (mu4e-completing-read-function 'completing-read)
   (mu4e-headers-auto-update nil)        ; somewhat confusing otherwise
   :config
+  (add-to-list 'mu4e-header-info-custom
+               `(:prio .
+                       ,(list :name "Priority"
+                              :shortname "Prio"
+                              :help "Priority of the message"
+                              :sortable nil
+                              :function (lambda (msg)
+                                          (let ((prio (mu4e-message-field-raw msg :priority)))
+                                            (if (or (not prio) (string-equal prio "normal"))
+                                                ""
+                                              (format "%s" prio))))))
+               nil
+               'equal)
+
   (defun lps/mu4e-unmark-backward ()
     (interactive)
     (mu4e-headers-prev)
@@ -7817,11 +7832,12 @@ You can bind this to the key C-c i in GNUS or mail by adding to
     (ispell-change-dictionary dict)
     (lps/ispell-change-personal-dictionary dict))
 
-  (TeX-ispell-skip-setcar
-   `(("\\\\newglossaryentry" ispell-tex-arg-end)
-     ("\\\\colorlet" ispell-tex-arg-end 2)
-     ("\\\\definecolor" ispell-tex-arg-end 3)
-     ("\\\\\\(re\\)?newtcolorbox" ispell-tex-arg-end 2))))
+  (with-eval-after-load 'tex
+    (TeX-ispell-skip-setcar
+     `(("\\\\newglossaryentry" ispell-tex-arg-end)
+       ("\\\\colorlet" ispell-tex-arg-end 2)
+       ("\\\\definecolor" ispell-tex-arg-end 3)
+       ("\\\\\\(re\\)?newtcolorbox" ispell-tex-arg-end 2)))))
 
 (use-package flyspell
   :bind
