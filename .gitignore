@@ -6,6 +6,9 @@
 *.elc
 auto-save-list
 %backup%
+/desktop/
+/.saveplaces
+/tutorial/
 
 # cask packages
 .cask/
@@ -19,6 +22,11 @@ dist/
 
 #Semantic files
 /semanticdb/
+
+# Org mode & co
+/.org-id-locations
+/org-roam.db
+org-*.tex
 
 # Magit
 /transient/
@@ -45,6 +53,7 @@ dist/
 /eclipse.jdt.ls/
 /workspace/
 /.dap-breakpoints
+/eglot-java-eclipse-jdt-cache/*
 
 # Flycheck
 flycheck_*.el
@@ -121,19 +130,12 @@ flycheck_*.el
 /network-security.data
 *.sqlite
 /session.*
-/.org-id-locations
 /pyhist-python3
 /devdocs/
 /share/
-/org-roam.db
 /pyhist-Python
-/extra-packages/private/*
-/desktop/
-/.saveplaces
 /multisession/
-/tutorial/
-/eglot-java-eclipse-jdt-cache/*
 /dirvish/
+/extra-packages/private/*
 /extra-packages/private
 /tree-sitter/
-org-*.tex
