@@ -2906,7 +2906,7 @@ call the associated function interactively. Otherwise, call the
     (let* ((buf (file-name-nondirectory (or (buffer-file-name) (buffer-name))))
            (buf-no-ext (file-name-sans-extension buf))
            (c-mode-p (eq major-mode 'c-mode))
-           (compiler (if c-mode-p "gcc " "g++ ")))
+           (compiler (if c-mode-p "cc " "c++ ")))
       (compile (concat compiler buf " -o " buf-no-ext))))
 
   (lps/add-auto-compile-mode 'c-mode 'lps/c-c++-mode-basic-compile-command))
