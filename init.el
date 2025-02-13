@@ -7075,7 +7075,7 @@ confirmation when sending a non-multipart MIME mail")
   (mu4e-search-threads t)                       ; Also show full message threads
   (mu4e-headers-include-related t)
   ;; Todo: fix so that it updates when window is resized
-  (mu4e-headers-fields '((:human-date . 22)
+  (mu4e-headers-fields '((:human-date . 23)
                          (:flags . 6)
                          (:mailing-list . 12)
                          (:prio . 5)
@@ -7092,10 +7092,7 @@ confirmation when sending a non-multipart MIME mail")
                               :help "Priority of the message"
                               :sortable nil
                               :function (lambda (msg)
-                                          (let ((prio (mu4e-message-field-raw msg :priority)))
-                                            (if (or (not prio) (string-equal prio "normal"))
-                                                ""
-                                              (format "%s" prio))))))
+                                          (format "%s" (mu4e-message-field-raw msg :priority)))))
                nil
                'equal)
 
@@ -7331,12 +7328,13 @@ Change to wide reply ?")))))
   (defun lps/resize-headers-fields ()
     (if (eq major-mode 'mu4e-headers-mode)
         (let ((width (window-body-width)))
-          (setq-local mu4e-headers-fields `((:human-date . 20)
+          (setq-local mu4e-headers-fields `((:human-date . 23)
                                             (:flags . 6)
+                                            (:prio . 5)
                                             (:mailing-list . 10)
                                             (:from-or-to . 22)
                                             (:subject . ,(- width
-                                                            (+ 20 6 10 22 15))))))))
+                                                            (+ 23 6 10 22 15))))))))
 
   ;; (add-hook 'mu4e-headers-mode-hook #'lps/resize-headers-fields)
 
@@ -7374,11 +7372,15 @@ Change to wide reply ?")))))
       (:size font-lock-string-face)
       (:tags font-lock-keyword-face)
       (:thread-subject font-lock-doc-face)
-      (:to font-lock-variable-name-face))
+      (:to font-lock-variable-name-face)
+      (:prio lps/mu4e-headers-format-prio))
     "Alist of (FIELD-NAME FACE-OR-FUNCTION).
 
     If the second element is a function, it will be called with two
     elements: the field content, and the message itself.")
+
+  ;; HACK: fixes an off-by-one error somewhere, but don't know where ...
+  (setq mu4e--mark-fringe-len 1)
 
   (defun lps/mu4e~headers-field-handler (f-w msg)
     "Create a description of the field of MSG described by F-W."
@@ -7425,6 +7427,16 @@ Change to wide reply ?")))))
                                 (match-end 2)
                                 '(:weight bold :underline t)))
       (buffer-substring (point-min) (point-max))))
+
+  (defun lps/mu4e-headers-format-prio (prio msg)
+    (let ((bullet "⏺")
+          (props (pcase prio
+                   ("low" "#556b2f")
+                   ("high" "#b22222")
+                   (t nil))))
+      (if props
+          (propertize bullet 'face `(:foreground ,props))
+        "")))
 
   ;; This overrides the previous definition of this function, inlines
   ;; everything called by the original function, and replace an internal
@@ -7487,7 +7499,65 @@ Change to wide reply ?")))))
   (font-lock-add-keywords 'mu4e-raw-view-mode
                           `(("^[a-zA-Z_-]+?: " . 'gnus-header-name)
                             ("\\b[a-zA-Z_-]+?=" . 'gnus-header-subject)
-                            (,thing-at-point-email-regexp . 'gnus-header-from))))
+                            (,thing-at-point-email-regexp . 'gnus-header-from)))
+
+  ;; Some patches & fixes
+  (defun-override lps/mu4e~header-line-format ()
+    "Get the format for the header line."
+    (let ((uparrow   (if mu4e-use-fancy-chars " ▲" " ^"))
+          (downarrow (if mu4e-use-fancy-chars " ▼" " V")))
+      (cons
+       (make-string
+        (+ mu4e--mark-fringe-len (floor (fringe-columns 'left t))) ?\s)
+       (mapcar
+        (lambda (item)
+          (let* (;; with threading enabled, we're necessarily sorting by date.
+                 (sort-field (if mu4e-search-threads
+                                 :date mu4e-search-sort-field))
+                 (field (car item)) (width (cdr item))
+                 (info (cdr (assoc field
+                                   (append mu4e-header-info
+                                           mu4e-header-info-custom))))
+                 (sortable (plist-get info :sortable))
+                 ;; if sortable, it is either t (when field is sortable itself)
+                 ;; or a symbol (if another field is used for sorting)
+                 (this-field (when sortable (if (booleanp sortable)
+                                                field
+                                              sortable)))
+                 (help (plist-get info :help))
+                 ;; triangle to mark the sorted-by column
+                 (arrow
+                  (when (and sortable (eq this-field sort-field))
+                    (if (eq mu4e-search-sort-direction 'descending)
+                        downarrow
+                      uparrow)))
+                 (name (concat (plist-get info :shortname) arrow))
+                 (map (make-sparse-keymap)))
+            (when sortable
+              (define-key map [header-line mouse-1]
+                          (lambda (&optional e)
+                            ;; getting the field, inspired by
+                            ;; `tabulated-list-col-sort'
+                            (interactive "e")
+                            (let* ((obj (posn-object (event-start e)))
+                                   (field
+                                    (and obj
+                                         (get-text-property 0 'field (car obj)))))
+                              ;; "t": if we're already sorted by field, the
+                              ;; sort-order is changed
+                              (mu4e-search-change-sorting field t)))))
+            (concat
+             (propertize
+              (if width
+                  (truncate-string-to-width
+                   name width 0 ?\s truncate-string-ellipsis)
+                name)
+              'face (when arrow 'bold)
+              'help-echo help
+              'mouse-face (when sortable 'highlight)
+              'keymap (when sortable map)
+              'field field)))) ;; HERE: deleted an added space
+        mu4e-headers-fields)))))
 
 ;; From https://github.com/iqbalansari/dotEmacs/blob/master/config/mail.org
 (use-package gnus-dired
