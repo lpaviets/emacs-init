@@ -9258,8 +9258,13 @@ add some interactive functions for the most common options.
           (props (pcase prio
                    ("low" "#556b2f")
                    ("high" "#b22222")
-                   (t nil))))
-      (if props
+                   (_ nil)))
+          (listp (mu4e-message-field-raw msg :list)))
+      ;; Only show when we have a non-normal priority; when it is a list message,
+      ;; also hide it unless it is a HIGH priority message
+      (if (and props
+               (or (string= prio "high")
+                   (not listp)))
           (propertize bullet 'face `(:foreground ,props))
         "")))
 
@@ -9269,6 +9274,11 @@ add some interactive functions for the most common options.
 
   ;; Because mu4e is somewhat unstable, we need to duplicate some code
   ;; depending on the installed version ...
+  ;;
+  ;; Actual version that we would like to override: `mu4e~message-header-line'
+  ;; However, it is defined with defsubst, so we don't have an easy way to
+  ;; override it everywhere, and the same goes for its caller, the function
+  ;; `mu4e~headers-insert-header'.
   (version-case mu4e-mu
     ("1.8"
      (defun-override lps/mu4e~headers-append-handler (msglst)
