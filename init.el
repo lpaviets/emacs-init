@@ -3718,20 +3718,21 @@ for a list of valid rules, to adapt this function."
   (org-preview-latex-default-process (if (executable-find "dvisvgm")
                                          'dvisvgm
                                        'dvipng))
-  (org-format-latex-options (list
-                             :foreground 'default
-                             :background (if (executable-find "dvisvgm")
-                                             "Transparent"
-                                           'default)
-                             :scale (if (executable-find "dvisvgm")
-                                        1.25
-                                      1.5)
-                             :html-foreground "Black"
-                             :html-background "Transparent"
-                             :html-scale 1.0
-                             :matchers '("begin" "$1"
-                                         "$" "$$"
-                                         "\\(" "\\[")))
+  (org-latex-preview-appearance-options (list
+                                         :foreground 'default
+                                         :background (if (executable-find "dvisvgm")
+                                                         "Transparent"
+                                                       'default)
+                                         :scale (if (executable-find "dvisvgm")
+                                                    1.25
+                                                  1.5)
+                                         :zoom 1.35
+                                         :html-foreground "Black"
+                                         :html-background "Transparent"
+                                         :html-scale 1.0
+                                         :matchers '("begin" "$1"
+                                                     "$" "$$"
+                                                     "\\(" "\\[")))
   (org-priority-highest ?A)
   (org-priority-lowest ?E)
   (org-priority-default ?C)
