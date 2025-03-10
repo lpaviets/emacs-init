@@ -444,6 +444,7 @@ the internal changes made by this config.")
 
   (defvar lps/truncate-lines-modes-hook '(dired-mode-hook
                                           outline-mode-hook
+                                          comint-mode
                                           tabulated-list-mode-hook
                                           occur-mode-hook)
     "Modes in which `truncate-lines' will be set to `t' automatically")

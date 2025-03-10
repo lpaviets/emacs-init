@@ -64,6 +64,7 @@
         mark-word
         mouse-set-region
         org-beginning-of-line
+        org-cdlatex-underscore-caret
         org-cycle
         org-delete-char
         org-emphasize
