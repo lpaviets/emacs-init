@@ -6268,30 +6268,52 @@ fixed duration.
 
 #+begin_src emacs-lisp :tangle no
   (defvar-local pdf-view-timetrack-last-pagelabel nil)
+  (defvar-local pdf-view-timetrack-recording-p nil)
   (defvar-local pdf-view-timetrack-last-time nil)
+  (defvar-local pdf-view-timetrack-all-times nil
+    "Alist of (PAGELABEL . TIME), with TIME in second, recording the time
+  spent on each PAGELABEL.")
+
+  (defcustom pdf-view-timetrack-jump-first-frame t
+    "Automatically go to the first page when starting a recording session.")
 
   (defun pdf-view-timetrack-page-change ()
-    (let ((current-pagelabel (pdf-view-current-pagelabel)))
-      (when (/= pdf-view-timetrack-last-pagelabel
-                current-pagelabel)
-        (pdf-view-timetrack-log pdf-view-timetrack-last-pagelabel
-                                (- (current-time) pdf-view-timetrack-last-time))
-        (setq-local pdf-view-timetrack-last-pagelabel current-pagelabel)
-        (setq-local pdf-view-timetrack-last-time (current-time)))))
+    (when pdf-view-timetrack-recording-p
+      (let ((current-pagelabel (pdf-view-current-pagelabel)))
+        (unless (equal pdf-view-timetrack-last-pagelabel current-pagelabel)
+          (pdf-view-timetrack-log pdf-view-timetrack-last-pagelabel
+                                  (time-subtract (current-time) pdf-view-timetrack-last-time))
+          (setq-local pdf-view-timetrack-last-pagelabel current-pagelabel)
+          (setq-local pdf-view-timetrack-last-time (current-time))))))
 
-  (defun pdf-view-timetrack-log (last-label time))
+  (defun pdf-view-timetrack-log (last-label time)
+    (message "Logging time %s" time)
+    (if-let ((pair (assoc last-label pdf-view-timetrack-all-times)))
+        (cl-incf (cdr pair time))
+      (push (cons last-label time) pdf-view-timetrack-all-times)))
 
   (defun pdf-view-timetrack-start-recording ()
-    (interactive))
+    (interactive)
+    (pdf-view-timetrack-reset)
+    (when pdf-view-timetrack-jump-first-frame
+      (pdf-view-first-page))
+    (setq pdf-view-timetrack-last-pagelabel (pdf-view-current-pagelabel))
+    (setq pdf-view-timetrack-recording-p t)
+    (setq pdf-view-timetrack-last-time (current-time)))
 
   (defun pdf-view-timetrack-stop-recording ()
-    (interactive))
+    (interactive)
+    (setq pdf-view-timetrack-recording-p nil))
 
   (defun pdf-view-timetrack-reset ()
-    (interactive))
+    (interactive)
+    (setq pdf-view-timetrack-last-pagelabel nil
+          pdf-view-timetrack-recording-p nil
+          pdf-view-timetrack-last-time nil
+          pdf-view-timetrack-all-times nil))
 
-  (defun pdf-view-timetrack-make-report ()
-    (interactive))
+  (defun pdf-view-timetrack-time-to-seconds (time)
+    (time-convert (cdr time) 'integer))
 
   (define-minor-mode pdf-view-timetrack-mode
     "Minor mode to keep track of the time spent on each page of a PDF
@@ -6299,7 +6321,42 @@ fixed duration.
 
   This is intended to be used with Beamer presentations,
   where the page label (rather than the PDF page itself) changes
-  after each frame, but can be used in any kind of PDF.")
+  after each frame, but can be used in any kind of PDF.
+
+  Use `pdf-view-timetrack-start-recording' to start recording the time
+  spent on each slide -- where a slide is a set of pages sharing the same
+  page label, i.e., typically correspond to a Beamer notion of frame.
+
+  `pdf-view-timetrack-make-report' can be used to report on the time spent
+  on each slide, in a table which makes finding the slides you spend the
+  most time on convenient."
+    (if pdf-view-timetrack-mode
+        (add-hook pdf-view-change-page-hook 'pdf-view-timetrack-page-change)
+      (remove-hook pdf-view-change-page-hook 'pdf-view-timetrack-page-change)))
+
+
+  (defvar-local pdf-view-timetrack-report-source-pdf nil)
+
+  (define-derived-mode pdf-view-timetrack-report-mode tabulated-list-mode "PDF-View TimeTrack Report"
+    "Major mode to report data collect by `pdf-view-timetrack-mode'"
+    (setq tabulated-list-format [("Slide" 5 t)
+                                 ("Time" 5 t)])
+    (setq tabulated-list-padding 2)
+    (setq tabulated-list-sort-key (cons "Time" nil))
+    (tabulated-list-init-header))
+
+  (defun pdf-view-timetrack-make-report ()
+    (interactive)
+    ;; (mapcar 'pdf-view-timetrack-time-to-seconds pdf-view-timetrack-all-times)
+    (let ((buf (get-buffer-create "*PDF-View TimeTrack Report*")))
+      (with-current-buffer buf
+        (pdf-view-timetrack-report-mode)
+        (setq tabulated-list-entries
+              (cl-loop for (slide . time) in pdf-view-timetrack-all-times
+                       collect (list slide
+                                     (vector slide (pdf-view-timetrack-time-to-seconds time)))))
+        (tabulated-list-print t))
+      (pop-to-buffer buf)))
 #+end_src
 
 *** PDF modification
