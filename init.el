@@ -2409,6 +2409,7 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
         ("M-^" . magit-section-up))
   :custom
   (magit-view-git-manual-method 'man)  ; can't understand what Gitman is
+  (magit-show-long-lines-warning nil)
   (magit-module-sections-nested nil)   ; disable if many modules in a given repo
   (magit-clone-always-transient t)
   (magit-repository-directories `((,(expand-file-name "~/from_source") . 1)
@@ -4452,7 +4453,8 @@ Refer to `org-agenda-prefix-format' for more information."
   (defvar lps/khalel-calendar-to-category '(("ade" "Lectures")
                                             ("loria" "Workplace")
                                             ("ul" "Workplace")
-                                            ("mocqua" "Seminars")))
+                                            ("mocqua" "Seminars")
+                                            ("loria_fm" "Seminars")))
   (defun lps/khalel-fix-item-category (item)
     (with-temp-buffer
       (insert item)
