@@ -4335,10 +4335,18 @@ for a list of valid rules, to adapt this function."
   (set-face-attribute 'org-agenda-date-today nil :italic t :underline nil)
   (set-face-attribute 'org-agenda-date-weekend nil :italic t :underline nil)
 
+  (defvar lps/org-agenda-date-separator
+    (if (and (display-graphic-p)
+             (char-displayable-p ?─))
+        ?─
+      ?-))
+
   ;; Maybe don't hardcode width and refer to some kind of window/buffer width ?
   (defun lps/org-agenda-format-date (date)
     (let ((old (org-agenda-format-date-aligned date)))
-      (format (concat (make-string 40 ?-) "\n%s") old)))
+      (format (concat (make-string 40 lps/org-agenda-date-separator)
+                      "\n▶ %s \n")
+              old)))
 
   ;; Icons and categories
   (dolist (tag-and-icon `(("."            . "❔")
@@ -4426,6 +4434,7 @@ Refer to `org-agenda-prefix-format' for more information."
 
 (use-package khalel
   :after org-agenda
+  :commands lps/khalel-update-after-time
   :custom
   (khalel-import-org-file (lps/org-expand-file-name "agenda/calendar-sync.org"))
   ;; (khalel-import-org-file-confirm-overwrite nil)
@@ -4475,7 +4484,25 @@ Refer to `org-agenda-prefix-format' for more information."
       (nreverse fixed-list)))
 
   (advice-add 'khalel--get-buffer-content-list
-              :filter-return 'lps/khalel-fix-all-items-categories))
+              :filter-return 'lps/khalel-fix-all-items-categories)
+
+  (defvar lps/khalel-auto-update-delay (time-convert (* 20 6300) nil))
+
+  (defun lps/khalel-update-after-time ()
+    (let ((file khalel-import-org-file))
+      (with-current-buffer (find-file-noselect file)
+        (save-excursion
+          (save-match-data
+            (goto-char (point-min))
+            (re-search-forward "(Last import: \\(.+\\))" nil t nil)
+            (when-let (date-text (match-string-no-properties 1))
+              (let* ((date (encode-time (parse-time-string date-text)))
+                     (now (current-time))
+                     (diff (time-subtract now date))
+                     (more-than-delay-p (time-less-p lps/khalel-auto-update-delay diff)))
+                (when more-than-delay-p
+                  (khalel-run-vdirsyncer)
+                  (khalel-import-events))))))))))
 
 (use-package org-capture
   :ensure nil
