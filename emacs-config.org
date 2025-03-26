@@ -5798,8 +5798,8 @@ given task, and so on.
     ;; Maybe don't hardcode width and refer to some kind of window/buffer width ?
     (defun lps/org-agenda-format-date (date)
       (let ((old (org-agenda-format-date-aligned date)))
-        (format (concat (make-string 40 lps/org-agenda-date-separator)
-                        "\n▶ %s \n")
+        (format "%s\n▶ %s \n"
+                (make-string 40 lps/org-agenda-date-separator)
                 old)))
 
     ;; Icons and categories
@@ -5907,7 +5907,6 @@ Note: when adding a calendar, you need to (at least when you use ~vdirsyncer~ an
 #+begin_src emacs-lisp
   (use-package khalel
     :after org-agenda
-    :commands lps/khalel-update-after-time
     :custom
     (khalel-import-org-file (lps/org-expand-file-name "agenda/calendar-sync.org"))
     ;; (khalel-import-org-file-confirm-overwrite nil)

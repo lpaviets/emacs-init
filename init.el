@@ -4346,8 +4346,8 @@ for a list of valid rules, to adapt this function."
   ;; Maybe don't hardcode width and refer to some kind of window/buffer width ?
   (defun lps/org-agenda-format-date (date)
     (let ((old (org-agenda-format-date-aligned date)))
-      (format (concat (make-string 40 lps/org-agenda-date-separator)
-                      "\n▶ %s \n")
+      (format "%s\n▶ %s \n"
+              (make-string 40 lps/org-agenda-date-separator)
               old)))
 
   ;; Icons and categories
@@ -4436,7 +4436,6 @@ Refer to `org-agenda-prefix-format' for more information."
 
 (use-package khalel
   :after org-agenda
-  :commands lps/khalel-update-after-time
   :custom
   (khalel-import-org-file (lps/org-expand-file-name "agenda/calendar-sync.org"))
   ;; (khalel-import-org-file-confirm-overwrite nil)
