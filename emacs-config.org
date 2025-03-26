@@ -3392,6 +3392,8 @@ that try to further improve it to integrate it with other Emacs tools.
 #+begin_src emacs-lisp
   (use-package magit-todos
     :after magit
+    :custom
+    (magit-todos-rg-extra-args '("--follow"))
     :config
     (magit-todos-mode 1))
 #+end_src

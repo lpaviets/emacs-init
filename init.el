@@ -2474,6 +2474,8 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
 
 (use-package magit-todos
   :after magit
+  :custom
+  (magit-todos-rg-extra-args '("--follow"))
   :config
   (magit-todos-mode 1))
 

@@ -111,6 +111,8 @@
         undo-redo
         wdired--self-insert
         wdired-capitalize-word
+        wdired-next-line
+        wdired-previous-line
         wdired-set-bit
         zap-up-to-char
         ))
@@ -119,6 +121,7 @@
       '(
         consult-line
         dired-do-compress-to
+        dired-hide-details-mode
         dired-toggle-read-only
         helpful-key
         hydra-multiple-cursors/body
