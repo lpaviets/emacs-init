@@ -11039,3 +11039,73 @@ to ~lp~ when printing using either the built-in functions or
 ** TRAMP
 
 - Fix dirvish and sudoedit
+- Make (S)FTP use ~auth-sources~. This is a recurring problem on the emacs-devel,
+  and seems non-trivial, but I don't need something super robust myself. Likely
+  idea: just query ~auth-source-search :host host :user user~ or something along
+  those lines, and integrate the ~secrets~ API with ~auth-source~ itself. Possible
+  code (to try & possibly fix:)
+
+
+#+begin_src emacs-lisp :tangle no
+  (defun-override lps/ange-ftp-get-passwd (host user)
+    "Return the password for specified HOST and USER, asking user if necessary."
+    ;; If `non-essential' is non-nil, don't ask for a password.  It will
+    ;; be caught in Tramp.
+    (when non-essential
+      (throw 'non-essential 'non-essential))
+
+    (ange-ftp-parse-netrc)
+
+    ;; look up password in the hash table first; user might have overridden the
+    ;; defaults.
+    (cond ((ange-ftp-lookup-passwd host user))
+
+  	;; See if default user and password set.
+  	((and (stringp ange-ftp-default-user)
+  	      ange-ftp-default-password
+  	      (string-equal user ange-ftp-default-user))
+  	 ange-ftp-default-password)
+
+  	;; See if default user and password set from .netrc file.
+  	((and (stringp ange-ftp-netrc-default-user)
+  	      ange-ftp-netrc-default-password
+  	      (string-equal user ange-ftp-netrc-default-user))
+  	 ange-ftp-netrc-default-password)
+
+  	;; anonymous ftp password is handled specially since there is an
+  	;; unwritten rule about how that is used on the Internet.
+  	((and (or (string-equal user "anonymous")
+  		  (string-equal user "ftp"))
+  	      ange-ftp-generate-anonymous-password)
+  	 (if (stringp ange-ftp-generate-anonymous-password)
+  	     ange-ftp-generate-anonymous-password
+  	   user-mail-address))
+
+  	;; see if same user has logged in to other hosts; if so then prompt
+  	;; with the password that was used there.
+  	(t
+  	 (let* ((enable-recursive-minibuffers t)
+  		(other (ange-ftp-get-host-with-passwd user))
+                  ;; TODO: debug this, this is my own personal addition
+                  ;;
+                  ;;This is definitely not the line, the call to
+                  ;; `auth-source-search' is OK but the secret extraction is not.
+                  (passwd (plist-get (car (auth-source-search :host host :user user)) :secrets))
+  		(passwd (or passwd
+                              (if other
+
+  			        ;; found another machine with the same user.
+  			        ;; Try that account.
+  			        (read-passwd
+                                   (format-prompt "passwd for %s@%s"
+                                                  (format "same as %s@%s" user other)
+                                                  user host)
+  			         nil
+  			         (ange-ftp-lookup-passwd other user))
+
+  			      ;; I give up.  Ask the user for the password.
+  			      (read-passwd
+  			       (format "Password for %s@%s: " user host))))))
+  	   (ange-ftp-set-passwd host user passwd)
+  	   passwd))))
+#+end_src
