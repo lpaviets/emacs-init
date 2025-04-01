@@ -1572,10 +1572,19 @@ and so.
           (when arg
             (kill-buffer)))))
 
+    (defun lps/copy-file-name-as-kill (&optional arg)
+      (interactive "P")
+      (let ((file (buffer-file-name)))
+        (assert file nil "Current buffer is not visiting a file")
+        (unless arg (setq file (file-name-nondirectory file)))
+        (kill-new file)
+        (message "Copied %s in the kill-ring" file)))
+
     :bind
     (:map ctl-x-x-map
           ("R" . lps/rename-current-buffer-file)
-          ("D" . lps/delete-current-buffer-file)))
+          ("D" . lps/delete-current-buffer-file)
+          ("M-w" . lps/copy-file-name-as-kill)))
 #+end_src
 
 *** Backup and auto-save
@@ -4999,6 +5008,17 @@ based on regular expressions) highlighting.
     (treesit-font-lock-level 4))
 #+end_src
 
+As a way to automatically change the major modes, without having to fiddle with
+~auto-mode-alist~ and similar variables, we can use an alist which is looked up
+anytime you open a file. Sadly, this only remaps major modes, not the hooks
+or keymaps attached to them and so on, so there is still some manual fixes to
+do.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :custom (major-mode-remap-alist major-mode-remap-defaults))
+#+end_src
+
 * Org Mode
 
    [[https://orgmode.org/][Org Mode]] is one of the best reasons to use Emacs.
@@ -6482,7 +6502,7 @@ documents, using the famous tool AUCTeX.
           ;; Produce a PDF by default
           TeX-PDF-mode t)
 
-    (unless (assoc "PDF tools" TeX-view-program-list-builtin)
+    (unless (assoc "PDF tools" TeX-view-program-list)
       (push '("PDF tools" TeX-pdf-tools-sync-view) TeX-view-program-list))
 
     ;; Update PDF buffers after successful LaTeX runs

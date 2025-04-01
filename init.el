@@ -1130,10 +1130,19 @@ If called with a prefix argument, also kills the current buffer"
         (when arg
           (kill-buffer)))))
 
+  (defun lps/copy-file-name-as-kill (&optional arg)
+    (interactive "P")
+    (let ((file (buffer-file-name)))
+      (assert file nil "Current buffer is not visiting a file")
+      (unless arg (setq file (file-name-nondirectory file)))
+      (kill-new file)
+      (message "Copied %s in the kill-ring" file)))
+
   :bind
   (:map ctl-x-x-map
         ("R" . lps/rename-current-buffer-file)
-        ("D" . lps/delete-current-buffer-file)))
+        ("D" . lps/delete-current-buffer-file)
+        ("M-w" . lps/copy-file-name-as-kill)))
 
 (use-package emacs
   :ensure nil
@@ -3657,6 +3666,9 @@ for a list of valid rules, to adapt this function."
   :custom
   (treesit-font-lock-level 4))
 
+(use-package emacs
+  :custom (major-mode-remap-alist major-mode-remap-defaults))
+
 (unless (package-installed-p 'org-mode)
   (package-vc-install '(org-mode
                         :url "https://code.tecosaur.net/tec/org-mode.git"
@@ -4899,7 +4911,7 @@ pre-filled with WORD."
         ;; Produce a PDF by default
         TeX-PDF-mode t)
 
-  (unless (assoc "PDF tools" TeX-view-program-list-builtin)
+  (unless (assoc "PDF tools" TeX-view-program-list)
     (push '("PDF tools" TeX-pdf-tools-sync-view) TeX-view-program-list))
 
   ;; Update PDF buffers after successful LaTeX runs
