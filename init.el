@@ -6713,7 +6713,20 @@ PWD is not in a git repo (or the git command is not found)."
   (defun lps/ibuffer-dired-current-directory (&optional other-window-p)
     (interactive "P")
     (let ((dir (dired-current-directory)))
-      (ibuffer other-window-p nil `((directory . ,dir))))))
+      (ibuffer other-window-p nil `((directory . ,dir)))))
+
+  (defun lps/dired-do-multi-occur (regexp &optional nlines)
+    "Run `multi-occur' with REGEXP on all marked files."
+    (interactive (list (read-regexp "Regexp: ")
+                       (when current-prefix-arg
+	                 (prefix-numeric-value current-prefix-arg))))
+    (let* ((marked-files (dired-get-marked-files))
+           (all-files (delete-dups (mapcan (lambda (f)
+                                             (if (file-directory-p f)
+                                                 (directory-files-recursively f "." nil t t)
+                                               (list f)))
+                                           marked-files))))
+      (multi-occur (mapcar 'find-file-noselect all-files) regexp nlines))))
 
 (use-package dired-x
   :ensure nil
