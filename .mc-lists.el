@@ -42,6 +42,7 @@
         hungry-delete-backward
         hungry-delete-forward
         hydra--negative-argument
+        indent-for-tab-command
         json-pretty-print
         kill-region
         kill-sexp

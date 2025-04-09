@@ -1264,8 +1264,12 @@ buffer name already resembles a file name"
   :bind
   (:map help-map
         ("M" . man))
+  :hook (Man-mode . olivetti-mode)
   :custom
   (Man-notify-method 'aggressive)
+  :bind
+  (:map Man-mode-map
+        ("o" . lps/man-search-option))
   :config
   ;; Minor improvements to visual appearance:
   ;; sections and some keywords are easier to see
@@ -1274,7 +1278,34 @@ buffer name already resembles a file name"
                       :bold t)
   (set-face-attribute 'Man-underline nil
                       :inherit font-lock-variable-name-face
-                      :underline t))
+                      :underline t)
+
+  (defun lps/man-search-option ()
+    "Search for a specific option in a man page.
+
+This is a highly heuristic function. It will prompt for a section in
+which to start the search, maximizing the chance to actually find the
+documentation.
+
+It then tries to match, in this:
+
+- The exact option, at the start of a line
+
+- The exact option, preceded only by what seems to be
+  another (short/long) name for the same option
+
+- Same as above, but only search for options of which it is a prefix"
+    (interactive)
+    (let* ((option (read-string "Search option: "))
+           (completion-ignore-case t)
+           (chosen (completing-read "Search in section: " Man--sections
+                                    nil t "OPTIONS" nil nil)))
+      (Man-goto-section chosen)
+      (let ((case-fold-search nil))
+        (or (re-search-forward (concat "^[ \t]+\\_<" option "\\_>") nil t)
+            (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<" option "\\_>") nil t)
+            (re-search-forward (concat "^[ \t]+\\_<" option) nil t)
+            (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<" option) nil t))))))
 
 (use-package info
   :bind
