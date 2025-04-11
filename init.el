@@ -4475,7 +4475,20 @@ Refer to `org-agenda-prefix-format' for more information."
                   ((org-agenda-tag-filter-preset '("-phd"))))))
     (cl-pushnew cmd
                 org-agenda-custom-commands
-                :test 'equal)))
+                :test 'equal))
+
+  ;;; Org agenda files handling.
+
+  ;; The idea is that I want to have Org-Roam Notes in agenda, as I might use
+  ;; TODOs/FIXMEs etc in them, but I never have proper *agenda* stuff:
+  ;; deadlines, scheduling, meetings ... I therefore simply remove them in the
+  ;; "actual" agenda view.
+  (defun lps/without-roam-agenda-files (fun &rest args)
+    (let ((org-agenda-files (list (lps/org-expand-file-name "agenda" t) ; basic agenda files
+                                  (lps/org-expand-file-name "archive" t)))) ; archived files
+      (apply fun args)))
+
+  (advice-add 'org-agenda-list :around 'lps/without-roam-agenda-files))
 
 (use-package khalel
   :after org-agenda

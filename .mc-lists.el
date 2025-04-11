@@ -110,6 +110,7 @@
         search-forward
         transpose-sexps
         undo-redo
+        upcase-dwim
         wdired--self-insert
         wdired-capitalize-word
         wdired-next-line
