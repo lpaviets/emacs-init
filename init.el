@@ -665,7 +665,16 @@ the mode-line and the usual non-full-screen Emacs are restored."
                 (when (bound-and-true-p company-search-mode)
                   company-search-lighter))
               global-mode-string
-              :test 'equal))
+              :test 'equal)
+
+  (doom-modeline-def-modeline 'lps/pdf
+    '(bar window-number modals matches buffer-info pdf-pages)
+    '(compilation misc-info mu4e major-mode process vcs time))
+
+  (add-to-list 'doom-modeline-mode-alist
+               '(pdf-view-mode . lps/pdf)
+               nil
+               'equal))
 
 (use-package beacon
   :init
@@ -1138,11 +1147,16 @@ If called with a prefix argument, also kills the current buffer"
       (kill-new file)
       (message "Copied %s in the kill-ring" file)))
 
+  (defun lps/open-current-file-eww (new-buffer)
+    (interactive "P")
+    (eww-open-file (buffer-file-name) new-buffer))
+
   :bind
   (:map ctl-x-x-map
         ("R" . lps/rename-current-buffer-file)
         ("D" . lps/delete-current-buffer-file)
-        ("M-w" . lps/copy-file-name-as-kill)))
+        ("M-w" . lps/copy-file-name-as-kill)
+        ("e" . lps/open-current-file-eww)))
 
 (use-package emacs
   :ensure nil

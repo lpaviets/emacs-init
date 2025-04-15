@@ -949,7 +949,16 @@ following command:
                   (when (bound-and-true-p company-search-mode)
                     company-search-lighter))
                 global-mode-string
-                :test 'equal))
+                :test 'equal)
+
+    (doom-modeline-def-modeline 'lps/pdf
+      '(bar window-number modals matches buffer-info pdf-pages)
+      '(compilation misc-info mu4e major-mode process vcs time))
+
+    (add-to-list 'doom-modeline-mode-alist
+                 '(pdf-view-mode . lps/pdf)
+                 nil
+                 'equal))
 #+end_src
 
 *** Extra packages
@@ -1580,11 +1589,16 @@ and so.
         (kill-new file)
         (message "Copied %s in the kill-ring" file)))
 
+    (defun lps/open-current-file-eww (new-buffer)
+      (interactive "P")
+      (eww-open-file (buffer-file-name) new-buffer))
+
     :bind
     (:map ctl-x-x-map
           ("R" . lps/rename-current-buffer-file)
           ("D" . lps/delete-current-buffer-file)
-          ("M-w" . lps/copy-file-name-as-kill)))
+          ("M-w" . lps/copy-file-name-as-kill)
+          ("e" . lps/open-current-file-eww)))
 #+end_src
 
 *** Backup and auto-save
@@ -4574,10 +4588,9 @@ have been written for it, and are pretty much necessary, as Haskell's syntax and
 source files look nothing like "basic C/Java" at all and so we cannot simply use
 variants of ~c-mode~ to program in Haskell.
 
-*MANUAL* [[https://www.haskell.org/cabal/][Cabal]] and
-[[https://github.com/ndmitchell/hoogle][Hoogle]] need to be installed
-separately. Once ~cabal~ is installed, you can just call =cabal update && cabal
-install hoogle= to install ~Hoogle~.
+*MANUAL* [[https://www.haskell.org/cabal/][Cabal]] and [[https://github.com/ndmitchell/hoogle][Hoogle]] need to be installed separately. Once ~cabal~ is
+installed, you can just call =cabal update && cabal install hoogle= to install
+~Hoogle~.
 
 #+begin_src emacs-lisp
   (use-package haskell-mode
