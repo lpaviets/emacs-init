@@ -1142,7 +1142,7 @@ If called with a prefix argument, also kills the current buffer"
   (defun lps/copy-file-name-as-kill (&optional arg)
     (interactive "P")
     (let ((file (buffer-file-name)))
-      (assert file nil "Current buffer is not visiting a file")
+      (cl-assert file nil "Current buffer is not visiting a file")
       (unless arg (setq file (file-name-nondirectory file)))
       (kill-new file)
       (message "Copied %s in the kill-ring" file)))
