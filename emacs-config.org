@@ -1817,11 +1817,20 @@ We can also improve some of the other help commands:
              (chosen (completing-read "Search in section: " Man--sections
                                       nil t "OPTIONS" nil nil)))
         (Man-goto-section chosen)
-        (let ((case-fold-search nil))
-          (or (re-search-forward (concat "^[ \t]+\\_<" option "\\_>") nil t)
-              (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<" option "\\_>") nil t)
-              (re-search-forward (concat "^[ \t]+\\_<" option) nil t)
-              (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<" option) nil t))))))
+        (save-match-data
+          (let ((case-fold-search nil))
+            ;; Doing multiple instead of a single, long regexp for clarity and for
+            ;; an easier way to deal with "priorities" (the more 'exact' the
+            ;; match, the earlier it is checked)
+            (or
+             ;; --option
+             (re-search-forward (concat "^[ \t]+\\_<\\(--\\)?" option "\\_>") nil t)
+             ;; ..., --option
+             (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<\\(--\\)?" option "\\_>") nil t)
+             ;; --option-extra
+             (re-search-forward (concat "^[ \t]+\\_<\\(--\\)?" option) nil t)
+             ;; ..., --option-extra
+             (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<\\(--\\)?" option) nil t)))))))
 #+end_src
 
 *** Info-mode
@@ -8273,7 +8282,7 @@ detection of bash files, configuration of bash highlighting and so on.
 #+begin_src emacs-lisp
   (use-package emacs
     :ensure nil
-    :mode ("\\.bash_aliases" . sh-mode))
+    :mode ("\\.bash_.*" . sh-mode))
 #+end_src
 
 *** VTerm

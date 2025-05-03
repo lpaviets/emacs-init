@@ -1315,11 +1315,20 @@ It then tries to match, in this:
            (chosen (completing-read "Search in section: " Man--sections
                                     nil t "OPTIONS" nil nil)))
       (Man-goto-section chosen)
-      (let ((case-fold-search nil))
-        (or (re-search-forward (concat "^[ \t]+\\_<" option "\\_>") nil t)
-            (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<" option "\\_>") nil t)
-            (re-search-forward (concat "^[ \t]+\\_<" option) nil t)
-            (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<" option) nil t))))))
+      (save-match-data
+        (let ((case-fold-search nil))
+          ;; Doing multiple instead of a single, long regexp for clarity and for
+          ;; an easier way to deal with "priorities" (the more 'exact' the
+          ;; match, the earlier it is checked)
+          (or
+           ;; --option
+           (re-search-forward (concat "^[ \t]+\\_<\\(--\\)?" option "\\_>") nil t)
+           ;; ..., --option
+           (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<\\(--\\)?" option "\\_>") nil t)
+           ;; --option-extra
+           (re-search-forward (concat "^[ \t]+\\_<\\(--\\)?" option) nil t)
+           ;; ..., --option-extra
+           (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<\\(--\\)?" option) nil t)))))))
 
 (use-package info
   :bind
@@ -6559,7 +6568,7 @@ Does not run `cdlatex-tab-hook.'"
 
 (use-package emacs
   :ensure nil
-  :mode ("\\.bash_aliases" . sh-mode))
+  :mode ("\\.bash_.*" . sh-mode))
 
 (system-case
  (gnu/linux
