@@ -5135,6 +5135,12 @@ return `nil'."
             "frametitle[ \t]*{"
             "\\(.+?\\)}\n"))
 
+  (defcustom lps/TeX-beamer-frame-title-max-length 12
+    "Maximal length of a frametitle displayed when the frame is folded.
+
+  For example, a frame with a \\frametitle{My super duper title} with a
+  value of 12 would be abbreviated as \[frame:My super du…\] when folded.")
+
   (defun lps/TeX-fold-frame (type)
     "Hide the frame at point.
 
@@ -5157,7 +5163,9 @@ return `nil'."
                  (display-string-spec (if (string= item-name "frame")
                                           "[frame]"
                                         (concat "[frame:"
-                                                (truncate-string-to-width item-name 12 0 nil "…")
+                                                (truncate-string-to-width item-name
+                                                                          lps/TeX-beamer-frame-title-max-length
+                                                                          0 nil "…")
                                                 "]")))
                  (ov (TeX-fold-make-overlay item-start item-end type
                                             display-string-spec)))
