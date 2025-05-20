@@ -6963,17 +6963,38 @@ PWD is not in a git repo (or the git command is not found)."
   :hook
   (shell-mode . lps/remote-shell-setup)
   :config
-  (defun lps/tramp-find-file (&optional method user host file)
-    (interactive (list (completing-read "Method: "
-                                        tramp-methods
-                                        nil t nil nil "-" t)
-                       (read-string "User: "
-                                    nil nil nil t)
-                       (read-string "Host: "
-                                    nil nil nil t)
-                       (read-string "File: "
-                                    nil nil nil t)))
-    (let ((port (if (member method '("ssh" "sshx" "ftp"))
+  (require 'tramp)
+  ;; Somewhat heavy wrapper around `tramp-completion-handle-file-name-all-completions'
+  ;; The default function has a few problems IMO, so I rewrite it in a somewhat simpler
+  ;; fashion, prompting for each element individually, without having to remember any
+  ;; order/separator between each part of the TRAMP syntax ...
+  (defun lps/tramp-find-file (&optional method host user file)
+    (interactive (let* ((auth-sources (remove "~/.authinfo.gpg" auth-sources))
+                        (method (completing-read "Method: "
+                                                 tramp-methods
+                                                 nil t nil nil "-" t))
+                        (comp-fun (tramp-get-completion-function method))
+                        (host (read-string "Host: "
+                                           nil nil nil t))
+                        (user (read-string "User: "
+                                           nil nil nil t))
+                        (file (read-string "File: "
+                                           nil nil nil t)))
+                   (list method host user file)))
+
+    ;; TODO: Adapt completion from tramp-completion-handle-file-name-all-completions'
+    ;; Or may be use it directly ?
+    ;; (let* ((all-user-hosts (mapcan
+    ;;                         (lambda (x)
+    ;;                           (purecopy (funcall (nth 0 x) (nth 1 x))))
+    ;;                         (tramp-get-completion-function "ssh")))
+    ;;        (result (mapcar
+    ;;     	    (lambda (x)
+    ;;     	      (tramp-get-completion-user-host
+    ;;     	       "ssh" "" "" (nth 0 x) (nth 1 x)))
+    ;;     	    all-user-hosts))))
+
+    (let ((port (if (member method '("ssh" "sshx" "ftp" "sftp"))
                     (read-string "Port: ")
                   (message "Using TRAMP for %s: no port asked" method)
                   nil)))
@@ -6981,9 +7002,9 @@ PWD is not in a git repo (or the git command is not found)."
                          (unless (string-empty-p user)
                            (concat user "@"))
                          host
-                         ":"
                          (when port
                            (concat "#" port))
+                         ":"
                          file))))
 
   (defun lps/remote-shell-setup ()

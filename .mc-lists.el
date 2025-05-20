@@ -13,6 +13,7 @@
         TeX-insert-macro
         TeX-insert-sub-or-superscript
         TeX-newline
+        backward-kill-sexp
         backward-sexp
         backward-up-list
         beginning-of-visual-line
@@ -36,6 +37,7 @@
         end-of-buffer
         end-of-visual-line
         eval-last-sexp
+        eval-print-last-sexp
         fill-paragraph
         forward-sentence
         forward-sexp
