@@ -3160,13 +3160,12 @@ call the associated function interactively. Otherwise, call the
   ;; When REPL triggers an error, pop create debugger below it
   ;; Otherwise, pop to the window
 
-  ;; Bugged for now
-  ;; (add-to-list 'display-buffer-alist
-  ;;              '("*sly-db" . ((display-buffer-reuse-mode-window
-  ;;                              display-buffer-below-selected)
-  ;;                             . ((inhibit-same-window . nil)
-  ;;                                (mode . sly-db-mode)))))
-  )
+  ;; TODO: Was marked as buggy, can't seem to see why atm ?
+  (add-to-list 'display-buffer-alist
+               '("\\*sly-db" . ((display-buffer-reuse-mode-window
+                                 display-buffer-below-selected)
+                                . ((inhibit-same-window . nil)
+                                   (mode . sly-db-mode))))))
 
 (use-package sly-mrepl
   :ensure nil
