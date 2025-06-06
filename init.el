@@ -3769,18 +3769,34 @@ for a list of valid rules, to adapt this function."
         file-or-dir)))
 
   :custom
-  ;; Coding in blocks
+  ;;; Coding in blocks
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
-  (org-use-speed-commands t)
+  ;;; Lists
   (org-list-allow-alphabetical t)
+  ;; Order:
+  ;; `-'  ->  `+'  ->  `*'  -> `-'
+  ;; `A.'  ->  `1.'  ->  `a.'
+  ;; Same with parenthesis instead of dot
+  (setq org-list-demote-modify-bullet '(("-" . "+")
+                                        ("+" . "*")
+                                        ("*" . "-")
+                                        ("A)" . "1)")
+                                        ("A." . "1.")
+                                        ("1." . "a.")
+                                        ("1)" . "a)")))
   (org-blank-before-new-entry '((heading . t)
                                 (plain-list-item . auto)))
+  ;;; Navigation
+  (org-use-speed-commands t)
   (org-special-ctrl-a/e t) ;; With visual-line-mode, need to bind C-a/C-e too
   (org-return-follows-link t)
   (org-imenu-depth 4)
+  ;;; Appearance
   (org-catch-invisible-edits 'show)
+  (org-ellipsis " ▾")
   (org-hide-emphasis-markers t)
+  ;;; LaTeX
   (org-latex-packages-alist '(("" "amsfonts" t)
                               ;; ("" "lps-tex-style" t) ; bugged atm
                               ))
@@ -3802,11 +3818,11 @@ for a list of valid rules, to adapt this function."
                                          :matchers '("begin" "$1"
                                                      "$" "$$"
                                                      "\\(" "\\[")))
+  ;;; Priority/TODOs
   (org-priority-highest ?A)
   (org-priority-lowest ?E)
   (org-priority-default ?C)
   (org-archive-subtree-save-file-p t)
-  (org-ellipsis " ▾")
   :config
   ;; Mouse support
   (require 'org-mouse)
@@ -8206,6 +8222,7 @@ insert as many blank lines as necessary."
       (holiday-easter-etc 1 "Lundi de Pâques")
       (holiday-easter-etc 39 "Ascension")
       (holiday-easter-etc 49 "Pentecôte")
+      (holiday-easter-etc 50 "Lundi de Pentecôte")
       (holiday-easter-etc -47 "Mardi gras")
       (holiday-float 5 0 4 "Fête des mères")
       (holiday-float 6 0 3 "Fête des pères")) ;; June's third Sunday
@@ -8217,12 +8234,12 @@ insert as many blank lines as necessary."
         (append holiday-general-holidays
                 holiday-local-holidays
                 holiday-other-holidays
+                holiday-solar-holidays
                 ;; holiday-christian-holidays
                 ;; holiday-hebrew-holidays
                 ;; holiday-islamic-holidays
                 ;; holiday-bahai-holidays
                 ;; holiday-oriental-holidays
-                ;; holiday-solar-holidays
                 )))
 
 (use-package calfw
