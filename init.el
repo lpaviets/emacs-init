@@ -3769,34 +3769,34 @@ for a list of valid rules, to adapt this function."
         file-or-dir)))
 
   :custom
-  ;;; Coding in blocks
+  ;; Coding in blocks
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
-  ;;; Lists
+  ;; Lists
   (org-list-allow-alphabetical t)
   ;; Order:
   ;; `-'  ->  `+'  ->  `*'  -> `-'
   ;; `A.'  ->  `1.'  ->  `a.'
   ;; Same with parenthesis instead of dot
-  (setq org-list-demote-modify-bullet '(("-" . "+")
-                                        ("+" . "*")
-                                        ("*" . "-")
-                                        ("A)" . "1)")
-                                        ("A." . "1.")
-                                        ("1." . "a.")
-                                        ("1)" . "a)")))
+  (org-list-demote-modify-bullet '(("-" . "+")
+                                   ("+" . "*")
+                                   ("*" . "-")
+                                   ("A)" . "1)")
+                                   ("A." . "1.")
+                                   ("1." . "a.")
+                                   ("1)" . "a)")))
   (org-blank-before-new-entry '((heading . t)
                                 (plain-list-item . auto)))
-  ;;; Navigation
+  ;; Navigation
   (org-use-speed-commands t)
   (org-special-ctrl-a/e t) ;; With visual-line-mode, need to bind C-a/C-e too
   (org-return-follows-link t)
   (org-imenu-depth 4)
-  ;;; Appearance
+  ;; Appearance
   (org-catch-invisible-edits 'show)
   (org-ellipsis " ▾")
   (org-hide-emphasis-markers t)
-  ;;; LaTeX
+  ;; LaTeX
   (org-latex-packages-alist '(("" "amsfonts" t)
                               ;; ("" "lps-tex-style" t) ; bugged atm
                               ))
@@ -3818,7 +3818,7 @@ for a list of valid rules, to adapt this function."
                                          :matchers '("begin" "$1"
                                                      "$" "$$"
                                                      "\\(" "\\[")))
-  ;;; Priority/TODOs
+  ;; Priority/TODOs
   (org-priority-highest ?A)
   (org-priority-lowest ?E)
   (org-priority-default ?C)

@@ -115,6 +115,7 @@
         upcase-dwim
         wdired--self-insert
         wdired-capitalize-word
+        wdired-downcase-word
         wdired-next-line
         wdired-previous-line
         wdired-set-bit
