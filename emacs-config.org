@@ -6293,7 +6293,9 @@ system.
             ("<C-right>" . image-scroll-left)
             ("s a" . pdf-view-auto-slice-minor-mode)
             ("G" . pdf-view-goto-label)
-            ("<f11>" . lps/slideshow-mode))
+            ("<f11>" . lps/slideshow-mode)
+            ([remap scroll-up-command] . pdf-view-scroll-up-or-next-page)
+            ([remap scroll-down-command] . pdf-view-scroll-down-or-previous-page))
       :custom
       (pdf-links-read-link-convert-commands '("-font" "FreeMono"
                                               "-pointsize" "%P"
@@ -9097,7 +9099,7 @@ the package documentation.
     ;; (format "INSIDE_EMACS=%s mbsync -a" emacs-version)
     ;; or something like that. However,
     ;; might have some funny interactions: don't use it for now
-    (mu4e-get-mail-command "mbsync -a")
+    (mu4e-get-mail-command "mbsync --all --verbose")
     (mu4e-index-update-in-background t)
     (mu4e-hide-index-messages t)
     (mu4e-headers-date-format "%d-%m-%Y [%H:%M]") ; Always show full date and time
