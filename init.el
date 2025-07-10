@@ -1335,7 +1335,16 @@ It then tries to match, in this:
   (:map Info-mode-map
         ("S" . consult-info))
   :hook
-  (Info-mode . olivetti-mode))
+  (Info-mode . olivetti-mode)
+  :config
+  (add-to-list 'Info-additional-directory-list
+               "/usr/share/texmf-dist/doc/info/")
+
+  (let* ((site-lisp "/usr/share/emacs/site-lisp/")
+         (infos-files (directory-files-recursively site-lisp "\\.info$"))
+         (infos-dirs (mapcar 'file-name-directory infos-files)))
+    (dolist (info infos-dirs)
+      (add-to-list 'Info-additional-directory-list info nil 'equal))))
 
 ;;; Add some colours to Info nodes
 (use-package info-colors
