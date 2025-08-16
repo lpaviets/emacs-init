@@ -6545,7 +6545,7 @@ documents, using the famous tool AUCTeX.
 #+begin_src emacs-lisp :noweb yes
   ;; AUCTeX initialization
   (use-package tex
-    :ensure auctex
+    ;; :ensure auctex
     :mode ("\\.tex\\'" . LaTeX-mode)
     :defer t
     :bind
@@ -11133,6 +11133,11 @@ To explore:
 - [ ] replace-regexp-function
 - [ ] defvar-keymap
 
+** GPG
+
+- [ ] Decide what to do with ~authinfo.gpg~ (might need system-wide orga)
+  + [ ] If we keep using it: check ~epa-keys-select-method~
+
 ** Org mode
 - [X] Fix (or check what breaks if fix) ~org-element-latex-fragment-parser~ so
   that it recognizes "dollars" followed by a dash directly (and no space+dash).
@@ -11189,6 +11194,12 @@ to ~lp~ when printing using either the built-in functions or
 - For =multibbl=
 - More generally: override and improve ~TeX-command-default~, this is probably
   where things need to be done.
+
+*** Beamer
+
+- Check if we can replace the hacks to fold frames by properly configuring
+  ~TeX-fold-begin-end-spec-list~ or some similar options.
+
 *** Documentation
 - Improve the documentation function: jump to a manual depending on current
   packages (not word at point ...), /then/ look in index for word at point
@@ -11202,6 +11213,8 @@ to ~lp~ when printing using either the built-in functions or
 ** TRAMP
 
 - Fix dirvish and sudoedit
+- Use the new macro ~without-remote-files~ to startup faster without resorting to
+  hacks.
 - Make (S)FTP use ~auth-sources~. This is a recurring problem on the emacs-devel,
   and seems non-trivial, but I don't need something super robust myself. Likely
   idea: just query ~auth-source-search :host host :user user~ or something along

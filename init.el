@@ -4954,7 +4954,7 @@ pre-filled with WORD."
 
 ;; AUCTeX initialization
 (use-package tex
-  :ensure auctex
+  ;; :ensure auctex
   :mode ("\\.tex\\'" . LaTeX-mode)
   :defer t
   :bind
