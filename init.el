@@ -4962,6 +4962,7 @@ pre-filled with WORD."
         ("C-c '" . TeX-error-overview)
         ("<f5>" . lps/auto-compile)
         ("<backtab>" . indent-for-tab-command)
+        ("C-M-i" . nil)
         ([remap TeX-documentation-texdoc] . lps/TeX-documentation-texdoc))
   :custom
   ;; Parse documents to provide completion
@@ -7496,6 +7497,9 @@ Change to wide reply ?")))))
         mu4e-headers-list-mark      '("s" . "⁞")
         mu4e-headers-personal-mark  '("p" . "⍟")
         mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
+
+  ;; Some default characters are not available in my default Mono font
+  (setq mu4e-headers-thread-first-child-prefix '("o " . "⫯ "))
 
   ;; Change this face to make it more visible, at least for kaolin-ocean theme
   (set-face-attribute 'mu4e-replied-face nil :inherit 'font-lock-function-name-face)
