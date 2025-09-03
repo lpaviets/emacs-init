@@ -1824,13 +1824,13 @@ We can also improve some of the other help commands:
             ;; match, the earlier it is checked)
             (or
              ;; --option
-             (re-search-forward (concat "^[ \t]+\\_<\\(--\\)?" option "\\_>") nil t)
+             (re-search-forward (concat "^[ \t]+\\_<\\(-?-\\)?" option "\\_>") nil t)
              ;; ..., --option
-             (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<\\(--\\)?" option "\\_>") nil t)
+             (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<\\(-?-\\)?" option "\\_>") nil t)
              ;; --option-extra
-             (re-search-forward (concat "^[ \t]+\\_<\\(--\\)?" option) nil t)
+             (re-search-forward (concat "^[ \t]+\\_<\\(-?-\\)?" option) nil t)
              ;; ..., --option-extra
-             (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<\\(--\\)?" option) nil t)))))))
+             (re-search-forward (concat "^[ \t]+[^ ]+, ?\\_<\\(-?-\\)?" option) nil t)))))))
 #+end_src
 
 *** Info-mode
@@ -5108,7 +5108,23 @@ delete the ~.eln~ and ~.elc files associated with Org.
 
   (use-package org-latex-preview
     :defer t
-    :hook (org-mode . org-latex-preview-auto-mode))
+    :hook (org-mode . org-latex-preview-auto-mode)
+    :custom
+    (org-latex-preview-appearance-options (list
+                                           :foreground 'default
+                                           :background (if (executable-find "dvisvgm")
+                                                           "Transparent"
+                                                         'default)
+                                           :scale (if (executable-find "dvisvgm")
+                                                      1.25
+                                                    1.5)
+                                           :zoom 1.35
+                                           :html-foreground "Black"
+                                           :html-background "Transparent"
+                                           :html-scale 1.0
+                                           :matchers '("begin" "$1"
+                                                       "$" "$$"
+                                                       "\\(" "\\["))))
 #+end_src
 
 ** Basic configuration
@@ -5186,21 +5202,7 @@ rules, by changing the headers appearance, and a few other minor changes.
     (org-preview-latex-default-process (if (executable-find "dvisvgm")
                                            'dvisvgm
                                          'dvipng))
-    (org-latex-preview-appearance-options (list
-                                           :foreground 'default
-                                           :background (if (executable-find "dvisvgm")
-                                                           "Transparent"
-                                                         'default)
-                                           :scale (if (executable-find "dvisvgm")
-                                                      1.25
-                                                    1.5)
-                                           :zoom 1.35
-                                           :html-foreground "Black"
-                                           :html-background "Transparent"
-                                           :html-scale 1.0
-                                           :matchers '("begin" "$1"
-                                                       "$" "$$"
-                                                       "\\(" "\\[")))
+
     ;; Priority/TODOs
     (org-priority-highest ?A)
     (org-priority-lowest ?E)
@@ -6891,6 +6893,27 @@ documents, using the famous tool AUCTeX.
                 "\\bibliography{"
                 (mapconcat 'identity bibpath ",")
                 "}\n"))))
+
+  (defun-override lps/TeX-command-run-all (arg)
+    "Compile the current document until an error occurs or it is finished.
+  With a prefix ARG (`\\[universal-argument] \\[TeX-command-run-all]'),
+  compile the current region instead, that is, call
+  `TeX-command-run-all-region'.  With multiple prefix
+  arguments (`\\[universal-argument] \\[universal-argument] \\[TeX-command-run-all]'),
+  compile the current section instead, that is, call
+  `LaTeX-command-run-all-section'.
+  If called in a narrowed buffer, run `TeX-command-run-all-region' on the
+  narrowed part of the buffer."
+    (interactive "P")
+    (cond
+     ((null arg)
+      (if (buffer-narrowed-p)
+          (let ((TeX-command-region-begin (point-min))
+                (TeX-command-region-end (point-max)))
+            (TeX-command-run-all-region))
+        (TeX-command-sequence t t)))
+     ((= 4 (car arg)) (TeX-command-run-all-region))
+     (t               (LaTeX-command-run-all-section))))
 
   ;; (add-hook 'TeX-region-hook 'lps/LaTeX-add-bib-to-compile-region)
 #+end_src
