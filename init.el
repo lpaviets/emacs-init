@@ -8198,6 +8198,7 @@ insert as many blank lines as necessary."
   :custom
   (calendar-view-holidays-initially-flag t)
   (calendar-mark-holidays-flag t)
+  (calendar-week-start-day 1)
   (calendar-latitude 47)
   (calendar-longitude 3) ; random place, roughly middle of France
   (cal-tex-preamble-extra (mapconcat 'identity
