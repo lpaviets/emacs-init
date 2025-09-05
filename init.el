@@ -497,6 +497,24 @@ the internal changes made by this config.")
      lps/default-theme
      '(hl-line ((t (:background "#39424D"))) t)))
 
+  ;; TODO : On <2025-09-05 Fri>, code is bugged
+  ;; This is simply copying the default face definition, overriding
+  ;; the buggy line in kaolin-themes-lib.el
+  (custom-theme-set-faces
+   'kaolin-ocean
+   '(ediff-current-diff-Ancestor
+     ((((class color) (min-colors 88) (background light))
+       :background "#cfdeee" :extend t)
+      (((class color) (min-colors 88) (background dark))
+       :background "#004151" :extend t)
+      (((class color) (min-colors 16) (background light))
+       :background "#cfdeee" :extend t)
+      (((class color) (min-colors 16) (background dark))
+       :background "#004151" :extend t)
+      (((class color))
+       (:foreground "black" :background "magenta3" :extend t))
+      (t (:inverse-video t :extend t)))))
+
   (defun lps/toggle-live-code-presentation-settings ()
     "Various useful settings for live coding sessions
   Still very buggy, but this should not matter in a live presentation
@@ -7261,6 +7279,7 @@ confirmation when sending a non-multipart MIME mail")
   (mu4e-compose-context-policy 'ask)
   (mu4e-context-policy 'ask)
   (mu4e-confirm-quit nil)
+  (mu4e-attachment-dir (xdg-user-dir "DOWNLOAD"))
   (mu4e-use-fancy-chars t)              ; ASCII-only time is over
   (mu4e-headers-precise-alignment t)    ; and fix alignment !
   (mu4e-compose-format-flowed nil)
