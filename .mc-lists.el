@@ -76,6 +76,7 @@
         org-kill-line
         org-meta-return
         org-metaright
+        org-return-and-maybe-indent
         org-self-insert-command
         org-yank
         paredit-backslash

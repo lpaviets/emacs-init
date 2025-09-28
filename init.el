@@ -4478,7 +4478,8 @@ for a list of valid rules, to adapt this function."
                           ("Santé"        . "⚕️")
                           ("Social"       . "🎉")
                           ("Books"        . "📚")
-                          ("Movies"       . "🎥")
+                          ("Cinema"       . "🎥")
+                          ("Musique"      . "🎶")
                           ("Workplace"    . "🏢")
                           ("Others"       . "❓")
                           ("Games"        . "🎮")
@@ -6887,6 +6888,9 @@ PWD is not in a git repo (or the git command is not found)."
 
 (system-case
  (gnu/linux
+  (use-package dirvish-extras
+    :after dirvish)
+
   (use-package dirvish
     :after dired
     :bind
@@ -6899,6 +6903,7 @@ PWD is not in a git repo (or the git command is not found)."
           ("z" . dirvish-layout-toggle)
           ("h" . dirvish-history-jump)
           ("/" . dirvish-fd)
+          ("?" . dirvish-dispatch)
           ([remap dired-sort-toggle-or-edit] . dirvish-quicksort)
           ([remap dired-do-relsymlink] . dirvish-yank-menu) ; to be called from TARGET of symlink
           ([remap dired-show-file-type] . dirvish-file-info-menu))
