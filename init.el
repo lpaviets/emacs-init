@@ -2511,7 +2511,7 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
                                    . 2)
                                   (,(expand-file-name "Work/"
                                                       (xdg-user-dir "DOCUMENTS"))
-                                   . 3)
+                                   . 4)
                                   (,(expand-file-name "~/.dotfiles") . 0)
                                   (,user-emacs-directory . 0)
                                   (,org-directory . 0)))

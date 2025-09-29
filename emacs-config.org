@@ -2690,12 +2690,11 @@ accessible again.
                        nil nil start end backward region-noncontiguous-p)))
 #+end_src
 
-The previously defined commands, along with ~Swiper~, are great to navigate in a
-buffer if you roughly know where you want to end. However, we sometimes want to
-move the point to a nearby, visible location, and instead of using and ~isearch~
-and repeatedly use the forward and backward bindings, we want to be able to
-quickly jump there without thinking much, regardless of the current point
-position in the buffer.
+The previously defined commands are great to navigate in a buffer if you roughly
+know where you want to end. However, we sometimes want to move the point to a
+nearby, visible location, and instead of using and ~isearch~ and repeatedly use
+the forward and backward bindings, we want to be able to quickly jump there
+without thinking much, regardless of the current point position in the buffer.
 
 #+begin_src emacs-lisp
   (use-package avy
@@ -3424,7 +3423,7 @@ the most advanced ones, while making it easy to use even for beginners.
                                      . 2)
                                     (,(expand-file-name "Work/"
                                                         (xdg-user-dir "DOCUMENTS"))
-                                     . 3)
+                                     . 4)
                                     (,(expand-file-name "~/.dotfiles") . 0)
                                     (,user-emacs-directory . 0)
                                     (,org-directory . 0)))
