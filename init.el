@@ -495,7 +495,8 @@ the internal changes made by this config.")
   (let ((custom--inhibit-theme-enable nil))
     (custom-theme-set-faces
      lps/default-theme
-     '(hl-line ((t (:background "#39424D"))) t)))
+     '(hl-line ((t (:background "#39424D"))) t)
+     '(diff-refine-added ((t (:background "#115511"))) t)))
 
   ;; TODO : On <2025-09-05 Fri>, code is bugged
   ;; This is simply copying the default face definition, overriding
@@ -6909,6 +6910,10 @@ PWD is not in a git repo (or the git command is not found)."
           ([remap dired-show-file-type] . dirvish-file-info-menu))
     :init
     (dirvish-override-dired-mode)
+
+    ;; Add mu4e indicator in Dirvish directory buffers
+    (dirvish-define-mode-line mu4e
+      (doom-modeline-segment--mu4e))
     :custom
     (dirvish-hide-details nil)
     (dirvish-hide-cursor nil)
@@ -6919,8 +6924,12 @@ PWD is not in a git repo (or the git command is not found)."
     (dirvish-mode-line-format '(:left
                                 (sort symlink vc-info)
                                 :right
-                                (omit yank index " " free-space)))
-    (dirvish-attributes '(file-size file-time subtree-state all-the-icons))
+                                (omit yank index " " mu4e free-space)))
+    (dirvish-attributes '(vc-state
+                          file-size
+                          file-time
+                          subtree-state
+                          all-the-icons))
     (dirvish-show-media-properties t)
     (dirvish-quick-access-entries `(("h" "~/" "Home")
                                     ("e" "~/.config/emacs/" "Emacs user directory")

@@ -19,6 +19,7 @@
         beginning-of-visual-line
         c-indent-line-or-region
         capitalize-dwim
+        cdlatex-math-symbol
         cdlatex-pbb
         cdlatex-sub-superscript
         cdlatex-tab

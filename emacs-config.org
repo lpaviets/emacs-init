@@ -805,7 +805,8 @@ on.
     (let ((custom--inhibit-theme-enable nil))
       (custom-theme-set-faces
        lps/default-theme
-       '(hl-line ((t (:background "#39424D"))) t)))
+       '(hl-line ((t (:background "#39424D"))) t)
+       '(diff-refine-added ((t (:background "#115511"))) t)))
 
     ;; TODO : On <2025-09-05 Fri>, code is bugged
     ;; This is simply copying the default face definition, overriding
@@ -8683,15 +8684,14 @@ Because those are useful functions, we bind them globally.
 
 *** Dirvish
 
-[[https://github.com/alexluigit/dirvish/][Dirvish]] is (almost) a drop-in
-replacement for Dired. As it is essentially a big wrapper around the built-in
-Dired, most of the customizations (bindings, some defaults ...) are kept !
-However, you may find that some of your old customizations have become unneeded,
-for Dirvish provides more options, or already has the "good" default behaviour,
-and so on.
+[[https://github.com/alexluigit/dirvish/][Dirvish]] is (almost) a drop-in replacement for Dired. As it is essentially a big
+wrapper around the built-in Dired, most of the customizations (bindings, some
+defaults ...) are kept ! However, you may find that some of your old
+customizations have become unneeded, for Dirvish provides more options, or
+already has the "good" default behaviour, and so on.
 
-*MANUAL* To enable all the options provided by Dirvish, you need to install the
-=fd= and =mediainfo= command-line tools.
+*MANUAL* To enable all the options provided by Dirvish, you need to install the =fd=
+and =mediainfo= command-line tools.
 
 #+begin_src emacs-lisp :noweb yes
   (system-case
@@ -8717,6 +8717,10 @@ and so on.
             ([remap dired-show-file-type] . dirvish-file-info-menu))
       :init
       (dirvish-override-dired-mode)
+
+      ;; Add mu4e indicator in Dirvish directory buffers
+      (dirvish-define-mode-line mu4e
+        (doom-modeline-segment--mu4e))
       :custom
       (dirvish-hide-details nil)
       (dirvish-hide-cursor nil)
@@ -8727,8 +8731,12 @@ and so on.
       (dirvish-mode-line-format '(:left
                                   (sort symlink vc-info)
                                   :right
-                                  (omit yank index " " free-space)))
-      (dirvish-attributes '(file-size file-time subtree-state all-the-icons))
+                                  (omit yank index " " mu4e free-space)))
+      (dirvish-attributes '(vc-state
+                            file-size
+                            file-time
+                            subtree-state
+                            all-the-icons))
       (dirvish-show-media-properties t)
       (dirvish-quick-access-entries `(("h" "~/" "Home")
                                       ("e" "~/.config/emacs/" "Emacs user directory")
