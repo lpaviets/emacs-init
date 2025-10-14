@@ -1692,7 +1692,8 @@ rough outline of the /whole/ document at any time, but in a less cluttered way.
     (setq outline-mode-cycle-map (make-sparse-keymap)))
 #+end_src
 
-** Scroll
+** Mouse and scrolling
+
 There are (obviously) many variables and functions controlling how scrolling
 works: amount of scroll, position of the point after a scroll, horizontal &
 vertical scrolls, and so on. We use the keyboard even for scrolling, so we want
@@ -1706,7 +1707,12 @@ customize its behaviour too.
     :custom
     (scroll-preserve-screen-position t)
     (scroll-error-top-bottom t)
-    (mouse-wheel-tilt-scroll t))
+    (mouse-wheel-tilt-scroll t)
+    :config
+    (add-hook 'server-after-make-frame-hook
+              (lambda ()
+                (unless (display-graphic-p)
+                  (xterm-mouse-mode)))))
 #+end_src
 
 ** XWidget
@@ -10326,22 +10332,57 @@ Emacs user.
                          (calendar-gregorian-from-absolute (time-to-days end-date))
                          text)))))))
 
-    ;;;; Still a problem: Emoji size makes alignment weird, as characters are too wide.
-    ;;;; Possible fix/solution: either use font-rescaling, or find a monospace font
-    ;;;; with Emoji symbols.
-    ;; (defun lps/cfw:org-summary-format (item)
-    ;;   (let* ((original (cfw:org-summary-format item))
-    ;;          (props (text-properties-at 0 original))
-    ;;          (category (cfw:org-tp item 'org-category))
-    ;;          (icon (caadr (assoc-string category org-agenda-category-icon-alist))))
-    ;;     (if icon
-    ;;         (concat (apply 'propertize icon props)
-    ;;                 original)
-    ;;       original)))
+    ;; Still a problem: Emoji size makes alignment weird, as characters are too wide.
+    ;; Possible fix/solution: either use font-rescaling, or find a monospace font
+    ;; with Emoji symbols.
+    ;; More precisely, the internal function `cfw:render-truncate' calls `truncate-string-to-width',
+    ;; which itself is imprecise when used on strings containing combined characters -- which some
+    ;; emojis are. A possible solution would be to completely rewrite it but it is a pain.
+    ;; In fact, `string-width' seems fine always return 2 for emojis I care about), but the truncation
+    ;; is not. so I might need to roll my own braindead truncation function.
+    (defun lps/cfw:org-summary-format (item)
+      (let* ((original (cfw:org-summary-format item))
+             (props (text-properties-at 0 original))
+             (category (cfw:org-tp item 'org-category))
+             (icon (caadr (assoc-string category org-agenda-category-icon-alist))))
+        (if icon
+            (concat (apply 'propertize icon props)
+                    original)
+          original)))
 
-    ;; Buggy
-    ;; (setq cfw:org-schedule-summary-transformer 'lps/cfw:org-summary-format)
-    )
+    (defun cfw:truncate-string (string width ellipsis)
+      (let ((i 1)
+            (olds "")
+            (news (substring string 0 1)))
+        (while (< (string-width news) width)
+          (incf i)
+          (setf olds news
+                news (substring string 0 i)))
+        (let ((ellipsis-string (cond
+                                ((stringp ellipsis)
+                                 ellipsis)
+                                ((eq t ellipsis)
+                                 (truncate-string-ellipsis))
+                                (nil " "))))
+          (s-concat olds ellipsis-string))))
+
+    (defun-override lps/cfw:render-truncate (org limit-width &optional ellipsis)
+      "[internal] Truncate a string ORG with LIMIT-WIDTH, like `truncate-string-to-width'.
+
+  PATCHED : This does not use `truncate-string-to-width', which tends to
+  \"fail\" with composed characters/emojis, in a way that I do not
+  understand. We use a hackish fix, without a deep understanding of the
+  internals of character width/display width/etc."
+      (setq org (replace-regexp-in-string "\n" " " org))
+      (if (< limit-width (string-width org))
+          (let ((str (cfw:truncate-string org limit-width ellipsis)))
+            (cfw:tp str 'mouse-face 'highlight)
+            (unless (get-text-property 0 'help-echo str)
+              (cfw:tp str 'help-echo org))
+            str)
+        org))
+
+    (setq cfw:org-schedule-summary-transformer 'lps/cfw:org-summary-format))
 #+end_src
 
 * News and RSS feed
