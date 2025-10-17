@@ -913,7 +913,7 @@ It might be buggy with some backend, so use at your own risk"
                '("\\<Callable\\>" . callable)
                nil 'equal)
 
-  (add-to-list 'marginalia-annotator-registry
+  (add-to-list 'marginalia-annotators
                '(callable marginalia-annotate-callable builtin none)
                nil 'equal)
 
@@ -2657,7 +2657,7 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
 
 ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
 (use-package rainbow-delimiters
-  :hook ((prog-mode comint-mode) . rainbow-delimiters-mode))
+  :hook ((prog-mode comint-mode LaTeX-mode) . rainbow-delimiters-mode))
 
 (use-package paredit
   :init

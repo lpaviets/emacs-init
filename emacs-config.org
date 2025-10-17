@@ -1296,7 +1296,7 @@ well with ~vertico~
                  '("\\<Callable\\>" . callable)
                  nil 'equal)
 
-    (add-to-list 'marginalia-annotator-registry
+    (add-to-list 'marginalia-annotators
                  '(callable marginalia-annotate-callable builtin none)
                  nil 'equal)
 
@@ -3636,7 +3636,7 @@ parenthesis are matching
 
   ;; rainbow-delimiters. Hightlights with the same colour matching parenthesis
   (use-package rainbow-delimiters
-    :hook ((prog-mode comint-mode) . rainbow-delimiters-mode))
+    :hook ((prog-mode comint-mode LaTeX-mode) . rainbow-delimiters-mode))
 #+end_src
 
 Now, in order to work with structured text, such as source code, we want to be
