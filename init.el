@@ -7333,6 +7333,7 @@ confirmation when sending a non-multipart MIME mail")
                          (:subject . 100)))
   ;; Improve completion
   (mu4e-completing-read-function 'completing-read)
+  (mu4e-read-option-use-builtin nil)    ; use completing-read too
   (mu4e-headers-auto-update nil)        ; somewhat confusing otherwise
   :config
   (add-to-list 'mu4e-header-info-custom
