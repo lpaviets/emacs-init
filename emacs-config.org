@@ -8976,6 +8976,23 @@ and also use a package that improves the UI for printing stuff, using
           ("i i" . transient-extras-lp-menu)))
 #+end_src
 
+*** Docker
+
+We use a wrapper around common ~docker~ commands, to easily deal with several
+running containers, inspect them, stop/restart them, look-up files in the images
+... without having to remember multiple complex commands.
+
+#+begin_src emacs-lisp
+  (use-package docker
+    :bind
+    (:map lps/system-tools-map
+          ("D" . docker))
+    :custom
+    (docker-run-async-with-buffer-function 'docker-run-async-with-buffer-vterm)
+    :config
+    (require 'vterm))
+#+end_src
+
 *** Emacs Everywhere
 
 Being used to write any kind of text into Emacs, it is probably easier to do so

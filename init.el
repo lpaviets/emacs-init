@@ -7165,6 +7165,15 @@ The return string is always 6 characters wide."
   (:map pdf-view-mode-map
         ("i i" . transient-extras-lp-menu)))
 
+(use-package docker
+  :bind
+  (:map lps/system-tools-map
+        ("D" . docker))
+  :custom
+  (docker-run-async-with-buffer-function 'docker-run-async-with-buffer-vterm)
+  :config
+  (require 'vterm))
+
 (use-package emacs-everywhere
   :defer t
   :custom
