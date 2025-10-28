@@ -2686,24 +2686,11 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
         ("C-M-;" . paredit-convolute-sexp)
         ([remap newline] . paredit-newline)
         ("C-j" . nil)
-        ("<C-backspace>" . paredit-delete-region)
-        ("M-S-<left>" . lps/transpose-sexp-backward)
-        ("M-S-<right>" . lps/transpose-sexp-forward))
+        ("<C-backspace>" . paredit-delete-region))
   :config
   ;; Version 29 or 30 broke something ?!
   ;; Remove paredit broken RET key
   (define-key paredit-mode-map (kbd "RET") nil t)
-
-  (defun lps/transpose-sexp-backward ()
-    (interactive)
-    (transpose-sexps 1)
-    (backward-sexp 2))
-
-  (defun lps/transpose-sexp-forward ()
-    (interactive)
-    (forward-sexp 1)
-    (transpose-sexps 1)
-    (backward-sexp 1))
 
   (defun lps/paredit-no-space-insert-after-sharp-dispatch (endp delimiter)
     "Always return T, unless we are right after a #<form> where form is only made of
@@ -2768,9 +2755,26 @@ Does not insert a space before the inserted opening parenthesis"
           (insert-pair arg ?\" ?\")
         (insert-pair 1 ?\" ?\"))))
 
+  (defun lps/transpose-sexp-backward ()
+    (interactive)
+    (transpose-sexps 1)
+    (backward-sexp 2))
+
+  (defun lps/transpose-sexp-forward ()
+    (interactive)
+    (forward-sexp 1)
+    (transpose-sexps 1)
+    (backward-sexp 1))
+
   :bind
   ([remap insert-parentheses] . lps/insert-parentheses)
-  ("M-\"" . lps/insert-quotes))
+  ("M-\"" . lps/insert-quotes)
+  ("C-M-z" . delete-pair)
+  (:map prog-mode-map
+        ("M-S-<left>" . lps/transpose-sexp-backward)
+        ("M-S-<right>" . lps/transpose-sexp-forward))
+  :custom
+  (delete-pair-blink-delay 0.2))
 
 (use-package hippie-exp
   :bind ([remap dabbrev-expand] . hippie-expand))
@@ -7297,7 +7301,8 @@ confirmation when sending a non-multipart MIME mail")
                ("Q" . lps/mu4e-kill-buffers)
                ("q" . lps/mu4e-quit))
          (:map mu4e-search-minor-mode-map
-               ("C-S-s" . lps/mu4e-build-query))
+               ("C-S-s" . lps/mu4e-build-query)
+               ([remap mu4e-search-toggle-property] . lps/mu4e-search-toggle-properties))
          (:map mu4e-view-mode-map
                ("A" . lps/mu4e-view-mime-part-action))
          (:map mu4e-headers-mode-map
@@ -7504,6 +7509,13 @@ Change to wide reply ?")))))
             (concat "*mu4e-view* " (truncate-string-to-width name 10))))))
 
     (setq mu4e-view-buffer-name-func 'lps/mu4e-view-buffer-name-func))
+
+  ;; Allow one to change multiple "search flags" more easily
+  (defun lps/mu4e-search-toggle-properties (&optional dont-refresh)
+    "Repeatedly call `mu4e-search-toggle-property'"
+    (interactive "P")
+    (while t
+      (mu4e-search-toggle-property dont-refresh)))
 
 ;;; Contexts and private setup
   (require 'secrets)
