@@ -6649,6 +6649,11 @@ Does not run `cdlatex-tab-hook.'"
   (:map TeX-mode-map
         ("C-|" . latex-table-wizard)))
 
+(use-package markdown-mode
+  :defer t
+  :custom
+  (markdown-enable-prefix-prompts nil))
+
 (use-package emacs
   :ensure nil
   :mode ("\\.bash_.*" . sh-mode))
@@ -7280,8 +7285,14 @@ confirmation when sending a non-multipart MIME mail")
               "/usr/share/emacs/site-lisp/mu4e")
   :commands mu4e
   :bind (("C-c e" . mu4e)
-         :map mu4e-compose-mode-map
-         ("C-c h" . lps/org-mime-htmlize-preserve-secure-and-attach)
+         (:map mu4e-compose-mode-map
+               ("C-c h" . lps/org-mime-htmlize-preserve-secure-and-attach))
+         (:map mu4e-compose-mode-map
+               :prefix "C-C C-l"
+               :prefix-map mu4e-compose-markdown-style-map
+               ("C" . markdown-insert-gfm-code-block)
+               ("f" . markdown-insert-footnote)
+               ("l" . markdown-insert-link))
          (:map mu4e-main-mode-map
                ("Q" . lps/mu4e-kill-buffers)
                ("q" . lps/mu4e-quit))
@@ -7335,7 +7346,24 @@ confirmation when sending a non-multipart MIME mail")
   (mu4e-completing-read-function 'completing-read)
   (mu4e-read-option-use-builtin nil)    ; use completing-read too
   (mu4e-headers-auto-update nil)        ; somewhat confusing otherwise
+  (mu4e-bookmarks '(( :name  "Unread messages"
+                      :query "flag:unread AND NOT flag:trashed"
+                      :key ?u
+                      :favorite t)
+                    ( :name "Today's messages"
+                      :query "date:today..now"
+                      :key ?t)
+                    ( :name "Last 7 days"
+                      :query "date:7d..now"
+                      :hide-unread t
+                      :key ?w)
+                    ( :name "Recent personal"
+                      :query "date:7d..now AND (NOT flag:trashed) AND flag:personal"
+                      :key ?p)))
   :config
+  ;; Easier time using links/footnotes when writing mails
+  (require 'markdown-mode nil t)
+
   (add-to-list 'mu4e-header-info-custom
                `(:prio .
                        ,(list :name "Priority"
@@ -7378,6 +7406,39 @@ versions of mu4e."
                                            (completing-read "MIME-part: "
                                                             attachments nil t)
                                            attachments)))))))
+
+  ;; Improvement to URL handling, but not that robust
+  ;; Weird because it tries to respect the signature of the original
+  ;; `mu4e--view-get-urls-num', returning a string
+  (defun-override lps/mu4e--view-get-urls-num (prompt &optional multi)
+    (let* ((count (hash-table-count mu4e--view-link-map))
+           (def)
+           (nums (mapcar 'number-to-string (hash-table-keys mu4e--view-link-map)))
+           (completion-extra-properties
+            `(:annotation-function (lambda (num)
+                                     (concat "\t" ; needed ?! Should be handled
+                                        ; by completion framework ...
+                                             (gethash (string-to-number num) mu4e--view-link-map)))))
+           (crm-separator "[ ]+"))   ; respect the original function : splits on
+                                        ; space, not commas
+      (when (zerop count)
+        (mu4e-error "No links for this message"))
+      (cond
+       ((and (not multi) (= count 1))
+        (string-to-number (completing-read (mu4e-format "%s: " prompt)
+                                           nums
+                                           nil t nil nil 1)))
+       ((not multi)
+        (string-to-number (completing-read (mu4e-format "%s (1-%d): " prompt count)
+                                           nums
+                                           nil t nil nil 1)))
+       (multi
+        (setq def (if (= count 1) "1" (format "1-%d" count)))
+        (mapconcat 'identity (completing-read-multiple
+                              (mu4e-format "%s (default %s):" prompt def)
+                              nums
+                              nil nil nil nil def)
+                   " ")))))
 
   (defun lps/mu4e-thread-next ()
     (interactive)
@@ -8838,6 +8899,7 @@ internals of character width/display width/etc."
 
 (use-package elfeed-tube
   :after elfeed
+  :disabled t
   :custom
   (elfeed-tube-auto-save-p nil)
   (elfeed-tube-auto-fetch-p t)
