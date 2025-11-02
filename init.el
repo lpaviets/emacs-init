@@ -607,8 +607,17 @@ the mode-line and the usual non-full-screen Emacs are restored."
     (redraw-display)))
 
 ;; First time used: run M-x all-the-icons-install-fonts
+;; TODO: remove, prefer nerd-icons
 (use-package all-the-icons
   :defer t)
+
+(use-package nerd-icons
+  :defer t
+  :config
+  ;; Why is it needed ? Shouldn't it be called automatically ?
+  ;; Anyway, I need that for Emacs to automatically use the right font
+  ;; for this Unicode codepoints ...
+  (nerd-icons-set-font))
 
 (use-package doom-modeline
   :hook (after-init . doom-modeline-mode)
@@ -980,9 +989,15 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
                  (inhibit-same-window . nil)
                  (quit-restore ('window 'window nil nil)))))
 
+;; TODO: remove, prefer nerd-icons
 (use-package all-the-icons-ibuffer
   :defer t
   :hook (ibuffer-mode . all-the-icons-ibuffer-mode))
+
+;;; Waiting for some patches in upstream nerd-icons
+;; (use-package nerd-icons-ibuffer
+;;   :defer t
+;;   :hook (ibuffer-mode . nerd-icons-ibuffer-mode))
 
 (use-package ibuffer
   :defer t
@@ -1011,10 +1026,14 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
                       (derived-mode . prog-mode)
                       (not (mode . fundamental-mode))))
       ("Mail" (or
-               (name . "^\\*mm\\*.*$") ; heuristic for attachments
+               (name . "^\\*mm\\*.*$")  ; heuristic for attachments
                (derived-mode . gnus-article-mode)
                (mode . mu4e-headers-mode)
                (mode . mu4e-main-mode))))))
+  ;;; TODO: fix. Those are strings, but if we use chars, we lose properties about
+  ;;; which face we should use, and Emacs can't find a suitable font ...
+  ;; (ibuffer-read-only-char (nerd-icons-mdicon "nf-md-lock"))
+  ;; (ibuffer-modified-char (nerd-icons-mdicon "nf-md-content_save_edit"))
   :config
   (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode)
 
@@ -6921,7 +6940,7 @@ PWD is not in a git repo (or the git command is not found)."
                           file-size
                           file-time
                           subtree-state
-                          all-the-icons))
+                          nerd-icons))
     (dirvish-show-media-properties t)
     (dirvish-quick-access-entries `(("h" "~/" "Home")
                                     ("e" "~/.config/emacs/" "Emacs user directory")
@@ -6945,7 +6964,7 @@ PWD is not in a git repo (or the git command is not found)."
                                             (push (list key path desc) shortcuts)))
                                         (nreverse shortcuts))))
     :config
-    (remove-hook 'dired-mode-hook 'all-the-icons-dired-mode)
+    ;; (remove-hook 'dired-mode-hook 'all-the-icons-dired-mode) ; No longer needed ?!
 
     ;; Fix a potential bug with Dirvish and TRAMP (SFTP in particular):
     (defun-override lps/dirvish-noselect-tramp (fn dir flags remote)
