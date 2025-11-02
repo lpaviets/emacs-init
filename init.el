@@ -6174,10 +6174,6 @@ governed by the variable `bibtex-completion-display-formats'."
   (doi-utils-async-download )           ; buggy
   (doi-utils-open-pdf-after-download t)
   :config
-  (advice-ensure-bindings org-ref-read-key ((orderless-matching-styles
-                                             (cons 'char-fold-to-regexp
-                                                   orderless-matching-styles))))
-
   ;; Override to also use another list of functions
   (defun-override lps/doi-utils-get-pdf-url-from-anywhere (doi)
     "Return a url to a pdf for the DOI if one can be calculated.
@@ -6241,16 +6237,20 @@ If none is found, loops through the functions in
 (use-package org-ref
   :defer t
   :config
-  (require 'bibtex-completion))
+  (require 'bibtex-completion)
+
+  (advice-ensure-bindings org-ref-read-key ((orderless-matching-styles
+                                             (cons 'char-fold-to-regexp
+                                                   orderless-matching-styles)))))
 
 (use-package org-ref-bibtex
   :defer t
   :ensure nil
-  :commands org-ref-bibtex-hydra/body
+  :commands org-ref-bibtex-entry-menu
   :bind
-  ("C-c b" . org-ref-bibtex-hydra/body)
+  ("C-c b" . org-ref-bibtex-entry-menu)
   (:map lps/all-hydras-map
-        ("p" . org-ref-bibtex-hydra/body))
+        ("p" . org-ref-bibtex-entry-menu))
   :custom
   (org-ref-title-case-types '(("misc" "title")
                               ("inproceedings" "title")
@@ -6260,6 +6260,7 @@ If none is found, loops through the functions in
                               ("inbook" "booktitle" "title")))
   :config
   (org-roam-bibtex-mode 1)
+  (require 'org-ref) ;; Needed ? Unsure.
 
   (setq org-ref-clean-bibtex-entry-hook
         (remove 'orcb-check-journal org-ref-clean-bibtex-entry-hook))
@@ -6283,33 +6284,6 @@ If none is found, loops through the functions in
                                                            (point-max)))))
             (cl-pushnew (cons new-in new-out)
                         org-ref-nonascii-latex-replacements))))))
-
-  ;; Add a few things to the default hydra BIG Hack with eval:
-  ;; otherwise, defhydra+ tries to expand, and it needs to know whta
-  ;; org-ref-bibtex-hydra *is* ... but it can't before the package is
-  ;; loaded
-  (eval '(progn
-           (defhydra+ org-ref-bibtex-hydra (:color blue :hint nil)
-             "Bibtex actions:"
-             ("p" lps/org-ref-open-bibtex-pdf "PDF" :column "Open" :exit t)
-             ("n" lps/org-ref-open-bibtex-notes "Notes" :column "Open" :exit t)
-             ("b" lps/org-ref-open-in-browser "URL" :column "Open" :exit t)
-             ("B" (lambda ()
-                    (interactive)
-                    (bibtex-completion-show-entry (list (org-ref-read-key))))
-              "Show entry"
-              :column "Navigation"
-              :color "red")
-             ("e" org-ref-email-add-pdf "Email PDF only" :column "WWW")
-             ("E" org-ref-email-bibtex-entry "Email PDF and bib entry" :column "WWW")
-             ("]" org-ref-bibtex-next-entry "Next entry" :column "Navigation" :color red)
-             ("[" org-ref-bibtex-previous-entry "Previous entry" :column "Navigation" :color red))
-           ;; Add a command to search more sources at once
-           ;; (defhydra+ org-ref-bibtex-new-entry (:color blue)
-           ;;   "New Bibtex entry:"
-           ;;   ("N" doi-utils-get-pdf-url-from-anywhere "from anywhere"
-           ;;    :column "Automatic"))
-           ))
 
   (defun lps/org-ref-email-add-pdf--internal (keys)
     "Does the real work of `org-ref-email-add-pdf'
@@ -6343,20 +6317,24 @@ case it has to be a string."
     (lps/org-ref-email-add-pdf--internal (list (bibtex-completion-key-at-point))))
 
   ;; Redefine to use the interface that *should* be used ...
-  (defun lps/org-ref-open-bibtex-pdf ()
+  (defun-override lps/org-ref-open-bibtex-pdf ()
     "Open pdf for a bibtex entry, if it exists."
     (interactive)
     (bibtex-completion-open-pdf (list (bibtex-completion-key-at-point))))
 
-  (defun lps/org-ref-open-bibtex-notes ()
+  (defun-override lps/org-ref-open-bibtex-notes ()
     "From a bibtex entry, open the notes if they exist."
     (interactive)
     (bibtex-completion-edit-notes (list (bibtex-completion-key-at-point))))
 
-  (defun lps/org-ref-open-in-browser ()
+  (defun-override lps/org-ref-open-in-browser ()
     "Open the bibtex entry at point in a browser using the url field or doi field."
     (interactive)
     (bibtex-completion-open-url-or-doi (list (bibtex-completion-key-at-point))))
+
+  ;; Add to the transient UI ? I don't really use it though ...
+  ;; This is the old entry for the Hydra, now revamped into Transient menu.
+  ;; ("e" org-ref-email-add-pdf "Email PDF only" :column "WWW")
 
   (defun lps/org-ref-read-keys-multiple ()
     "Read keys with completion.
