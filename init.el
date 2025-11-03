@@ -934,6 +934,7 @@ It might be buggy with some backend, so use at your own risk"
   (global-auto-revert-mode t)
 
   :custom
+  (revert-without-query '("\\.pdf"))
   (display-buffer-base-action
    '((display-buffer-reuse-window)
      (display-buffer-reuse-mode-window)
