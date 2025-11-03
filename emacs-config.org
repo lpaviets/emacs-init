@@ -5643,6 +5643,16 @@ and you can even define your own backends easily.
     <<patch-ox-html-meta>>)
 #+end_src
 
+**** General export configuration
+
+#+begin_src emacs-lisp
+  (use-package ox
+    :after org
+    :custom
+    (org-export-with-toc nil)
+    (org-export-with-date nil))
+#+end_src
+
 **** Abbreviations
 
 A useful feature, offered by some static website generators (e.g. [[https://getpelican.com/][Pelican]] ...),
@@ -5847,7 +5857,12 @@ functions]].
             (inc-suffixf ref)))
         ref)))
 
-  (lps/org-export-html-with-useful-ids-mode 1)
+  (defun lps/org-export-html-with-useful-ids-perhaps (backend)
+    (if (eq backend 'html)
+        (lps/org-export-html-with-useful-ids-mode 1)
+      (lps/org-export-html-with-useful-ids-mode 0)))
+
+  (add-hook 'org-export-before-processing-functions 'lps/org-export-html-with-useful-ids-perhaps)
 #+end_src
 
 ** Org Agenda

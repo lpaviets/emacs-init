@@ -4396,12 +4396,23 @@ for a list of valid rules, to adapt this function."
             (inc-suffixf ref)))
         ref)))
 
-  (lps/org-export-html-with-useful-ids-mode 1)
+  (defun lps/org-export-html-with-useful-ids-perhaps (backend)
+    (if (eq backend 'html)
+        (lps/org-export-html-with-useful-ids-mode 1)
+      (lps/org-export-html-with-useful-ids-mode 0)))
+
+  (add-hook 'org-export-before-processing-functions 'lps/org-export-html-with-useful-ids-perhaps)
   (defun lps/org-build-meta-strip-trailing-slash (res)
     (replace-regexp-in-string " ?/>\n$" ">\n" res))
 
   (advice-add 'org-html--build-meta-entry
               :filter-return 'lps/org-build-meta-strip-trailing-slash))
+
+(use-package ox
+  :after org
+  :custom
+  (org-export-with-toc nil)
+  (org-export-with-date nil))
 
 (use-package org-agenda
   :ensure nil
