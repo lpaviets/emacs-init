@@ -6872,6 +6872,8 @@ PWD is not in a git repo (or the git command is not found)."
   (dired-listing-switches "-l --almost-all --human-readable --group-directories-first")
   (wdired-allow-to-change-permissions t)
   (dired-dwim-target t)
+  (dired-movement-style 'cycle)
+  (dired-maybe-use-globstar t)
   :config
   (defun lps/ibuffer-dired-current-directory (&optional other-window-p)
     (interactive "P")
