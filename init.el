@@ -606,11 +606,6 @@ the mode-line and the usual non-full-screen Emacs are restored."
       (setq lps/slideshow--old-window-configuration nil))
     (redraw-display)))
 
-;; First time used: run M-x all-the-icons-install-fonts
-;; TODO: remove, prefer nerd-icons
-(use-package all-the-icons
-  :defer t)
-
 (use-package nerd-icons
   :defer t
   :config
@@ -989,15 +984,16 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
                  (inhibit-same-window . nil)
                  (quit-restore ('window 'window nil nil)))))
 
-;; TODO: remove, prefer nerd-icons
-(use-package all-the-icons-ibuffer
-  :defer t
-  :hook (ibuffer-mode . all-the-icons-ibuffer-mode))
-
 ;;; Waiting for some patches in upstream nerd-icons
-;; (use-package nerd-icons-ibuffer
-;;   :defer t
-;;   :hook (ibuffer-mode . nerd-icons-ibuffer-mode))
+(use-package nerd-icons-ibuffer
+  :defer t
+  :hook (ibuffer-mode . nerd-icons-ibuffer-mode))
+
+(use-package nerd-icons-completion
+  :after marginalia
+  :config
+  (nerd-icons-completion-mode)
+  (add-hook 'marginalia-mode-hook #'nerd-icons-completion-marginalia-setup))
 
 (use-package ibuffer
   :defer t
@@ -1030,10 +1026,9 @@ minibuffer, exit recursive edit with `abort-recursive-edit'"
                (derived-mode . gnus-article-mode)
                (mode . mu4e-headers-mode)
                (mode . mu4e-main-mode))))))
-  ;;; TODO: fix. Those are strings, but if we use chars, we lose properties about
-  ;;; which face we should use, and Emacs can't find a suitable font ...
-  ;; (ibuffer-read-only-char (nerd-icons-mdicon "nf-md-lock"))
-  ;; (ibuffer-modified-char (nerd-icons-mdicon "nf-md-content_save_edit"))
+;;; TODO: fix spacing/alignment ? Seems hard to do.
+  (ibuffer-read-only-char (string-to-char (nerd-icons-mdicon "nf-md-lock")))
+  (ibuffer-modified-char (string-to-char (nerd-icons-mdicon "nf-md-content_save_edit")))
   :config
   (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode)
 
