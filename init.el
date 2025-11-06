@@ -607,12 +607,11 @@ the mode-line and the usual non-full-screen Emacs are restored."
     (redraw-display)))
 
 (use-package nerd-icons
-  :defer t
-  :config
   ;; Why is it needed ? Shouldn't it be called automatically ?
   ;; Anyway, I need that for Emacs to automatically use the right font
   ;; for this Unicode codepoints ...
-  (nerd-icons-set-font))
+  :init
+  (add-hook-once 'post-command-hook 'nerd-icons-set-font))
 
 (use-package doom-modeline
   :hook (after-init . doom-modeline-mode)
@@ -7633,20 +7632,23 @@ Change to wide reply ?")))))
 
 ;;; Appearance
   ;; Redefine everything here
-  (setq mu4e-headers-draft-mark     '("D" . "⚒")
-        mu4e-headers-flagged-mark   '("F" . "✚")
-        mu4e-headers-new-mark       '("N" . "✱")
-        mu4e-headers-passed-mark    '("P" . "❯")
-        mu4e-headers-replied-mark   '("R" . "❮")
-        mu4e-headers-seen-mark      '("S" . "✔")
-        mu4e-headers-trashed-mark   '("T" . "⏚")
-        mu4e-headers-attach-mark    '("a" . "≡")
-        mu4e-headers-encrypted-mark '("x" . "⸮")
-        mu4e-headers-signed-mark    '("s" . "☡")
-        mu4e-headers-unread-mark    '("u" . "⎕")
-        mu4e-headers-list-mark      '("s" . "⁞")
-        mu4e-headers-personal-mark  '("p" . "⍟")
-        mu4e-headers-calendar-mark  '("c" . "Ⓒ"))
+  ;; Use Nerd Icons, somewhat better looking flags !
+  (setq mu4e-headers-draft-mark     '("D" . "")
+        mu4e-headers-flagged-mark   '("F" . "󰐃")
+        mu4e-headers-new-mark       '("N" . "󰮒")
+        mu4e-headers-passed-mark    '("P" . "")
+        mu4e-headers-replied-mark   '("R" . "")
+        mu4e-headers-seen-mark      '("S" . "")
+        mu4e-headers-trashed-mark   '("T" . "")
+        mu4e-headers-attach-mark    '("a" . "󰁦")
+        mu4e-headers-encrypted-mark '("x" . "")
+        mu4e-headers-signed-mark    '("s" . "")
+        mu4e-headers-unread-mark    '("u" . "󰮒")
+        mu4e-headers-list-mark      '("s" . "")
+        mu4e-headers-personal-mark  '("p" . "")
+        mu4e-headers-calendar-mark  '("c" . ""))
+
+  (setopt mu4e-headers-from-or-to-prefix '("" . "→"))
 
   ;; Some default characters are not available in my default Mono font
   (setq mu4e-headers-thread-first-child-prefix '("o " . "⫯ "))
