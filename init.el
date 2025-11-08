@@ -434,6 +434,16 @@ the internal changes made by this config.")
                     (lps/set-default-fonts))))
     (lps/set-default-fonts)))
 
+(use-package nerd-icons
+  ;; Why is it needed ? Shouldn't it be called automatically ?
+  ;; Anyway, I need that for Emacs to automatically use the right font
+  ;; for this Unicode codepoints ...
+  :init
+  ;; TODO: clarify which one is needed ?
+  (if (daemonp)
+      (add-hook 'server-after-make-frame-hook 'nerd-icons-set-font)
+    (add-hook-once 'post-command-hook 'nerd-icons-set-font)))
+
 (use-package emacs
   :init
   (column-number-mode t)
@@ -605,13 +615,6 @@ the mode-line and the usual non-full-screen Emacs are restored."
       (set-window-configuration lps/slideshow--old-window-configuration)
       (setq lps/slideshow--old-window-configuration nil))
     (redraw-display)))
-
-(use-package nerd-icons
-  ;; Why is it needed ? Shouldn't it be called automatically ?
-  ;; Anyway, I need that for Emacs to automatically use the right font
-  ;; for this Unicode codepoints ...
-  :init
-  (add-hook-once 'post-command-hook 'nerd-icons-set-font))
 
 (use-package doom-modeline
   :hook (after-init . doom-modeline-mode)
@@ -4519,12 +4522,14 @@ for a list of valid rules, to adapt this function."
                           ("Others"       . "❓")
                           ("Games"        . "🎮")
                           ("Short-term"   . "⚠️")))
-    (cl-pushnew (list (car tag-and-icon)
-                      (list (substring-no-properties (cdr tag-and-icon)))
-                      nil nil
-                      :ascent 'center)
-                org-agenda-category-icon-alist
-                :test 'equal))
+    (let* ((tag (car tag-and-icon))
+           (icon (cdr tag-and-icon))
+           (full-form (list (list (substring-no-properties icon))
+                            nil nil
+                            :ascent 'center)))
+      (setf (alist-get tag org-agenda-category-icon-alist
+                       nil nil 'string-equal)
+            full-form)))
 
   ;; Taken from
   ;; https://d12frosted.io/posts/2020-06-24-task-management-with-roam-vol2.html
