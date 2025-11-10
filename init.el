@@ -7653,7 +7653,7 @@ Change to wide reply ?")))))
         mu4e-headers-personal-mark  '("p" . "")
         mu4e-headers-calendar-mark  '("c" . ""))
 
-  (setopt mu4e-headers-from-or-to-prefix '("" . "→"))
+  (setopt mu4e-headers-from-or-to-prefix '("" . "→ "))
 
   ;; Some default characters are not available in my default Mono font
   (setq mu4e-headers-thread-first-child-prefix '("o " . "⫯ "))
