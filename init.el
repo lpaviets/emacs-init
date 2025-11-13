@@ -4469,11 +4469,12 @@ for a list of valid rules, to adapt this function."
    '(("IDEA" . (:foreground "purple1" :weight bold))
      ("READ" . (:foreground "orchid3" :weight bold))
      ("NEXT" . (:foreground "orange1" :weight bold))))
-
-  (org-agenda-breadcrumbs-separator "/")
+  (org-agenda-search-view-always-boolean t)
+  (org-agenda-time-leading-zero t)
+  (org-agenda-breadcrumbs-separator " ⏵ ")
   (org-agenda-format-date 'lps/org-agenda-format-date)
   (org-agenda-prefix-format
-   '((agenda . " %i %(lps/agenda-category 15)%?-15t%b% s")
+   '((agenda . " %i %(lps/agenda-category 15)%-15t%-22b% s")
      (todo . " %i %(lps/agenda-category 15) ")
      (tags . " %i %(lps/agenda-category 15) ")
      (search . " %i %(lps/agenda-category 15)")))
@@ -4497,8 +4498,8 @@ for a list of valid rules, to adapt this function."
   ;; Maybe don't hardcode width and refer to some kind of window/buffer width ?
   (defun lps/org-agenda-format-date (date)
     (let ((old (org-agenda-format-date-aligned date)))
-      (format "%s\n▶ %s \n"
-              (make-string 40 lps/org-agenda-date-separator)
+      (format "%s\n▶ ❰ %s ❱ \n"
+              (make-string (/ (window-width) 3) lps/org-agenda-date-separator)
               old)))
 
   ;; Icons and categories
@@ -4510,7 +4511,7 @@ for a list of valid rules, to adapt this function."
                           ("Seminar"      . "🪧")
                           ("Workshop"     . "👥") ; same icon as conference
                           ("Culture"      . "🎨")
-                          ("PhDResearch"  . "🎓")
+                          ("Research"     . "🎓")
                           ("Holidays"     . "☀️")
                           ("Science"      . "👩🏾‍🔬")
                           ("Banque"       . "💰")
@@ -4577,13 +4578,13 @@ Refer to `org-agenda-prefix-format' for more information."
           (s-truncate len (s-pad-right len " " result))
         result)))
 
-  (dolist (cmd '(("p" . "PhD related views")
-                 ("pp" "PhD (everything)"
-                  ((agenda) (tags-todo "phd"))
-                  ((org-agenda-tag-filter-preset '("+phd"))))
-                 ("pe" "PhD excluded"
-                  ((agenda) (tags-todo "-phd"))
-                  ((org-agenda-tag-filter-preset '("-phd"))))))
+  (dolist (cmd '(("p" . "Research related views")
+                 ("pp" "Research (everything)"
+                  ((agenda) (tags-todo "research"))
+                  ((org-agenda-tag-filter-preset '("+research"))))
+                 ("pe" "Research excluded"
+                  ((agenda) (tags-todo "-research"))
+                  ((org-agenda-tag-filter-preset '("-research"))))))
     (cl-pushnew cmd
                 org-agenda-custom-commands
                 :test 'equal))

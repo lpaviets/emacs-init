@@ -5933,11 +5933,12 @@ given task, and so on.
      '(("IDEA" . (:foreground "purple1" :weight bold))
        ("READ" . (:foreground "orchid3" :weight bold))
        ("NEXT" . (:foreground "orange1" :weight bold))))
-
-    (org-agenda-breadcrumbs-separator "/")
+    (org-agenda-search-view-always-boolean t)
+    (org-agenda-time-leading-zero t)
+    (org-agenda-breadcrumbs-separator " ⏵ ")
     (org-agenda-format-date 'lps/org-agenda-format-date)
     (org-agenda-prefix-format
-     '((agenda . " %i %(lps/agenda-category 15)%?-15t%b% s")
+     '((agenda . " %i %(lps/agenda-category 15)%-15t%-22b% s")
        (todo . " %i %(lps/agenda-category 15) ")
        (tags . " %i %(lps/agenda-category 15) ")
        (search . " %i %(lps/agenda-category 15)")))
@@ -5961,8 +5962,8 @@ given task, and so on.
     ;; Maybe don't hardcode width and refer to some kind of window/buffer width ?
     (defun lps/org-agenda-format-date (date)
       (let ((old (org-agenda-format-date-aligned date)))
-        (format "%s\n▶ %s \n"
-                (make-string 40 lps/org-agenda-date-separator)
+        (format "%s\n▶ ❰ %s ❱ \n"
+                (make-string (/ (window-width) 3) lps/org-agenda-date-separator)
                 old)))
 
     ;; Icons and categories
@@ -5974,7 +5975,7 @@ given task, and so on.
                             ("Seminar"      . "🪧")
                             ("Workshop"     . "👥") ; same icon as conference
                             ("Culture"      . "🎨")
-                            ("PhDResearch"  . "🎓")
+                            ("Research"     . "🎓")
                             ("Holidays"     . "☀️")
                             ("Science"      . "👩🏾‍🔬")
                             ("Banque"       . "💰")
@@ -6041,13 +6042,13 @@ given task, and so on.
             (s-truncate len (s-pad-right len " " result))
           result)))
 
-    (dolist (cmd '(("p" . "PhD related views")
-                   ("pp" "PhD (everything)"
-                    ((agenda) (tags-todo "phd"))
-                    ((org-agenda-tag-filter-preset '("+phd"))))
-                   ("pe" "PhD excluded"
-                    ((agenda) (tags-todo "-phd"))
-                    ((org-agenda-tag-filter-preset '("-phd"))))))
+    (dolist (cmd '(("p" . "Research related views")
+                   ("pp" "Research (everything)"
+                    ((agenda) (tags-todo "research"))
+                    ((org-agenda-tag-filter-preset '("+research"))))
+                   ("pe" "Research excluded"
+                    ((agenda) (tags-todo "-research"))
+                    ((org-agenda-tag-filter-preset '("-research"))))))
       (cl-pushnew cmd
                   org-agenda-custom-commands
                   :test 'equal))
@@ -11397,6 +11398,15 @@ To explore:
   a toggle of the mode.
 - Check that khalel/Khal integration works properly, and fix the apparent bug in
   org-capture integration
+- [ ] Org agenda: add hack (with some advices) to properly align the "tasks" to do
+  in the agenda buffer. More precisely, the function ~org-agenda-format-item~
+  calls the "breadcrumb-formatting" function ~org-format-outline-path~ with a
+  maximal width of ~(1- (frame-width))~, while we would like to set it to the same
+  value as the one that is used in the case of the *absence* of breadcrumbs,
+  hardcoded in ~org-agenda-prefix-format~. To do that, we can add an advice around
+  ~org-format-outline-path~, which sets the width to (?) depending on the value of
+  some variable, dynamically set by some other advice around the ~format-item~
+  function.
 
 ** mu4e
 
