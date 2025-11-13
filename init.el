@@ -4162,8 +4162,10 @@ for a list of valid rules, to adapt this function."
 
 (use-package org-modern
   :after org
-  :hook (org-modern-mode . lps/org-modern)
-  :custom
+  :hook
+  (org-modern-mode . lps/org-modern)
+  (org-agenda-finalize . org-modern-agenda)
+:custom
   (org-modern-fold-stars '(("▶" . "▼")
                            ("▷" . "▽")
                            ;; ("⯈" . "⯆") ; unavailable in my font of choice
@@ -4484,6 +4486,7 @@ for a list of valid rules, to adapt this function."
   (set-face-attribute 'org-agenda-date nil :italic t :underline nil)
   (set-face-attribute 'org-agenda-date-today nil :italic t :underline nil)
   (set-face-attribute 'org-agenda-date-weekend nil :italic t :underline nil)
+  (set-face-attribute 'org-imminent-deadline nil :underline nil)
 
   (defvar lps/org-agenda-date-separator
     (if (and (display-graphic-p)
@@ -7049,16 +7052,16 @@ PWD is not in a git repo (or the git command is not found)."
                               (dired-dwim-target-directory)
                               nil nil nil 'file-directory-p))))
 
-;;;; Add a colourful directory preview.
-;;;; Not really needed and somewhat noisy ...
-    ;; (dirvish-define-preview exa (file)
-    ;;   "Use `exa' to generate directory preview."
-    ;;   :require ("exa")             ; tell Dirvish to check if we have the executable
-    ;;   (when (file-directory-p file)         ; we only interest in directories here
-    ;;     `(shell . ("exa" "-al" "--color=always" "--icons"
-    ;;                "--group-directories-first" ,file))))
+    ;;; Add a colourful directory preview.
+    ;;; Not really needed and somewhat noisy ...
+    (dirvish-define-preview eza (file)
+      "Use `eza' to generate directory preview."
+      :require ("eza")         ; tell Dirvish to check if we have the executable
+      (when (file-directory-p file)     ; we only interest in directories here
+        `(shell . ("eza" "-al" "--color=always" "--icons"
+                   "--group-directories-first" ,file))))
 
-    ;; (add-to-list 'dirvish-preview-dispatchers 'exa)
+    ;; (add-to-list 'dirvish-preview-dispatchers 'eza)
     )))
 
 (use-package tramp
