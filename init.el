@@ -4473,6 +4473,8 @@ for a list of valid rules, to adapt this function."
   (org-agenda-time-leading-zero t)
   (org-agenda-breadcrumbs-separator " ⏵ ")
   (org-agenda-format-date 'lps/org-agenda-format-date)
+  ;; TODO: this 22 is the same as the one in
+  ;; `lps/org-format-outline-path-maybe-set-width', may be add a variable ?
   (org-agenda-prefix-format
    '((agenda . " %i %(lps/agenda-category 15)%-15t%-22b% s")
      (todo . " %i %(lps/agenda-category 15) ")
@@ -4501,6 +4503,25 @@ for a list of valid rules, to adapt this function."
       (format "%s\n▶ ❰ %s ❱ \n"
               (make-string (/ (window-width) 3) lps/org-agenda-date-separator)
               old)))
+
+  ;; Allows one to truncate breadcrumbs in org-agenda, to have a nice alignment
+  (defvar lps/org-agenda-should-truncate-breadcrumbs nil)
+
+  (defun lps/org-format-outline-path-maybe-set-width (args)
+    (cl-destructuring-bind (path &optional width prefix separator)
+        args
+      (list path
+            (if lps/org-agenda-should-truncate-breadcrumbs
+                (min (- 22 3) (1- (frame-width)))
+              width)
+            prefix
+            separator)))
+
+  (advice-add 'org-format-outline-path
+              :filter-args 'lps/org-format-outline-path-maybe-set-width)
+
+  (advice-ensure-bindings org-agenda-format-item
+                          ((lps/org-agenda-should-truncate-breadcrumbs t)))
 
   ;; Icons and categories
   (dolist (tag-and-icon `(("."            . "❔")
@@ -4540,23 +4561,23 @@ for a list of valid rules, to adapt this function."
   (defun lps/agenda-category (&optional len)
     "Get category of item at point for agenda.
 
-Category is defined by one of the following items:
+  Category is defined by one of the following items:
 
-- CATEGORY property
-- TITLE keyword
-- TITLE property
-- filename without directory and extension
+  - CATEGORY property
+  - TITLE keyword
+  - TITLE property
+  - filename without directory and extension
 
-When LEN is a number, resulting string is padded right with
-spaces and then truncated with ... on the right if result is
-longer than LEN.
+  When LEN is a number, resulting string is padded right with
+  spaces and then truncated with ... on the right if result is
+  longer than LEN.
 
-Usage example:
+  Usage example:
 
-  (setq org-agenda-prefix-format
-        '((agenda . \" %(lps/agenda-category) %?-12t %12s\")))
+    (setq org-agenda-prefix-format
+          '((agenda . \" %(lps/agenda-category) %?-12t %12s\")))
 
-Refer to `org-agenda-prefix-format' for more information."
+  Refer to `org-agenda-prefix-format' for more information."
     (let* ((file-name (when buffer-file-name
                         (file-name-sans-extension
                          (file-name-nondirectory buffer-file-name))))
@@ -4589,7 +4610,7 @@ Refer to `org-agenda-prefix-format' for more information."
                 org-agenda-custom-commands
                 :test 'equal))
 
-  ;;; Org agenda files handling.
+;;; Org agenda files handling.
 
   ;; The idea is that I want to have Org-Roam Notes in agenda, as I might use
   ;; TODOs/FIXMEs etc in them, but I never have proper *agenda* stuff:

@@ -5881,7 +5881,7 @@ built-in functionality is the agenda, where you can schedule tasks, set
 deadlines, configure reminders, the frequency at which you will need to repeat a
 given task, and so on.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :noweb yes
   (use-package org-agenda
     :ensure nil
     :hook
@@ -5937,6 +5937,8 @@ given task, and so on.
     (org-agenda-time-leading-zero t)
     (org-agenda-breadcrumbs-separator " ⏵ ")
     (org-agenda-format-date 'lps/org-agenda-format-date)
+    ;; TODO: this 22 is the same as the one in
+    ;; `lps/org-format-outline-path-maybe-set-width', may be add a variable ?
     (org-agenda-prefix-format
      '((agenda . " %i %(lps/agenda-category 15)%-15t%-22b% s")
        (todo . " %i %(lps/agenda-category 15) ")
@@ -5947,62 +5949,113 @@ given task, and so on.
     ;; TODO: check sometimes to see if it has been fixed/how to fix it
     (add-to-list 'warning-suppress-types '(org-element org-element-parser) nil 'equal)
 
-    ;; Faces
-    (set-face-attribute 'org-agenda-date nil :italic t :underline nil)
-    (set-face-attribute 'org-agenda-date-today nil :italic t :underline nil)
-    (set-face-attribute 'org-agenda-date-weekend nil :italic t :underline nil)
-    (set-face-attribute 'org-imminent-deadline nil :underline nil)
+    <<org-agenda-appearance>>
 
-    (defvar lps/org-agenda-date-separator
-      (if (and (display-graphic-p)
-               (char-displayable-p ?─))
-          ?─
-        ?-))
+    (dolist (cmd '(("p" . "Research related views")
+                   ("pp" "Research (everything)"
+                    ((agenda) (tags-todo "research"))
+                    ((org-agenda-tag-filter-preset '("+research"))))
+                   ("pe" "Research excluded"
+                    ((agenda) (tags-todo "-research"))
+                    ((org-agenda-tag-filter-preset '("-research"))))))
+      (cl-pushnew cmd
+                  org-agenda-custom-commands
+                  :test 'equal))
 
-    ;; Maybe don't hardcode width and refer to some kind of window/buffer width ?
-    (defun lps/org-agenda-format-date (date)
-      (let ((old (org-agenda-format-date-aligned date)))
-        (format "%s\n▶ ❰ %s ❱ \n"
-                (make-string (/ (window-width) 3) lps/org-agenda-date-separator)
-                old)))
+  ;;; Org agenda files handling.
 
-    ;; Icons and categories
-    (dolist (tag-and-icon `(("."            . "❔")
-                            ("Lectures"     . "🏫")
-                            ("Conference"   . "👥")
-                            ("Talk"         . "🔊")
-                            ("Exam"         . "💯")
-                            ("Seminar"      . "🪧")
-                            ("Workshop"     . "👥") ; same icon as conference
-                            ("Culture"      . "🎨")
-                            ("Research"     . "🎓")
-                            ("Holidays"     . "☀️")
-                            ("Science"      . "👩🏾‍🔬")
-                            ("Banque"       . "💰")
-                            ("Informatique" . "💻")
-                            ("Logement"     . "🏠️")
-                            ("Santé"        . "⚕️")
-                            ("Social"       . "🎉")
-                            ("Books"        . "📚")
-                            ("Cinema"       . "🎥")
-                            ("Musique"      . "🎶")
-                            ("Workplace"    . "🏢")
-                            ("Others"       . "❓")
-                            ("Games"        . "🎮")
-                            ("Short-term"   . "⚠️")))
-      (let* ((tag (car tag-and-icon))
-             (icon (cdr tag-and-icon))
-             (full-form (list (list (substring-no-properties icon))
-                              nil nil
-                              :ascent 'center)))
-        (setf (alist-get tag org-agenda-category-icon-alist
-                         nil nil 'string-equal)
-              full-form)))
+    ;; The idea is that I want to have Org-Roam Notes in agenda, as I might use
+    ;; TODOs/FIXMEs etc in them, but I never have proper *agenda* stuff:
+    ;; deadlines, scheduling, meetings ... I therefore simply remove them in the
+    ;; "actual" agenda view.
+    (defun lps/without-roam-agenda-files (fun &rest args)
+      (let ((org-agenda-files (list (lps/org-expand-file-name "agenda" t) ; basic agenda files
+                                    (lps/org-expand-file-name "archive" t)))) ; archived files
+        (apply fun args)))
 
-    ;; Taken from
-    ;; https://d12frosted.io/posts/2020-06-24-task-management-with-roam-vol2.html
-    (defun lps/agenda-category (&optional len)
-      "Get category of item at point for agenda.
+    (advice-add 'org-agenda-list :around 'lps/without-roam-agenda-files))
+
+#+end_src
+
+We place in the next block most of the visual configuration of the agenda :
+
+#+NAME: org-agenda-appearance
+#+begin_src emacs-lisp :tangle no
+  ;; Faces
+  (set-face-attribute 'org-agenda-date nil :italic t :underline nil)
+  (set-face-attribute 'org-agenda-date-today nil :italic t :underline nil)
+  (set-face-attribute 'org-agenda-date-weekend nil :italic t :underline nil)
+  (set-face-attribute 'org-imminent-deadline nil :underline nil)
+
+  (defvar lps/org-agenda-date-separator
+    (if (and (display-graphic-p)
+             (char-displayable-p ?─))
+        ?─
+      ?-))
+
+  ;; Maybe don't hardcode width and refer to some kind of window/buffer width ?
+  (defun lps/org-agenda-format-date (date)
+    (let ((old (org-agenda-format-date-aligned date)))
+      (format "%s\n▶ ❰ %s ❱ \n"
+              (make-string (/ (window-width) 3) lps/org-agenda-date-separator)
+              old)))
+
+  ;; Allows one to truncate breadcrumbs in org-agenda, to have a nice alignment
+  (defvar lps/org-agenda-should-truncate-breadcrumbs nil)
+
+  (defun lps/org-format-outline-path-maybe-set-width (args)
+    (cl-destructuring-bind (path &optional width prefix separator)
+        args
+      (list path
+            (if lps/org-agenda-should-truncate-breadcrumbs
+                (min (- 22 3) (1- (frame-width)))
+              width)
+            prefix
+            separator)))
+
+  (advice-add 'org-format-outline-path
+              :filter-args 'lps/org-format-outline-path-maybe-set-width)
+
+  (advice-ensure-bindings org-agenda-format-item
+                          ((lps/org-agenda-should-truncate-breadcrumbs t)))
+
+  ;; Icons and categories
+  (dolist (tag-and-icon `(("."            . "❔")
+                          ("Lectures"     . "🏫")
+                          ("Conference"   . "👥")
+                          ("Talk"         . "🔊")
+                          ("Exam"         . "💯")
+                          ("Seminar"      . "🪧")
+                          ("Workshop"     . "👥") ; same icon as conference
+                          ("Culture"      . "🎨")
+                          ("Research"     . "🎓")
+                          ("Holidays"     . "☀️")
+                          ("Science"      . "👩🏾‍🔬")
+                          ("Banque"       . "💰")
+                          ("Informatique" . "💻")
+                          ("Logement"     . "🏠️")
+                          ("Santé"        . "⚕️")
+                          ("Social"       . "🎉")
+                          ("Books"        . "📚")
+                          ("Cinema"       . "🎥")
+                          ("Musique"      . "🎶")
+                          ("Workplace"    . "🏢")
+                          ("Others"       . "❓")
+                          ("Games"        . "🎮")
+                          ("Short-term"   . "⚠️")))
+    (let* ((tag (car tag-and-icon))
+           (icon (cdr tag-and-icon))
+           (full-form (list (list (substring-no-properties icon))
+                            nil nil
+                            :ascent 'center)))
+      (setf (alist-get tag org-agenda-category-icon-alist
+                       nil nil 'string-equal)
+            full-form)))
+
+  ;; Taken from
+  ;; https://d12frosted.io/posts/2020-06-24-task-management-with-roam-vol2.html
+  (defun lps/agenda-category (&optional len)
+    "Get category of item at point for agenda.
 
   Category is defined by one of the following items:
 
@@ -6021,51 +6074,26 @@ given task, and so on.
           '((agenda . \" %(lps/agenda-category) %?-12t %12s\")))
 
   Refer to `org-agenda-prefix-format' for more information."
-      (let* ((file-name (when buffer-file-name
-                          (file-name-sans-extension
-                           (file-name-nondirectory buffer-file-name))))
-             (title (org-with-point-at 1
-                      (when (re-search-forward (concat "^#\\+" "title" ": \\(.*\\)")
-                                               (point-max) t)
-                        (buffer-substring-no-properties
-                         (match-beginning 1)
-                         (match-end 1)))))
-             (category (org-get-category))
-             (result
-              (or (if (and
-                       title
-                       (string-equal category file-name))
-                      title
-                    category)
-                  "")))
-        (if (numberp len)
-            (s-truncate len (s-pad-right len " " result))
-          result)))
-
-    (dolist (cmd '(("p" . "Research related views")
-                   ("pp" "Research (everything)"
-                    ((agenda) (tags-todo "research"))
-                    ((org-agenda-tag-filter-preset '("+research"))))
-                   ("pe" "Research excluded"
-                    ((agenda) (tags-todo "-research"))
-                    ((org-agenda-tag-filter-preset '("-research"))))))
-      (cl-pushnew cmd
-                  org-agenda-custom-commands
-                  :test 'equal))
-
-    ;;; Org agenda files handling.
-
-    ;; The idea is that I want to have Org-Roam Notes in agenda, as I might use
-    ;; TODOs/FIXMEs etc in them, but I never have proper *agenda* stuff:
-    ;; deadlines, scheduling, meetings ... I therefore simply remove them in the
-    ;; "actual" agenda view.
-    (defun lps/without-roam-agenda-files (fun &rest args)
-      (let ((org-agenda-files (list (lps/org-expand-file-name "agenda" t) ; basic agenda files
-                                    (lps/org-expand-file-name "archive" t)))) ; archived files
-        (apply fun args)))
-
-    (advice-add 'org-agenda-list :around 'lps/without-roam-agenda-files))
-
+    (let* ((file-name (when buffer-file-name
+                        (file-name-sans-extension
+                         (file-name-nondirectory buffer-file-name))))
+           (title (org-with-point-at 1
+                    (when (re-search-forward (concat "^#\\+" "title" ": \\(.*\\)")
+                                             (point-max) t)
+                      (buffer-substring-no-properties
+                       (match-beginning 1)
+                       (match-end 1)))))
+           (category (org-get-category))
+           (result
+            (or (if (and
+                     title
+                     (string-equal category file-name))
+                    title
+                  category)
+                "")))
+      (if (numberp len)
+          (s-truncate len (s-pad-right len " " result))
+        result)))
 #+end_src
 
 *** Integration with CalDAV
@@ -11398,7 +11426,7 @@ To explore:
   a toggle of the mode.
 - Check that khalel/Khal integration works properly, and fix the apparent bug in
   org-capture integration
-- [ ] Org agenda: add hack (with some advices) to properly align the "tasks" to do
+- [X] Org agenda: add hack (with some advices) to properly align the "tasks" to do
   in the agenda buffer. More precisely, the function ~org-agenda-format-item~
   calls the "breadcrumb-formatting" function ~org-format-outline-path~ with a
   maximal width of ~(1- (frame-width))~, while we would like to set it to the same
@@ -11407,7 +11435,6 @@ To explore:
   ~org-format-outline-path~, which sets the width to (?) depending on the value of
   some variable, dynamically set by some other advice around the ~format-item~
   function.
-
 ** mu4e
 
 - [ ] Add a way to download all (or at least some ?) attachments from multiple
