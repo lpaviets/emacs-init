@@ -4471,15 +4471,15 @@ for a list of valid rules, to adapt this function."
      ("NEXT" . (:foreground "orange1" :weight bold))))
   (org-agenda-search-view-always-boolean t)
   (org-agenda-time-leading-zero t)
-  (org-agenda-breadcrumbs-separator " ⏵ ")
+  (org-agenda-breadcrumbs-separator " ▶ ")
   (org-agenda-format-date 'lps/org-agenda-format-date)
   ;; TODO: this 22 is the same as the one in
   ;; `lps/org-format-outline-path-maybe-set-width', may be add a variable ?
   (org-agenda-prefix-format
-   '((agenda . " %i %(lps/agenda-category 15)%-15t%-22b% s")
-     (todo . " %i %(lps/agenda-category 15) ")
-     (tags . " %i %(lps/agenda-category 15) ")
-     (search . " %i %(lps/agenda-category 15)")))
+   '((agenda . " %-2i %(lps/agenda-category 15)%-15t%-22b% s")
+     (todo . " %-2i %(lps/agenda-category 15) ")
+     (tags . " %-2i %(lps/agenda-category 15) ")
+     (search . " %-2i %(lps/agenda-category 15)")))
 
   :config
   ;; TODO: check sometimes to see if it has been fixed/how to fix it
