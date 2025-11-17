@@ -58,6 +58,7 @@
         lps/kill-region-or-word-dwim
         lps/lisp-indent-adjust-parens
         lps/org-maybe-surround-*
+        lps/org-maybe-surround-+
         lps/org-return-dwim
         lps/select-line
         lps/transpose-sexp-backward

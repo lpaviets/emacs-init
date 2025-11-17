@@ -428,7 +428,9 @@ located in the =~/.gnupg/= directory on Linux.
     (use-package auth-source
       :defer t
       :custom
-      (auth-sources '("secrets:default" "~/.authinfo.gpg"))
+      (auth-sources '("secrets:default"
+                      ;; "~/.authinfo.gpg" ; try not to use it, see if anything breaks
+                      ))
       (auth-source-cache-expiry 86400) ;; All day
 
       :config
@@ -5893,12 +5895,7 @@ given task, and so on.
     (org-agenda-files
      (list (lps/org-expand-file-name "agenda" t)  ; basic agenda files
            (lps/org-expand-file-name "archive" t) ; archived files
-           ;; org-roam-directory, not necessarily loaded
-           ;; at this point: don't want to have org-agenda
-           ;; depend on org-roam
-           (lps/org-expand-file-name "RoamNotes" t)
-           ;; Now for articles-notes: somewhat bad to hardcode ...
-           (lps/org-expand-file-name "RoamNotes/articles-notes" t)))
+           ))
     (org-log-into-drawer t)
     (org-log-done 'time)
     (org-archive-location (concat (lps/org-expand-file-name "archive" t)
@@ -5949,8 +5946,6 @@ given task, and so on.
     ;; TODO: check sometimes to see if it has been fixed/how to fix it
     (add-to-list 'warning-suppress-types '(org-element org-element-parser) nil 'equal)
 
-    <<org-agenda-appearance>>
-
     (dolist (cmd '(("p" . "Research related views")
                    ("pp" "Research (everything)"
                     ((agenda) (tags-todo "research"))
@@ -5968,12 +5963,25 @@ given task, and so on.
     ;; TODOs/FIXMEs etc in them, but I never have proper *agenda* stuff:
     ;; deadlines, scheduling, meetings ... I therefore simply remove them in the
     ;; "actual" agenda view.
-    (defun lps/without-roam-agenda-files (fun &rest args)
-      (let ((org-agenda-files (list (lps/org-expand-file-name "agenda" t) ; basic agenda files
-                                    (lps/org-expand-file-name "archive" t)))) ; archived files
+    (defvar lps/org-agenda-files-with-roam
+      (append org-agenda-files
+              (list
+               ;; org-roam-directory, not necessarily loaded
+               ;; at this point: don't want to have org-agenda
+               ;; depend on org-roam
+               (lps/org-expand-file-name "RoamNotes" t)
+               ;; Now for articles-notes: somewhat bad to hardcode ...
+               (lps/org-expand-file-name "RoamNotes/articles-notes" t))))
+
+    (defun lps/with-roam-agenda-files (fun &rest args)
+      (let ((org-agenda-files lps/org-agenda-files-with-roam))
         (apply fun args)))
 
-    (advice-add 'org-agenda-list :around 'lps/without-roam-agenda-files))
+    (advice-add 'org-todo-list :around 'lps/with-roam-agenda-files)
+
+    ;; Appearance
+    <<org-agenda-appearance>>
+    )
 
 #+end_src
 
@@ -6040,6 +6048,7 @@ We place in the next block most of the visual configuration of the agenda :
                           ("Cinema"       . "🎥")
                           ("Musique"      . "🎶")
                           ("Workplace"    . "🏢")
+                          ("Birthday"     . "🎂")
                           ("Others"       . "❓")
                           ("Games"        . "🎮")
                           ("Short-term"   . "⚠️")))
@@ -10433,73 +10442,75 @@ Emacs user.
   (use-package calfw
     :defer t
     :hook
-    (cfw:calendar-mode . lps/enable-auto-hscroll-scroll)
+    (calfw-calendar-mode . lps/enable-auto-hscroll-scroll)
     :bind
-    (:map cfw:calendar-mode-map
-          ("RET" . cfw:show-details-command))
+    (:map calfw-calendar-mode-map
+          ("RET" . calfw-show-details-command))
     :custom
     ;; Taken from https://github.com/kiwanami/emacs-calfw
 
     ;; If it does not show, comment this, and it will use the defaults which are
     ;; normal ascii chars instead.
-    (cfw:fchar-junction ?┼)
-    (cfw:fchar-vertical-line ?│)
-    (cfw:fchar-horizontal-line ?─)
-    (cfw:fchar-left-junction ?├)
-    (cfw:fchar-right-junction ?┤)
-    (cfw:fchar-top-junction ?┬)
-    (cfw:fchar-top-left-corner ?┌)
-    (cfw:fchar-top-right-corner ?┐)
-    (cfw:render-line-breaker 'cfw:render-line-breaker-wordwrap))
+    (calfw-fchar-junction ?┼)
+    (calfw-fchar-vertical-line ?│)
+    (calfw-fchar-horizontal-line ?─)
+    (calfw-fchar-left-junction ?├)
+    (calfw-fchar-right-junction ?┤)
+    (calfw-fchar-top-junction ?┬)
+    (calfw-fchar-top-left-corner ?┌)
+    (calfw-fchar-top-right-corner ?┐)
+    (calfw-render-line-breaker 'calfw-render-line-breaker-wordwrap))
 
   (use-package calfw-org
     :defer t
     :init
-    (setq cfw:org-overwrite-default-keybinding t) ; dumb here but it is not a custom var ...
-    :bind ("C-c A" . cfw:open-org-calendar)
+    (setq calfw-org-overwrite-default-keybinding t) ; dumb here but it is not a custom var ...
+    :bind ("C-c A" . calfw-org-open-calendar)
     :config
     ;; There is a problem with the original function: periods are displayed at the
     ;; wrong dates + multiple times. AFAICT, the computations of start-date and
     ;; end-date are bonkers, so we fix those.
-    (defun-override lps/cfw:org-get-timerange (text)
-      "Return a range object (begin end text).
-  If TEXT does not have a range, return nil."
-      (let* ((dotime (cfw:org-tp text 'dotime)))
-        (and (stringp dotime)
-             (string-match org-ts-regexp dotime)
-             (let ((date-string  (match-string 1 dotime))
-                   (extra (cfw:org-tp text 'extra)))
-               (when (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra)
-                 (let* ((range-beg (save-match-data (org-read-date nil t date-string)))
-                        (total-days (string-to-number
-                                     (match-string 2 extra)))
-                        (start-date range-beg)
-                        (end-date (time-add
-                                   start-date
-                                   (seconds-to-time (* 3600 24 (- total-days 1))))))
-                   (list (calendar-gregorian-from-absolute (time-to-days start-date))
-                         (calendar-gregorian-from-absolute (time-to-days end-date))
-                         text)))))))
+
+    ;; TODO: seems to be no longer necessary : check if it has actually been fixed
+    ;;   (defun-override lps/calfw-org-get-timerange (text)
+    ;;     "Return a range object (begin end text).
+    ;; If TEXT does not have a range, return nil."
+    ;;     (let* ((dotime (calfw-org--tp text 'dotime)))
+    ;;       (and (stringp dotime)
+    ;;            (string-match org-ts-regexp dotime)
+    ;;            (let ((date-string  (match-string 1 dotime))
+    ;;                  (extra (calfw-org--tp text 'extra)))
+    ;;              (when (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra)
+    ;;                (let* ((range-beg (save-match-data (org-read-date nil t date-string)))
+    ;;                       (total-days (string-to-number
+    ;;                                    (match-string 2 extra)))
+    ;;                       (start-date range-beg)
+    ;;                       (end-date (time-add
+    ;;                                  start-date
+    ;;                                  (seconds-to-time (* 3600 24 (- total-days 1))))))
+    ;;                  (list (calendar-gregorian-from-absolute (time-to-days start-date))
+    ;;                        (calendar-gregorian-from-absolute (time-to-days end-date))
+    ;;                        text)))))))
 
     ;; Still a problem: Emoji size makes alignment weird, as characters are too wide.
     ;; Possible fix/solution: either use font-rescaling, or find a monospace font
     ;; with Emoji symbols.
-    ;; More precisely, the internal function `cfw:render-truncate' calls `truncate-string-to-width',
+    ;; More precisely, the internal function `calfw-render-truncate' calls `truncate-string-to-width',
     ;; which itself is imprecise when used on strings containing combined characters -- which some
     ;; emojis are. A possible solution would be to completely rewrite it but it is a pain.
     ;; In fact, `string-width' seems fine always return 2 for emojis I care about), but the truncation
     ;; is not. so I might need to roll my own braindead truncation function.
-    (defun lps/cfw:org-summary-format (item)
-      (let* ((original (cfw:org-summary-format item))
+    (defun lps/calfw-org-summary-format (item)
+      (let* ((original (calfw-org-summary-format item))
              (props (text-properties-at 0 original))
-             (category (cfw:org-tp item 'org-category))
+             (category (calfw-org--tp item 'org-category))
              (icon (caadr (assoc-string category org-agenda-category-icon-alist))))
         (if icon
             (concat (apply 'propertize icon props)
                     original)
           original)))
 
-    (defun cfw:truncate-string (string width ellipsis)
+    (defun calfw-truncate-string (string width ellipsis)
       (let ((i 1)
             (olds "")
             (news (substring string 0 1)))
@@ -10515,23 +10526,24 @@ Emacs user.
                                 (nil " "))))
           (s-concat olds ellipsis-string))))
 
-    (defun-override lps/cfw:render-truncate (org limit-width &optional ellipsis)
-      "[internal] Truncate a string ORG with LIMIT-WIDTH, like `truncate-string-to-width'.
+    ;; TODO : also no longer seems to be necessary : check if it is fine !
+    ;;   (defun-override lps/calfw-render-truncate (org limit-width &optional ellipsis)
+    ;;     "[internal] Truncate a string ORG with LIMIT-WIDTH, like `truncate-string-to-width'.
 
-  PATCHED : This does not use `truncate-string-to-width', which tends to
-  \"fail\" with composed characters/emojis, in a way that I do not
-  understand. We use a hackish fix, without a deep understanding of the
-  internals of character width/display width/etc."
-      (setq org (replace-regexp-in-string "\n" " " org))
-      (if (< limit-width (string-width org))
-          (let ((str (cfw:truncate-string org limit-width ellipsis)))
-            (cfw:tp str 'mouse-face 'highlight)
-            (unless (get-text-property 0 'help-echo str)
-              (cfw:tp str 'help-echo org))
-            str)
-        org))
+    ;; PATCHED : This does not use `truncate-string-to-width', which tends to
+    ;; \"fail\" with composed characters/emojis, in a way that I do not
+    ;; understand. We use a hackish fix, without a deep understanding of the
+    ;; internals of character width/display width/etc."
+    ;;     (setq org (replace-regexp-in-string "\n" " " org))
+    ;;     (if (< limit-width (string-width org))
+    ;;         (let ((str (calfw-truncate-string org limit-width ellipsis)))
+    ;;           (calfw-tp str 'mouse-face 'highlight)
+    ;;           (unless (get-text-property 0 'help-echo str)
+    ;;             (calfw-tp str 'help-echo org))
+    ;;           str)
+    ;;       org))
 
-    (setq cfw:org-schedule-summary-transformer 'lps/cfw:org-summary-format))
+    (setq calfw-org-schedule-summary-transformer 'lps/calfw-org-summary-format))
 #+end_src
 
 * News and RSS feed
