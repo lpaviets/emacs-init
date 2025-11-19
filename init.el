@@ -7285,7 +7285,9 @@ confirmation when sending a non-multipart MIME mail")
   ;;(mml-secure-smime-sign-with-sender t)
   :config
   ;; Prefer text compared to html
-  (add-to-list 'mm-discouraged-alternatives "text/html")
+  (dolist (alt '("text/html"
+                 "multipart/related"))
+    (add-to-list 'mm-discouraged-alternatives alt))
 
   (defun lps/message-tab ()
     (interactive nil message-mode)
