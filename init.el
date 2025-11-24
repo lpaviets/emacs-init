@@ -2100,6 +2100,7 @@ moving point or mark as little as possible."
   :ensure nil
   :init
   (defvar lps/yank-indent-modes '(prog-mode latex-mode))
+  (defvar lps/yank-noindent-modes '(python-mode))
   :bind
   ("M-k" . lps/copy-line-at-point)
   ("M-à" . lps/mark-line)
@@ -2142,7 +2143,8 @@ the current selection by line."
     (interactive "*P")
     (let ((point (point)))
       (yank arg)
-      (when (-some 'derived-mode-p lps/yank-indent-modes)
+      (when (and (-some 'derived-mode-p lps/yank-indent-modes)
+                 (not (-some 'derived-mode-p lps/yank-noindent-modes)))
         (indent-region point (point)))))
 
   ;; Make `C-w' consistent with readline

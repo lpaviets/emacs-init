@@ -2905,6 +2905,7 @@ is quicker than having to do something like =C-a C-SPC C-e=
     :ensure nil
     :init
     (defvar lps/yank-indent-modes '(prog-mode latex-mode))
+    (defvar lps/yank-noindent-modes '(python-mode))
     :bind
     ("M-k" . lps/copy-line-at-point)
     ("M-à" . lps/mark-line)
@@ -2947,7 +2948,8 @@ is quicker than having to do something like =C-a C-SPC C-e=
       (interactive "*P")
       (let ((point (point)))
         (yank arg)
-        (when (-some 'derived-mode-p lps/yank-indent-modes)
+        (when (and (-some 'derived-mode-p lps/yank-indent-modes)
+                   (not (-some 'derived-mode-p lps/yank-noindent-modes)))
           (indent-region point (point)))))
 
     ;; Make `C-w' consistent with readline
