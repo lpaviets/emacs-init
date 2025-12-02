@@ -1859,7 +1859,14 @@ It then tries to match, in this:
   (:map corfu-map
         ("C-s" . corfu-insert-separator))
   :init
-  (add-hook-once 'pre-command-hook 'global-corfu-mode))
+  (add-hook-once 'pre-command-hook 'global-corfu-mode)
+  :config
+  ;; If using Orderless, there are some weird bugs
+  ;; We fix those by advising an internal function
+  ;; TODO (maybe) Debug/Fix for real ?
+  (advice-ensure-bindings corfu--in-region-1 ((completion-styles '(basic
+                                                                   partial-completion
+                                                                   emacs22)))))
 
 (use-package corfu-popupinfo
   :custom
@@ -3223,7 +3230,93 @@ call the associated function interactively. Otherwise, call the
                '("\\*sly-db" . ((display-buffer-reuse-mode-window
                                  display-buffer-below-selected)
                                 . ((inhibit-same-window . nil)
-                                   (mode . sly-db-mode))))))
+                                   (mode . sly-db-mode)))))
+
+  ;; Really sluggish when you have lots of buffer opened
+
+  ;; Made even worse by doom-modeline, can't really figure out why
+
+  ;; We just comment out the troublesome bits, the main point is that SLY has to
+  ;; filter the entire buffer list to find its own buffers/debugging buffers and
+  ;; so on
+  (defun-override lps/sly--mode-line-format ()
+    (let* ((conn (sly-current-connection))
+           (conn (and (process-live-p conn) conn))
+           (name (or (and conn
+                          (sly-connection-name conn))
+                     "*"))
+           (pkg (sly-current-package))
+           (format-number (lambda (n) (cond ((and n (not (zerop n)))
+                                             (format "%d" n))
+                                            (n "-")
+                                            (t "*"))))
+           (package-name (and pkg
+                              (sly--pretty-package-name pkg)))
+           (pending (and conn
+                         (length (sly-rex-continuations conn))))
+           ;; (sly-dbs (and conn (length (sly-db-buffers conn))))
+           )
+      `((:propertize "sly"
+                     face sly-mode-line
+                     keymap ,(let ((map (make-sparse-keymap)))
+                               (define-key map [mode-line down-mouse-1]
+                                           sly-menu)
+                               map)
+                     mouse-face mode-line-highlight
+                     help-echo "mouse-1: pop-up SLY menu"
+                     )
+        " "
+        (:propertize ,name
+                     face sly-mode-line
+                     keymap ,(let ((map (make-sparse-keymap)))
+                               (define-key map [mode-line mouse-1] 'sly-prev-connection)
+                               (define-key map [mode-line mouse-2] 'sly-list-connections)
+                               (define-key map [mode-line mouse-3] 'sly-next-connection)
+                               map)
+                     mouse-face mode-line-highlight
+                     help-echo ,(concat "mouse-1: previous connection\n"
+                                        "mouse-2: list connections\n"
+                                        "mouse-3: next connection"))
+        "/"
+        ,(or package-name "*")
+        "/"
+        (:propertize ,(funcall format-number pending)
+                     help-echo ,(if conn (format "%s pending events outgoing\n%s"
+                                                 pending
+                                                 (concat "mouse-1: go to *sly-events* buffer"
+                                                         "mouse-3: forget pending continuations"))
+                                  "No current connection")
+                     mouse-face mode-line-highlight
+                     face ,(cond ((and pending (cl-plusp pending))
+                                  'warning)
+                                 (t
+                                  'sly-mode-line))
+                     keymap ,(let ((map (make-sparse-keymap)))
+                               (define-key map [mode-line mouse-1] 'sly-pop-to-events-buffer)
+                               (define-key map [mode-line mouse-3] 'sly-forget-pending-events)
+                               map))
+        ;; "/"
+        ;; (:propertize ,(funcall format-number sly-dbs)
+        ;;              help-echo ,(if conn (format "%s SLY-DB buffers waiting\n%s"
+        ;;                                          pending
+        ;;                                          "mouse-1: go to first one")
+        ;;                           "No current connection")
+        ;;              mouse-face mode-line-highlight
+        ;;              face ,(cond ((and sly-dbs (cl-plusp sly-dbs))
+        ;;                           'warning)
+        ;;                          (t
+        ;;                           'sly-mode-line))
+        ;;              keymap ,(let ((map (make-sparse-keymap)))
+        ;;                        (define-key map [mode-line mouse-1] 'sly-db-pop-to-debugger)
+        ;;                        map))
+        ,@(cl-loop for construct in sly-extra-mode-line-constructs
+                   collect "/"
+                   collect (if (and (symbolp construct)
+                                    (fboundp construct))
+                               (condition-case _oops
+                                   (funcall construct)
+                                 (error "*sly-invalid*"))
+                             construct))))))
 
 (use-package sly-mrepl
   :ensure nil
@@ -6532,7 +6625,7 @@ present in the list of authors or in the title of the article"
   (cdlatex-takeover-parenthesis nil)
   (cdlatex-math-symbol-prefix ?°)
   (cdlatex-math-symbol-alist
-   '((?< ("\\leq" "\\iff"))
+   '((?< ("\\leq"  "\\impliedby" "\\iff"))
      (?> ("\\geq" "\\implies"))
      (?\[ ("\\subseteq" "\\sqsubseteq" "\\sqsubset"))
      (?\] ("\\supseteq" "\\sqsupseteq" "\\sqsupset"))
