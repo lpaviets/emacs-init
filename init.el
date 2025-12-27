@@ -2300,17 +2300,16 @@ Move point in the last duplicated string (line or region)."
 
 (use-package emacs
   :ensure nil
-  :bind-keymap ("C-o" . lps/manipulate-lines-map)
+  :bind-keymap ("C-z C-o" . lps/manipulate-lines-map)
   :bind
   (:map lps/manipulate-lines-map
-        ("o" . open-line)
         ("p" . lps/insert-line-above)
         ("n" . lps/insert-line-below)
         ("l" . list-matching-lines)
         ("s" . sort-lines)
-        ("r b" . delete-blank-lines)
-        ("r d" . delete-matching-lines)
-        ("r k" . keep-lines))
+        ("b" . delete-blank-lines)
+        ("d" . delete-matching-lines)
+        ("k" . keep-lines))
   :custom
   (list-matching-lines-default-context-lines 1)
   (list-matching-lines-jump-to-current-line t)
