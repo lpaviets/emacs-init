@@ -7072,6 +7072,8 @@ PWD is not in a git repo (or the git command is not found)."
     (dirvish-hide-cursor nil)
     (dirvish-use-mode-line t)
     (dirvish-subtree-state-style 'arrow)
+    (dirvish-path-separators '("  " "  " "  ")
+                             )
     (dirvish-subtree-always-show-state t)
     (dirvish-mode-line-height 15)       ; same as doom-modeline, see above
     (dirvish-mode-line-format '(:left
@@ -7178,8 +7180,8 @@ PWD is not in a git repo (or the git command is not found)."
                               (dired-dwim-target-directory)
                               nil nil nil 'file-directory-p))))
 
-    ;;; Add a colourful directory preview.
-    ;;; Not really needed and somewhat noisy ...
+;;; Add a colourful directory preview.
+;;; Not really needed and somewhat noisy ...
     (dirvish-define-preview eza (file)
       "Use `eza' to generate directory preview."
       :require ("eza")         ; tell Dirvish to check if we have the executable
