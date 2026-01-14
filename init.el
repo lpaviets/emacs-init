@@ -255,12 +255,17 @@ the internal changes made by this config.")
   (defvar lps/quick-edit-map (make-sparse-keymap))
   (defvar lps/system-tools-map (make-sparse-keymap))
   (defvar lps/all-hydras-map (make-sparse-keymap))
-  (defvar lps/manipulate-lines-map (make-sparse-keymap)))
+  (defvar lps/manipulate-lines-map (make-sparse-keymap))
+  :bind-keymap
+  ("C-z"     . lps/quick-edit-map)
+  ("C-c s"   . lps/system-tools-map)
+  ("C-c h"   . lps/all-hydras-map)
+  :config
+  ;; TODO : fix this keymap definition
+  (keymap-set lps/quick-edit-map "C-o" lps/manipulate-lines-map))
 
 (use-package package
   :ensure nil
-  :bind-keymap
-  ("C-c s" . lps/system-tools-map)
   :bind
   (:map lps/system-tools-map
         ("P i" . package-install)
@@ -782,8 +787,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
   :hook (emacs-news-mode . page-break-lines-mode))
 
 (use-package hydra
-  :defer t
-  :bind-keymap ("C-c h" . lps/all-hydras-map))
+  :defer t)
 
 ;; Easier hydra definition
 (use-package pretty-hydra
@@ -2300,7 +2304,6 @@ Move point in the last duplicated string (line or region)."
 
 (use-package emacs
   :ensure nil
-  :bind-keymap ("C-z C-o" . lps/manipulate-lines-map)
   :bind
   (:map lps/manipulate-lines-map
         ("p" . lps/insert-line-above)
@@ -2328,8 +2331,6 @@ Move point in the last duplicated string (line or region)."
 
 (use-package emacs
   :ensure nil
-  :bind-keymap
-  ("C-z" . lps/quick-edit-map)
   :bind
   (:map lps/quick-edit-map
         ("C-u" . lps/underline-or-frame-dwim)
