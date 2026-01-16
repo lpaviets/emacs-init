@@ -936,7 +936,7 @@ It might be buggy with some backend, so use at your own risk"
 (use-package emacs
   :ensure nil
   :bind
-  ([remap kill-buffer] . lps/kill-buffer)
+  ([remap kill-buffer] . kill-current-buffer)
   :init
   ;; Automatically reload a file if it has been modified
   (global-auto-revert-mode t)
@@ -953,17 +953,6 @@ It might be buggy with some backend, so use at your own risk"
   (global-auto-revert-ignore-modes '(pdf-view-mode))
 
   :config
-  (defun lps/kill-buffer (&optional arg)
-    "Kill the current buffer if no ARG. Otherwise, prompt for a
-buffer to kill. If ARG is nil and the function is called from the
-minibuffer, exit recursive edit with `abort-recursive-edit'"
-    (interactive "P")
-    (if arg
-        (call-interactively 'kill-buffer)
-      (if (minibufferp)
-          (abort-recursive-edit)
-        (kill-buffer (current-buffer)))))
-
   ;; Display all the "help" buffers in the same window
   (defvar lps/help-modes '(helpful-mode
                            help-mode
@@ -1605,7 +1594,8 @@ It then tries to match, in this:
         ("a" . mc/mark-all-like-this)
         ("A" . mc/mark-all-dwim)
         ("d" . lps/eglot-mc-symbol-at-point)
-        ("D" . mc/mark-all-symbols-like-this-in-defun))
+        ("D" . mc/mark-all-symbols-like-this-in-defun)
+        ("l" . mc/edit-lines))
   (:map lps/multiple-cursors-repeat-map
         ("<down>" . mc/mark-next-like-this)
         ("<up>" . mc/mark-previous-like-this)
@@ -2950,6 +2940,10 @@ Does not insert a space before the inserted opening parenthesis"
         ("<f5>" . lps/auto-compile))
   :custom
   (compilation-message-face nil)
+  :bind
+  (:map compilation-button-map
+        ("C-<return>" . compile-goto-error)
+        ("C-RET" . compile-goto-error))
   :config
   (defvar lps/auto-compile-command-alist nil
     "Alist containing commands to run to automatically compile the
@@ -4989,6 +4983,7 @@ for a list of valid rules, to adapt this function."
     (pdf-links-convert-pointsize-scale 0.015) ;; Slightly bigger than default
     (pdf-view-display-size 'fit-page)
     (pdf-view-selection-style 'glyph)
+    (pdf-view-mode-line-position-use-labels t)
     :config
     (pdf-tools-install :no-query)
 
@@ -6803,7 +6798,8 @@ Does not run `cdlatex-tab-hook.'"
  (gnu/linux
   (use-package vterm
     :defer t
-    :if module-file-suffix)
+    :if module-file-suffix
+    :hook (vterm-mode . compilation-shell-minor-mode))
 
   (use-package vterm-toggle
     :bind

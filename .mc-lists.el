@@ -128,6 +128,7 @@
 (setq mc/cmds-to-run-once
       '(
         consult-line
+        describe-keymap
         dired-do-compress-to
         dired-hide-details-mode
         dired-toggle-read-only
