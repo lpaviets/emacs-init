@@ -2933,8 +2933,9 @@ Does not insert a space before the inserted opening parenthesis"
                  flymake-show-buffer-diagnostics))
     (put cmd 'repeat-map 'flymake-repeat-map)))
 
-(use-package emacs
+(use-package compile
   :ensure nil
+  :only-built-in t
   :bind
   (:map prog-mode-map
         ("<f5>" . lps/auto-compile))
@@ -2944,7 +2945,7 @@ Does not insert a space before the inserted opening parenthesis"
   (:map compilation-button-map
         ("C-<return>" . compile-goto-error)
         ("C-RET" . compile-goto-error))
-  :config
+  :init
   (defvar lps/auto-compile-command-alist nil
     "Alist containing commands to run to automatically compile the
 current file.

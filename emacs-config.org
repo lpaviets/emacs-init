@@ -3999,8 +3999,9 @@ current program easily. We will use the built-in ~compile~ command for this, and
 tune it as we need.
 
 #+begin_src emacs-lisp
-  (use-package emacs
+  (use-package compile
     :ensure nil
+    :only-built-in t
     :bind
     (:map prog-mode-map
           ("<f5>" . lps/auto-compile))
@@ -4010,7 +4011,7 @@ tune it as we need.
     (:map compilation-button-map
           ("C-<return>" . compile-goto-error)
           ("C-RET" . compile-goto-error))
-    :config
+    :init
     (defvar lps/auto-compile-command-alist nil
       "Alist containing commands to run to automatically compile the
   current file.
