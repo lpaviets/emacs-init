@@ -4976,7 +4976,9 @@ for a list of valid rules, to adapt this function."
           ([remap scroll-up-command] . pdf-view-scroll-up-or-next-page)
           ([remap scroll-down-command] . pdf-view-scroll-down-or-previous-page))
     :custom
-    (pdf-links-read-link-convert-commands '("-font" "FreeMono"
+    ;; TODO : maybe fix ? `magick' does not find the font by name and a solution
+    ;; createing extra config files for ImageMagick is not great ...
+    (pdf-links-read-link-convert-commands `("-font" ,(aref (font-info "DejaVu Sans Mono") 12)
                                             "-pointsize" "%P"
                                             "-undercolor" "%f"
                                             "-fill" "%b"
@@ -5089,6 +5091,28 @@ for a list of valid rules, to adapt this function."
     ;;              (pdf-view-create-image image-data t))
     ;;             (pdf-links-read-link-action--read-chars prompt alist))
     ;;         (pdf-view-redisplay)))))
+
+    ;; Fix "Invalid Image specification" message when doing stuff
+    ;; in a pdf : zoom, search ...
+    (defun-override lps/pdf-view-image-size (&optional displayed-p window page)
+      "Return the size in pixel of the current image in WINDOW.
+
+    If DISPLAYED-P is non-nil, return the size of the displayed
+    image.  These values may be different, if slicing is used.
+
+    If PAGE is non-nil return its size instead of current page."
+      (let ((display-prop (if pdf-view-roll-minor-mode
+                              (progn (setq window (if (windowp window) window (selected-window)))
+                                     (setq page (or page (pdf-view-current-page window)))
+                                     (unless (memq page (image-mode-window-get 'displayed-pages window))
+                                       (pdf-view-display-page page window))
+                                     (overlay-get (pdf-roll-page-overlay page window) 'display))
+                            (image-get-display-property))))
+        (if (eq (car display-prop) 'image)
+            (image-size display-prop t)
+          (if displayed-p
+              (image-display-size display-prop t)
+            (image-size (nth 1 display-prop) t)))))
 
     (defun lps/pdf-isearch-sync-backward-search ()
       (interactive)
