@@ -471,6 +471,36 @@ the internal changes made by this config.")
 
   (defun lps/enable-auto-hscroll-scroll ()
     (setq-local auto-hscroll-mode t))
+
+  (define-fringe-bitmap 'lps/continuation-left
+    [
+     #b00111000
+     #b01000000
+     #b01000000
+     #b00100000
+     #b00010000
+     #b00001010
+     #b00000110
+     #b00011110
+     ])
+
+  (define-fringe-bitmap 'lps/continuation-right
+    [
+     #b00011100
+     #b01100010
+     #b00000010
+     #b00000100
+     #b01001000
+     #b01010000
+     #b01100000
+     #b01111000
+     ])
+
+  (add-to-list 'fringe-indicator-alist
+               '(continuation lps/continuation-left lps/continuation-right)
+               nil
+               'equal)
+
   :custom
   (hscroll-margin 10)
   (hscroll-step 10)
