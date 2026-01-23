@@ -2556,6 +2556,8 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
   (magit-show-long-lines-warning nil)
   (magit-module-sections-nested nil)   ; disable if many modules in a given repo
   (magit-clone-always-transient t)
+  (magit-diff-refine-hunk t) ; Might be 'all later: slower but less annoying ?
+  (magit-format-file-function 'magit-format-file-nerd-icons)
   (magit-repository-directories `((,(expand-file-name "~/from_source") . 1)
                                   (,(expand-file-name "Projects"
                                                       (xdg-user-dir "DOCUMENTS"))
@@ -2830,10 +2832,11 @@ Does not insert a space before the inserted opening parenthesis"
 ;;YASnippet
 (use-package yasnippet
   :init
-  (defvar lps/snippets-dir-root (expand-file-name "snippets" user-emacs-directory))
+  (defvar lps/snippets-dir-root
+    (expand-file-name "snippets" user-emacs-directory))
   :custom
   (yas-verbosity 1)
-  :hook ((prog-mode LaTeX-mode) . yas-minor-mode)
+  :hook (prog-mode . yas-minor-mode)
   :bind (:map yas-minor-mode-map
               ("TAB" . nil)
               ("<tab>" . nil))
