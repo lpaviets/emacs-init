@@ -6865,10 +6865,7 @@ documents, using the famous tool AUCTeX.
                         (TeX-find-opening-brace))))
           (delete-region (1- (cdr bounds)) (cdr bounds))
           (delete-region (car bounds) (1+ brace)))
-        t))
-
-    ;; Beamer-related stuff
-    <<beamer-mode>>)
+        t)))
 
   (use-package latex
     :after tex
@@ -7097,11 +7094,17 @@ macro, etc.
 #+end_src
 
 **** Beamer
+
 Beamer, a (the !) LaTeX document class used to produce presentations, slideshows
-and so on, is a beast in itself. We configure it separately in this section.
+and so on, is a beast in itself. We configure it separately in this section. In
+order to work as expected, we actually tangle it to a separate style file, in a
+location where AucTeX will look it.
+
+TODO (maybe) Tangle to a more general file, using ~TeX-style-private~ (problem:
+not necessarily defined when *tangling* ...)
 
 #+NAME: beamer-mode
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp :tangle auctex/beamer.el
   (defvar beamer-mode-map
     (define-keymap
       "C-M-x"   'lps/LaTeX-beamer-compile-frame
@@ -7124,10 +7127,6 @@ and so on, is a beast in itself. We configure it separately in this section.
         (advice-remove 'TeX-fold-item 'lps/TeX-fold-item-beamer)
         (lps/LaTeX-beamer-remove-frame-as-section)
         (TeX-fold-clearout-buffer))))
-
-  (add-hook 'TeX-update-style-hook
-            (lambda ()
-              (TeX-add-style-hook "beamer" 'beamer-mode))) ; Buggy ?! Overrides default
 
   ;; Folding
   (defvar lps/TeX-beamer-fold-frame-overlay-regexp
@@ -7392,6 +7391,8 @@ and so on, is a beast in itself. We configure it separately in this section.
                 (while (re-search-forward "[[:digit:]]+" end t)
                   (let ((num (string-to-number (match-string 0))))
                     (replace-match (number-to-string (+ num n))))))))))))
+
+  (TeX-add-style-hook "beamer" 'beamer-mode TeX-dialect)
 #+end_src
 
 **** References
