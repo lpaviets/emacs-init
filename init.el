@@ -1967,6 +1967,21 @@ It then tries to match, in this:
   :config
   (defun query-replace-number (num to-expr &optional delimited start end
                                    backward region-noncontiguous-p)
+    "Similar to `query-replace', using Elisp capacities to handle numbers.
+More precisely, it will replace every number NUM of the region by the
+result of the (elisp) expression TO-EXPR.
+
+The function prompts for a *variable name* NUM, the value of which (when
+matched) is substituted in the occurrences of NUM within TO-EXPR. For
+example:
+
+(query-replace-number n \"(1+ n)\")
+
+will increment every number in the buffer by 1.
+
+Numbers are matched by a regexp amounting to
+
+SIGN? DIGIT* DOT DIGIT+"
     (declare (interactive-args
               (start (use-region-beginning))
               (end (use-region-end))
