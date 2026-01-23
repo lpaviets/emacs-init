@@ -496,11 +496,6 @@ the internal changes made by this config.")
      #b01111000
      ])
 
-  (add-to-list 'fringe-indicator-alist
-               '(continuation lps/continuation-left lps/continuation-right)
-               nil
-               'equal)
-
   :custom
   (hscroll-margin 10)
   (hscroll-step 10)
@@ -508,6 +503,11 @@ the internal changes made by this config.")
   (display-line-numbers-width 3)
   (display-line-numbers-grow-only t)
   (fill-column 80)                      ; default 70 is a bit low
+  (fringe-indicator-alist
+   (cl-pushnew '(continuation lps/continuation-left lps/continuation-right)
+               fringe-indicator-alist
+               :test 'equal))
+  'equal
   :hook
   ((prog-mode LaTeX-mode) . display-line-numbers-mode)
   ((text-mode LaTeX-mode comint-mode) . visual-line-mode)
