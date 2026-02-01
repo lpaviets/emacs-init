@@ -5533,23 +5533,23 @@ The return value is the string as entered in the minibuffer."
 
   ;; Improve compile region
   ;; TODO: Fix to also work with biblatex/biber
-  (defun lps/LaTeX-add-bib-to-compile-region ()
-    (let (bibstyle bibpath)
-      (with-current-buffer TeX-region-master-buffer
-        (save-excursion
-          (goto-char (point-min))
-          (setq bibpath (reftex-locate-bibliography-files
-                         (file-name-directory (reftex-TeX-master-file))))
-          (re-search-forward "\\\\bibliographystyle{[a-z]+}" nil t)
-          (setq bibstyle (or (match-string-no-properties 0) ""))))
-      (save-excursion
-        (goto-char (point-max))
-        (re-search-backward "\\\\end{document}")
-        (insert bibstyle
-                "\n"
-                "\\bibliography{"
-                (mapconcat 'identity bibpath ",")
-                "}\n"))))
+  ;; (defun lps/LaTeX-add-bib-to-compile-region ()
+  ;;   (let (bibstyle bibpath)
+  ;;     (with-current-buffer TeX-region-master-buffer
+  ;;       (save-excursion
+  ;;         (goto-char (point-min))
+  ;;         (setq bibpath (reftex-locate-bibliography-files
+  ;;                        (file-name-directory (reftex-TeX-master-file))))
+  ;;         (re-search-forward "\\\\bibliographystyle{[a-z]+}" nil t)
+  ;;         (setq bibstyle (or (match-string-no-properties 0) ""))))
+  ;;     (save-excursion
+  ;;       (goto-char (point-max))
+  ;;       (re-search-backward "\\\\end{document}")
+  ;;       (insert bibstyle
+  ;;               "\n"
+  ;;               "\\bibliography{"
+  ;;               (mapconcat 'identity bibpath ",")
+  ;;               "}\n"))))
 
   (defun-override lps/TeX-command-run-all (arg)
     "Compile the current document until an error occurs or it is finished.
@@ -5574,6 +5574,59 @@ The return value is the string as entered in the minibuffer."
 
   ;; (add-hook 'TeX-region-hook 'lps/LaTeX-add-bib-to-compile-region)
   )
+
+;; Full recompile
+(defun lps/TeX-recompile-all ()
+  ;; Clean everything
+  (TeX-clean t)
+  ;; Recompile everything
+  (let ((TeX-debug-bad-boxes t)
+        (TeX-debug-warnings t)
+        (TeX-error-overview-open-after-TeX-run t))
+    (TeX-command-sequence t t)))
+
+;; Improve compile region
+;; TODO: Fix to also work with biblatex/biber
+;; (defun lps/LaTeX-add-bib-to-compile-region ()
+;;   (let (bibstyle bibpath)
+;;     (with-current-buffer TeX-region-master-buffer
+;;       (save-excursion
+;;         (goto-char (point-min))
+;;         (setq bibpath (reftex-locate-bibliography-files
+;;                        (file-name-directory (reftex-TeX-master-file))))
+;;         (re-search-forward "\\\\bibliographystyle{[a-z]+}" nil t)
+;;         (setq bibstyle (or (match-string-no-properties 0) ""))))
+;;     (save-excursion
+;;       (goto-char (point-max))
+;;       (re-search-backward "\\\\end{document}")
+;;       (insert bibstyle
+;;               "\n"
+;;               "\\bibliography{"
+;;               (mapconcat 'identity bibpath ",")
+;;               "}\n"))))
+
+(defun-override lps/TeX-command-run-all (arg)
+  "Compile the current document until an error occurs or it is finished.
+With a prefix ARG (`\\[universal-argument] \\[TeX-command-run-all]'),
+compile the current region instead, that is, call
+`TeX-command-run-all-region'.  With multiple prefix
+arguments (`\\[universal-argument] \\[universal-argument] \\[TeX-command-run-all]'),
+compile the current section instead, that is, call
+`LaTeX-command-run-all-section'.
+If called in a narrowed buffer, run `TeX-command-run-all-region' on the
+narrowed part of the buffer."
+  (interactive "P")
+  (cond
+   ((null arg)
+    (if (buffer-narrowed-p)
+        (let ((TeX-command-region-begin (point-min))
+              (TeX-command-region-end (point-max)))
+          (TeX-command-run-all-region))
+      (TeX-command-sequence t t)))
+   ((= 4 (car arg)) (TeX-command-run-all-region))
+   (t               (LaTeX-command-run-all-section))))
+
+;; (add-hook 'TeX-region-hook 'lps/LaTeX-add-bib-to-compile-region)
 
 (use-package tex-fold
   :defer t

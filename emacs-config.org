@@ -7026,7 +7026,7 @@ documents, using the famous tool AUCTeX.
 
 
 #+NAME: tex-better-compilation
-#+begin_src emacs-lisp :tangle no
+#+begin_src emacs-lisp
   ;; Full recompile
   (defun lps/TeX-recompile-all ()
     ;; Clean everything
@@ -7039,23 +7039,23 @@ documents, using the famous tool AUCTeX.
 
   ;; Improve compile region
   ;; TODO: Fix to also work with biblatex/biber
-  (defun lps/LaTeX-add-bib-to-compile-region ()
-    (let (bibstyle bibpath)
-      (with-current-buffer TeX-region-master-buffer
-        (save-excursion
-          (goto-char (point-min))
-          (setq bibpath (reftex-locate-bibliography-files
-                         (file-name-directory (reftex-TeX-master-file))))
-          (re-search-forward "\\\\bibliographystyle{[a-z]+}" nil t)
-          (setq bibstyle (or (match-string-no-properties 0) ""))))
-      (save-excursion
-        (goto-char (point-max))
-        (re-search-backward "\\\\end{document}")
-        (insert bibstyle
-                "\n"
-                "\\bibliography{"
-                (mapconcat 'identity bibpath ",")
-                "}\n"))))
+  ;; (defun lps/LaTeX-add-bib-to-compile-region ()
+  ;;   (let (bibstyle bibpath)
+  ;;     (with-current-buffer TeX-region-master-buffer
+  ;;       (save-excursion
+  ;;         (goto-char (point-min))
+  ;;         (setq bibpath (reftex-locate-bibliography-files
+  ;;                        (file-name-directory (reftex-TeX-master-file))))
+  ;;         (re-search-forward "\\\\bibliographystyle{[a-z]+}" nil t)
+  ;;         (setq bibstyle (or (match-string-no-properties 0) ""))))
+  ;;     (save-excursion
+  ;;       (goto-char (point-max))
+  ;;       (re-search-backward "\\\\end{document}")
+  ;;       (insert bibstyle
+  ;;               "\n"
+  ;;               "\\bibliography{"
+  ;;               (mapconcat 'identity bibpath ",")
+  ;;               "}\n"))))
 
   (defun-override lps/TeX-command-run-all (arg)
     "Compile the current document until an error occurs or it is finished.
@@ -9795,7 +9795,7 @@ add some interactive functions for the most common options.
       (buffer-substring (point-min) (point-max))))
 
   (defun lps/mu4e-headers-format-prio (prio msg)
-    (let ((bullet "⏺")
+    (let ((bullet "●")
           (props (pcase prio
                    ("low" "#556b2f")
                    ("high" "#b22222")
