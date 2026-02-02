@@ -17,6 +17,7 @@
         backward-sexp
         backward-up-list
         beginning-of-visual-line
+        c-electric-delete-forward
         c-indent-line-or-region
         capitalize-dwim
         cdlatex-math-symbol

@@ -5502,6 +5502,8 @@ The return value is the string as entered in the minibuffer."
                 (delete-backward-char 2)
                 (insert "$")))))))))
 
+  (add-to-list 'LaTeX-indent-environment-list '("algorithm"))
+
   (custom-theme-set-faces
    lps/default-theme
    '(font-latex-sedate-face ((t (:foreground "#aab5b8"))) t))
