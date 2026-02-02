@@ -8347,39 +8347,55 @@ insert as many blank lines as necessary."
   (calfw-fchar-top-junction ?┬)
   (calfw-fchar-top-left-corner ?┌)
   (calfw-fchar-top-right-corner ?┐)
-  (calfw-render-line-breaker 'calfw-render-line-breaker-wordwrap))
+  (calfw-render-line-breaker 'calfw-render-line-breaker-wordwrap)
+  (calfw-fchar-period-line ?─)
+  :config
+  (defun calfw-truncate-string (string width ellipsis)
+    (let ((i 1)
+          (olds "")
+          (news (substring string 0 1)))
+      (while (< (string-width news) width)
+        (cl-incf i)
+        (setf olds news
+              news (substring string 0 i)))
+      (let ((ellipsis-string (cond
+                              ((stringp ellipsis)
+                               ellipsis)
+                              ((eq t ellipsis)
+                               (truncate-string-ellipsis))
+                              (nil " "))))
+        (s-concat olds ellipsis-string))))
+
+  ;; TODO : also no longer seems to be necessary : check if it is fine !
+  (defun-override lps/calfw--render-truncate (org limit-width &optional ellipsis)
+    "[internal] Truncate a string ORG with LIMIT-WIDTH, like `truncate-string-to-width'.
+
+    PATCHED : This does not use `truncate-string-to-width', which tends to
+    \"fail\" with composed characters/emojis, in a way that I do not
+    understand. We use a hackish fix, without a deep understanding of the
+    internals of character width/display width/etc."
+    (setq org (replace-regexp-in-string "\n" " " org))
+    (if (< limit-width (string-width org))
+        (let ((str (calfw-truncate-string org limit-width ellipsis)))
+          (calfw--tp str 'mouse-face 'highlight)
+          (unless (get-text-property 0 'help-echo str)
+            (calfw--tp str 'help-echo org))
+          str)
+      org))
+
+  (advice-add 'calfw-open-calendar-buffer :after
+              (lambda (&rest args)
+                (declare (ignore args))
+                (calfw-refresh-calendar-buffer nil))))
 
 (use-package calfw-org
   :defer t
   :init
   (setq calfw-org-overwrite-default-keybinding t) ; dumb here but it is not a custom var ...
+  :custom
+  (calfw-read-date-command 'calfw-org-read-date-command)
   :bind ("C-c A" . calfw-org-open-calendar)
   :config
-  ;; There is a problem with the original function: periods are displayed at the
-  ;; wrong dates + multiple times. AFAICT, the computations of start-date and
-  ;; end-date are bonkers, so we fix those.
-
-  ;; TODO: seems to be no longer necessary : check if it has actually been fixed
-  ;;   (defun-override lps/calfw-org-get-timerange (text)
-  ;;     "Return a range object (begin end text).
-  ;; If TEXT does not have a range, return nil."
-  ;;     (let* ((dotime (calfw-org--tp text 'dotime)))
-  ;;       (and (stringp dotime)
-  ;;            (string-match org-ts-regexp dotime)
-  ;;            (let ((date-string  (match-string 1 dotime))
-  ;;                  (extra (calfw-org--tp text 'extra)))
-  ;;              (when (string-match "(\\([0-9]+\\)/\\([0-9]+\\)): " extra)
-  ;;                (let* ((range-beg (save-match-data (org-read-date nil t date-string)))
-  ;;                       (total-days (string-to-number
-  ;;                                    (match-string 2 extra)))
-  ;;                       (start-date range-beg)
-  ;;                       (end-date (time-add
-  ;;                                  start-date
-  ;;                                  (seconds-to-time (* 3600 24 (- total-days 1))))))
-  ;;                  (list (calendar-gregorian-from-absolute (time-to-days start-date))
-  ;;                        (calendar-gregorian-from-absolute (time-to-days end-date))
-  ;;                        text)))))))
-
   ;; Still a problem: Emoji size makes alignment weird, as characters are too wide.
   ;; Possible fix/solution: either use font-rescaling, or find a monospace font
   ;; with Emoji symbols.
@@ -8397,39 +8413,6 @@ insert as many blank lines as necessary."
           (concat (apply 'propertize icon props)
                   original)
         original)))
-
-  (defun calfw-truncate-string (string width ellipsis)
-    (let ((i 1)
-          (olds "")
-          (news (substring string 0 1)))
-      (while (< (string-width news) width)
-        (incf i)
-        (setf olds news
-              news (substring string 0 i)))
-      (let ((ellipsis-string (cond
-                              ((stringp ellipsis)
-                               ellipsis)
-                              ((eq t ellipsis)
-                               (truncate-string-ellipsis))
-                              (nil " "))))
-        (s-concat olds ellipsis-string))))
-
-  ;; TODO : also no longer seems to be necessary : check if it is fine !
-  ;;   (defun-override lps/calfw-render-truncate (org limit-width &optional ellipsis)
-  ;;     "[internal] Truncate a string ORG with LIMIT-WIDTH, like `truncate-string-to-width'.
-
-  ;; PATCHED : This does not use `truncate-string-to-width', which tends to
-  ;; \"fail\" with composed characters/emojis, in a way that I do not
-  ;; understand. We use a hackish fix, without a deep understanding of the
-  ;; internals of character width/display width/etc."
-  ;;     (setq org (replace-regexp-in-string "\n" " " org))
-  ;;     (if (< limit-width (string-width org))
-  ;;         (let ((str (calfw-truncate-string org limit-width ellipsis)))
-  ;;           (calfw-tp str 'mouse-face 'highlight)
-  ;;           (unless (get-text-property 0 'help-echo str)
-  ;;             (calfw-tp str 'help-echo org))
-  ;;           str)
-  ;;       org))
 
   (setq calfw-org-schedule-summary-transformer 'lps/calfw-org-summary-format))
 
