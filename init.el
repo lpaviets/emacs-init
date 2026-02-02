@@ -7993,6 +7993,7 @@ Change to wide reply ?")))))
   :config
   (defun lps/ispell-message-ask ()
     (when (y-or-n-p "Check spelling ?")
+      (lps/ispell-change-dictionary)
       (ispell-message)))
 
 ;;; Redefinition of ispell-message to work with mu4e
@@ -8041,8 +8042,9 @@ You can bind this to the key C-c i in GNUS or mail by adding to
                       (t (min (point-max)
                               (funcall ispell-message-text-end))))))
              (default-prefix         ; Vanilla cite prefix used for cite-regexp)
-              (if (ispell-non-empty-string mail-yank-prefix)
-                  "   \\|\t"))
+              (if mail-yank-prefix
+                  (ispell-non-empty-string mail-yank-prefix)
+                "   \\|\t"))
              (cite-regexp               ;Prefix of quoted text
               (cond
                ((functionp 'sc-cite-regexp) ; supercite >= 3.0
@@ -8147,9 +8149,12 @@ You can bind this to the key C-c i in GNUS or mail by adding to
 
   (defun lps/ispell-change-personal-dictionary (code &optional kill-ispell)
     (let ((perso-dict (expand-file-name code lps/ispell-personal-dictionaries-dir)))
-      (when (file-exists-p perso-dict)
-        (setq ispell-personal-dictionary perso-dict
-              ispell-current-personal-dictionary (print perso-dict))))
+      (if (file-exists-p perso-dict)
+          (progn
+            (setq ispell-personal-dictionary perso-dict
+                  ispell-current-personal-dictionary perso-dict)
+            (message "Switched personal dictionary to %s" perso-dict))
+        (message "Could not switch the personal dictionary to %s: file does not exist")))
     (when (and ispell-process kill-ispell)
       (ispell-kill-ispell)))
 
