@@ -3914,7 +3914,13 @@ for a list of valid rules, to adapt this function."
   (treesit-font-lock-level 4))
 
 (use-package emacs
-  :custom (major-mode-remap-alist major-mode-remap-defaults))
+  :custom (major-mode-remap-alist major-mode-remap-defaults)
+  :config
+  (dolist (mode-remap '((c-mode . c-ts-mode)
+                        (c++-mode . c++-ts-mode)
+                        (sh-mode . bash-ts-mode)
+                        (python-mode . python-ts-mode)))
+    (add-to-list 'major-mode-remap-alist mode-remap nil 'equal)))
 
 (unless (package-installed-p 'org-mode)
   (package-vc-install '(org-mode
@@ -3926,7 +3932,7 @@ for a list of valid rules, to adapt this function."
 
 (use-package org-latex-preview
   :defer t
-  :hook (org-mode . org-latex-preview-auto-mode)
+  :hook (org-mode . org-latex-preview-mode)
   :custom
   (org-latex-preview-appearance-options (list
                                          :foreground 'default
@@ -3942,7 +3948,8 @@ for a list of valid rules, to adapt this function."
                                          :html-scale 1.0
                                          :matchers '("begin" "$1"
                                                      "$" "$$"
-                                                     "\\(" "\\["))))
+                                                     "\\(" "\\[")))
+  (org-latex-preview-mode-track-inserts t))
 
 (use-package org
   :only-built-in t
@@ -4022,6 +4029,9 @@ for a list of valid rules, to adapt this function."
   :config
   ;; Mouse support
   (require 'org-mouse)
+
+  ;; Needed for TeX-insert-dollar bound on $ key
+  (require 'tex)
 
   ;; Basic fonts and faces
   (defun lps/org-font-setup ()
@@ -7734,7 +7744,7 @@ Change to wide reply ?")))))
       (buffer-substring (point-min) (point-max))))
 
   (defun lps/mu4e-headers-format-prio (prio msg)
-    (let ((bullet "⏺")
+    (let ((bullet "●")
           (props (pcase prio
                    ("low" "#556b2f")
                    ("high" "#b22222")

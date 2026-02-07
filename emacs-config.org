@@ -5179,7 +5179,13 @@ do.
 
 #+begin_src emacs-lisp
   (use-package emacs
-    :custom (major-mode-remap-alist major-mode-remap-defaults))
+    :custom (major-mode-remap-alist major-mode-remap-defaults)
+    :config
+    (dolist (mode-remap '((c-mode . c-ts-mode)
+                          (c++-mode . c++-ts-mode)
+                          (sh-mode . bash-ts-mode)
+                          (python-mode . python-ts-mode)))
+      (add-to-list 'major-mode-remap-alist mode-remap nil 'equal)))
 #+end_src
 
 * Org Mode
@@ -5210,7 +5216,7 @@ delete the ~.eln~ and ~.elc files associated with Org.
 
   (use-package org-latex-preview
     :defer t
-    :hook (org-mode . org-latex-preview-auto-mode)
+    :hook (org-mode . org-latex-preview-mode)
     :custom
     (org-latex-preview-appearance-options (list
                                            :foreground 'default
@@ -5226,7 +5232,8 @@ delete the ~.eln~ and ~.elc files associated with Org.
                                            :html-scale 1.0
                                            :matchers '("begin" "$1"
                                                        "$" "$$"
-                                                       "\\(" "\\["))))
+                                                       "\\(" "\\[")))
+    (org-latex-preview-mode-track-inserts t))
 #+end_src
 
 ** Basic configuration
@@ -5313,6 +5320,9 @@ rules, by changing the headers appearance, and a few other minor changes.
     :config
     ;; Mouse support
     (require 'org-mouse)
+
+    ;; Needed for TeX-insert-dollar bound on $ key
+    (require 'tex)
 
     ;; Basic fonts and faces
     <<org-fonts>>
