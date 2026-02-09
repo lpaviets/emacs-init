@@ -453,6 +453,12 @@ the internal changes made by this config.")
 
 (use-package emacs
   :init
+  (defun lps/remove-face-property (val)
+    (remove-text-properties 0 (length val) '(face nil) val)
+    val))
+
+(use-package emacs
+  :init
   (column-number-mode t)
 
   (setq-default word-wrap t)
@@ -7228,7 +7234,8 @@ confirmation when sending a non-multipart MIME mail")
   :config
   ;; Prefer text compared to html
   (dolist (alt '("text/html"
-                 "multipart/related"))
+                 "multipart/related"
+                 "multipart/mixed"))
     (add-to-list 'mm-discouraged-alternatives alt))
 
   (defun lps/message-tab ()
@@ -7639,10 +7646,6 @@ Change to wide reply ?")))))
   ;; Change this face to make it more visible, at least for kaolin-ocean theme
   (set-face-attribute 'mu4e-replied-face nil :inherit 'font-lock-function-name-face)
 
-  ;; This is ugly otherwise
-  (when (facep 'mu4e-thread-fold-face)
-    (set-face-attribute 'mu4e-thread-fold-face nil :inherit nil))
-
   (defun lps/resize-headers-fields ()
     (if (eq major-mode 'mu4e-headers-mode)
         (let ((width (window-body-width)))
@@ -7822,6 +7825,67 @@ Change to wide reply ?")))))
                       (mu4e~headers-docid-cookie docid)
                       mu4e~mark-fringe line "\n")
                      'docid docid 'msg msg)))))))))))
+
+  ;; About threads
+  (defun-override lps/mu4e-thread-fold-info (count unread)
+    "Text to be displayed for a folded thread.
+  There are COUNT hidden and UNREAD messages overall."
+    (format "  %c [%d hidden messages%s]\n"
+            (if mu4e-use-fancy-chars ?▼ ?v)
+            count
+            (if (> unread 0)
+                (format ", %d unread" unread)
+              "")))
+
+  (set-face-foreground 'mu4e-thread-fold-face "#b57edc")
+
+  (defun-override lps/mu4e-thread-fold (&optional no-save)
+    "Fold thread at point and store state unless NO-SAVE is t."
+    (interactive)
+    (unless (eq (line-end-position) (point-max))
+      (let* ((thread-beg (mu4e-thread-root))
+             (thread-end (mu4e-thread-next))
+             (thread-end (if thread-end (1- thread-end) (point-max)))
+             (unread-count 0)
+             (fold-beg (save-excursion
+                         (goto-char thread-beg)
+                         ;; This is the only change:
+                         ;; Don't go down one line
+                         (end-of-line)
+                         (point)))
+             (fold-end (save-excursion
+                         (goto-char thread-beg)
+                         (forward-line)
+                         (catch 'fold-end
+                           (while (and (not (eobp))
+                                       (get-text-property (point) 'msg)
+                                       (and thread-end (< (point) thread-end)))
+                             (let* ((msg (get-text-property (point) 'msg))
+                                    (docid (mu4e-message-field msg :docid))
+                                    (flags (mu4e-message-field msg :flags))
+                                    (unread (memq 'unread flags)))
+                               (when (mu4e-mark-docid-marked-p docid)
+                                 (throw 'fold-end (point)))
+                               (when unread
+                                 (unless mu4e-thread-fold-unread
+                                   (throw 'fold-end (point)))
+                                 (setq unread-count (+ 1 unread-count))))
+                             (forward-line)))
+                         (point))))
+        (unless no-save
+          (mu4e-thread--save-state 'folded))
+        (let ((child-count (count-lines fold-beg fold-end))
+              (unread-count (if mu4e-thread-fold-unread unread-count 0)))
+          (when (> child-count (if mu4e-thread-fold-single-children 0 1))
+            (let ((inhibit-read-only t)
+                  (overlay (make-overlay fold-beg fold-end))
+                  (info (mu4e-thread-fold-info child-count unread-count)))
+              (add-text-properties fold-beg (+ fold-beg 1)
+                                   '(face mu4e-thread-fold-face))
+              (overlay-put overlay 'mu4e-thread-folded t)
+              (overlay-put overlay 'display info)))))))
+
+  (advice-add 'mu4e~headers-thread-prefix-map :filter-return 'lps/remove-face-property)
 
 ;;; Other modes
   (font-lock-add-keywords 'mu4e-raw-view-mode
