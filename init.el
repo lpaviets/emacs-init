@@ -4101,6 +4101,32 @@ for a list of valid rules, to adapt this function."
                 'lps/electric-pair-inhibit-predicate-org)
     (setq-local TeX-electric-math '("\\(" . "\\)")))
 
+  (defvar lps/in-org-timestamp-p nil)
+
+  (defun lps/org-read-date-default-input (&rest args)
+    (let ((new-args args))
+      (when (and lps/in-org-timestamp-p (region-active-p))
+        (cl-destructuring-bind
+            (&optional with-time to-time from-string prompt
+                       default-time default-input inactive)
+            new-args
+          (setf new-args (list with-time
+                               to-time
+                               from-string
+                               prompt
+                               default-time
+                               (or default-input
+                                   (buffer-substring-no-properties (region-beginning) (region-end)))
+                               inactive))))
+      new-args))
+
+  (advice-ensure-bindings org-timestamp ((lps/in-org-timestamp-p t)))
+
+  ;; TODO : try to do something like this ? Buggy atm. We would also need to
+  ;; kill the active region, and maybe do some extra cleanup ?
+
+  ;; (advice-add 'org-read-date :filter-args ;; 'lps/org-read-date-default-input)
+
   ;; Improve org edition
   (defun lps/electric-pair-inhibit-predicate-org (char)
     (or (char-equal char ?<)
