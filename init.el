@@ -7344,6 +7344,7 @@ confirmation when sending a non-multipart MIME mail")
   ;; Might avoid unwanted drafts
   (mu4e-compose-mode . lps/disable-auto-save-mode)
   :custom
+  (mu4e-trash-without-flag t) ; safer this way
   (message-cite-reply-position 'below)
   (mu4e-compose-context-policy 'ask)
   (mu4e-context-policy 'ask)
