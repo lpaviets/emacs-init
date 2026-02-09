@@ -455,6 +455,9 @@ the internal changes made by this config.")
   :init
   (column-number-mode t)
 
+  (setq-default word-wrap t)
+  (toggle-word-wrap 1)
+
   (defun lps/activate-truncate-lines ()
     (let ((inhibit-message t))
       (toggle-truncate-lines 1)))
@@ -746,7 +749,7 @@ the mode-line and the usual non-full-screen Emacs are restored."
   (beacon-size 20))
 
 (use-package rainbow-mode
-  :defer t)
+  :hook (org-mode . rainbow-mode))
 
 (use-package highlight-numbers
   :hook ((prog-mode LaTeX-mode) . highlight-numbers-mode))
