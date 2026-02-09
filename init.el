@@ -333,11 +333,11 @@ the internal changes made by this config.")
   :init
   ;; Only use desktop-save-mode automatically in daemon mode
   ;; Otherwise, just manually restore/save stuff
-  (add-hook 'server-after-make-frame-hook
-            (lambda ()
-              (let ((desktop-load-locked-desktop t))
-                (desktop-save-mode 1)
-                (desktop-read (car desktop-path)))))
+  (add-hook-once 'server-after-make-frame-hook
+                 (lambda ()
+                   (let ((desktop-load-locked-desktop t))
+                     (desktop-save-mode 1)
+                     (desktop-read (car desktop-path)))))
   ;; (desktop-save-mode 1)
   :custom
   (desktop-restore-frames t) ;; Otherwise buggy with daemon-mode
@@ -447,9 +447,13 @@ the internal changes made by this config.")
   ;; for this Unicode codepoints ...
   :init
   ;; TODO: clarify which one is needed ?
+  (defun lps/setup-nerd-fonts ()
+    (when (display-graphic-p)
+      (nerd-icons-set-font)))
+
   (if (daemonp)
-      (add-hook 'server-after-make-frame-hook 'nerd-icons-set-font)
-    (add-hook-once 'post-command-hook 'nerd-icons-set-font)))
+      (add-hook 'server-after-make-frame-hook 'lps/setup-nerd-fonts)
+    (add-hook-once 'post-command-hook 'lps/setup-nerd-fonts)))
 
 (use-package emacs
   :init
