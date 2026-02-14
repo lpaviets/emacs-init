@@ -9441,32 +9441,6 @@ the package documentation.
       (let ((mu4e-headers-advance-after-mark nil))
         (mu4e-headers-mark-for-unmark)))
 
-    (defun lps/mu4e-view-mime-part-action ()
-      "Wrapper around `mu4e-view-mime-part-action' with better prompt
-
-  This is just a call to `mu4e-view-mime-part-action' in more recent
-  versions of mu4e."
-      (interactive)
-      (version-case mu4e-mu
-        ("1.11" (call-interactively 'mu4e-view-mime-part-action))
-        (t
-         (let* ((parts (mu4e~view-gather-mime-parts))
-                attachments)
-           (cl-loop for part in parts
-                    for num = (car part)
-                    for fn = (or (cdr (assoc 'filename
-                                             (assoc "attachment" (cdr part))))
-                                 (cl-loop for item in part
-                                          for name = (and (listp item)
-                                                          (assoc-default 'name item))
-                                          thereis (and (stringp name) name)))
-                    when fn
-                    do (push (cons fn num) attachments))
-           (mu4e-view-mime-part-action (cdr (assoc
-                                             (completing-read "MIME-part: "
-                                                              attachments nil t)
-                                             attachments)))))))
-
     ;; Improvement to URL handling, but not that robust
     ;; Weird because it tries to respect the signature of the original
     ;; `mu4e--view-get-urls-num', returning a string
@@ -9500,16 +9474,6 @@ the package documentation.
                                 nil nil nil nil def)
                      " ")))))
 
-    (defun lps/mu4e-thread-next ()
-      (interactive)
-      (let ((thread-end (mu4e-thread-next)))
-        (goto-char (or thread-end (point-max)))))
-
-    (defun lps/mu4e-thread-prev ()
-      (interactive)
-      (let ((thread-beg (mu4e-thread-prev)))
-        (goto-char (or thread-beg (point-min)))))
-
     (defun lps/mu4e-check-wide-reply (args)
       (let ((wide (car args)))
         (when (and (not wide)
@@ -9527,6 +9491,9 @@ the package documentation.
   ;;; Contexts and private setup
     <<mu4e-private>>
 
+  ;;; Attachments
+    <<mu4e-attachments>>
+
   ;;; Queries
     <<mu4e-build-query>>
 
@@ -9536,7 +9503,10 @@ the package documentation.
   ;;; Other modes
     <<mu4e-raw-view>>
 
-    ;; Some patches & fixes
+  ;;; Threads
+    <<mu4e-threads>>
+
+  ;;; Some patches & fixes
     <<patch-mu4e-header-line>>)
 #+end_src
 
@@ -9594,7 +9564,7 @@ the package documentation.
 #+end_src
 
 In order to provide contextual mail completion, address, server synchronization
-... mu4e relies on /contexts/, essentially mappings between local maildirs, mail
+... mu4e relies on /contexts/, essentilly mappings between local maildirs, mail
 addresses, and a bunch of local variables that are indenpendently setup per
 context.
 
@@ -9712,6 +9682,60 @@ add some interactive functions for the most common options.
         (push choice query-list))
       (let ((query (mapconcat 'identity (reverse query-list) " ")))
         (mu4e-search query "Search for: " t))))
+#+end_src
+
+In order to deal with attachments, we also configure a few functions: easier
+retrieval, downloading from multiple mails at once, etc
+
+#+NAME: mu4e-attachments
+#+begin_src emacs-lisp :tangle no
+  ;; Raw mime-part, not an actual attachment (note: inline images are proper
+  ;; attachments, for this function, unless some other variables is set)
+
+  (defvar lps/mu4e-inline-as-attachment-p t)
+
+  (defvar lps/mu4e-in-view-mime-part-action-p nil)
+
+  (defun lps/mu4e-is-mime-part-not-attachment (part)
+    (and (string-match-p "^mime-part-[0-9][0-9]$"
+                         (plist-get part :filename))
+         (or lps/mu4e-inline-as-attachment-p
+             (string-equal "attachment" (plist-get part :disposition)))))
+
+  (defun lps/mu4e-view-mime-part-filter-non-attachments (ret)
+    (if lps/mu4e-in-view-mime-part-action-p
+        (cl-remove-if 'lps/mu4e-is-mime-part-not-attachment ret)
+      ret))
+
+  (advice-add 'mu4e-view-mime-parts
+              :filter-return 'lps/mu4e-view-mime-part-filter-non-attachments)
+
+  (defun lps/mu4e-view-mime-part-action ()
+    "Wrapper around `mu4e-view-mime-part-action' with better prompt
+
+    This is just a call to `mu4e-view-mime-part-action' in more recent
+    versions of mu4e."
+    (interactive)
+    (version-case mu4e-mu
+      ("1.11" (let ((lps/mu4e-in-view-mime-part-action-p t))
+                (call-interactively 'mu4e-view-mime-part-action)))
+      (t
+       (let* ((parts (mu4e~view-gather-mime-parts))
+              attachments)
+         (cl-loop for part in parts
+                  for num = (car part)
+                  for fn = (or (cdr (assoc 'filename
+                                           (assoc "attachment" (cdr part))))
+                               (cl-loop for item in part
+                                        for name = (and (listp item)
+                                                        (assoc-default 'name item))
+                                        thereis (and (stringp name) name)))
+                  when fn
+                  do (push (cons fn num) attachments))
+         (mu4e-view-mime-part-action (cdr (assoc
+                                           (completing-read "MIME-part: "
+                                                            attachments nil t)
+                                           attachments)))))))
 #+end_src
 
 *** Look and feel
@@ -9922,11 +9946,28 @@ add some interactive functions for the most common options.
                       (mu4e~headers-docid-cookie docid)
                       mu4e~mark-fringe line "\n")
                      'docid docid 'msg msg)))))))))))
+#+end_src
+
+Mu4e also makes it convenient to work with threads: we mainly customize their
+appearance and a few navigation functions.
+
+#+NAME: mu4e-threads
+#+begin_src emacs-lisp :tangle no
+  (defun lps/mu4e-thread-next ()
+    (interactive)
+    (let ((thread-end (mu4e-thread-next)))
+      (goto-char (or thread-end (point-max)))))
+
+  (defun lps/mu4e-thread-prev ()
+    (interactive)
+    (let ((thread-beg (mu4e-thread-prev)))
+      (goto-char (or thread-beg (point-min)))))
+
 
   ;; About threads
   (defun-override lps/mu4e-thread-fold-info (count unread)
     "Text to be displayed for a folded thread.
-  There are COUNT hidden and UNREAD messages overall."
+    There are COUNT hidden and UNREAD messages overall."
     (format "  %c [%d hidden messages%s]\n"
             (if mu4e-use-fancy-chars ?▼ ?v)
             count
@@ -9934,6 +9975,8 @@ add some interactive functions for the most common options.
                 (format ", %d unread" unread)
               "")))
 
+  ;; Defaults to inheriting hilighting: somewhat ugly
+  (set-face-attribute 'mu4e-thread-fold-face nil :inherit nil)
   (set-face-foreground 'mu4e-thread-fold-face "#b57edc")
 
   (defun-override lps/mu4e-thread-fold (&optional no-save)

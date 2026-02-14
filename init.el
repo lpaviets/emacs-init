@@ -7412,32 +7412,6 @@ confirmation when sending a non-multipart MIME mail")
     (let ((mu4e-headers-advance-after-mark nil))
       (mu4e-headers-mark-for-unmark)))
 
-  (defun lps/mu4e-view-mime-part-action ()
-    "Wrapper around `mu4e-view-mime-part-action' with better prompt
-
-This is just a call to `mu4e-view-mime-part-action' in more recent
-versions of mu4e."
-    (interactive)
-    (version-case mu4e-mu
-      ("1.11" (call-interactively 'mu4e-view-mime-part-action))
-      (t
-       (let* ((parts (mu4e~view-gather-mime-parts))
-              attachments)
-         (cl-loop for part in parts
-                  for num = (car part)
-                  for fn = (or (cdr (assoc 'filename
-                                           (assoc "attachment" (cdr part))))
-                               (cl-loop for item in part
-                                        for name = (and (listp item)
-                                                        (assoc-default 'name item))
-                                        thereis (and (stringp name) name)))
-                  when fn
-                  do (push (cons fn num) attachments))
-         (mu4e-view-mime-part-action (cdr (assoc
-                                           (completing-read "MIME-part: "
-                                                            attachments nil t)
-                                           attachments)))))))
-
   ;; Improvement to URL handling, but not that robust
   ;; Weird because it tries to respect the signature of the original
   ;; `mu4e--view-get-urls-num', returning a string
@@ -7470,16 +7444,6 @@ versions of mu4e."
                               nums
                               nil nil nil nil def)
                    " ")))))
-
-  (defun lps/mu4e-thread-next ()
-    (interactive)
-    (let ((thread-end (mu4e-thread-next)))
-      (goto-char (or thread-end (point-max)))))
-
-  (defun lps/mu4e-thread-prev ()
-    (interactive)
-    (let ((thread-beg (mu4e-thread-prev)))
-      (goto-char (or thread-beg (point-min)))))
 
   (defun lps/mu4e-check-wide-reply (args)
     (let ((wide (car args)))
@@ -7562,6 +7526,55 @@ Change to wide reply ?")))))
 
   (when (lps/check-mail-setup)
     (load lps/private-mail-setup-file))
+
+;;; Attachments
+  ;; Raw mime-part, not an actual attachment (note: inline images are proper
+  ;; attachments, for this function, unless some other variables is set)
+
+  (defvar lps/mu4e-inline-as-attachment-p t)
+
+  (defvar lps/mu4e-in-view-mime-part-action-p nil)
+
+  (defun lps/mu4e-is-mime-part-not-attachment (part)
+    (and (string-match-p "^mime-part-[0-9][0-9]$"
+                         (plist-get part :filename))
+         (or lps/mu4e-inline-as-attachment-p
+             (string-equal "attachment" (plist-get part :disposition)))))
+
+  (defun lps/mu4e-view-mime-part-filter-non-attachments (ret)
+    (if lps/mu4e-in-view-mime-part-action-p
+        (cl-remove-if 'lps/mu4e-is-mime-part-not-attachment ret)
+      ret))
+
+  (advice-add 'mu4e-view-mime-parts
+              :filter-return 'lps/mu4e-view-mime-part-filter-non-attachments)
+
+  (defun lps/mu4e-view-mime-part-action ()
+    "Wrapper around `mu4e-view-mime-part-action' with better prompt
+
+    This is just a call to `mu4e-view-mime-part-action' in more recent
+    versions of mu4e."
+    (interactive)
+    (version-case mu4e-mu
+      ("1.11" (let ((lps/mu4e-in-view-mime-part-action-p t))
+                (call-interactively 'mu4e-view-mime-part-action)))
+      (t
+       (let* ((parts (mu4e~view-gather-mime-parts))
+              attachments)
+         (cl-loop for part in parts
+                  for num = (car part)
+                  for fn = (or (cdr (assoc 'filename
+                                           (assoc "attachment" (cdr part))))
+                               (cl-loop for item in part
+                                        for name = (and (listp item)
+                                                        (assoc-default 'name item))
+                                        thereis (and (stringp name) name)))
+                  when fn
+                  do (push (cons fn num) attachments))
+         (mu4e-view-mime-part-action (cdr (assoc
+                                           (completing-read "MIME-part: "
+                                                            attachments nil t)
+                                           attachments)))))))
 
 ;;; Queries
   (defun lps/mu4e-read-range (fun initial-prompt)
@@ -7857,10 +7870,28 @@ Change to wide reply ?")))))
                       mu4e~mark-fringe line "\n")
                      'docid docid 'msg msg)))))))))))
 
+;;; Other modes
+  (font-lock-add-keywords 'mu4e-raw-view-mode
+                          `(("^[a-zA-Z_-]+?: " . 'gnus-header-name)
+                            ("\\b[a-zA-Z_-]+?=" . 'gnus-header-subject)
+                            (,thing-at-point-email-regexp . 'gnus-header-from)))
+
+;;; Threads
+  (defun lps/mu4e-thread-next ()
+    (interactive)
+    (let ((thread-end (mu4e-thread-next)))
+      (goto-char (or thread-end (point-max)))))
+
+  (defun lps/mu4e-thread-prev ()
+    (interactive)
+    (let ((thread-beg (mu4e-thread-prev)))
+      (goto-char (or thread-beg (point-min)))))
+
+
   ;; About threads
   (defun-override lps/mu4e-thread-fold-info (count unread)
     "Text to be displayed for a folded thread.
-  There are COUNT hidden and UNREAD messages overall."
+    There are COUNT hidden and UNREAD messages overall."
     (format "  %c [%d hidden messages%s]\n"
             (if mu4e-use-fancy-chars ?▼ ?v)
             count
@@ -7868,6 +7899,8 @@ Change to wide reply ?")))))
                 (format ", %d unread" unread)
               "")))
 
+  ;; Defaults to inheriting hilighting: somewhat ugly
+  (set-face-attribute 'mu4e-thread-fold-face nil :inherit nil)
   (set-face-foreground 'mu4e-thread-fold-face "#b57edc")
 
   (defun-override lps/mu4e-thread-fold (&optional no-save)
@@ -7918,13 +7951,7 @@ Change to wide reply ?")))))
 
   (advice-add 'mu4e~headers-thread-prefix-map :filter-return 'lps/remove-face-property)
 
-;;; Other modes
-  (font-lock-add-keywords 'mu4e-raw-view-mode
-                          `(("^[a-zA-Z_-]+?: " . 'gnus-header-name)
-                            ("\\b[a-zA-Z_-]+?=" . 'gnus-header-subject)
-                            (,thing-at-point-email-regexp . 'gnus-header-from)))
-
-  ;; Some patches & fixes
+;;; Some patches & fixes
   (defun-override lps/mu4e~header-line-format ()
     "Get the format for the header line."
     (let ((uparrow   (if mu4e-use-fancy-chars " ▲" " ^"))
