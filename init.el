@@ -6974,6 +6974,7 @@ PWD is not in a git repo (or the git command is not found)."
                           subtree-state
                           nerd-icons))
     (dirvish-show-media-properties t)
+    (dirvish-fd-switches "--hidden")
     (dirvish-quick-access-entries `(("h" "~/" "Home")
                                     ("e" "~/.config/emacs/" "Emacs user directory")
                                     ("t"  "~/.local/share/Trash/" "Trashes")
@@ -6998,13 +6999,30 @@ PWD is not in a git repo (or the git command is not found)."
     :config
     ;; (remove-hook 'dired-mode-hook 'all-the-icons-dired-mode) ; No longer needed ?!
 
+    (defvar lps/dirvish-expand-subfolders-threshold 100)
+
+    (defun lps/dirvish-expand-ensure-few-subfolders ()
+      (let ((re "[^.]\\|.[^.]\\|...")
+            (stack (list (expand-file-name default-directory)))
+            (threshold lps/dirvish-expand-subfolders-threshold))
+        (while (and stack (< 0 threshold))
+          (let ((cur-dir (pop stack)))
+            (dolist (file (directory-files cur-dir t re t threshold))
+              (when (f-directory-p file)
+                (push file stack)
+                (cl-decf threshold)))))
+        (< 0 threshold)))
+
     (defun lps/dirvish-expand-all-subtrees ()
       (interactive)
-      (save-excursion
-        (goto-char (point-min))
-        (while (re-search-forward dired-re-dir nil t)
-          (unless (dirvish-subtree--expanded-p)
-            (dirvish-subtree--insert)))))
+      (when (or (lps/dirvish-expand-ensure-few-subfolders)
+                (y-or-n-p (format "More than %s subfolders found. Continue ? "
+                                  lps/dirvish-expand-subfolders-threshold)))
+        (save-excursion
+          (goto-char (point-min))
+          (while (re-search-forward dired-re-dir nil t)
+            (unless (dirvish-subtree--expanded-p)
+              (dirvish-subtree--insert))))))
 
     (defun lps/dirvish-remove-all-subtrees ()
       (interactive)
