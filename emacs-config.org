@@ -8907,6 +8907,7 @@ and =mediainfo= command-line tools.
       ("C-c j" . dirvish-quick-access)
       (:map dirvish-mode-map
             ("TAB" . dirvish-subtree-toggle)
+            ("<backtab>" . lps/dirvish-toggle-all-subtrees)
             ("a" . dirvish-quick-access)
             ("b" . dirvish-history-go-backward)
             ("f" . dirvish-history-go-forward)
@@ -8965,6 +8966,35 @@ and =mediainfo= command-line tools.
                                           (nreverse shortcuts))))
       :config
       ;; (remove-hook 'dired-mode-hook 'all-the-icons-dired-mode) ; No longer needed ?!
+
+      (defun lps/dirvish-expand-all-subtrees ()
+        (interactive)
+        (save-excursion
+          (goto-char (point-min))
+          (while (re-search-forward dired-re-dir nil t)
+            (unless (dirvish-subtree--expanded-p)
+              (dirvish-subtree--insert)))))
+
+      (defun lps/dirvish-remove-all-subtrees ()
+        (interactive)
+        (save-excursion
+          (goto-char (point-min))
+          (while (re-search-forward dired-re-dir nil t)
+            (when (dirvish-subtree--expanded-p)
+              (dired-next-line 1)
+              (dirvish-subtree-remove)))))
+
+      (defun lps/dirvish-toggle-all-subtrees ()
+        (interactive)
+        (let ((expanded-p (save-excursion
+                            (goto-char (point-min))
+                            (catch 'expanded
+                              (while (re-search-forward dired-re-dir nil t)
+                                (when (dirvish-subtree--expanded-p)
+                                  (throw 'expanded t)))))))
+          (if expanded-p
+              (lps/dirvish-remove-all-subtrees)
+            (lps/dirvish-expand-all-subtrees))))
 
       <<patch-dirvish-tramp>>
 
