@@ -3105,10 +3105,16 @@ call the associated function interactively. Otherwise, call the
   (:map c-mode-base-map
         ("C-c C-d" . disaster)))
 
-(use-package rustic
-  :ensure nil
+(use-package rust-mode
   :defer t
   :custom
+  (rust-mode-treesitter-derive t))
+
+(use-package rustic
+  :ensure nil
+  :after rust-mode
+  :custom
+  (rustic-lsp-setup-p nil)
   (rustic-popup-commands
    '((?b "build"      build)
      (?f "fmt"        fmt)

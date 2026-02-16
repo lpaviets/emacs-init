@@ -4246,10 +4246,16 @@ see the assembly code /while still editing the source/ !
 Orange Crab Language.
 
 #+begin_src emacs-lisp
-  (use-package rustic
-    :ensure nil
+  (use-package rust-mode
     :defer t
     :custom
+    (rust-mode-treesitter-derive t))
+
+  (use-package rustic
+    :ensure nil
+    :after rust-mode
+    :custom
+    (rustic-lsp-setup-p nil)
     (rustic-popup-commands
      '((?b "build"      build)
        (?f "fmt"        fmt)
