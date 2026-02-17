@@ -7004,13 +7004,24 @@ PWD is not in a git repo (or the git command is not found)."
 
     (defvar lps/dirvish-expand-subfolders-threshold 100)
 
-    (defun lps/dirvish-next-sibling ()
+    (defun lps/dirvish-next-sibling (&optional bol)
+      "Return marker after the next sibling (directory at the same depth).
+
+If BOL is non-nil, return the marker placed at the beginning of the line
+instead."
       (let ((depth (dirvish-subtree--depth)))
         (catch 'found
           (while (re-search-forward dired-re-dir nil t)
             (when (= depth (dirvish-subtree--depth))
-              (end-of-line)
-              (throw 'found (point-marker)))))))
+              (if bol
+                  (beginning-of-line)
+                (end-of-line))
+              (throw 'found (point-marker)))
+            (when (< (dirvish-subtree--depth) depth)
+              (throw 'found (save-excursion
+                              (beginning-of-line)
+                              (backward-char 1)
+                              (point-marker))))))))
 
     (defun lps/dirvish-expand-ensure-few-subfolders-range (start end threshold)
       (let ((marker-start (save-excursion
@@ -7060,7 +7071,8 @@ PWD is not in a git repo (or the git command is not found)."
         (goto-char start)
         (while (re-search-forward dired-re-dir end t)
           (when (dirvish-subtree--expanded-p)
-            (dired-next-line 1)
+            (end-of-line)
+            (forward-char 1)
             (dirvish-subtree-remove)))))
 
     (defun lps/dirvish-expanded-p (start end &optional fast)
@@ -7086,24 +7098,30 @@ directories between START and END. More precisely:
               ;; expanded one
               (if (and (dirvish-subtree--expanded-p)
                        (setq some-expanded t))
-                  (when fast
+                  (when (or fast some-collapsed)
                     (throw 'expanded 'partial))
-                (when (and (not fast)
+                (when (and (setq some-collapsed t)
+                           (not fast)
                            some-expanded)
                   (throw 'expanded 'partial))))
-            ;; Here, we are at the end, and we've only seen expanded dirs
+            ;; Here, we are at the end. We have either seen only expanded, or
+            ;; only collapsed dirs.
             (if some-collapsed nil 'full)))))
 
     (defun lps/dirvish-subtree-toggle ()
       (interactive)
-      (let ((start (point-marker))
-            (end (lps/dirvish-next-sibling)))
-        (pcase (lps/dirvish-expanded-p start end)
-          ('nil (dirvish-subtree--insert))
-          ('partial (or
-                     (lps/dirvish-expand-all-subtrees start end lps/dirvish-expand-subfolders-threshold)
-                     (lps/dirvish-remove-all-subtrees start end)))
-          ('full (lps/dirvish-remove-all-subtrees start end)))))
+      (let ((start (save-excursion
+                     (beginning-of-line)
+                     (point-marker)))
+            (end (save-excursion
+                   (lps/dirvish-next-sibling 'bol))))
+        (save-excursion
+          (pcase (lps/dirvish-expanded-p start end)
+            ('nil (dirvish-subtree--insert))
+            ('partial (or
+                       (lps/dirvish-expand-all-subtrees start end lps/dirvish-expand-subfolders-threshold)
+                       (lps/dirvish-remove-all-subtrees start end)))
+            ('full (lps/dirvish-remove-all-subtrees start end))))))
 
     (defun lps/dirvish-toggle-all-subtrees ()
       (interactive)
@@ -7111,7 +7129,10 @@ directories between START and END. More precisely:
             (end (make-marker)))
         (if (region-active-p)
             (progn
-              (set-marker start (region-beginning))
+              (set-marker start (save-excursion
+                                  (goto-char (region-beginning))
+                                  (beginning-of-line)
+                                  (point)))
               (set-marker end (region-end)))
           (set-marker start (point-min))
           (set-marker end (point-max)))
