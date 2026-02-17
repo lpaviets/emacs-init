@@ -6937,7 +6937,7 @@ PWD is not in a git repo (or the git command is not found)."
     :bind
     ("C-c j" . dirvish-quick-access)
     (:map dirvish-mode-map
-          ("TAB" . dirvish-subtree-toggle)
+          ("TAB" . lps/dirvish-subtree-toggle)
           ("<backtab>" . lps/dirvish-toggle-all-subtrees)
           ("a" . dirvish-quick-access)
           ("b" . dirvish-history-go-backward)
@@ -6999,51 +6999,126 @@ PWD is not in a git repo (or the git command is not found)."
     :config
     ;; (remove-hook 'dired-mode-hook 'all-the-icons-dired-mode) ; No longer needed ?!
 
+    ;; TODO: robustify against symlinks, errors & so on
+    ;; Also, make a function to cycle on a single directory (expand once -> expand all -> collapse)
+
     (defvar lps/dirvish-expand-subfolders-threshold 100)
 
-    (defun lps/dirvish-expand-ensure-few-subfolders ()
+    (defun lps/dirvish-next-sibling ()
+      (let ((depth (dirvish-subtree--depth)))
+        (catch 'found
+          (while (re-search-forward dired-re-dir nil t)
+            (when (= depth (dirvish-subtree--depth))
+              (end-of-line)
+              (throw 'found (point-marker)))))))
+
+    (defun lps/dirvish-expand-ensure-few-subfolders-range (start end threshold)
+      (let ((marker-start (save-excursion
+                            (goto-char start)
+                            (beginning-of-line)
+                            (point-marker)))
+            (marker-end (save-excursion
+                          (goto-char end)
+                          (lps/dirvish-next-sibling))))
+        (set-marker-insertion-type marker-start nil)
+        (goto-char start)
+        (while (and (re-search-forward dired-re-dir end t)
+                    (< 0 threshold))
+          (cl-decf threshold)
+          (setq threshold (lps/dirvish-expand-ensure-few-subfolders
+                           (dired-get-filename)
+                           threshold)))
+        threshold))
+
+    (defun lps/dirvish-expand-ensure-few-subfolders (directory threshold)
       (let ((re "[^.]\\|.[^.]\\|...")
-            (stack (list (expand-file-name default-directory)))
-            (threshold lps/dirvish-expand-subfolders-threshold))
+            (stack (list (expand-file-name directory))))
         (while (and stack (< 0 threshold))
           (let ((cur-dir (pop stack)))
             (dolist (file (directory-files cur-dir t re t threshold))
               (when (f-directory-p file)
                 (push file stack)
                 (cl-decf threshold)))))
-        (< 0 threshold)))
+        threshold))
 
-    (defun lps/dirvish-expand-all-subtrees ()
+    ;; Return T on success, NIL on failure
+    (defun lps/dirvish-expand-all-subtrees (start end threshold)
       (interactive)
-      (when (or (lps/dirvish-expand-ensure-few-subfolders)
+      (when (or (< 0 (lps/dirvish-expand-ensure-few-subfolders-range start end threshold))
                 (y-or-n-p (format "More than %s subfolders found. Continue ? "
-                                  lps/dirvish-expand-subfolders-threshold)))
+                                  threshold)))
         (save-excursion
-          (goto-char (point-min))
-          (while (re-search-forward dired-re-dir nil t)
+          (goto-char start)
+          (while (re-search-forward dired-re-dir end t)
             (unless (dirvish-subtree--expanded-p)
-              (dirvish-subtree--insert))))))
+              (dirvish-subtree--insert)))
+          t)))
 
-    (defun lps/dirvish-remove-all-subtrees ()
+    (defun lps/dirvish-remove-all-subtrees (start end)
       (interactive)
       (save-excursion
-        (goto-char (point-min))
-        (while (re-search-forward dired-re-dir nil t)
+        (goto-char start)
+        (while (re-search-forward dired-re-dir end t)
           (when (dirvish-subtree--expanded-p)
             (dired-next-line 1)
             (dirvish-subtree-remove)))))
 
+    (defun lps/dirvish-expanded-p (start end &optional fast)
+      "Return FULL, PARTIAL or NIL depending on the expansion state of the
+directories between START and END. More precisely:
+
+- If FAST is nil, return NIL if all those directories are collapsed,
+  PARTIAL otherwise but some subfolders are collapsed, and FULL if all
+  the subdirectories are expanded.
+
+- If FAST is not NIL, return NIL or PARTIAL: this is faster in general,
+  as we can only look at a few directories and return as soon as we find
+  an expanded one."
+      (save-excursion
+        (goto-char start)
+        (let ((some-expanded nil)
+              (some-collapsed nil))
+          (catch 'expanded
+            (while (re-search-forward dired-re-dir end t)
+              ;; PARTIAL is for sure either when we find an expanded dir and we
+              ;; are FAST, so we can return immediately, or when we are not fast
+              ;; but we are on a collapsed dir and we've already seen an
+              ;; expanded one
+              (if (and (dirvish-subtree--expanded-p)
+                       (setq some-expanded t))
+                  (when fast
+                    (throw 'expanded 'partial))
+                (when (and (not fast)
+                           some-expanded)
+                  (throw 'expanded 'partial))))
+            ;; Here, we are at the end, and we've only seen expanded dirs
+            (if some-collapsed nil 'full)))))
+
+    (defun lps/dirvish-subtree-toggle ()
+      (interactive)
+      (let ((start (point-marker))
+            (end (lps/dirvish-next-sibling)))
+        (pcase (lps/dirvish-expanded-p start end)
+          ('nil (dirvish-subtree--insert))
+          ('partial (or
+                     (lps/dirvish-expand-all-subtrees start end lps/dirvish-expand-subfolders-threshold)
+                     (lps/dirvish-remove-all-subtrees start end)))
+          ('full (lps/dirvish-remove-all-subtrees start end)))))
+
     (defun lps/dirvish-toggle-all-subtrees ()
       (interactive)
-      (let ((expanded-p (save-excursion
-                          (goto-char (point-min))
-                          (catch 'expanded
-                            (while (re-search-forward dired-re-dir nil t)
-                              (when (dirvish-subtree--expanded-p)
-                                (throw 'expanded t)))))))
-        (if expanded-p
-            (lps/dirvish-remove-all-subtrees)
-          (lps/dirvish-expand-all-subtrees))))
+      (let ((start (make-marker))
+            (end (make-marker)))
+        (if (region-active-p)
+            (progn
+              (set-marker start (region-beginning))
+              (set-marker end (region-end)))
+          (set-marker start (point-min))
+          (set-marker end (point-max)))
+        (let ((expanded-p (lps/dirvish-expanded-p start end 'fast)))
+          (if expanded-p
+              (lps/dirvish-remove-all-subtrees start end)
+            (lps/dirvish-expand-all-subtrees start end lps/dirvish-expand-subfolders-threshold)))))
 
     ;; Fix a potential bug with Dirvish and TRAMP (SFTP in particular):
     (defun-override lps/dirvish-noselect-tramp (fn dir flags remote)
