@@ -42,8 +42,17 @@ and more generally [[https://en.wikipedia.org/wiki/Scope_(computer_science)#Lexi
 should work fine with it, and code that /doesn't/ work with lexical binding,
 expecting dynamic binding everywhere, should be refactored.
 
-#+begin_src emacs-lisp
+#+NAME: lexical-binding
+#+begin_src emacs-lisp :tangle no
   ;; -*- lexical-binding: t -*-
+#+end_src
+
+#+begin_src emacs-lisp :tangle "init.el" :noweb yes
+  <<lexical-binding>>
+#+end_src
+
+#+begin_src emacs-lisp :tangle "early-init.el" :noweb yes
+  <<lexical-binding>>
 #+end_src
 
 ** Emacs performance
@@ -51,7 +60,7 @@ expecting dynamic binding everywhere, should be refactored.
 First, we set things up so that Emacs starts /fast/ (and also with the frame
 maximized)
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle "early-init.el"
   (set-frame-parameter nil 'fullscreen 'maximized)
   (setq gc-cons-threshold 100000000) ; 1e8 = 100 MB (default: 800kB)
 #+end_src
@@ -61,7 +70,7 @@ start. Although there is already a built-in function to do this (try to call
 =emacs-init-time= in any Emacs session), we want it to be automatically
 displayed anytime we start Emacs
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle "early-init.el"
   (defun lps/display-startup-time ()
     (message "Emacs started in %s seconds"
              (format "%.2f"
@@ -86,7 +95,7 @@ displayed anytime we start Emacs
 
 In order to speed-up the startup, we also make a few more tweaks:
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle "early-init.el"
   ;; This avoids a lot of regexp matches between filenames and
   ;; this large list of handlers.
   ;; TODO: make sure this does not break with TRAMP and desktop-read ?
@@ -113,7 +122,7 @@ only use builtin packages; this might be useful to start Emacs in a "nice" state
 for us, e.g. during a fresh install or when debugging, while not loading any
 packages.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle "early-init.el"
   (defvar lps/only-built-in-p nil
     "Variable indicating if we can load, or even download, packages
   that are not built-in.
@@ -190,7 +199,7 @@ another, more appropriate behaviour (/e.g./ if you lack space, time, if you use
 another OS, if you are already compiling some of those packages by yourself, and
 so on).
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle "early-init.el"
   (require 'use-package)
   (use-package use-package
     :custom
@@ -245,7 +254,7 @@ Although ~use-package~ is extensible and we could add some keywords to it, it is
 rather cumbersome and I prefer to define personal macros to deal with various
 operating systems and versions.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle "early-init.el"
   (defmacro system-case (&rest cases)
     "Light wrapper around `cl-case' on `system-type'"
     `(cl-case system-type
@@ -614,7 +623,7 @@ Hence, we simply "remap" (using translation maps, see the [[info:elisp#Translati
 
 In this section, we configure the default fonts.
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle "early-init.el"
   (use-package emacs
     :init
     ;; Use the right font according to what is installed on the system
@@ -651,7 +660,7 @@ In this section, we configure the default fonts.
 #+end_src
 
 We also add some icons, to make things prettier !
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle "early-init.el"
   (use-package nerd-icons
     ;; Why is it needed ? Shouldn't it be called automatically ?
     ;; Anyway, I need that for Emacs to automatically use the right font
@@ -716,10 +725,16 @@ However, we would like to see Emacs in full-screen if we are to use it
 #+NAME: fullscreen-alpha
 #+begin_src emacs-lisp :tangle no
   ;; Maximize the Emacs frame at startup
-  (add-to-list 'default-frame-alist '(fullscreen . maximized))
+  (dolist (prop '((fullscreen . maximized)
+                  ;; (visibility . nil)
+                  ))
+    (add-to-list 'default-frame-alist prop nil 'equal))
+
   (when (version<= "29" emacs-version)
     (add-to-list 'default-frame-alist '(alpha-background . 95))
     (set-frame-parameter nil 'alpha-background 95))
+
+  ;; (add-hook 'after-make-frame-functions 'make-frame-visible)
 #+end_src
 
 We also don't want Emacs to be flashing and beeping at us whenver we do
@@ -834,7 +849,7 @@ This is simply a way to change how Emacs looks. Some themes are more complete
 than other (they will modify how other packages look, like Magit, or even the
 minibuffer)
 
-#+begin_src emacs-lisp
+#+begin_src emacs-lisp :tangle "early-init.el"
   ;; Themes
   (use-package kaolin-themes
     :custom
@@ -992,7 +1007,7 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
 *MANUAL*: depending on how you install nerd fonts on your system, you may need to
 do manual installation steps (e.g. =M-x nerd-icons-install-fonts=).
 
-#+begin_src emacs-lisp :noweb yes
+#+begin_src emacs-lisp :tangle "early-init.el" :noweb yes
   (use-package doom-modeline
     :hook (after-init . doom-modeline-mode)
     :custom
@@ -8978,7 +8993,10 @@ and =mediainfo= command-line tools.
       ;; (remove-hook 'dired-mode-hook 'all-the-icons-dired-mode) ; No longer needed ?!
 
       ;; TODO: robustify against symlinks, errors & so on
-      ;; Also, make a function to cycle on a single directory (expand once -> expand all -> collapse)
+
+      ;; TODO: maybe go faster by using the overlays that are placed by dirvish,
+      ;; without repeatedly calling the same functions (probably some things like
+      ;; dirvish-subtree--parent
 
       (defvar lps/dirvish-expand-subfolders-threshold 100)
 
