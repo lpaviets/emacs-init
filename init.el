@@ -967,7 +967,8 @@ buffer name already resembles a file name"
         (";" . helpful-at-point)
         ([remap describe-function] . helpful-callable)
         ([remap describe-variable] . helpful-variable)
-        ([remap describe-key] . helpful-key))
+        ([remap describe-key] . helpful-key)
+        ("K" . find-function-on-key))
   (:map helpful-mode-map
         ("i" . lps/helpful-manual)
         ("s" . lps/helpful-source))
@@ -2631,6 +2632,7 @@ Does not insert a space before the inserted opening parenthesis"
         ("h" . eldoc))
   :custom
   (eglot-ignored-server-capabilities '(:documentHighlightProvider))
+  (eglot-autoshutdown t)
   :config
   (define-key eglot-mode-map (kbd "C-c l") lps/eglot-prefix-map))
 

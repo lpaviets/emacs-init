@@ -1822,7 +1822,8 @@ typing.
           (";" . helpful-at-point)
           ([remap describe-function] . helpful-callable)
           ([remap describe-variable] . helpful-variable)
-          ([remap describe-key] . helpful-key))
+          ([remap describe-key] . helpful-key)
+          ("K" . find-function-on-key))
     (:map helpful-mode-map
           ("i" . lps/helpful-manual)
           ("s" . lps/helpful-source))
@@ -4038,6 +4039,7 @@ than ~flycheck~.
           ("h" . eldoc))
     :custom
     (eglot-ignored-server-capabilities '(:documentHighlightProvider))
+    (eglot-autoshutdown t)
     :config
     (define-key eglot-mode-map (kbd "C-c l") lps/eglot-prefix-map))
 #+end_src
