@@ -5447,7 +5447,8 @@ return `nil'."
         ([remap end-of-defun] . LaTeX-find-matching-end)
         ("C-S-b" . lps/LaTeX-prev-math)
         ("C-S-f" . lps/LaTeX-next-math)
-        ("C-c $" . lps/LaTeX-switch-inline-display-math))
+        ("C-c $" . lps/LaTeX-switch-inline-display-math)
+        ("C-c C-q C-b" . LaTeX-fill-buffer))
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . subword-mode)
@@ -5533,7 +5534,7 @@ The return value is the string as entered in the minibuffer."
 
   (defun lps/LaTeX-switch-inline-display-math ()
     (interactive)
-    (let ((delims  '("$" "\\[")))
+    (let ((delims  '("$" "\\[" "$$")))
       (save-excursion
         (when (texmathp)
           (let ((delim (car texmathp-why))
@@ -5547,6 +5548,14 @@ The return value is the string as entered in the minibuffer."
               (save-excursion
                 (search-forward "$")
                 (delete-backward-char 1)
+                (insert "\\]")))
+             ((equal delim "$$")
+              (goto-char bound)
+              (delete-char 2)
+              (insert "\\[")
+              (save-excursion
+                (search-forward "$$")
+                (delete-backward-char 2)
                 (insert "\\]")))
              ((equal delim "\\[")
               (goto-char bound)
