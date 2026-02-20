@@ -2747,10 +2747,11 @@ call the associated function interactively. Otherwise, call the
 (use-package cc-mode
   :custom
   (c-tab-always-indent tab-always-indent)
-  :bind
-  (:map c-mode-base-map
-        ("TAB" . indent-for-tab-command)
-        ("<tab>" . indent-for-tab-command)))
+  ;; :bind
+  ;; (:map c-mode-base-map
+  ;;       ("TAB" . indent-for-tab-command)
+  ;;       ("<tab>" . indent-for-tab-command))
+  )
 
 (use-package emacs
   :ensure nil
@@ -3599,7 +3600,6 @@ for a list of valid rules, to adapt this function."
   (treesit-font-lock-level 4))
 
 (use-package emacs
-  :custom (major-mode-remap-alist major-mode-remap-defaults)
   :config
   (dolist (mode-remap '((c-mode . c-ts-mode)
                         (c++-mode . c++-ts-mode)
