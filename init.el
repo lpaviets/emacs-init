@@ -146,22 +146,22 @@
                      (desktop-read (car desktop-path)))))
   ;; (desktop-save-mode 1)
   :custom
-  (desktop-restore-frames t) ;; Otherwise buggy with daemon-mode
   (desktop-path (list (locate-user-emacs-file "desktop-saves/")))
   (desktop-restore-eager (if (daemonp) 0 10))
   (desktop-lazy-verbose nil)
   (desktop-modes-not-to-save '(tags-table-mode     ; default
                                eglot--managed-mode ; seems buggy ?
                                ))
-  (desktop-restore-frames nil)
+  (desktop-restore-frames nil) ;; What about daemon mode ?
   (desktop-restore-forces-onscreen nil)
+  (desktop-files-not-to-save "\\(\\`/[^/:]*:\\|(ftp)\\'\\|synctex.gz\\'\\)")
   (desktop-buffers-not-to-save-function 'lps/desktop-buffers-not-to-save-function)
   :config
   (defun lps/desktop-buffers-not-to-save-function (filename bufname mode &rest rest)
     (cond
      ((provided-mode-derived-p mode 'dired-mode)
       (let ((dirname (car (nth 4 rest))))
-        (not (string-match-p "/s?ftp:" dirname))))
+        (and dirname (not (string-match-p "/s?ftp:" dirname)))))
      (t t))))
 
 (use-package saveplace
