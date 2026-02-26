@@ -4942,7 +4942,9 @@ pre-filled with WORD."
         ("<f5>" . lps/auto-compile)
         ("<backtab>" . indent-for-tab-command)
         ("C-M-i" . nil)
-        ([remap TeX-documentation-texdoc] . lps/TeX-documentation-texdoc))
+        ([remap TeX-documentation-texdoc] . lps/TeX-documentation-texdoc)
+        ("C-c M-%" . lps/LaTeX-query-replace-in-math)
+        ("C-c C-M-%" . lps/LaTeX-query-replace-regexp-in-math))
   :custom
   ;; Parse documents to provide completion
   (TeX-parse-self t)
@@ -5071,6 +5073,44 @@ the number of the file to view, anything else to skip: ") "1") list)))
     (if (derived-mode-p 'tex-mode)
         (save-excursion (save-match-data (goto-char beg) (texmathp)))
       t))
+
+  ;; Inspired from https://stackoverflow.com/a/19848761
+  (defun lps/LaTeX-make-replace-search-function (regexp-p)
+    "Return a function suitable for `replace-re-search-function'  "
+    (lambda (str bound noerror)
+      (unless (derived-mode-p 'tex-mode)
+        (error "Should be in a mode derived from tex-mode"))
+      (catch :found
+        (while (let ((ret (if regexp-p
+                              (re-search-forward str bound noerror)
+                            (search-forward str bound noerror))))
+                 (when (save-match-data (texmathp))
+                   (throw :found ret))
+                 ret)))))
+
+  (defun lps/LaTeX-query-replace-in-math (from-string
+                                          to-string
+                                          &optional delimited start end backward
+                                          &rest _ignore)
+    "Like `query-replace' but only replaces in LaTeX-math environments."
+    (let ((replace-search-function (lps/LaTeX-make-replace-search-function nil)))
+      (query-replace from-string to-string delimited start end backward)))
+
+  (put 'lps/LaTeX-query-replace-in-math
+       'interactive-form (interactive-form 'query-replace))
+
+
+  (defun lps/LaTeX-query-replace-regexp-in-math (regexp
+                                                 to-string
+                                                 &optional delimited start end backward
+                                                 &rest _ignore)
+    "Like `query-replace-regexp' but only replaces in LaTeX-math environments."
+    (interactive (interactive-form 'query-replace-regexp))
+    (let ((replace-re-search-function (lps/LaTeX-make-replace-search-function t)))
+      (query-replace-regexp regexp to-string delimited start end backward)))
+
+  (put 'lps/LaTeX-query-replace-regexp-in-math
+       'interactive-form (interactive-form 'query-replace-regexp))
 
   (defvar lps/isearch-old-filter-predicate nil
     "Old predicate used in `isearch-filter-predicate'
@@ -7473,9 +7513,10 @@ Change to wide reply ?")))))
 
   (defun lps/mu4e-build-query (&optional start-query)
     "Provides a simpler interface to build mu4e search queries.
-    A caveat is that it does not insert logical separators (NOT, AND,
-    OR ...) between expressions, so the expression has to be modified
-    by hand if needed"
+
+  A caveat is that it does not insert logical separators (NOT, AND, OR)
+  between expressions, so the expression has to be modified by hand if
+  needed"
     (interactive "P")
     (let ((choices lps/mu4e-build-query-alist)
           (query-list (if start-query
