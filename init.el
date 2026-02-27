@@ -129,6 +129,14 @@
       ;; (shell-command "gpgconf -- reload gpg-agent")
       (setq lps/auth-cache-expiry-setup-p nil)))))
 
+(use-package emacs
+  :init
+  (defvar lps/extra-packages-private-dir
+    (locate-user-emacs-file "extra-packages/private/"))
+
+  (defun lps/find-in-private-dir (file)
+    (expand-file-name file lps/extra-packages-private-dir)))
+
 (ensure-emacs-version 29
   (use-package emacs
     :bind
@@ -7377,8 +7385,7 @@ Change to wide reply ?")))))
 ;;; Contexts and private setup
   (require 'secrets)
 
-  (defvar lps/private-mail-setup-file
-    (locate-user-emacs-file "extra-packages/private/mail-setup.el")
+  (defvar lps/private-mail-setup-file (lps/find-in-private-dir "mail-setup.el")
     "Personal configuration, including mu4e-contexts. Private, as it
   contains mail addresses, etc.")
 

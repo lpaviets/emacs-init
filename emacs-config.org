@@ -403,7 +403,7 @@ We finally add a few bindings to manage our packages more efficiently.
           ("P u" . package-update)))
 #+end_src
 
-** Security
+** Security and privacy
 
 Emacs is not very secure as such. We try to fix this as best as we can.
 
@@ -467,6 +467,22 @@ located in the =~/.gnupg/= directory on Linux.
         (shell-command "gpgconf --kill gpg-agent")
         ;; (shell-command "gpgconf -- reload gpg-agent")
         (setq lps/auth-cache-expiry-setup-p nil)))))
+#+end_src
+
+Now, for some other privacy-related settings: even with some basic security
+stuff (e.g., no password in plaintext being written in the init files), some
+packages still depend on "soft" private informations (mail addresses, for
+example, or nicknames in the case of IRC). Those might be synchronized between
+machines using external means, but we still need to configure them.
+
+#+begin_src emacs-lisp
+  (use-package emacs
+    :init
+    (defvar lps/extra-packages-private-dir
+      (locate-user-emacs-file "extra-packages/private/"))
+
+    (defun lps/find-in-private-dir (file)
+      (expand-file-name file lps/extra-packages-private-dir)))
 #+end_src
 
 ** Quick restart
@@ -9790,8 +9806,7 @@ context.
 #+begin_src emacs-lisp :tangle no
   (require 'secrets)
 
-  (defvar lps/private-mail-setup-file
-    (locate-user-emacs-file "extra-packages/private/mail-setup.el")
+  (defvar lps/private-mail-setup-file (lps/find-in-private-dir "mail-setup.el")
     "Personal configuration, including mu4e-contexts. Private, as it
   contains mail addresses, etc.")
 
@@ -12000,6 +12015,15 @@ To explore:
   ~org-format-outline-path~, which sets the width to (?) depending on the value of
   some variable, dynamically set by some other advice around the ~format-item~
   function.
+- [ ] Org agenda: try to hack ~org-agenda-get-timestamps~ to add a special "exclude
+  date", or "end repeat" date, that makes it so that some repeated entries are
+  not repeated absolutely unconditionnally (e.g., we know that the repetition
+  ends at some point, or we want to mark some day as a special case where it
+  should be ignored). NOT really needed: Diary expressions can process arbitrary
+  code, they are just functions called on a given "day" returning NIL if the day
+  is not matching (actually, the variable ~date~ is (lexically) set to the current
+  date, in M/D/Y format).
+
 ** mu4e
 
 - [ ] Add a way to download all (or at least some ?) attachments from multiple
