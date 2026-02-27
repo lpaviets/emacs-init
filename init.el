@@ -5105,7 +5105,6 @@ the number of the file to view, anything else to skip: ") "1") list)))
                                                  &optional delimited start end backward
                                                  &rest _ignore)
     "Like `query-replace-regexp' but only replaces in LaTeX-math environments."
-    (interactive (interactive-form 'query-replace-regexp))
     (let ((replace-re-search-function (lps/LaTeX-make-replace-search-function t)))
       (query-replace-regexp regexp to-string delimited start end backward)))
 
