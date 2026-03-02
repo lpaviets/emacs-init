@@ -5101,6 +5101,7 @@ the number of the file to view, anything else to skip: ") "1") list)))
                                           &optional delimited start end backward
                                           &rest _ignore)
     "Like `query-replace' but only replaces in LaTeX-math environments."
+    (interactive)
     (let ((replace-search-function (lps/LaTeX-make-replace-search-function nil)))
       (query-replace from-string to-string delimited start end backward)))
 
@@ -5113,6 +5114,7 @@ the number of the file to view, anything else to skip: ") "1") list)))
                                                  &optional delimited start end backward
                                                  &rest _ignore)
     "Like `query-replace-regexp' but only replaces in LaTeX-math environments."
+    (interactive)
     (let ((replace-re-search-function (lps/LaTeX-make-replace-search-function t)))
       (query-replace-regexp regexp to-string delimited start end backward)))
 
@@ -6845,7 +6847,8 @@ directories between START and END. More precisely:
             ('nil (dirvish-subtree--insert))
             ('partial (or
                        (lps/dirvish-expand-all-subtrees start end lps/dirvish-expand-subfolders-threshold)
-                       (lps/dirvish-remove-all-subtrees start end)))
+                       (and (y-or-n-p "Collapse all subdirectories ?")
+                            (lps/dirvish-remove-all-subtrees start end))))
             ('full (lps/dirvish-remove-all-subtrees start end))))))
 
     (defun lps/dirvish-toggle-all-subtrees ()
