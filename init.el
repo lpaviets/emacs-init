@@ -2459,9 +2459,10 @@ This ensures that no space is inserted after e.g. #2A or #C"
 (use-package elec-pair
   :only-built-in t
   :hook ((prog-mode
-          org-mode
-          inferior-python-mode)
-         . electric-pair-local-mode)) ;; needed for org-babel
+          org-mode                      ; needed for org-babel
+          inferior-python-mode
+          LaTeX-mode)
+         . electric-pair-local-mode))
 
 (use-package adjust-parens
   :after paredit
@@ -5163,7 +5164,10 @@ return `nil'."
         ("C-S-b" . lps/LaTeX-prev-math)
         ("C-S-f" . lps/LaTeX-next-math)
         ("C-c $" . lps/LaTeX-switch-inline-display-math)
-        ("C-c C-q C-b" . LaTeX-fill-buffer))
+        ("C-c C-q C-b" . LaTeX-fill-buffer)
+        ("(" . nil)
+        ("{" . nil)
+        ("[" . nil))
   :hook
   (LaTeX-mode . outline-minor-mode)
   (LaTeX-mode . subword-mode)
@@ -5172,8 +5176,8 @@ return `nil'."
   ;; (LaTeX-mode . LaTeX-math-mode)
   (LaTeX-mode . cdlatex-mode)
   :custom
-  ;; Automatically insert closing brackets
-  (LaTeX-electric-left-right-brace t)
+  ;; Don't automatically insert closing brackets, let other packages do the job
+  (LaTeX-electric-left-right-brace nil)
   ;; Also change the key to access LaTeX-math-mode
   (LaTeX-math-abbrev-prefix "°")
   ;; Improve fontification
@@ -7178,8 +7182,6 @@ confirmation when sending a non-multipart MIME mail")
   :after mu4e
   :custom
   ;; Default SMTP configuration
-  ;; Don't forget that it uses authinfo(.gpg) ! So any password change
-  ;; should be reflected there too !
   (smtpmail-debug-info t)
   (smtpmail-debug-verb t)
   (smtpmail-servers-requiring-authorization "ovh"))
