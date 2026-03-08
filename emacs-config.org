@@ -1023,7 +1023,7 @@ This modifies how the [[https://www.emacswiki.org/emacs/ModeLine][modeline]] loo
 *MANUAL*: depending on how you install nerd fonts on your system, you may need to
 do manual installation steps (e.g. =M-x nerd-icons-install-fonts=).
 
-#+begin_src emacs-lisp :tangle "early-init.el" :noweb yes
+#+begin_src emacs-lisp :noweb yes
   (use-package doom-modeline
     :hook (after-init . doom-modeline-mode)
     :custom
@@ -1041,7 +1041,7 @@ do manual installation steps (e.g. =M-x nerd-icons-install-fonts=).
                   (not (or (eq buffer-file-coding-system 'utf-8-unix)
                            (eq buffer-file-coding-system 'utf-8)))))
 
-    (add-hook 'after-change-major-mode-hook #'lps/hide-utf-8-encoding)
+    (add-hook 'after-change-major-mode-hook 'lps/hide-utf-8-encoding)
 
     ;; Add recursive-depth info to the mode line
     ;; Useful for e.g. Isearch sessions
@@ -11511,11 +11511,11 @@ applied upstream.
 #+NAME: patch-doom-modeline
 #+begin_src emacs-lisp :tangle no
   ;; Fix a bug where symbol-with-pos are inserted instead of "bare symbols"
-  (ensure-emacs-version 29
-    (let ((remove-pos-from-seg (lambda (it)
-                                 (cons (remove-pos-from-symbol (car it)) (cdr it)))))
-      (setq doom-modeline-fn-alist (mapcar remove-pos-from-seg doom-modeline-fn-alist)
-            doom-modeline-var-alist (mapcar remove-pos-from-seg doom-modeline-var-alist))))
+  ;; (ensure-emacs-version 29
+  ;;   (let ((remove-pos-from-seg (lambda (it)
+  ;;                                (cons (remove-pos-from-symbol (car it)) (cdr it)))))
+  ;;     (setq doom-modeline-fn-alist (mapcar remove-pos-from-seg doom-modeline-fn-alist)
+  ;;           doom-modeline-var-alist (mapcar remove-pos-from-seg doom-modeline-var-alist))))
 
   ;; Fix an Eldoc bug ? Doc seems to pop in a random buffer, and so
   ;; force-mode-line-update doesn't refresh the "current" mode-line. Still
