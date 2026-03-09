@@ -8420,6 +8420,36 @@ insert as many blank lines as necessary."
                  nil
                  'equal)))
 
+(use-package parse-time
+  :defer t
+  :config
+  (cl-loop for ext-month in '(("janvier")
+                              ("février" "fevrier" "fev")
+                              ("mars")
+                              ("avril" "avr")
+                              ("mai")
+                              ("juin")
+                              ("juillet" "juil")
+                              ("aout")
+                              ("septembre")
+                              ("octobre")
+                              ("novembre")
+                              ("decembre"))
+           for i from 1
+           do (dolist (month ext-month)
+                (add-to-list 'parse-time-months (cons month i) nil 'equal)))
+
+  (cl-loop for ext-day in '( ("dimanche" "dim")
+                             ("lundi" "lun")
+                             ("mardi" "mar") ; check vs Mars/March
+                             ("mercredi" "mer")
+                             ("jeudi" "jeu")
+                             ("vendredi" "ven")
+                             ("samedi" "sam"))
+           for i from 0
+           do (dolist (day ext-day)
+                (add-to-list 'parse-time-weekdays (cons day i) nil 'equal))))
+
 (use-package calendar
   :ensure nil
   :custom
