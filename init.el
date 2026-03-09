@@ -4675,6 +4675,26 @@ for a list of valid rules, to adapt this function."
       ,(concat "* %?\n%^t" (or extra "\n"))
       :empty-lines 1))
 
+  (defun lps/region-string-to-org-timestamp ()
+    (interactive)
+    (let* (org-time-was-given
+           org-end-time-was-given
+           extra
+           fmt
+           (str (buffer-substring-no-properties (region-beginning) (region-end)))
+           (time (org-read-date nil 'totime str)))
+      (when (and org-end-time-was-given
+                 (string-match "\\([0-9]+\\):\\([0-9]+\\)" org-end-time-was-given))
+        (setq extra (format "-%02d:%02d"
+  			    (string-to-number (match-string 1 org-end-time-was-given))
+  			    (string-to-number (match-string 2 org-end-time-was-given)))))
+      (setq fmt (org-time-stamp-format org-time-was-given))
+      (when extra
+        (setq fmt (concat (substring fmt 0 -1)
+                          extra
+                          (substring fmt -1))))
+      (message (format-time-string fmt time))))
+
   :bind
   ("C-c o" . org-capture)
   (:map org-capture-mode-map
@@ -4700,7 +4720,11 @@ for a list of valid rules, to adapt this function."
                                                        "agenda/Science.org"
                                                        "%i")
 
-     ,(lps/org-capture-make-generic-timestamp-template "aw" "Workplace events"
+     ,(lps/org-capture-make-generic-timestamp-template "aw" "Cultural event"
+                                                       "agenda/Culture.org"
+                                                       "%i")
+
+     ,(lps/org-capture-make-generic-timestamp-template "aw" "Workplace event"
                                                        "agenda/Workplace.org"
                                                        "%i")
 
@@ -4714,8 +4738,7 @@ for a list of valid rules, to adapt this function."
 
      ("r" "Random")
      ("rr" "Random" plain
-      (file+function "everything.org"
-                     lps/org-ask-location))
+      (file+function "everything.org" lps/org-ask-location))
 
      ("rm" "Movie" checkitem
       (file+function "movies.org" lps/org-ask-location))
@@ -6326,6 +6349,7 @@ present in the list of authors or in the title of the article"
   (cdlatex-paired-parens "$([{")
   (cdlatex-make-sub-superscript-roman-if-pressed-twice t)
   (cdlatex-simplify-sub-super-scripts nil)
+  (cdlatex-sub-super-scripts-outside-math-mode nil)
   (cdlatex-math-modify-prefix "C-°")
   (cdlatex-takeover-dollar nil)
   (cdlatex-auto-help-delay 1.0)
