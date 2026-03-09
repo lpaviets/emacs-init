@@ -3765,6 +3765,11 @@ for a list of valid rules, to adapt this function."
         file-or-dir)))
 
   :custom
+  ;; Citations
+  (org-cite-global-bibliography lps/bib-bibliography-files)
+  (org-cite-export-processors '((latex biblatex "authoryear")
+                                (t basic)))
+  (org-cite-biblatex-options "backend=biber")
   ;; Coding in blocks
   (org-src-fontify-natively t)
   (org-src-tab-acts-natively t)
@@ -3794,11 +3799,13 @@ for a list of valid rules, to adapt this function."
   (org-hide-emphasis-markers t)
   ;; LaTeX
   (org-latex-packages-alist '(("" "amsfonts" t)
+                              ("" "amsthm" t)
                               ;; ("" "lps-tex-style" t) ; bugged atm
                               ))
   (org-preview-latex-default-process (if (executable-find "dvisvgm")
                                          'dvisvgm
                                        'dvipng))
+  (org-latex-precompile nil)
 
   ;; Priority/TODOs
   (org-priority-highest ?A)
@@ -4273,9 +4280,9 @@ for a list of valid rules, to adapt this function."
   made unique when necessary."
     :global t
     (if lps/org-export-html-with-useful-ids-mode
-        (advice-add #'org-export-get-reference
-                    :override #'lps/org-export-get-reference)
-      (advice-remove #'org-export-get-reference #'lps/org-export-get-reference)))
+        (advice-add 'org-export-get-reference
+                    :override 'lps/org-export-get-reference)
+      (advice-remove 'org-export-get-reference 'lps/org-export-get-reference)))
 
   (defun lps/org-export-get-reference (datum info)
     "Like `org-export-get-reference', except uses heading titles
