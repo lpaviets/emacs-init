@@ -290,7 +290,8 @@
   :hook
   ((prog-mode LaTeX-mode) . display-line-numbers-mode)
   ((text-mode LaTeX-mode comint-mode) . visual-line-mode)
-  (LaTeX-mode . auto-fill-mode))
+  ;; (LaTeX-mode . auto-fill-mode)
+  )
 
 (when lps/only-built-in-p
   (load-theme 'deeper-blue))
@@ -8431,7 +8432,7 @@ insert as many blank lines as necessary."
   :defer t
   :config
   (cl-loop for ext-month in '(("janvier")
-                              ("février" "fevrier" "fev")
+                              ("fevrier" "fev") ; can't have accents
                               ("mars")
                               ("avril" "avr")
                               ("mai")
@@ -8446,13 +8447,13 @@ insert as many blank lines as necessary."
            do (dolist (month ext-month)
                 (add-to-list 'parse-time-months (cons month i) nil 'equal)))
 
-  (cl-loop for ext-day in '( ("dimanche" "dim")
-                             ("lundi" "lun")
-                             ("mardi" "mar") ; check vs Mars/March
-                             ("mercredi" "mer")
-                             ("jeudi" "jeu")
-                             ("vendredi" "ven")
-                             ("samedi" "sam"))
+  (cl-loop for ext-day in '(("dimanche" "dim")
+                            ("lundi" "lun")
+                            ("mardi" "mar") ; check vs Mars/March
+                            ("mercredi" "mer")
+                            ("jeudi" "jeu")
+                            ("vendredi" "ven")
+                            ("samedi" "sam"))
            for i from 0
            do (dolist (day ext-day)
                 (add-to-list 'parse-time-weekdays (cons day i) nil 'equal))))
