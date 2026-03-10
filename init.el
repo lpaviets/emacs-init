@@ -433,6 +433,9 @@ the mode-line and the usual non-full-screen Emacs are restored."
   (doom-modeline-buffer-file-name-style 'buffer-name)
   (doom-modeline-mu4e t)
   (mode-line-compact 'long)
+  (doom-modeline-modal-icon t)
+  (doom-modeline-modal-modern-icon t)
+  (doom-modeline-buffer-encoding 'nondefault)
   :config
   ;; Fix a bug where symbol-with-pos are inserted instead of "bare symbols"
   ;; (ensure-emacs-version 29
@@ -472,14 +475,6 @@ the mode-line and the usual non-full-screen Emacs are restored."
                     (apply #'format-message format-string args)))
             (force-mode-line-update 'all))) ; only diff is in the non-nil arg here
       (apply #'message format-string args)))
-  ;; Hide encoding in modeline when UTF-8(-unix)
-  (defun lps/hide-utf-8-encoding ()
-    (setq-local doom-modeline-buffer-encoding
-                (not (or (eq buffer-file-coding-system 'utf-8-unix)
-                         (eq buffer-file-coding-system 'utf-8)))))
-
-  (add-hook 'after-change-major-mode-hook 'lps/hide-utf-8-encoding)
-
   ;; Add recursive-depth info to the mode line
   ;; Useful for e.g. Isearch sessions
   (let ((rec-depth-indicator '(:eval

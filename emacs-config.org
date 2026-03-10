@@ -1034,16 +1034,11 @@ do manual installation steps (e.g. =M-x nerd-icons-install-fonts=).
     (doom-modeline-buffer-file-name-style 'buffer-name)
     (doom-modeline-mu4e t)
     (mode-line-compact 'long)
+    (doom-modeline-modal-icon t)
+    (doom-modeline-modal-modern-icon t)
+    (doom-modeline-buffer-encoding 'nondefault)
     :config
     <<patch-doom-modeline>>
-    ;; Hide encoding in modeline when UTF-8(-unix)
-    (defun lps/hide-utf-8-encoding ()
-      (setq-local doom-modeline-buffer-encoding
-                  (not (or (eq buffer-file-coding-system 'utf-8-unix)
-                           (eq buffer-file-coding-system 'utf-8)))))
-
-    (add-hook 'after-change-major-mode-hook 'lps/hide-utf-8-encoding)
-
     ;; Add recursive-depth info to the mode line
     ;; Useful for e.g. Isearch sessions
     (let ((rec-depth-indicator '(:eval
