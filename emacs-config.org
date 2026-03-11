@@ -1803,13 +1803,30 @@ customize its behaviour too.
                   (xterm-mouse-mode)))))
 #+end_src
 
-** XWidget
+** XWidget and HTML rendering
 
 You can compile emacs with XWidget support to be able to visualize many things
 in a pretty way (/e.g./ HTML files or mails, render markdown ...). For this, you
 need to build Emacs with the =--with-xwidgets= flag.
 
-NOTE: YOu might need to call =export WEBKIT_FORCE_SANDBOX=0= for it to work.
+NOTE: You might need to call =export WEBKIT_FORCE_SANDBOX=0= for it to work.
+
+Even without XWidget support, Emacs can still do basic HTML rendering, using
+~shr~, which can be useful when viewing Emails for example.
+
+#+begin_src emacs-lisp
+  (use-package shr
+    :defer t
+    :custom
+    (shr-max-width nil)
+    (shr-use-colors nil)
+    (shr-cookie-policy nil)
+    (shr-bullet "• ")
+    (shr-table-horizontal-line ?─)
+    (shr-table-vertical-line ?│)
+    (shr-table-corner ?┼)
+    (shr-hr-line ?─))
+#+end_src
 
 ** Help !
 *** Improve default help
@@ -9647,6 +9664,7 @@ the package documentation.
     (mu4e-attachment-dir (xdg-user-dir "DOWNLOAD"))
     (mu4e-use-fancy-chars t)              ; ASCII-only time is over
     (mu4e-headers-precise-alignment t)    ; and fix alignment !
+    (mu4e-mailing-list-patterns '("\\([^.+]*\\)\\."))
     (mu4e-compose-format-flowed nil)
     (mu4e-change-filenames-when-moving t) ; Avoid mail syncing issues with mbsync
     ;; Refresh mail every 5 minutes

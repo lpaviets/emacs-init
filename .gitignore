@@ -139,3 +139,4 @@ flycheck_*.el
 /extra-packages/private/*
 /extra-packages/private
 /tree-sitter/
+/ielm-history.eld

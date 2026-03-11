@@ -1044,6 +1044,18 @@ buffer name already resembles a file name"
               (unless (display-graphic-p)
                 (xterm-mouse-mode)))))
 
+(use-package shr
+  :defer t
+  :custom
+  (shr-max-width nil)
+  (shr-use-colors nil)
+  (shr-cookie-policy nil)
+  (shr-bullet "• ")
+  (shr-table-horizontal-line ?─)
+  (shr-table-vertical-line ?│)
+  (shr-table-corner ?┼)
+  (shr-hr-line ?─))
+
 ;; Helpful. Extra documentation when calling for help
 (use-package helpful
   :defer t
@@ -7344,6 +7356,7 @@ confirmation when sending a non-multipart MIME mail")
   (mu4e-attachment-dir (xdg-user-dir "DOWNLOAD"))
   (mu4e-use-fancy-chars t)              ; ASCII-only time is over
   (mu4e-headers-precise-alignment t)    ; and fix alignment !
+  (mu4e-mailing-list-patterns '("\\([^.+]*\\)\\."))
   (mu4e-compose-format-flowed nil)
   (mu4e-change-filenames-when-moving t) ; Avoid mail syncing issues with mbsync
   ;; Refresh mail every 5 minutes
