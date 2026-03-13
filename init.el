@@ -852,6 +852,8 @@ It might be buggy with some backend, so use at your own risk"
   (org-shiftleft-final . windmove-left)
   (org-shiftdown-final . windmove-down)
   (org-shiftright-final . windmove-right)
+  :bind
+  ("M-o" . other-window)
   :init
   (windmove-default-keybindings 'shift)
   (windmove-swap-states-default-keybindings '(ctrl shift))
@@ -1026,8 +1028,8 @@ buffer name already resembles a file name"
   :ensure nil
   :defer t
   :hook (prog-mode . outline-minor-mode)
-  :custom
-  (outline-minor-mode-prefix (kbd "M-o"))
+  ;; :custom
+  ;; (outline-minor-mode-prefix (kbd "M-o"))
   :config
   ;; Problems with TAB -> completely override cycle keymap
   (setq outline-mode-cycle-map (make-sparse-keymap)))

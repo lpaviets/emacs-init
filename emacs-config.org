@@ -1541,6 +1541,8 @@ which allows us to "undo" and "redo" changes in the Windows' configuration.
     (org-shiftleft-final . windmove-left)
     (org-shiftdown-final . windmove-down)
     (org-shiftright-final . windmove-right)
+    :bind
+    ("M-o" . other-window)
     :init
     (windmove-default-keybindings 'shift)
     (windmove-swap-states-default-keybindings '(ctrl shift))
@@ -1773,8 +1775,8 @@ rough outline of the /whole/ document at any time, but in a less cluttered way.
     :ensure nil
     :defer t
     :hook (prog-mode . outline-minor-mode)
-    :custom
-    (outline-minor-mode-prefix (kbd "M-o"))
+    ;; :custom
+    ;; (outline-minor-mode-prefix (kbd "M-o"))
     :config
     ;; Problems with TAB -> completely override cycle keymap
     (setq outline-mode-cycle-map (make-sparse-keymap)))
