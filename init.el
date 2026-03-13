@@ -4676,21 +4676,32 @@ for a list of valid rules, to adapt this function."
 (use-package org-capture
   :ensure nil
   :preface
-  (defun lps/org-capture-make-generic-timestamp-template (abbrev name file &optional extra)
+  (defun lps/org-capture-make-generic-timestamp-template (abbrev name file &optional extra time-range)
     `(,abbrev
       ,name entry
       (file+function ,(lps/org-expand-file-name file)
                      lps/org-ask-location)
-      ,(concat "* %?\n%^t" (or extra "\n"))
+      ,(concat (if time-range
+                   "* %?\n\n%^t--%^t"
+                 "* %?\n\n%^t")
+               (or extra "\n"))
       :empty-lines 1))
 
-  (defun lps/region-string-to-org-timestamp ()
+  (defun lps/org-capture-make-generic-timestamp-template-both (abbrev name file &optional extra)
+    (list (list abbrev name)
+          (lps/org-capture-make-generic-timestamp-template (concat abbrev "p")
+                                                           (concat name " (Ponctual)")
+                                                           file extra)
+          (lps/org-capture-make-generic-timestamp-template (concat abbrev "r")
+                                                           (concat name " (Range)")
+                                                           file extra t)))
+
+  (defun lps/string-to-org-timestamp (str)
     (interactive)
     (let* (org-time-was-given
            org-end-time-was-given
            extra
            fmt
-           (str (buffer-substring-no-properties (region-beginning) (region-end)))
            (time (org-read-date nil 'totime str)))
       (when (and org-end-time-was-given
                  (string-match "\\([0-9]+\\):\\([0-9]+\\)" org-end-time-was-given))
@@ -4722,23 +4733,23 @@ for a list of valid rules, to adapt this function."
       :empty-lines 1)
 
      ("a" "Agenda")
-     ,(lps/org-capture-make-generic-timestamp-template "at" "Teaching"
-                                                       "agenda/Teaching.org")
+     ,@(lps/org-capture-make-generic-timestamp-template-both "at" "Teaching"
+                                                             "agenda/Teaching.org")
 
-     ,(lps/org-capture-make-generic-timestamp-template "as" "Science Event"
-                                                       "agenda/Science.org"
-                                                       "%i")
+     ,@(lps/org-capture-make-generic-timestamp-template-both "as" "Science Event"
+                                                             "agenda/Science.org"
+                                                             "%i")
 
-     ,(lps/org-capture-make-generic-timestamp-template "aw" "Cultural event"
-                                                       "agenda/Culture.org"
-                                                       "%i")
+     ,@(lps/org-capture-make-generic-timestamp-template-both "aw" "Cultural event"
+                                                             "agenda/Culture.org"
+                                                             "%i")
 
-     ,(lps/org-capture-make-generic-timestamp-template "aw" "Workplace event"
-                                                       "agenda/Workplace.org"
-                                                       "%i")
+     ,@(lps/org-capture-make-generic-timestamp-template-both "aw" "Workplace event"
+                                                             "agenda/Workplace.org"
+                                                             "%i")
 
-     ,(lps/org-capture-make-generic-timestamp-template "ao" "Others"
-                                                       "agenda/Others.org")
+     ,@(lps/org-capture-make-generic-timestamp-template-both "ao" "Others"
+                                                             "agenda/Others.org")
      ("aa"
       "Any (pick)" entry
       (function lps/org-capture-agenda-any-location)
