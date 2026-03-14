@@ -2886,6 +2886,8 @@ call the associated function interactively. Otherwise, call the
   :after rust-mode
   :custom
   (rustic-lsp-setup-p nil)
+  ;; Experimental but useful for student code/TP
+  (rustic-enable-detached-file-support t)
   (rustic-popup-commands
    '((?b "build"      build)
      (?f "fmt"        fmt)
@@ -6872,24 +6874,33 @@ PWD is not in a git repo (or the git command is not found)."
 
     (defvar lps/dirvish-expand-subfolders-threshold 100)
 
+    (defun lps/dirvish-collect-subtree-overlays ()
+      (cl-loop for ov in (overlays-at (point))
+               when (overlay-get ov 'dired-subtree-depth)
+               collect (list (overlay-get ov 'dired-subtree-depth)
+                             (overlay-start ov)
+                             (overlay-end ov))))
+
     (defun lps/dirvish-next-sibling (&optional bol)
       "Return marker after the next sibling (directory at the same depth).
 
 If BOL is non-nil, return the marker placed at the beginning of the line
 instead."
       (let ((depth (dirvish-subtree--depth)))
-        (catch 'found
-          (while (re-search-forward dired-re-dir nil t)
-            (when (= depth (dirvish-subtree--depth))
-              (if bol
-                  (beginning-of-line)
-                (end-of-line))
-              (throw 'found (point-marker)))
-            (when (< (dirvish-subtree--depth) depth)
-              (throw 'found (save-excursion
-                              (beginning-of-line)
-                              (backward-char 1)
-                              (point-marker))))))))
+        (if (dirvish-subtree--expanded-p)
+            (save-excursion
+              (forward-line 1)
+              (let* ((overlays (lps/dirvish-collect-subtree-overlays))
+                     (ov (assoc (1+ depth) overlays))
+                     (end (nth 2 ov)))
+                (goto-char end)
+                (unless bol (end-of-line))
+                (point-marker)))
+          (forward-line 1)
+          (if bol
+              (beginning-of-line)
+            (end-of-line))
+          (point-marker))))
 
     (defun lps/dirvish-expand-ensure-few-subfolders-range (start end threshold)
       (let ((marker-start (save-excursion
