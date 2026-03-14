@@ -6437,7 +6437,7 @@ Note: when adding a calendar, you need to (at least when you use ~vdirsyncer~ an
                                                                "agenda/Science.org"
                                                                "%i")
 
-       ,@(lps/org-capture-make-generic-timestamp-template-both "aw" "Cultural event"
+       ,@(lps/org-capture-make-generic-timestamp-template-both "ac" "Cultural event"
                                                                "agenda/Culture.org"
                                                                "%i")
 

@@ -4742,7 +4742,7 @@ for a list of valid rules, to adapt this function."
                                                              "agenda/Science.org"
                                                              "%i")
 
-     ,@(lps/org-capture-make-generic-timestamp-template-both "aw" "Cultural event"
+     ,@(lps/org-capture-make-generic-timestamp-template-both "ac" "Cultural event"
                                                              "agenda/Culture.org"
                                                              "%i")
 
