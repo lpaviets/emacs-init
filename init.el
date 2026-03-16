@@ -4405,6 +4405,19 @@ for a list of valid rules, to adapt this function."
          (lps/org-expand-file-name "archive" t) ; archived files
          ))
   (org-log-into-drawer t)
+  ;; Fix misleading use of display-graphic-p: does not work well with --daemon &
+  ;; desktop-restore
+  (org-agenda-block-separator (if (char-displayable-p ?─) ?─ ?=))
+  (org-agenda-time-grid
+   (let ((fancy (char-displayable-p ?┄)))
+     `((daily today require-timed)
+       ,(cl-loop for h from 8 to 22 collect (* h 100))
+       ,(if fancy " ┄┄┄┄┄ " "......")
+       ,(if fancy "┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄" "----------------"))))
+  (org-agenda-current-time-string (if (and (char-displayable-p ?←)
+                                           (char-displayable-p ?─))
+                                      "← now ───────────────────────────────────────────────"
+                                    "now -------------------------------------------------"))
   (org-log-done 'time)
   (org-archive-location (concat (lps/org-expand-file-name "archive" t)
                                 "%s_archive::")) ; not technically
@@ -4495,10 +4508,7 @@ for a list of valid rules, to adapt this function."
   (set-face-attribute 'org-imminent-deadline nil :underline nil)
 
   (defvar lps/org-agenda-date-separator
-    (if (and (display-graphic-p)
-             (char-displayable-p ?─))
-        ?─
-      ?-))
+    (if (char-displayable-p ?─) ?─ ?-))
 
   ;; Maybe don't hardcode width and refer to some kind of window/buffer width ?
   (defun lps/org-agenda-format-date (date)
