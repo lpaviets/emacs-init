@@ -248,9 +248,6 @@
   (dolist (hook lps/truncate-lines-modes-hook)
     (add-hook hook 'lps/activate-truncate-lines))
 
-  (defun lps/enable-auto-hscroll-scroll ()
-    (setq-local auto-hscroll-mode t))
-
   (define-fringe-bitmap 'lps/continuation-left
     [
      #b00111000
@@ -276,9 +273,6 @@
      ])
 
   :custom
-  (hscroll-margin 10)
-  (hscroll-step 10)
-  (auto-hscroll-mode 'current-line)
   (display-line-numbers-width 3)
   (display-line-numbers-grow-only t)
   (fill-column 80)                      ; default 70 is a bit low
@@ -869,17 +863,10 @@ It might be buggy with some backend, so use at your own risk"
           (apply fun args))
       (remove-hook 'minibuffer-setup-hook 'lps/windmove-mode-local-off))))
 
-;; Taken from https://emacs.stackexchange.com/questions/2189/how-can-i-prevent-a-command-from-using-specific-windows
-(defun lps/toggle-window-dedicated ()
-  "Control whether or not Emacs is allowed to display another
-buffer in current window."
-  (interactive)
-  (message
-   (if (let (window (get-buffer-window (current-buffer)))
-         (set-window-dedicated-p window (not (window-dedicated-p window))))
-       "%s: Can't touch this!"
-     "%s is up for grabs.")
-   (current-buffer)))
+(use-package emacs
+  :custom
+  (window-min-height 10)
+  (fit-window-to-buffer-horizontally t))
 
 (require 'xdg)
 
@@ -1039,8 +1026,14 @@ buffer name already resembles a file name"
   :custom
   (scroll-preserve-screen-position t)
   (scroll-error-top-bottom t)
+  (hscroll-margin 10)
+  (hscroll-step 10)
+  (auto-hscroll-mode 'current-line)
   (mouse-wheel-tilt-scroll t)
   :config
+  (defun lps/enable-auto-hscroll-scroll ()
+    (setq-local auto-hscroll-mode t))
+
   (add-hook 'server-after-make-frame-hook
             (lambda ()
               (unless (display-graphic-p)
