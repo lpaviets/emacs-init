@@ -2992,6 +2992,51 @@ and the function in this sexp is used.
       (setq-local er/try-expand-list (remove 'er/mark-org-code-block er/try-expand-list))))
 #+end_src
 
+In fairness, Emacs already comes with a variety of ways to mark "stuff" of
+varying nature, using the "thing at point" mechanism. We extend it to be able to
+quickly mark "something" (being prompted for the thing) without remembering each
+~mark-<X>~ function.
+
+#+begin_src emacs-lisp
+  (use-package thingatpt
+    :only-built-in t
+    :bind ("C-M-=" . lps/mark-thing-at-point)
+    :config
+    (defun lps/all-things-at-point ()
+      (let ((things nil))
+        (cl-do-all-symbols (x things)
+          (when (or (get x 'end-op)
+                    (get x 'bounds-of-thing-at-point)
+                    (get x 'thing-at-point)
+                    (let ((str (symbol-name x)))
+                      (and (string-match "^forward-\\(\\w\\{2,\\}\\)$" str)
+                           (setq x (match-string-no-properties 1 str)))))
+            (push x things)))))
+
+    (defvar lps/last-thing-at-point nil)
+
+    (defun lps/mark-thing-at-point (arg)
+      (interactive "P")
+      (if (region-active-p)
+          ;; Extend
+          (progn
+            (setq arg (if (< (mark) (point)) -1 1))
+            (set-mark
+  	   (save-excursion
+  	     (goto-char (mark))
+  	     (forward-thing lps/last-thing-at-point arg)
+  	     (point))))
+        ;; Start new region
+        (let* ((thing (intern-soft (completing-read "Thing: " (lps/all-things-at-point))))
+               (bounds (bounds-of-thing-at-point thing)))
+          (when bounds
+            (setq lps/last-thing-at-point thing)
+            (goto-char (car bounds))
+            (push-mark)
+            (goto-char (cdr bounds))
+            (activate-mark))))))
+#+end_src
+
 We also define functions that Emacs is surprinsingly lacking.
 
 The first one is used to copy without deleting the current line (internally, it

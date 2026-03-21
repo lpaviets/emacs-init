@@ -1916,6 +1916,44 @@ moving point or mark as little as possible."
   (defun lps/er-org-mode-remove-unused ()
     (setq-local er/try-expand-list (remove 'er/mark-org-code-block er/try-expand-list))))
 
+(use-package thingatpt
+  :only-built-in t
+  :bind ("C-M-=" . lps/mark-thing-at-point)
+  :config
+  (defun lps/all-things-at-point ()
+    (let ((things nil))
+      (cl-do-all-symbols (x things)
+        (when (or (get x 'end-op)
+                  (get x 'bounds-of-thing-at-point)
+                  (get x 'thing-at-point)
+                  (let ((str (symbol-name x)))
+                    (and (string-match "^forward-\\(\\w\\{2,\\}\\)$" str)
+                         (setq x (match-string-no-properties 1 str)))))
+          (push x things)))))
+
+  (defvar lps/last-thing-at-point nil)
+
+  (defun lps/mark-thing-at-point (arg)
+    (interactive "P")
+    (if (region-active-p)
+        ;; Extend
+        (progn
+          (setq arg (if (< (mark) (point)) -1 1))
+          (set-mark
+	   (save-excursion
+	     (goto-char (mark))
+	     (forward-thing lps/last-thing-at-point arg)
+	     (point))))
+      ;; Start new region
+      (let* ((thing (intern-soft (completing-read "Thing: " (lps/all-things-at-point))))
+             (bounds (bounds-of-thing-at-point thing)))
+        (when bounds
+          (setq lps/last-thing-at-point thing)
+          (goto-char (car bounds))
+          (push-mark)
+          (goto-char (cdr bounds))
+          (activate-mark))))))
+
 (use-package emacs
   :ensure nil
   :init
