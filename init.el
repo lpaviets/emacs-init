@@ -4538,6 +4538,7 @@ for a list of valid rules, to adapt this function."
                           ("Seminar"      . "🪧")
                           ("Workshop"     . "👥") ; same icon as conference
                           ("Culture"      . "🎨")
+                          ("Achat"        . "💵")
                           ("Research"     . "🎓")
                           ("Holidays"     . "☀️")
                           ("Science"      . "👩🏾‍🔬")
@@ -7375,7 +7376,7 @@ confirmation when sending a non-multipart MIME mail")
   ;; Might avoid unwanted drafts
   (mu4e-compose-mode . lps/disable-auto-save-mode)
   :custom
-  (mu4e-trash-without-flag t) ; safer this way
+  (mu4e-trash-without-flag t)           ; safer this way
   (message-cite-reply-position 'below)
   (mu4e-compose-context-policy 'ask)
   (mu4e-context-policy 'ask)
@@ -7450,7 +7451,11 @@ confirmation when sending a non-multipart MIME mail")
   (defun-override lps/mu4e--view-get-urls-num (prompt &optional multi)
     (let* ((count (hash-table-count mu4e--view-link-map))
            (def)
-           (nums (mapcar 'number-to-string (hash-table-keys mu4e--view-link-map)))
+           (nums (mapcar 'number-to-string
+                         (cl-delete-duplicates (hash-table-keys mu4e--view-link-map)
+                                               :key (lambda (x)
+                                                      (gethash x mu4e--view-link-map))
+                                               :test 'equal)))
            (completion-extra-properties
             `(:annotation-function (lambda (num)
                                      (concat "\t" ; needed ?! Should be handled
