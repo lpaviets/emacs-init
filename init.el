@@ -221,6 +221,9 @@
   (:map lps/quick-edit-map
         ("C-z" . iso-transl-ctl-x-8-map)))
 
+(use-package kkp
+  :hook (tty-setup . global-kkp-mode))
+
 (use-package emacs
   :init
   (defun lps/remove-face-property (val)
@@ -1933,9 +1936,14 @@ moving point or mark as little as possible."
 
   (defvar lps/last-thing-at-point nil)
 
+  (defun lps/reset-last-thing-at-point ()
+    (setq lps/last-thing-at-point nil))
+
+  ;; Wacky handling of repetitions
   (defun lps/mark-thing-at-point (arg)
     (interactive "P")
-    (if (region-active-p)
+    (if (and (region-active-p)
+             lps/last-thing-at-point)
         ;; Extend
         (progn
           (setq arg (if (< (mark) (point)) -1 1))
@@ -1949,10 +1957,11 @@ moving point or mark as little as possible."
              (bounds (bounds-of-thing-at-point thing)))
         (when bounds
           (setq lps/last-thing-at-point thing)
-          (goto-char (car bounds))
-          (push-mark)
           (goto-char (cdr bounds))
-          (activate-mark))))))
+          (push-mark)
+          (goto-char (car bounds))
+          (activate-mark))
+        (add-hook-once 'deactivate-mark-hook 'lps/reset-last-thing-at-point)))))
 
 (use-package emacs
   :ensure nil

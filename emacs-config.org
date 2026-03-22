@@ -635,6 +635,21 @@ Hence, we simply "remap" (using translation maps, see the [[info:elisp#Translati
           ("C-z" . iso-transl-ctl-x-8-map)))
 #+end_src
 
+*** Emacs in the terminal
+
+Emacs can be run in a terminal, with no GUI window. This is sometimes useful,
+but there are some rough edges. Most customizations work fine both in a GUI and
+in a TTY, but special care needs to be taken for some stuff, especially when
+dealing with fancy fonts and complex inputs. The standard way to wrap code meant
+for GUI is to use the ~(display-graphic-p)~ function, but there are a few special
+hooks run when we are in a terminal that we can use to do stuff precisely /when/
+we are in a TTY.
+
+#+begin_src emacs-lisp
+  (use-package kkp
+    :hook (tty-setup . global-kkp-mode))
+#+end_src
+
 *** Fonts and faces
 
 In this section, we configure the default fonts.
@@ -3015,9 +3030,14 @@ quickly mark "something" (being prompted for the thing) without remembering each
 
     (defvar lps/last-thing-at-point nil)
 
+    (defun lps/reset-last-thing-at-point ()
+      (setq lps/last-thing-at-point nil))
+
+    ;; Wacky handling of repetitions
     (defun lps/mark-thing-at-point (arg)
       (interactive "P")
-      (if (region-active-p)
+      (if (and (region-active-p)
+               lps/last-thing-at-point)
           ;; Extend
           (progn
             (setq arg (if (< (mark) (point)) -1 1))
@@ -3031,10 +3051,11 @@ quickly mark "something" (being prompted for the thing) without remembering each
                (bounds (bounds-of-thing-at-point thing)))
           (when bounds
             (setq lps/last-thing-at-point thing)
-            (goto-char (car bounds))
-            (push-mark)
             (goto-char (cdr bounds))
-            (activate-mark))))))
+            (push-mark)
+            (goto-char (car bounds))
+            (activate-mark))
+          (add-hook-once 'deactivate-mark-hook 'lps/reset-last-thing-at-point)))))
 #+end_src
 
 We also define functions that Emacs is surprinsingly lacking.

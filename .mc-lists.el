@@ -51,6 +51,7 @@
         kill-region
         kill-sexp
         kill-visual-line
+        kmacro-end-or-call-macro
         lps/copy-line-at-point
         lps/eval-and-replace-last-sexp
         lps/exchange-point-and-mark
