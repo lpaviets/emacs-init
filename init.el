@@ -2393,6 +2393,7 @@ If ABSOLUTE is non-nil, inserts the absolute file name instead."
   (magit-module-sections-nested nil)   ; disable if many modules in a given repo
   (magit-clone-always-transient t)
   (magit-diff-refine-hunk t) ; Might be 'all later: slower but less annoying ?
+  (magit-diff-refine-ignore-whitespace nil)
   (magit-format-file-function 'magit-format-file-nerd-icons)
   (magit-repository-directories `((,(expand-file-name "~/from_source") . 1)
                                   (,(expand-file-name "Projects"
@@ -7393,6 +7394,7 @@ confirmation when sending a non-multipart MIME mail")
               "/usr/share/emacs/site-lisp/mu4e")
   :commands mu4e
   :bind (("C-c e" . mu4e)
+         ("C-c E" . lps/mu4e-search-favorite-bookmark)
          (:map mu4e-compose-mode-map
                ("C-c h" . lps/org-mime-htmlize-preserve-secure-and-attach))
          (:map mu4e-compose-mode-map
@@ -7485,6 +7487,13 @@ confirmation when sending a non-multipart MIME mail")
                                           (format "%s" (mu4e-message-field-raw msg :priority)))))
                nil
                'equal)
+
+  (defun lps/mu4e-search-favorite-bookmark ()
+    (interactive)
+    (let* ((fun-favorite-p (lambda (b) (plist-get b :favorite)))
+           (bm (cl-find-if fun-favorite-p mu4e-bookmarks))
+           (query (plist-get bm :query)))
+      (mu4e-search-bookmark query)))
 
   (defun lps/mu4e-unmark-backward ()
     (interactive)
